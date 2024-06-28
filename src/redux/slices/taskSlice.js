@@ -21,19 +21,6 @@ export const fetchTasks = createAsyncThunk(
   }
 );
 
-
-// export const fetchTasksbyId = createAsyncThunk(
-//   "api/tasks/gettaskbyId/task_id",
-//   async (data, thunkAPI) => {
-//     const {task_id}=data;
-//     try {
-//       const response = await httpGetService(`api/tasks/gettaskbyId/${task_id}`,data);
-//       return response; 
-//     } catch (error) {
-//       return thunkAPI.rejectWithValue(error.response.data);
-//     }
-//   } 
-// );
 export const fetchTasksbyId = createAsyncThunk(
   "api/tasks/gettaskbyId/task_id",
   async ({ task_id }, thunkAPI) => {
@@ -88,30 +75,25 @@ export const createSubTask = createAsyncThunk(
 );
 
 
-export const getSubTask = createAsyncThunk(
-  "/api/tasks/getsubtasks",
-  async (data, thunkAPI) => {
-    const { id } = data;
-    try {
-      const response = await httpGetService(`api/tasks/getsubtasks/${id}`, data);
-      return response;
-    } catch (error) {
-      return thunkAPI.rejectWithValue(error.response.data);
-    }
-  }
-);
 // export const getSubTask = createAsyncThunk(
 //   "/api/tasks/getsubtasks",
-//   async (data, thunkAPI) => {
+//   async (id,data, thunkAPI) => {
+//     // const { id } = data;
 //     try {
-//       const response = await httpGetService("api/tasks/getsubtasks", data);
-//       // console.log(response);
-//       return response;
+//       const response = await httpGetService(`api/tasks/getsubtasks/${id}`, data);
+//       return response.data;
 //     } catch (error) {
 //       return thunkAPI.rejectWithValue(error.response.data);
 //     }
 //   }
 // );
+export const getSubTask = createAsyncThunk(
+  "/api/tasks/getsubtasks",
+  async (taskId) => {
+    const response = await httpGetService(`api/tasks/getsubtasks/${taskId}`);
+    return response;
+  }
+);
 
 const taskSlice = createSlice({
   name: "tasks",
@@ -183,6 +165,7 @@ const taskSlice = createSlice({
       .addCase(getSubTask.fulfilled, (state, action) => {
         state.status = 'succeeded';
         state.subs.push(action.payload);
+        // state.tasks.push(action.payload);
       })
       .addCase(getSubTask.rejected, (state, action) => {
         state.status = 'failed';
@@ -194,7 +177,10 @@ const taskSlice = createSlice({
 // Selectors
 export const selectTaskById = (state, taskId) =>
   state.tasks.tasks.find((task) => task.id === taskId);
-// export const selectSubTasks = (state) => state.subs.subs;
+
+
+export const selectSubTasks = (state) => state.tasks.subs;
+// export const selectSubTasks = (state) => state.tasks.tasks;
 export const selectTasks = (state) => state.tasks.tasks;
 export const selectTaskStatus = (state) => state.tasks.status;
 export const selectTaskError = (state) => state.tasks.error;

@@ -10,13 +10,12 @@ import { useSelector, useDispatch } from "react-redux";
 import { BiMessageAltDetail } from "react-icons/bi";
 import { FaList } from "react-icons/fa";
 import moment from "moment";
-import TaskDialog from "./task/TaskDialog";
+import TaskDialog from "./task/TaskDialog"; 
 import UserInfo from "./UserInfo";
 import { IoMdAdd } from "react-icons/io";
 import AddSubTask from "./task/AddSubTask";
 import { BGS, PRIOTITYSTYELS, TASK_TYPE, formatDate } from "../utils";
-import { getSubTask  } from "../redux/slices/taskSlice";
-// import { getSubTask, selectSubTasks } from "../redux/slices/taskSlice";
+import { getSubTask, selectSubTasks } from "../redux/slices/taskSlice";
 
 const ICONS = {
   HIGH: <MdKeyboardDoubleArrowUp />,
@@ -24,16 +23,19 @@ const ICONS = {
   LOW: <MdKeyboardArrowDown />,
 };
 
-const TaskCard = ({ task }) => {
-  // const dispatch = useDispatch();
-  // const subtasks = useSelector(selectSubTasks);
+const TaskCard = ({task}) => {
+
+  const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const [open, setOpen] = useState(false);
 
-  // useEffect(() => {
-  //   dispatch(getSubTask(task.task_Id));
-  // }, [dispatch, task.task_Id]);
-  const subtasks=[];
+  // const subtasks = useSelector(selectSubTasks);
+  const subtasks = [];
+  
+  useEffect(() => {
+    dispatch(getSubTask(task.task_id));
+    }, [dispatch, task.task_id]);
+
 
   return (
     <>
@@ -77,7 +79,7 @@ const TaskCard = ({ task }) => {
             </div>
             <div className="flex gap-1 items-center text-sm text-gray-600 ">
               <FaList />
-              <span>0/{subtasks?.length}</span>
+              <span>0/{subtasks?.length} </span>
             </div>
           </div>
 
@@ -97,20 +99,23 @@ const TaskCard = ({ task }) => {
         </div>
 
         {subtasks?.length > 0 ? (
-          <div className="py-4 border-t border-gray-200">
-            <h5 className="text-base line-clamp-1 text-black">
-              {subtasks[0]?.title}
-            </h5>
+      // subtasks.map((subtask, index) => (
+        <div key={index} className="py-4 border-t border-gray-200">
+          <h5 className="text-base line-clamp-1 text-black">
+            {subtasks.title}
+          </h5>
 
-            <div className="p-4 space-x-8">
-              <span className="text-sm text-gray-600">
-                {formatDate(new Date(subtasks[0]?.date))}
-              </span>
-              <span className="bg-blue-600/10 px-3 py-1 rounded-full text-blue-700 font-medium">
-                {subtasks[0].tag}
-              </span>
-            </div>
+          <div className="p-4 space-x-8">
+            <span className="text-sm text-gray-600">
+              {formatDate(new Date(subtasks.due_date))}
+            </span>
+            <span className="bg-blue-600/10 px-3 py-1 rounded-full text-blue-700 font-medium">
+              {subtasks.tag}
+            </span>
           </div>
+        </div>
+      // ))
+      
         ) : (
           <div className="py-4 border-t border-gray-200">
             <span className="text-gray-500">No Sub Task</span>

@@ -111,7 +111,6 @@ function App() {
           {/* <Route path='/trashed' element={<Trash />} /> */}
           <Route path='/task/:id' element={<TaskDetails/>} />
         </Route>
-
         <Route path='/log-in' element={<Login />} />
         <Route path='/abc/abc' element={<Mypage/>}/>
       </Routes>

@@ -168,8 +168,6 @@
 // export default AddTask;
 
 
-
-
 import React, { useState } from "react";
 import ModalWrapper from "../ModalWrapper";
 import { Dialog } from "@headlessui/react";
@@ -177,6 +175,7 @@ import Textbox from "../Textbox";
 import { useForm } from "react-hook-form";
 import UserList from "./UserList";
 import SelectList from "../SelectList";
+import { BiImages } from "react-icons/bi";
 import Button from "../Button";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -210,7 +209,8 @@ const AddTask = ({ open, setOpen }) => {
       assigned_to: team,
       stage,
       taskDate: new Date(date).toISOString(),
-      priority
+      priority,
+      assets
     };
 
     setUploading(true);
@@ -222,10 +222,18 @@ const AddTask = ({ open, setOpen }) => {
       setOpen(false);
     }
   };
-
+  // const handleSelect = (e) => {
+  //   // setAssets([...e.target.files]);
+  //   const filesArray = Array.from(e.target.files);
+  //   setAssets(filesArray);
+  //   console.log(assets)
+  // };
   const handleSelect = (e) => {
-    setAssets([...e.target.files]);
+    const files = Array.from(e.target.files);
+    const newAssets = files.map(file => URL.createObjectURL(file));
+    setAssets(newAssets);
   };
+
 
   return (
     <>
@@ -281,8 +289,25 @@ const AddTask = ({ open, setOpen }) => {
                 selected={priority}
                 setSelected={setPriority}
               />
-            </div>
 
+                    <div className='w-full flex items-center justify-center mt-4'>
+                <label
+                  className='flex items-center gap-1 text-base text-ascent-2 hover:text-ascent-1 cursor-pointer my-4'
+                  htmlFor='imgUpload'
+                >
+                  <input
+                    type='file'
+                    className='hidden'
+                    id='imgUpload'
+                    onChange={handleSelect}
+                    accept='.jpg, .png, .jpeg'
+                    multiple={true}
+                  />
+                  <BiImages />
+                  <span>Add Assets</span>
+                </label>
+              </div> 
+            </div>
             <div className='bg-gray-50 py-6 sm:flex sm:flex-row-reverse gap-4'>
               {uploading ? (
                 <span className='text-sm py-2 text-red-500'>Uploading assets...</span>
