@@ -10,6 +10,7 @@ import Sidebar from "./components/Sidebar";
 import Login from "./pages/Login";
 import TaskDetails from "./pages/TaskDetails";
 import Tasks from "./pages/Tasks";
+import Report from "./pages/Report";
 // import Trash from "./pages/Trash";
 import Users from "./pages/Users";
 import Dashboard from "./pages/dashboard";
@@ -108,6 +109,7 @@ function App() {
           <Route path='/in-progress/:status' element={<Tasks />} />
           <Route path='/todo/:status' element={<Tasks />} />
           <Route path='/team' element={<Users />} />
+          <Route path='/report' element={<Report/>} />
           {/* <Route path='/trashed' element={<Trash />} /> */}
           <Route path='/task/:id' element={<TaskDetails/>} />
         </Route>

@@ -19,6 +19,7 @@ import { useSelector,useDispatch } from "react-redux";
 const TaskDialog = ({ task }) => {
   const [open, setOpen] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
+  // const [openWH, setOpenWH] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [selected, setSelected] = useState(null);
 
@@ -51,9 +52,14 @@ const dispatch=useDispatch();
     },
     {
       label: "Edit",
-      icon: <MdOutlineEdit className='mr-2 h-5 w-5' aria-hidden='true' />,
+      icon: <MdAdd className='mr-2 h-5 w-5' aria-hidden='true' />,
       onClick: () => setOpenEdit(true),
     },
+    // {
+    //   label: "Add Working HRs",
+    //   icon: <MdOutlineEdit className='mr-2 h-5 w-5' aria-hidden='true' />,
+    //   onClick: () => setOpenWH(true),
+    // },
     // {
     //   label: "Add Sub-Task",
     //   icon: <MdAdd className='mr-2 h-5 w-5' aria-hidden='true' />,

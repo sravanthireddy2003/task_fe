@@ -8,6 +8,7 @@ import {
 
   MdTaskAlt,
 } from "react-icons/md";
+import { TbReportSearch } from "react-icons/tb";
 import { FaTasks, FaTrashAlt, FaUsers } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useLocation } from "react-router-dom";
@@ -46,11 +47,12 @@ const linkData = [
     link: "team",
     icon: <FaUsers />,
   },
-  // {
-  //   label: "Trash",
-  //   link: "trashed",
-  //   icon: <FaTrashAlt />,
-  // },
+  {
+    label: "Report",
+    link: "report",
+    icon: <TbReportSearch />
+    ,
+  },
 ];
 
 const Sidebar = () => {

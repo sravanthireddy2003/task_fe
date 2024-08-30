@@ -95,10 +95,48 @@ const TaskDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [subtasks, setsubTask] = useState([]);
+  const [totalWorkingHours, setTotalWorkingHours] = useState(null);
 
-  // const task = useSelector();
 
-  
+const task_id=id;
+  useEffect(() => {
+    const fetchTotalWorkingHours = async (task_id) => {
+      try {
+        const response = await fetch(`http://localhost:4000/api/tasks/total-working-hours/${task_id}`);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Failed to fetch total working hours: ${errorText}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        return data.total_working_hours;
+      } catch (error) {
+        console.error('Error fetching total working hours:', error);
+        throw error;
+      }
+    };
+
+    const getTotalWorkingHours = async () => {
+      try {
+        if (task_id) {
+          const hours = await fetchTotalWorkingHours(task_id);
+          setTotalWorkingHours(hours);
+        }
+      } catch (error) {
+        setError(error.message);
+      }
+    };
+
+    getTotalWorkingHours();
+  }, [task_id]);
+
+
   useEffect(() => {
     const fetchTask = async () => {
       try {
@@ -171,8 +209,9 @@ const TaskDetails = () => {
 
                 <div className='flex items-center gap-8 p-4 border-y border-gray-200'>
                   <div className='space-x-2'>
-                    <span className='font-semibold'>Assets :</span>
-                    <span>{assets?.length}</span>
+                    <span className='font-semibold'>Time-Alotted :</span>
+                    {/* <span>{assets?.length}</span> */}
+                    <span>{task?.time_alloted}</span>
                     {/* <span>{assets?.length}</span> */}
                   </div>
 
@@ -186,8 +225,8 @@ const TaskDetails = () => {
                   <span className='text-gray-400'>|</span>
 
                   <div className='space-x-2'>
-                    <span className='font-semibold'>Time-Left :</span>
-                    <span>{subtasks?.length}</span>
+                    <span className='font-semibold'>Time-Taken :</span>
+                    <span>{totalWorkingHours}</span>
                   </div>
                 </div>
 
