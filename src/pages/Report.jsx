@@ -253,7 +253,7 @@ const ReportPage = () => {
     html2canvas(input).then((canvas) => {
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF();
-      pdf.addImage(imgData, 'PNG', 20, 20);
+      pdf.addImage(imgData, 'PNG', 10, 10);
       pdf.save('report.pdf');
     });
   };
