@@ -11,6 +11,7 @@ import Login from "./pages/Login";
 import TaskDetails from "./pages/TaskDetails";
 import Tasks from "./pages/Tasks";
 import Report from "./pages/Report";
+import TestRep from "./pages/testRep";
 // import Trash from "./pages/Trash";
 import Users from "./pages/Users";
 import Dashboard from "./pages/dashboard";
@@ -110,6 +111,7 @@ function App() {
           <Route path='/todo/:status' element={<Tasks />} />
           <Route path='/team' element={<Users />} />
           <Route path='/report' element={<Report/>} />
+          <Route path='/testRep' element={<TestRep/>} />
           {/* <Route path='/trashed' element={<Trash />} /> */}
           <Route path='/task/:id' element={<TaskDetails/>} />
         </Route>

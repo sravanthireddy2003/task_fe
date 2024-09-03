@@ -1,0 +1,24 @@
+.week-calendar {
+    text-align: center;
+  }
+  
+  .calendar-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .calendar-table th,
+  .calendar-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+  }
+  
+  .hour-input {
+    width: 60px;
+  }
+  
+  .navigation button {
+    margin: 10px;
+  }
+  

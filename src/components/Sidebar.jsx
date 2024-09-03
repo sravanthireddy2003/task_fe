@@ -53,6 +53,12 @@ const linkData = [
     icon: <TbReportSearch />
     ,
   },
+  {
+    label: "TestRep",
+    link: "Testrep",
+    icon: <TbReportSearch />
+    ,
+  },
 ];
 
 const Sidebar = () => {
