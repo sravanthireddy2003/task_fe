@@ -226,14 +226,14 @@ const ReportPage = () => {
   };
 
   
-  const totalHours = reportData.reduce((sum, row) => sum + parseFloat(row.duration_hours), 0);
+  const totalHours = reportData.reduce((sum, row) => sum + parseFloat(row.hours), 0);
 
   const TableHeader = () => (
     <thead className='border-b border-gray-300'>
       <tr className='text-black text-left'>
         <th className='py-2'>Date</th>
-        <th className='py-2'>Start Time</th>
-        <th className='py-2'>End Time</th>
+        {/* <th className='py-2'>Start Time</th>
+        <th className='py-2'>End Time</th> */}
         <th className='py-2'>Duration (Hrs)</th>
       </tr>
     </thead>
@@ -241,10 +241,10 @@ const ReportPage = () => {
 
   const TableRow = ({ row }) => (
     <tr className='border-b border-gray-300 text-gray-600 hover:bg-gray-300/10'>
-      <td className='py-2'>{moment(row.working_date).format('YYYY-MM-DD')}</td>
-      <td className='py-2'>{row.start_time}</td>
-      <td className='py-2'>{row.end_time}</td>
-      <td className='py-2'>{row.duration_hours}</td>
+      <td className='py-2'>{moment(row.date).format('YYYY-MM-DD')}</td>
+      {/* <td className='py-2'>{row.start_time}</td>
+      <td className='py-2'>{row.end_time}</td> */}
+      <td className='py-2'>{row.hours}</td>
     </tr>
   );
 
@@ -322,7 +322,6 @@ const ReportPage = () => {
   Download PDF
 </button>
         </form>
-
         {isLoading && <p className='mt-4'>Loading...</p>}
         {error && <p className='mt-4 text-red-500'>{error}</p>}
 
@@ -338,7 +337,7 @@ const ReportPage = () => {
                 ))
                 }
                 <tr className='font-bold text-gray-700'>
-                  <td className='py-2' colSpan='3'>Total Hours</td>
+                  <td className='py-2' colSpan='1'>Total Hours</td>
                   <td className='py-2'>{totalHours.toFixed(2)}</td>
                 </tr>
               </tbody>

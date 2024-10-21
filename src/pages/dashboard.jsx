@@ -23,7 +23,7 @@ import { fetchUsers } from "../redux/slices/userSlice";
 import { selectUsers, selectUserStatus, selectUserError } from "../redux/slices/userSlice";
 
 // TaskTable
-import { fetchTasks } from "../redux/slices/taskSlice";
+import { fetchTasks, fetchTaskss } from "../redux/slices/taskSlice";
 import {selectTaskError,selectTaskStatus,selectTasks} from "../redux/slices/taskSlice"
 
 
@@ -54,7 +54,6 @@ const TaskTable = ({ tasks }) => {
           <div
             className={clsx("w-4 h-4 rounded-full", TASK_TYPE[task.stage])}
           />
-
           <p className='text-base text-black'>{task.title}</p>
         </div>
       </td>
@@ -105,11 +104,6 @@ const TaskTable = ({ tasks }) => {
     </>
   );
 };
-
-
-
-
-
 
 
 const UserTable = ({ users }) => {
@@ -180,9 +174,9 @@ const Dashboard = () => {
   const tasks = useSelector(selectTasks); 
 
   useEffect(() => {
-  
     dispatch(fetchUsers());
-    dispatch(fetchTasks());
+    // dispatch(fetchTasks());
+    dispatch(fetchTaskss());
   }, [dispatch]);
   const [openDialog, setOpenDialog] = useState(false);
   const [open, setOpen] = useState(false);
@@ -200,6 +194,8 @@ const Dashboard = () => {
       total: `${tasks.length}` || 0,
       icon: <FaNewspaper />,
       bg: "bg-[#1d4ed8]",
+      thought:"Assigned OverAll "
+
     },
     {
       _id: "2",
@@ -209,6 +205,8 @@ const Dashboard = () => {
       total: tasks.filter(task => task.stage === "COMPLETED").length,    
       icon: <MdAdminPanelSettings />,
       bg: "bg-[#0f766e]",
+      thought:"Well Done "
+
     },
     {
       _id: "3",
@@ -217,6 +215,8 @@ const Dashboard = () => {
       total: tasks.filter(task => task.stage === "IN PROGRESS").length,    
       icon: <LuClipboardEdit />,
       bg: "bg-[#f59e0b]",
+      thought:"progress "
+
     },
     {
       _id: "4",
@@ -225,16 +225,17 @@ const Dashboard = () => {
       total: tasks.filter(task => task.stage === "TODO").length,    
       icon: <FaArrowsToDot />,
       bg: "bg-[#be185d]" || 0,
+      thought:"Remaining "
     },
   ];
 
-  const Card = ({ label, count, bg, icon }) => {
+  const Card = ({ label, count, bg, icon,thought }) => {
     return (
       <div className='w-full h-32 bg-white p-5 shadow-md rounded-md flex items-center justify-between'>
         <div className='h-full flex flex-1 flex-col justify-between'>
           <p className='text-base text-gray-600'>{label}</p>
           <span className='text-2xl font-semibold'>{count}</span>
-          <span className='text-sm text-gray-400'>{"110 last month"}</span>
+          <span className='text-sm text-gray-400'>{thought}</span>
         </div>
 
         <div
@@ -251,8 +252,8 @@ const Dashboard = () => {
   return (
     <div classNamee='h-full py-4'>
       <div className='grid grid-cols-1 md:grid-cols-4 gap-5'>
-        {stats.map(({ icon, bg, label, total }, index) => (
-          <Card key={index} icon={icon} bg={bg} label={label} count={total} />
+        {stats.map(({ icon, bg, label, total,thought }, index) => (
+          <Card key={index} icon={icon} bg={bg} label={label} count={total} thought={thought}/>
         ))}
       </div>
 

@@ -427,7 +427,7 @@ const AddTask = ({ open, setOpen }) => {
     setUploading(true);
 
     await dispatch(createTask(taskData));
-
+    
     setUploading(false);
     if (status === "succeeded") {
       setOpen(false);

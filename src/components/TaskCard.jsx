@@ -29,7 +29,7 @@ const TaskCard = ({task}) => {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const [open, setOpen] = useState(false);
-  const [openWH, setOpenWH] = useState(false);
+  // const [openWH, setOpenWH] = useState(false);
 
   // const subtasks = useSelector(selectSubTasks);
   const subtasks = [];
@@ -53,7 +53,8 @@ const TaskCard = ({task}) => {
             <span className="uppercase">{task?.priority} Priority</span>
           </div>
 
-          {user?.isAdmin && <TaskDialog task={task} />}
+          {/* {user?.isAdmin && <TaskDialog task={task} />} */}
+          {user && <TaskDialog task={task} />}
         </div>
 
         <>
@@ -127,7 +128,7 @@ const TaskCard = ({task}) => {
         <div className="w-full pb-2">
           <button
             onClick={() => setOpen(true)}
-            disabled={!user.isAdmin}
+            // disabled={!user.isAdmin}
             className="w-full flex gap-4 items-center text-sm text-gray-500 font-semibold disabled:cursor-not-allowed disabled::text-gray-300"
           >
             <IoMdAdd className="text-lg" />
@@ -136,21 +137,21 @@ const TaskCard = ({task}) => {
         </div>
 
 
-        <div className="w-full pb-2">
+        {/* <div className="w-full pb-2">
           <button
             onClick={() => setOpenWH(true)}
-            disabled={!user.isAdmin}
+            // disabled={!user.isAdmin}
             className="w-full flex gap-4 items-center text-sm text-gray-500 font-semibold disabled:cursor-not-allowed disabled::text-gray-300"
           >
             <IoMdAdd className="text-lg" />
             <span>ADD WH</span>
           </button>
-        </div>
+        </div> */}
 
       </div>
 
       <AddSubTask open={open} setOpen={setOpen} id={task.task_id} />
-      <AddWH open={openWH} setOpen={setOpenWH} idWH={task.task_id} />
+      {/* <AddWH open={openWH} setOpen={setOpenWH} idWH={task.task_id} /> */}
 
         {/* <div className="w-full pb-2">
           <button

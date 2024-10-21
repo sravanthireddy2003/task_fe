@@ -1,5 +1,5 @@
 .week-calendar {
-    text-align: center;
+    width: 100%;
   }
   
   .calendar-table {
@@ -10,15 +10,60 @@
   .calendar-table th,
   .calendar-table td {
     border: 1px solid #ddd;
-    padding: 8px;
+    padding: 5px;
     text-align: center;
   }
   
+  .task-input,
   .hour-input {
-    width: 60px;
+    width: 100%;
+    padding: 4px;
+    box-sizing: border-box;
   }
   
-  .navigation button {
-    margin: 10px;
+  /* .navigation {
+
+    display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  } */
+  
+
+  button {
+    margin-right: 10px;
   }
   
+
+
+  /* const WeekCalendar = () => {
+    const [tasks, setTasks] = useState([]);
+    const [currentWeek, setCurrentWeek] = useState(moment());
+    const [currentPage, setCurrentPage] = useState(1);
+    const tasksPerPage = 5;
+  
+    const startOfWeek = currentWeek.startOf("week");
+    const endOfWeek = currentWeek.endOf("week");
+    const daysOfWeek = Array.from({ length: 7 }).map((_, i) =>
+      startOfWeek.clone().add(i, "days")
+    );
+
+
+    <h2>
+    {startOfWeek.format("MMM DD")} - {endOfWeek.format("MMM DD")}
+  </h2>
+
+
+  <td
+  key={day.format("YYYY-MM-DD")}
+  className={isWeekend ? "bg-red-500" : "bg-green-500"}
+>
+  <div className="flex justify-between items-center p-2">
+     {/* <input
+      type="number"
+      placeholder="Hours"
+      className="hour-input"
+    /> 
+    /* <h3 className="text-lg">8</h3>
+    <MdModeEdit className="cursor-pointer text-gray-700" />
+  </div>
+</td>  */

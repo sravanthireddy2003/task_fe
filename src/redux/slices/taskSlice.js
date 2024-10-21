@@ -9,6 +9,24 @@ const initialState = {
   subs:[]
 };
 
+
+export const fetchTaskss = createAsyncThunk(
+  'tasks/fetchTasks',
+  async (_, thunkAPI) => {
+    try {
+      const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+      const params = userInfo.isAdmin === 1 ? {isAdmin:1} : { userId: userInfo._id };
+      const queryString = new URLSearchParams(params).toString();
+      const url = `api/tasks/gettaskss${queryString ? `?${queryString}` :'' }`;
+      const response = await httpGetService(url);
+      return response;
+    } catch (error) {
+      console.error('Error fetching tasks:', error); 
+      return thunkAPI.rejectWithValue(error.response ? error.response.data : error.message);
+    }
+  }
+);
+
 export const fetchTasks = createAsyncThunk(
   "api/tasks/gettasks",
   async (data, thunkAPI) => {
@@ -109,6 +127,17 @@ const taskSlice = createSlice({
         state.tasks = action.payload; 
       })
       .addCase(fetchTasks.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload; 
+      })
+      .addCase(fetchTaskss.pending, (state) => {
+        state.status = 'loading';
+      })
+      .addCase(fetchTaskss.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.tasks = action.payload; 
+      })
+      .addCase(fetchTaskss.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.payload; 
       })

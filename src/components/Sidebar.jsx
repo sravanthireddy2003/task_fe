@@ -5,10 +5,10 @@ import {
   MdOutlineAddTask,
   MdOutlinePendingActions,
   MdSettings,
-
   MdTaskAlt,
 } from "react-icons/md";
 import { TbReportSearch } from "react-icons/tb";
+import { BsFileEarmarkSpreadsheetFill } from "react-icons/bs";
 import { FaTasks, FaTrashAlt, FaUsers } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useLocation } from "react-router-dom";
@@ -28,20 +28,25 @@ const linkData = [
     icon: <FaTasks />,
   },
   {
-    label: "Completed",
-    link: "completed/completed",
-    icon: <MdTaskAlt />,
+    label: "Test Sheet Fill",
+    link: "Testrep",
+    icon: <BsFileEarmarkSpreadsheetFill />
   },
-  {
-    label: "In Progress",
-    link: "in-progress/in progress",
-    icon: <MdOutlinePendingActions />,
-  },
-  {
-    label: "To Do",
-    link: "todo/todo",
-    icon: <MdOutlinePendingActions />,
-  },
+  // {
+  //   label: "Completed",
+  //   link: "completed/completed",
+  //   icon: <MdTaskAlt />,
+  // },
+  // {
+  //   label: "In Progress",
+  //   link: "in-progress/in progress",
+  //   icon: <MdOutlinePendingActions />,
+  // },
+  // {
+  //   label: "To Do",
+  //   link: "todo/todo",
+  //   icon: <MdOutlinePendingActions />,
+  // },
   {
     label: "Team",
     link: "team",
@@ -51,14 +56,12 @@ const linkData = [
     label: "Report",
     link: "report",
     icon: <TbReportSearch />
-    ,
   },
-  {
-    label: "TestRep",
-    link: "Testrep",
-    icon: <TbReportSearch />
-    ,
-  },
+  // {
+  //   label: "Video Conf",
+  //   link: "VC",
+  //   icon: <TbReportSearch />
+  // },
 ];
 
 const Sidebar = () => {
@@ -69,7 +72,7 @@ const Sidebar = () => {
 
   const path = location.pathname.split("/")[1];
 
-  const sidebarLinks = user?.isAdmin ? linkData : linkData.slice(0, 5);
+  const sidebarLinks = user?.isAdmin ? linkData : linkData.slice(0, 3);
 
   const closeSidebar = () => {
     dispatch(setOpenSidebar(false));

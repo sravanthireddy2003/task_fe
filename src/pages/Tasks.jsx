@@ -15,7 +15,7 @@ import BoardView from "../components/BoardView";
 import Table from "../components/task/Table";
 import AddTask from "../components/task/AddTask";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchTasks, selectTasks } from "../redux/slices/taskSlice";
+import { fetchTasks,fetchTaskss, selectTasks } from "../redux/slices/taskSlice";
 const TABS = [
   { title: "Board View", icon: <MdGridView /> },
   { title: "List View", icon: <FaList /> },
@@ -38,17 +38,29 @@ const Tasks = () => {
 
 
   useEffect(() => {
-      dispatch(fetchTasks())
+      dispatch(fetchTaskss())
+      // dispatch(fetchTasks())
   }, [dispatch]);
   
   const tasks=useSelector(selectTasks);
   const [selected, setSelected] = useState(0);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  
-
+  const [isAdmin, setIsAdmin] = useState(false);
   const status = params?.status || "";
 
+
+  useEffect(() => {
+    const userInfo = localStorage.getItem('userInfo');
+    if (userInfo) {
+      const parsedUserInfo = JSON.parse(userInfo);
+      setIsAdmin(parsedUserInfo.isAdmin === 1);
+    }
+  }, []);
+
+
+
+  
   return loading ? (
     <div className='py-10'>
       <Loading />
@@ -58,7 +70,8 @@ const Tasks = () => {
       <div className='flex items-center justify-between mb-4'>
         <Title title={status ? `${status} Tasks` : "Tasks"} />
 
-        {!status && (
+        {!status && isAdmin &&
+(
           <Button
             onClick={() => setOpen(true)}
             label='Create Task'

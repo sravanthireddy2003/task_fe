@@ -18,6 +18,8 @@ import Dashboard from "./pages/dashboard";
 import { setOpenSidebar } from "./redux/slices/authSlice";
 import Mypage from "./pages/Mypage";
 import { selectTasks } from "./redux/slices/taskSlice";
+// import VC from "./pages/VC";
+
 
 function Layout() {
   const { user } = useSelector((state) => state.auth);
@@ -111,6 +113,7 @@ function App() {
           <Route path='/todo/:status' element={<Tasks />} />
           <Route path='/team' element={<Users />} />
           <Route path='/report' element={<Report/>} />
+          {/* <Route path='/vc' element={<VC/>} /> */}
           <Route path='/testRep' element={<TestRep/>} />
           {/* <Route path='/trashed' element={<Trash />} /> */}
           <Route path='/task/:id' element={<TaskDetails/>} />
