@@ -93,7 +93,7 @@ const AddUser = ({ open, setOpen, userData }) => {
               })}
               error={errors.role ? errors.role.message : ""}
             />
-            <div className="flex items-center">
+            {/* <div className="flex items-center">
               <input
                 type="checkbox"
                 id="isAdmin"
@@ -103,7 +103,23 @@ const AddUser = ({ open, setOpen, userData }) => {
               <label htmlFor="isAdmin" className="text-sm font-medium">
                 Is Admin
               </label>
-            </div>
+            </div> */}
+
+<div className="flex items-center">
+  <label htmlFor="role" className="text-sm font-medium mr-2">
+    Role
+  </label>
+  <select
+    id="role"
+    {...register("role")}
+    className="p-2 border rounded-md"
+  >
+    <option value="0">User</option>
+    <option value="2">TeamLead</option>
+    <option value="1">Admin</option>
+  </select>
+</div>
+
             {/* <Textbox
               placeholder="Tasks"
               type="text"

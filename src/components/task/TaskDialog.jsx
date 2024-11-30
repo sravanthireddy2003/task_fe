@@ -8,6 +8,7 @@ import { RiDeleteBin6Line } from "react-icons/ri";
 import { Menu, Transition } from "@headlessui/react";
 import AddTask from "./AddTask";
 import AddSubTask from "./AddSubTask";
+// import UpdateTaskStatus from './UpdateTaskStatus';
 import ConfirmatioDialog from "../Dialogs";
 
 
@@ -19,7 +20,6 @@ import { useSelector,useDispatch } from "react-redux";
 const TaskDialog = ({ task }) => {
   const [open, setOpen] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
-  // const [openWH, setOpenWH] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [selected, setSelected] = useState(null);
 
@@ -55,6 +55,11 @@ const dispatch=useDispatch();
       icon: <MdAdd className='mr-2 h-5 w-5' aria-hidden='true' />,
       onClick: () => setOpenEdit(true),
     },
+    // {
+    //   label: "change Status",
+    //   icon: <MdOutlineEdit className='mr-2 h-5 w-5' aria-hidden='true' />,
+    //   onClick: () => setStage(true),
+    // },
     // {
     //   label: "Add Working HRs",
     //   icon: <MdOutlineEdit className='mr-2 h-5 w-5' aria-hidden='true' />,
@@ -139,6 +144,8 @@ const dispatch=useDispatch();
       />
 
       <AddSubTask open={open} setOpen={setOpen} />
+
+      {/* <UpdateTaskStatus openStage={openStage} setStage={setStage} /> */}
 
       <ConfirmatioDialog
         open={openDialog}

@@ -14,9 +14,12 @@ import Report from "./pages/Report";
 import TestRep from "./pages/testRep";
 // import Trash from "./pages/Trash";
 import Users from "./pages/Users";
+import Client from "./pages/Client"
 import Dashboard from "./pages/dashboard";
+import AddClient from "./pages/AddClientsP";
+// import ClientDetails from "./pages/ClientDetails";
+import ClientDashboard from "./pages/ClientDashboard";
 import { setOpenSidebar } from "./redux/slices/authSlice";
-import Mypage from "./pages/Mypage";
 import { selectTasks } from "./redux/slices/taskSlice";
 // import VC from "./pages/VC";
 
@@ -107,6 +110,11 @@ function App() {
         <Route element={<Layout />}>
           <Route index path='/' element={<Navigate to='/dashboard' />} />
           <Route path='/dashboard' element={<Dashboard />} />
+          <Route path='/client' element={<Client />} />
+          <Route path="/add-client" element={<AddClient/>} />
+          <Route path="/client-dashboard/:id" element={<ClientDashboard />} />
+
+          {/* <Route path='/client/:id' element={<ClientDetails/>} /> */}
           <Route path='/tasks' element={<Tasks />} />
           <Route path='/completed/:status' element={<Tasks />} />
           <Route path='/in-progress/:status' element={<Tasks />} />
@@ -119,7 +127,6 @@ function App() {
           <Route path='/task/:id' element={<TaskDetails/>} />
         </Route>
         <Route path='/log-in' element={<Login />} />
-        <Route path='/abc/abc' element={<Mypage/>}/>
       </Routes>
 
       <Toaster richColors />

@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { httpGetService, httpPostService,httpDeleteService } from "../../App/httpHandler";
+import { httpGetService,httpPutService, httpPostService,httpDeleteService } from "../../App/httpHandler";
 
 const initialState = {
   isSidebarOpen: false,
@@ -15,7 +15,17 @@ export const fetchTaskss = createAsyncThunk(
   async (_, thunkAPI) => {
     try {
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-      const params = userInfo.isAdmin === 1 ? {isAdmin:1} : { userId: userInfo._id };
+      // const params = userInfo.isAdmin === 1 ? {isAdmin:1} : { userId: userInfo._id };
+      const params = [1,2].includes(userInfo.isAdmin) ? {isAdmin:1} : { userId: userInfo._id };
+
+  //     const params = 
+  // userInfo.isAdmin === 1 
+  //   ? { isAdmin: 1 } 
+  //   : userInfo.isAdmin === 2 
+  //     ? { value: 2 } 
+  //     : { userId: userInfo._id };
+
+
       const queryString = new URLSearchParams(params).toString();
       const url = `api/tasks/gettaskss${queryString ? `?${queryString}` :'' }`;
       const response = await httpGetService(url);
@@ -52,10 +62,10 @@ export const fetchTasksbyId = createAsyncThunk(
 );
 
 export const createTask = createAsyncThunk(
-  "/api/tasks/create",
+  "/api/tasks/createjson",
   async (taskData, thunkAPI) => {
     try {
-      const response = await httpPostService("api/tasks/create", taskData);
+      const response = await httpPostService("api/tasks/createjson", taskData);
       return response;
     } catch (error) {
       return thunkAPI.rejectWithValue(error.response.data);
@@ -110,6 +120,18 @@ export const getSubTask = createAsyncThunk(
   async (taskId) => {
     const response = await httpGetService(`api/tasks/getsubtasks/${taskId}`);
     return response;
+  }
+);
+
+export const updateTaskStatuss = createAsyncThunk(
+  'tasks/updateStatus',
+  async ({ id, stage }, { rejectWithValue }) => {
+    try {
+      const response = await httpPutService(`api/tasks/updatetask/${id}`, { stage });
+      return response; 
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 
@@ -200,6 +222,25 @@ const taskSlice = createSlice({
         state.status = 'failed';
         state.error = action.payload; 
       })
+
+
+
+      .addCase(updateTaskStatuss.pending, (state) => {
+        state.loading = true; 
+      })
+      .addCase(updateTaskStatuss.fulfilled, (state, action) => {
+        state.loading = false; 
+        const updatedTask = action.payload;
+        
+        const index = state.tasks.findIndex(task => task.id === updatedTask.id);
+        if (index !== -1) {
+          state.tasks[index] = updatedTask; 
+        }
+      })
+      .addCase(updateTaskStatuss.rejected, (state, action) => {
+        state.loading = false; 
+        state.error = action.error.message;
+      });
   },
 });
 

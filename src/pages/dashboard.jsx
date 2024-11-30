@@ -149,6 +149,8 @@ const UserTable = ({ users }) => {
   );
 
   return (
+
+
     <div className='w-full md:w-1/3 bg-white h-fit px-2 md:px-6 py-4 shadow-md rounded'>
       <table className='w-full mb-5'>
         <TableHeader />
@@ -251,7 +253,8 @@ const Dashboard = () => {
   };
   return (
     <div classNamee='h-full py-4'>
-      <div className='grid grid-cols-1 md:grid-cols-4 gap-5'>
+<div className='w-full flex py-4 text-black text-left font-bold'>Client Name</div>
+<div className='grid grid-cols-1 md:grid-cols-4 gap-5'>
         {stats.map(({ icon, bg, label, total,thought }, index) => (
           <Card key={index} icon={icon} bg={bg} label={label} count={total} thought={thought}/>
         ))}

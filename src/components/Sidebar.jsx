@@ -7,7 +7,7 @@ import {
   MdSettings,
   MdTaskAlt,
 } from "react-icons/md";
-import { TbReportSearch } from "react-icons/tb";
+import { Tb360, TbReportSearch } from "react-icons/tb";
 import { BsFileEarmarkSpreadsheetFill } from "react-icons/bs";
 import { FaTasks, FaTrashAlt, FaUsers } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
@@ -18,6 +18,11 @@ import { PiHeartLight } from "react-icons/pi";
 
 const linkData = [
   {
+    label: "Client",
+    link: "client",
+    icon: <Tb360 />
+  },
+  {
     label: "Dashboard",
     link: "dashboard",
     icon: <MdDashboard />,
@@ -27,41 +32,37 @@ const linkData = [
     link: "tasks",
     icon: <FaTasks />,
   },
-  {
-    label: "Test Sheet Fill",
-    link: "Testrep",
-    icon: <BsFileEarmarkSpreadsheetFill />
-  },
   // {
-  //   label: "Completed",
-  //   link: "completed/completed",
-  //   icon: <MdTaskAlt />,
-  // },
-  // {
-  //   label: "In Progress",
-  //   link: "in-progress/in progress",
-  //   icon: <MdOutlinePendingActions />,
-  // },
-  // {
-  //   label: "To Do",
-  //   link: "todo/todo",
-  //   icon: <MdOutlinePendingActions />,
-  // },
-  {
-    label: "Team",
-    link: "team",
-    icon: <FaUsers />,
-  },
-  {
-    label: "Report",
-    link: "report",
-    icon: <TbReportSearch />
-  },
-  // {
-  //   label: "Video Conf",
-  //   link: "VC",
-  //   icon: <TbReportSearch />
-  // },
+    //   label: "Completed",
+    //   link: "completed/completed",
+    //   icon: <MdTaskAlt />,
+    // },
+    // {
+      //   label: "In Progress",
+      //   link: "in-progress/in progress",
+      //   icon: <MdOutlinePendingActions />,
+      // },
+      // {
+        //   label: "To Do",
+        //   link: "todo/todo",
+        //   icon: <MdOutlinePendingActions />,
+        // },
+        {
+          label: "Test Sheet Fill",
+          link: "Testrep",
+          icon: <BsFileEarmarkSpreadsheetFill />
+        },
+        {
+          label: "Team",
+          link: "team",
+          icon: <FaUsers />,
+        },
+        {
+          label: "Report",
+          link: "report",
+          icon: <TbReportSearch />
+        },
+
 ];
 
 const Sidebar = () => {
@@ -72,7 +73,16 @@ const Sidebar = () => {
 
   const path = location.pathname.split("/")[1];
 
-  const sidebarLinks = user?.isAdmin ? linkData : linkData.slice(0, 3);
+  // const sidebarLinks = user?.isAdmin ? linkData : linkData.slice(1, 4);
+  const sidebarLinks = (() => {
+    if (user?.isAdmin === 1) {
+      return linkData;
+    } else if (user?.isAdmin === 2) {
+      return linkData.slice(1,5);
+    } else {
+      return linkData.slice(1, 4);
+    }
+  })();
 
   const closeSidebar = () => {
     dispatch(setOpenSidebar(false));

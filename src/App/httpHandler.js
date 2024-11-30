@@ -42,6 +42,24 @@ export function httpPatchService(url, data) {
         .catch(err => console.log(err))
 }
 
+  
+  // HTTP PUT Service function
+  export function httpPutService(url, data) {
+      const apiURL = `${serverURL}/${url}`; 
+      return fetch(apiURL, {
+          method: 'PUT',
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+      })
+      .then((response) =>response.json())
+      .then((data)=>{
+        return data
+      })
+      .catch(err =>
+          console.error(err)); 
+  }
+  
+
 
 // export function httpUploadService(url, data) {
 //     const apiURL = `${serverURL}/${url}` //http://localhost:5000/api/login
