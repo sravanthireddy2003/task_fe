@@ -66,7 +66,7 @@ const AddClientsPage = () => {
             <div>
               <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+                {/* <div>
                   <label className="block text-sm font-medium mb-1">Reference</label>
                   <input
                     {...register("ref", { required: "Reference is required" })}
@@ -74,7 +74,7 @@ const AddClientsPage = () => {
                     placeholder="Reference"
                   />
                   {errors.ref && <p className="text-red-500 text-sm mt-1">{errors.ref.message}</p>}
-                </div>
+                </div> */}
 
                 <div>
                   <label className="block text-sm font-medium mb-1">Client Name</label>
@@ -188,49 +188,6 @@ const AddClientsPage = () => {
                     placeholder="Pincode"
                   />
                   {errors.pincode && <p className="text-red-500 text-sm mt-1">{errors.pincode.message}</p>}
-                </div>
-              </div>
-            </div>
-
-            {/* Financial Information Section */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Financial Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Tax ID</label>
-                  <input
-                    {...register("taxId")}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Tax ID"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1">Payment Terms</label>
-                  <input
-                    {...register("paymentTerms")}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Payment Terms"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1">Bank Account</label>
-                  <input
-                    {...register("bankAccount")}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Bank Account"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1">Credit Limit</label>
-                  <input
-                    {...register("creditLimit")}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Credit Limit"
-                    type="number"
-                  />
                 </div>
               </div>
             </div>
