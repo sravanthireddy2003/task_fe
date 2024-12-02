@@ -431,8 +431,7 @@ const Activities = ({ activity, id }) => {
           <div className='text-gray-500 space-y-2'>
             <span className='capitalize'>{item?.type}</span>
             <div className='flex items-center space-x-2'>
-              {/* Clock Icon before the Time */}
-              <Clock size={16} />
+              <Clock size={18} />
               <span className='text-sm'>{moment(item?.date).fromNow()}</span>
             </div>
           </div>
@@ -441,7 +440,7 @@ const Activities = ({ activity, id }) => {
             {isExpanded ? (
               item?.activity 
             ) : (
-              item?.activity?.slice(0, 30) + '...' // Shortened description
+              item?.activity?.slice(0, 30) + '...' 
             )}
           </div>
         </div>
