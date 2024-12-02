@@ -20,12 +20,50 @@ import Loading from "../components/Loader";
 import Button from "../components/Button";
 import { useSelector, useDispatch } from "react-redux";
 import { selectTasks, fetchTasksbyId, selectSubTasks, getSubTask } from "../redux/slices/taskSlice";
+import { Clock, User, Info } from 'lucide-react';
+
+
+
+const mockActivities =  [
+  {
+    type: "meeting",
+    by: {
+      name: "Admin",
+    },
+    date: "2024-12-02T14:30:00Z",
+    activity: "Scheduled a team meeting to discuss project progress.",
+  },
+  {
+    type: "call",
+    by: {
+      name: "Amit",
+    },
+    date: "2024-12-01T09:00:00Z",
+    activity: "Had a call with the client to review requirements.",
+  },
+  {
+    type: "email",
+    by: {
+      name: "Amit",
+    },
+    date: "2024-11-30T16:45:00Z",
+    activity: "Sent the weekly progress update email to the team.",
+  },
+  {
+    type: "task",
+    by: {
+      name: "Admin",
+    },
+    date: "2024-11-29T11:15:00Z",
+    activity: "Completed the code review for the new feature.",
+  },
+];
 
 const assets = [
   "https://images.pexels.com/photos/2418664/pexels-photo-2418664.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
   "https://images.pexels.com/photos/8797307/pexels-photo-8797307.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
-  "https://images.pexels.com/photos/2534523/pexels-photo-2534523.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
-  "https://images.pexels.com/photos/804049/pexels-photo-804049.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
+  // "https://images.pexels.com/photos/2534523/pexels-photo-2534523.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
+  // "https://images.pexels.com/photos/804049/pexels-photo-804049.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
 ];
 
 const ICONS = {
@@ -170,6 +208,7 @@ const task_id=id;
   if (loading) return <Loading />;
   if (error) return <p>Error: {error}</p>;
 
+
   return (
     <div className='w-full flex flex-col gap-3 mb-4 overflow-y-hidden'>
       <h1 className='text-2xl text-gray-600 font-bold'>{task?.title}</h1>
@@ -290,29 +329,44 @@ const task_id=id;
                 </div>
               </div>
               {/* RIGHT */}
-              <div className='w-full md:w-1/2 space-y-8'>
-                <p className='text-lg font-semibold'>ASSETS</p>
+              <div className="w-full md:w-1/2 space-y-8">
+  {/* Section Title */}
 
-                <div className='w-full grid grid-cols-2 gap-4'>
-                  {assets?.map((el, index) => (
-                    <img
-                      key={index}
-                      src={el}
-                      alt={task?.title}
-                      className='w-full rounded h-28 md:h-36 2xl:h-52 cursor-pointer transition-all duration-700 hover:scale-125 hover:z-50'
-                    />
-                  ))}
-                </div>
-              </div>
+  {/* Task Description */}
+  <div className="w-full">
+    <div className="mb-4 text-gray-700">
+      <p className="text-lg font-semibold">TASK DESCRIPTION</p>
+      <p>{task?.description || "No description provided."}</p>
+    </div>
+
+    {/* Image Grid */}
+    <p className="text-lg font-semibold">ASSETS</p>
+
+    <div className="grid grid-cols-2 gap-4">
+      {assets?.map((el, index) => (
+        <img
+          key={index}
+          src={el}
+          alt={task?.title}
+          className="w-full rounded h-28 md:h-36 2xl:h-52 cursor-pointer transition-all duration-700 hover:scale-125 hover:z-50"
+        />
+      ))}
+    </div>
+  </div>
+</div>
+
+
             </div>
           </>
         ) : (
-          <Activities activity={task?.activities} id={id} />
+          // <Activities activity={task?.activities} id={id} />
+          <Activities activity={mockActivities} id={51} />
         )}
       </Tabs>
     </div>
   );
 };
+
 
 
 const Activities = ({ activity, id }) => {
@@ -322,9 +376,42 @@ const Activities = ({ activity, id }) => {
 
   const handleSubmit = async () => {};
 
+  // const Card = ({ item }) => {
+  //   return (
+  //     <div className='flex space-x-4'>
+  //       <div className='flex flex-col items-center flex-shrink-0'>
+  //         <div className='w-10 h-10 flex items-center justify-center'>
+  //           {TASKTYPEICON[item?.type]}
+  //         </div>
+  //         <div className='w-full flex items-center'>
+  //           <div className='w-0.5 bg-gray-300 h-full'></div>
+  //         </div>
+  //       </div>
+
+  //       <div className='flex flex-col gap-y-1 mb-8'>
+  //         <p className='font-semibold'>{item?.by?.name}</p>
+  //         <div className='text-gray-500 space-y-2'>
+  //           <span className='capitalize'>{item?.type}</span>
+  //           <span className='text-sm'>{moment(item?.date).fromNow()}</span>
+  //         </div>
+  //         <div className='text-gray-700'>{item?.activity}</div>
+  //       </div>
+  //     </div>
+  //   );
+  // };
+  
   const Card = ({ item }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+  
+    const handleToggle = () => {
+      setIsExpanded(prevState => !prevState);
+    };
+  
     return (
-      <div className='flex space-x-4'>
+      <div 
+        className='flex space-x-4 p-4 border rounded-lg shadow-lg transition-transform transform hover:scale-105 hover:shadow-xl cursor-pointer'
+        onClick={handleToggle}
+      >
         <div className='flex flex-col items-center flex-shrink-0'>
           <div className='w-10 h-10 flex items-center justify-center'>
             {TASKTYPEICON[item?.type]}
@@ -333,18 +420,49 @@ const Activities = ({ activity, id }) => {
             <div className='w-0.5 bg-gray-300 h-full'></div>
           </div>
         </div>
-
+  
         <div className='flex flex-col gap-y-1 mb-8'>
-          <p className='font-semibold'>{item?.by?.name}</p>
+          <div className='flex items-center space-x-2'>
+            {/* User Icon before the Name */}
+            <User size={16} />
+            <p className='font-semibold'>{item?.by?.name}</p>
+          </div>
+  
           <div className='text-gray-500 space-y-2'>
             <span className='capitalize'>{item?.type}</span>
-            <span className='text-sm'>{moment(item?.date).fromNow()}</span>
+            <div className='flex items-center space-x-2'>
+              {/* Clock Icon before the Time */}
+              <Clock size={16} />
+              <span className='text-sm'>{moment(item?.date).fromNow()}</span>
+            </div>
           </div>
-          <div className='text-gray-700'>{item?.activity}</div>
+  
+          <div className='text-gray-700'>
+            {isExpanded ? (
+              item?.activity 
+            ) : (
+              item?.activity?.slice(0, 30) + '...' // Shortened description
+            )}
+          </div>
         </div>
+  
+        <div className='flex flex-col items-center justify-center mt-4 gap-y-2'>
+          <button className='text-blue-500 hover:underline'>
+            {isExpanded ? 'Less' : 'More...'}
+          </button>
+          <div className='flex space-x-4 mt-2'>
+            <button 
+              className='text-gray-600 hover:text-yellow-500 transition-colors'
+              onClick={(e) => { e.stopPropagation(); }}
+            >
+            </button>
+          </div>
+        </div>
+
       </div>
     );
   };
+
 
   return (
     <div className='w-full flex gap-10 2xl:gap-20 min-h-screen px-10 py-8 bg-white shadow rounded-md justify-between overflow-y-auto'>
@@ -400,6 +518,8 @@ const Activities = ({ activity, id }) => {
     </div>
   );
 };
+
+
 
 export default TaskDetails;
 

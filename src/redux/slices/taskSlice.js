@@ -17,15 +17,6 @@ export const fetchTaskss = createAsyncThunk(
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
       // const params = userInfo.isAdmin === 1 ? {isAdmin:1} : { userId: userInfo._id };
       const params = [1,2].includes(userInfo.isAdmin) ? {isAdmin:1} : { userId: userInfo._id };
-
-  //     const params = 
-  // userInfo.isAdmin === 1 
-  //   ? { isAdmin: 1 } 
-  //   : userInfo.isAdmin === 2 
-  //     ? { value: 2 } 
-  //     : { userId: userInfo._id };
-
-
       const queryString = new URLSearchParams(params).toString();
       const url = `api/tasks/gettaskss${queryString ? `?${queryString}` :'' }`;
       const response = await httpGetService(url);
