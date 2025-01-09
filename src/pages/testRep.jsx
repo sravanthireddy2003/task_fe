@@ -62,7 +62,7 @@ const WeekCalendar = () => {
       const userId = userInfo._id;
       try {
         const response = await fetch(
-          `http://localhost:4000/api/tasks/taskdropdownfortaskHrs?user_id=${userId}`
+          `${import.meta.env.VITE_SERVERURL}/api/tasks/taskdropdownfortaskHrs?user_id=${userId}`
         );
         if (!response.ok) {
           throw new Error("Failed to fetch tasks");
@@ -84,7 +84,7 @@ const WeekCalendar = () => {
 
   //     try {
   //       const response = await fetch(
-  //         `http://localhost:4000/api/tasks/fetchtaskhours?user_id=${userId}`
+  //         `${import.meta.env.VITE_SERVERURL}/api/tasks/fetchtaskhours?user_id=${userId}`
   //       );
   //       if (!response.ok) {
   //         throw new Error("Failed to fetch tasks");
@@ -105,7 +105,7 @@ const WeekCalendar = () => {
 
       try {
         const response = await fetch(
-          `http://localhost:4000/api/tasks/fetchtaskhours?user_id=${userId}`
+          `${import.meta.env.VITE_SERVERURL}/api/tasks/fetchtaskhours?user_id=${userId}`
         );
         if (!response.ok) {
           throw new Error("Failed to fetch task hours");
@@ -163,7 +163,7 @@ const WeekCalendar = () => {
       const encryptedData = CryptoJS.AES.encrypt(JSON.stringify(data), secret).toString();
       try {
         const response = await fetch(
-          "http://localhost:4000/api/tasks/taskhours",
+          `${import.meta.env.VITE_SERVERURL}/api/tasks/taskhours`,
           {
             method: "POST",
             headers: {

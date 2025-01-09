@@ -17,7 +17,7 @@ const Clients = () => {
   // Fetch all clients
   const fetchClients = async () => {
     try {
-      const response = await axios.get("http://localhost:4000/api/clients/clients");
+      const response = await axios.get(`${import.meta.env.VITE_SERVERURL}/api/clients/clients`);
       setClients(response.data);
       console.log(clients);
     } catch (error) {
@@ -28,7 +28,7 @@ const Clients = () => {
   // Delete a client
   const handleDelete = async (clientId) => {
     try {
-      await axios.delete(`"http://localhost:4000/api/clients/clients/${clientId}`);
+      await axios.delete(`${import.meta.env.VITE_SERVERURL}/api/clients/clients/${clientId}`);
       setClients(clients.filter((client) => client.id !== clientId));
     } catch (error) {
       console.error("Error deleting client:", error);
@@ -38,7 +38,7 @@ const Clients = () => {
   // Update a client
   const handleUpdateClient = async (updatedClient) => {
     try {
-      await axios.put(`http://localhost:4000/api/clients/clients/${updatedClient.id}`, updatedClient);
+      await axios.put(`${import.meta.env.VITE_SERVERURL}/api/clients/clients/${updatedClient.id}`, updatedClient);
       setClients(
         clients.map((client) =>
           client.id === updatedClient.id ? updatedClient : client

@@ -1,7 +1,7 @@
-const serverURL = "http://localhost:4000";
+const serverURL =`${import.meta.env.VITE_SERVERURL}`;
 
 export function httpPostService(url, data) {
-    const apiURL = `${serverURL}/${url}` //http://localhost:5000/api/login
+    const apiURL = `${serverURL}/${url}`
     return fetch(`${apiURL}`, {
         method: 'POST',
         headers: { "Content-Type": "application/JSON" },
@@ -59,22 +59,6 @@ export function httpPatchService(url, data) {
           console.error(err)); 
   }
   
-
-
-// export function httpUploadService(url, data) {
-//     const apiURL = `${serverURL}/${url}` //http://localhost:5000/api/login
-//     return fetch(`${apiURL}`, {
-//         method: 'POST',
-//         // headers: { "Content-Type": "application/x-www-form-urlencoded" },
-//         body: data
-//     })
-//         .then((response) => response.json())
-//         .then((data) => {
-//             return data
-//         })
-//         .catch(err => console.log(err))
-// }
-
 export function httpGetService(url) {
     const apiURL = `${serverURL}/${url}`
     return fetch(`${apiURL}`)

@@ -16,6 +16,8 @@ import { BGS, PRIOTITYSTYELS, TASK_TYPE, getInitials } from "../utils";
 import UserInfo from "../components/UserInfo";
 import { useSelector,useDispatch } from "react-redux";
 import { useEffect ,useState} from "react";
+import Navbar from "../components/Navbar"; // Import the Navbar component
+
 
 
 // userTable
@@ -184,10 +186,11 @@ const Dashboard = () => {
   const [open, setOpen] = useState(false);
   const [openAction, setOpenAction] = useState(false);
   const [selected, setSelected] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
-
-
-  const totals = tasks;
+  const filteredTasks = tasks.filter(task =>
+    task.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const stats = [
     {
@@ -253,6 +256,8 @@ const Dashboard = () => {
   };
   return (
     <div classNamee='h-full py-4'>
+  {/* <Navbar searchQuery={searchQuery} setSearchQuery={setSearchQuery} /> */}
+
 <div className='w-full flex py-4 text-black text-left font-bold'>Client Name</div>
 <div className='grid grid-cols-1 md:grid-cols-4 gap-5'>
         {stats.map(({ icon, bg, label, total,thought }, index) => (
@@ -271,7 +276,8 @@ const Dashboard = () => {
         {/* /left */}
 
         {/* <TaskTable tasks={summary.last10Task} /> */}
-        <TaskTable tasks={tasks} />
+        {/* <TaskTable tasks={tasks} />  */}
+        <TaskTable tasks={filteredTasks} /> 
 
         {/* /right */}
 

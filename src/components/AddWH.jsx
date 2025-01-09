@@ -21,7 +21,7 @@ const AddWorkingHours = ({ open, setOpen, idWH }) => {
     console.log(idWH);  // Corrected variable name
   
     try {
-      const response = await fetch("http://localhost:4000/api/tasks/working-hours", {
+      const response = await fetch(`${import.meta.env.VITE_SERVERURL}/api/tasks/working-hours`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -145,7 +145,7 @@ export default AddWorkingHours;
 
 
 //   try {
-//     const response = await fetch('http://localhost:4000/api/tasks/working-hours', {
+//     const response = await fetch(`${import.meta.env.VITE_SERVERURL}/api/tasks/working-hours`, {
 //       method: 'POST',
 //       headers: {
 //         'Content-Type': 'application/json',

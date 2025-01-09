@@ -112,14 +112,14 @@ const TaskDetails = () => {
   useEffect(() => {
     const fetchTaskActivities = async () => {
       try {
-        const response = await fetch(`http://localhost:4000/api/tasks/taskdetail/getactivity/${task_id}`);
+        const response = await fetch(`${import.meta.env.VITE_SERVERURL}/api/tasks/taskdetail/getactivity/${task_id}`);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
         setActivitiesdata(data);
-        setTimeout(fetchTaskActivities, 2000);
+        // setTimeout(fetchTaskActivities, 5000);
       } catch (err) {
         console.error("Error fetching task activities:", err);
         setError("Failed to load task activities.");
@@ -135,7 +135,7 @@ const TaskDetails = () => {
   useEffect(() => {
     const fetchTotalWorkingHours = async (task_id) => {
       try {
-        const response = await fetch(`http://localhost:4000/api/tasks/total-working-hours/${task_id}`);
+        const response = await fetch(`${import.meta.env.VITE_SERVERURL}/api/tasks/total-working-hours/${task_id}`);
         
         if (!response.ok) {
           const errorText = await response.text();
@@ -172,8 +172,7 @@ const TaskDetails = () => {
     useEffect(() => {
       const fetchupload = async () => {
         try {
-          console.log(task_id);
-          const response = await fetch(`http://localhost:4000/api/uploads/getuploads/${task_id}`);
+          const response = await fetch(`${import.meta.env.VITE_SERVERURL}/api/uploads/getuploads/${task_id}`);
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
@@ -252,7 +251,7 @@ const TaskDetails = () => {
 
     try {
       setMessage('Uploading...');
-      const response = await fetch('http://localhost:4000/api/uploads/upload', {
+      const response = await fetch(`${import.meta.env.VITE_SERVERURL}/api/uploads/upload`, {
         method: 'POST',
         body: formData,
       });
@@ -272,7 +271,11 @@ const TaskDetails = () => {
 
   return (
     <div className='w-full flex flex-col gap-3 mb-4 overflow-y-hidden'>
-      <h1 className='text-2xl text-gray-600 font-bold'>{task?.title}</h1>
+<h1 className="font-bold">
+  <span className="text-2xl text-gray-600">{task?.title}</span> -{" "}
+  <span className="text-sm text-green-600">{task?.client_name}</span>
+</h1>
+
 
       <Tabs tabs={TABS} setSelected={setSelected}>
         {selected === 0 ? (
@@ -479,8 +482,7 @@ const TaskDetails = () => {
   <h3 className="text-xl font-bold text-gray-700">Uploaded Files</h3>
   <p className="text-sm text-gray-500">{message}</p>
 
-  {getfile.length > 0 ? (
-    <div className="space-y-4 mt-4">
+{getfile && getfile.length > 0    ? ( <div className="space-y-4 mt-4">
       {getfile.map((file) => (
         <div key={file.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg shadow-sm">
           <div className="flex flex-col">
@@ -562,7 +564,7 @@ const Activities = ({ activity, taskId}) => {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch("http://localhost:4000/api/tasks/taskdetail/Postactivity", {
+      const response = await fetch(`${import.meta.env.VITE_SERVERURL}/api/tasks/taskdetail/Postactivity`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

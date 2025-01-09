@@ -23,7 +23,7 @@ const AddClientsPage = () => {
   const onSubmit = async (data) => {
     try {
       // Send data to the backend API
-      const response = await axios.post('http://localhost:4000/api/clients/clients', data);
+      const response = await axios.post(`${import.meta.env.VITE_SERVERURL}/api/clients/clients`, data);
       console.log('Client added successfully:', response.data);
 
       // Navigate to the client list or a success page
@@ -243,7 +243,7 @@ export default AddClientsPage;
 //   // const onSubmit = async (data) => {
 //   //   try {
 //   //     // Send data to backend API
-//   //     const response = await axios.post('localhost:4000/api/clients/clients', data);
+//   //     const response = await axios.post(`${import.meta.env.VITE_SERVERURL}/api/clients/clients`, data);
       
 //   //     // Show success message or navigate to client list
 //   //     console.log('Client added successfully:', response.data);
@@ -257,7 +257,7 @@ export default AddClientsPage;
 //   const onSubmit = async (data) => {
 //     try {
 //       // Ensure the API endpoint is correct
-//       const response = await axios.post('http://localhost:4000/api/clients/clients', data);
+//       const response = await axios.post(`${import.meta.env.VITE_SERVERURL}/api/clients/clients`, data);
 //       console.log('Client added successfully:', response.data);
   
 //       // Navigate to the client list or a success page

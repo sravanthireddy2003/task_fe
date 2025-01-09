@@ -1,4 +1,4 @@
-import React from "react";
+// import React from "react";
 import { useForm } from "react-hook-form";
 import ModalWrapper from "./ModalWrapper";
 import { Dialog } from "@headlessui/react";
@@ -7,22 +7,23 @@ import Loading from "./Loader";
 import Button from "./Button";
 import { useSelector, useDispatch } from "react-redux";
 import { authRegister } from "../redux/slices/authSlice";
-
+ 
 const AddUser = ({ open, setOpen, userData }) => {
   const dispatch = useDispatch();
   let defaultValues = userData ?? {};
   const { isLoading, isUpdating } = useSelector((state) => state.auth);
-
+ 
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm({ defaultValues });
-
+ 
   const handleOnSubmit = (data) => {
+    // console.log(data)
     dispatch(authRegister(data));
   };
-
+ 
   return (
     <>
       <ModalWrapper open={open} setOpen={setOpen}>
@@ -104,8 +105,11 @@ const AddUser = ({ open, setOpen, userData }) => {
                 Is Admin
               </label>
             </div> */}
-
+ 
+<div className="flex justify-around">
 <div className="flex items-center">
+ 
+ 
   <label htmlFor="role" className="text-sm font-medium mr-2">
     Role
   </label>
@@ -118,8 +122,24 @@ const AddUser = ({ open, setOpen, userData }) => {
     <option value="2">TeamLead</option>
     <option value="1">Admin</option>
   </select>
+  </div>
+ 
+  <div className="flex items-center">
+  <input
+                type="checkbox"
+                id="isGuest"
+                {...register("isGuest")}
+                className="mr-2"
+                // defaultChecked
+                value={1}
+               
+              />
+              <label htmlFor="isGuest" className="text-sm font-medium">
+                Is Guest
+              </label>
+  </div>
 </div>
-
+ 
             {/* <Textbox
               placeholder="Tasks"
               type="text"
@@ -142,7 +162,7 @@ const AddUser = ({ open, setOpen, userData }) => {
               </label>
             </div>
           </div>
-
+ 
           {isLoading || isUpdating ? (
             <div className="py-5">
               <Loading />
@@ -167,9 +187,8 @@ const AddUser = ({ open, setOpen, userData }) => {
     </>
   );
 };
-
+ 
 export default AddUser;
-
 
 
 

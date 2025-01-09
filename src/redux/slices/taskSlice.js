@@ -15,8 +15,8 @@ export const fetchTaskss = createAsyncThunk(
   async (_, thunkAPI) => {
     try {
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-      // const params = userInfo.isAdmin === 1 ? {isAdmin:1} : { userId: userInfo._id };
-      const params = [1,2].includes(userInfo.isAdmin) ? {isAdmin:1} : { userId: userInfo._id };
+      const params = userInfo.isAdmin === 1 ? {isAdmin:1} : { userId: userInfo._id };
+      // const params = [1,2].includes(userInfo.isAdmin) ? {isAdmin:1} : { userId: userInfo._id };
       const queryString = new URLSearchParams(params).toString();
       const url = `api/tasks/gettaskss${queryString ? `?${queryString}` :'' }`;
       const response = await httpGetService(url);
@@ -187,6 +187,7 @@ const taskSlice = createSlice({
         state.status = 'failed';
         state.error = action.payload;
       })
+
 
 
 
