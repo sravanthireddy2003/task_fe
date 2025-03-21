@@ -54,5 +54,3 @@ stage('Deploy to EC2') {
         }
     }
 }
-
-                        // pm2 restart client
