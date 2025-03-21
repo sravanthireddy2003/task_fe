@@ -9,7 +9,7 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git credentialsId: '33135dda-cb80-45d1-bd26-6c1cdd27661c', url: 'https://amit1208@github.com/amit1208/TaskMg.git', branch: 'marketing'
+                git credentialsId: '33135dda-cb80-45d1-bd26-6c1cdd27661c', url: 'git@github.com:amit1208/TaskMg.git', branch: 'marketing'
             }
         }
         
