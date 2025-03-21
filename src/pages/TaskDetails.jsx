@@ -109,6 +109,28 @@ const TaskDetails = () => {
 
   const task_id=id;
 
+  // useEffect(() => {
+  //   const fetchTaskActivities = async () => {
+  //     try {
+  //       const response = await fetch(`${import.meta.env.VITE_SERVERURL}/api/tasks/taskdetail/getactivity/${task_id}`);
+  //       if (!response.ok) {
+  //         throw new Error(`HTTP error! status: ${response.status}`);
+  //       }
+
+  //       const data = await response.json();
+  //       setActivitiesdata(data);
+  //       // setTimeout(fetchTaskActivities, 5000);
+  //     } catch (err) {
+  //       console.error("Error fetching task activities:", err);
+  //       setError("Failed to load task activities.");
+  //     }
+  //   };
+
+  //   if (task_id) {
+  //     fetchTaskActivities();
+  //   }
+  // }, [task_id]);
+
   useEffect(() => {
     const fetchTaskActivities = async () => {
       try {
@@ -116,21 +138,23 @@ const TaskDetails = () => {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-
+  
         const data = await response.json();
         setActivitiesdata(data);
-        // setTimeout(fetchTaskActivities, 5000);
       } catch (err) {
         console.error("Error fetching task activities:", err);
         setError("Failed to load task activities.");
       }
     };
-
+  
     if (task_id) {
-      fetchTaskActivities();
+      fetchTaskActivities(); // Fetch immediately
+      const interval = setInterval(fetchTaskActivities, 5000); // Fetch every 5 seconds
+  
+      return () => clearInterval(interval); // Cleanup on unmount
     }
-  }, [task_id]);
-
+  }, [task_id]); // Re-run when task_id changes
+  
 
   useEffect(() => {
     const fetchTotalWorkingHours = async (task_id) => {
@@ -448,8 +472,8 @@ const TaskDetails = () => {
 
     {/* Image Grid */}
     <p className="text-lg font-semibold">ASSETS</p>
-
-    {/* <div className="mt-6">
+{/* 
+    <div className="mt-6">
       <h3 className="text-xl font-bold text-gray-700">Uploaded Files</h3>
       <p className="text-sm text-gray-500">{message}</p>
 

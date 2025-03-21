@@ -23,6 +23,11 @@ const linkData = [
     icon: <Tb360 />
   },
   {
+    label: "Analysis",
+    link: "analysis",
+    icon: <MdTaskAlt />,
+  },
+  {
     label: "Dashboard",
     link: "dashboard",
     icon: <MdDashboard />,

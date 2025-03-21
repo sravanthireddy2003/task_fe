@@ -22,6 +22,7 @@ import ClientDashboard from "./pages/ClientDashboard";
 import { setOpenSidebar } from "./redux/slices/authSlice";
 import { selectTasks } from "./redux/slices/taskSlice";
 import PageNotFound from "./pages/PageNotFound";
+import Analysis from "./pages/Analysis";
 // import VC from "./pages/VC";
  
 import {  GoogleOAuthProvider } from "@react-oauth/google";
@@ -119,6 +120,7 @@ function App() {
         <Route element={<Layout />}>
           <Route index path='/' element={<Navigate to='/dashboard' />} />
           <Route path='/dashboard' element={<Dashboard />} />
+          <Route path='/analysis' element={<Analysis />} />
           <Route path='*' element={<PageNotFound/>} />
           <Route path='/client' element={<Client />} />
           <Route path="/add-client" element={<AddClient/>} />
