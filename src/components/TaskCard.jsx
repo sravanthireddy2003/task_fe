@@ -10,14 +10,18 @@ import { useSelector, useDispatch } from "react-redux";
 import { BiMessageAltDetail } from "react-icons/bi";
 import { FaList } from "react-icons/fa";
 import moment from "moment";
-import TaskDialog from "./task/TaskDialog"; 
+import TaskDialog from "./task/TaskDialog";
 import UserInfo from "./UserInfo";
 import { IoMdAdd } from "react-icons/io";
 import AddSubTask from "./task/AddSubTask";
-import AddWH from "./AddWH";
-import { BGS, PRIOTITYSTYELS, TASK_TYPE, formatDate } from "../utils";
-import { getSubTask, selectSubTasks } from "../redux/slices/taskSlice";
-import UpdateTaskStatus from "./task/UpdateTaskStatus";
+import UpdateTaskStatus from "./task/UpdateTaskStatus"; 
+import { BGS, PRIOTITYSTYELS, TASK_TYPE } from "../utils";
+import {
+  getSubTask,
+  selectSubTasks,
+  selectTaskById,
+  updateTaskStatuss,
+} from "../redux/slices/taskSlice";
 
 const ICONS = {
   HIGH: <MdKeyboardDoubleArrowUp />,
@@ -25,53 +29,52 @@ const ICONS = {
   LOW: <MdKeyboardArrowDown />,
 };
 
-const TaskCard = ({ task }) => {
-  const dispatch = useDispatch();
+const TaskCard = ({ taskId }) => {
+  const task = useSelector((state) => selectTaskById(state, taskId));
+    const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const [open, setOpen] = useState(false);
   const [openStage, setOpenStage] = useState(false);
-  const [localTask, setLocalTask] = useState(task); // Local state for task
+  const [localTask, setLocalTask] = useState(task);
+  const subtasks = useSelector(selectSubTasks);
 
-  const subtasks = [];
 
-  useEffect(() => {
+useEffect(() => {
+  if (task?.task_id) {
     dispatch(getSubTask(task.task_id));
-  }, [dispatch, task.task_id]);
+    setLocalTask(task);  // Only set if task_id changes
+  }
+}, [dispatch, task.task_id]);
 
+  
   const handleStatusUpdate = async (status) => {
-    const updatedTaskData = {
-      stage: status,
-    };
-  
-    // Update local state immediately
-    setLocalTask((prevTask) => ({
-      ...prevTask,
-      stage: status,
-    }));
-  
-    try {
-      const response = await fetch(`${import.meta.env.VITE_SERVERURL}/api/tasks/updatetask/${task.task_id}`, {
-        method: 'PUT',
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedTaskData),
-      });
-  
-      const responseData = await response.json(); // Parse the JSON response
-  
-      if (!response.ok) {
-        throw new Error(responseData.error || 'Failed to update task');
-      }
-  
-      console.log('Task updated successfully:', responseData);
-    } catch (error) {
-      console.error('Error updating task:', error);
-      // Optionally, revert local state if the update fails
-      setLocalTask((prevTask) => ({
-        ...prevTask,
-        stage: prevTask.stage,
-      }));
+  if (!task?.task_id) return;
+
+  try {
+    const result = await dispatch(
+      updateTaskStatuss({
+        id: task.task_id.toString(), 
+        data: { stage: status }    
+      })
+    ).unwrap();
+
+    if (result) {
+      setLocalTask(prev => ({ ...prev, stage: status }));
     }
-  };
+  } catch (error) {
+    console.error("Update failed:", error);
+    // Revert UI if update fails
+    setLocalTask(prev => ({ ...prev }));
+  }
+};
+
+  if (!task) {
+  return (
+    <div className="w-full h-fit bg-white shadow-md p-4 rounded">
+      Task not found.
+    </div>
+  );
+}
 
   return (
     <>
@@ -84,45 +87,41 @@ const TaskCard = ({ task }) => {
             )}
           >
             <span className="text-lg">{ICONS[localTask?.priority]}</span>
-            <span className="uppercase">{localTask?.priority} Priority</span>
+            <span className="uppercase">{localTask?.priority || "N/A"} Priority</span>
           </div>
 
           {user && <TaskDialog task={localTask} />}
         </div>
 
-        <>
-          <div className="flex items-center gap-2">
-            <div
-              className={clsx("w-4 h-4 rounded-full", TASK_TYPE[localTask.stage])}
-            />
-            <h4 className="line-clamp-1 text-black">{localTask?.title}</h4>
-          </div>
-          <span className="text-sm text-gray-600">
-            {moment(localTask?.createdAt).fromNow()}
-          </span>
-        </>
+        <div className="flex items-center gap-2">
+          <div className={clsx("w-4 h-4 rounded-full", TASK_TYPE[localTask?.stage])} />
+          <h4 className="line-clamp-1 text-black">{localTask?.title || "Untitled Task"}</h4>
+        </div>
+        <span className="text-sm text-gray-600">
+          {localTask?.createdAt ? moment(localTask.createdAt).fromNow() : "Recently"}
+        </span>
 
         <div className="w-full border-t border-gray-200 my-2" />
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
             <div className="flex gap-1 items-center text-sm text-gray-600">
               <BiMessageAltDetail />
-              <span>{localTask?.activities?.length}</span>
+              <span>{localTask?.activities?.length || 0}</span>
             </div>
-            <div className="flex gap-1 items-center text-sm text-gray-600 ">
+            <div className="flex gap-1 items-center text-sm text-gray-600">
               <MdAttachFile />
-              <span>{localTask?.assets?.length}</span>
+              <span>{localTask?.assets?.length || 0}</span>
             </div>
-            <div className="flex gap-1 items-center text-sm text-gray-600 ">
+            <div className="flex gap-1 items-center text-sm text-gray-600">
               <FaList />
-              <span>0/{subtasks?.length} </span>
+              <span>0/{subtasks?.length || 0}</span>
             </div>
           </div>
 
           <div className="flex flex-row-reverse">
             {localTask?.assigned_users?.map((m, index) => (
               <div
-                key={index}
+                key={m?._id || index}
                 className={clsx(
                   "w-7 h-7 rounded-full text-white flex items-center justify-center text-sm -mr-1",
                   BGS[index % BGS?.length]
@@ -137,7 +136,7 @@ const TaskCard = ({ task }) => {
         <div className="w-full pb-2">
           <button
             onClick={() => setOpen(true)}
-            className="w-full flex gap-4 items-center text-sm text-gray-500 font-semibold disabled:cursor-not-allowed disabled::text-gray-300"
+            className="w-full flex gap-4 items-center text-sm text-gray-500 font-semibold"
           >
             <IoMdAdd className="text-lg" />
             <span>ADD SUBTASK</span>
@@ -147,31 +146,31 @@ const TaskCard = ({ task }) => {
         <div className="w-full pb-2">
           <button
             onClick={() => setOpenStage(true)}
-            className="w-full flex gap-4 items-center text-sm text-gray-500 font-semibold disabled:cursor-not-allowed disabled::text-gray-300"
+            className="w-full flex gap-4 items-center text-sm text-gray-500 font-semibold"
           >
             <span
               className={`${
-                localTask.stage === "COMPLETED"
+                localTask?.stage === "COMPLETED"
                   ? "text-green-500"
-                  : localTask.stage === "IN PROGRESS"
+                  : localTask?.stage === "IN PROGRESS"
                   ? "text-yellow-500"
-                  : localTask.stage === "TODO"
+                  : localTask?.stage === "TODO"
                   ? "text-blue-500"
                   : "text-gray-500"
               }`}
             >
-              {localTask.stage}
+              {localTask?.stage || "NOT SET"}
             </span>
           </button>
         </div>
       </div>
 
-      <AddSubTask open={open} setOpen={setOpen} id={task.task_id} />
+      <AddSubTask open={open} setOpen={setOpen} id={localTask.task_id} />
 
       <UpdateTaskStatus
         openStage={openStage}
         setOpenStage={setOpenStage}
-        id={task.task_id}
+        id={localTask.task_id}
         onStatusUpdate={handleStatusUpdate}
       />
     </>
@@ -179,5 +178,3 @@ const TaskCard = ({ task }) => {
 };
 
 export default TaskCard;
-
-

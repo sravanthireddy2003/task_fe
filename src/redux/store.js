@@ -2,13 +2,15 @@ import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./slices/authSlice";
 import { apiSlice } from "./slices/apiSlice";
 import userReducer from "./slices/userSlice"; 
-import taskReducer from "./slices/taskSlice"; 
+import taskReducer from "./slices/taskSlice";
+import clientReducer from "./slices/clientSlice"; 
 
 const store = configureStore({
   reducer: {
     [apiSlice.reducerPath]: apiSlice.reducer,
     auth: authReducer,
     users: userReducer,
+    clients: clientReducer,
     tasks: taskReducer,
   },
   middleware: (getDefaultMiddleware) =>

@@ -1,82 +1,135 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { httpGetService,httpPutService, httpPostService,httpDeleteService } from "../../App/httpHandler";
+import {
+  httpGetService,
+  httpPutService,
+  httpPostService,
+  httpDeleteService,
+} from "../../App/httpHandler";
 
 const initialState = {
   isSidebarOpen: false,
   status: null,
   error: null,
   tasks: [],
-  subs:[]
+  subs: [],
 };
 
-
+// Fetch Tasks
 export const fetchTaskss = createAsyncThunk(
-  'tasks/fetchTasks',
+  "tasks/fetchTasks",
   async (_, thunkAPI) => {
     try {
-      const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-      const params = userInfo.isAdmin === 1 ? {isAdmin:1} : { userId: userInfo._id };
-      // const params = [1,2].includes(userInfo.isAdmin) ? {isAdmin:1} : { userId: userInfo._id };
+      const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+      const params =
+        userInfo.isAdmin === 1 ? { isAdmin: 1 } : { userId: userInfo._id };
       const queryString = new URLSearchParams(params).toString();
-      const url = `api/tasks/gettaskss${queryString ? `?${queryString}` :'' }`;
+      const url = `api/tasks/gettaskss${queryString ? `?${queryString}` : ""}`;
       const response = await httpGetService(url);
       return response;
     } catch (error) {
-      console.error('Error fetching tasks:', error); 
-      return thunkAPI.rejectWithValue(error.response ? error.response.data : error.message);
+      console.error("Error fetching tasks:", error);
+      return thunkAPI.rejectWithValue(
+        error.response ? error.response.data : error.message
+      );
     }
   }
 );
 
-export const fetchTasks = createAsyncThunk(
-  "api/tasks/gettasks",
-  async (data, thunkAPI) => {
-    try {
-      const response = await httpGetService("api/tasks/gettasks", data);
-      return response; 
-    } catch (error) {
-      return thunkAPI.rejectWithValue(error.response.data);
-    }
-  }
-);
-
-export const fetchTasksbyId = createAsyncThunk(
-  "api/tasks/gettaskbyId/task_id",
-  async ({ task_id }, thunkAPI) => {
-    try {
-      const response = await httpGetService(`api/tasks/gettaskbyId/${task_id}`);
-      return response; 
-    } catch (error) {
-      return thunkAPI.rejectWithValue(error);
-    }
-  } 
-);
-
+// Create Task with immediate UI update
 export const createTask = createAsyncThunk(
   "/api/tasks/createjson",
   async (taskData, thunkAPI) => {
     try {
       const response = await httpPostService("api/tasks/createjson", taskData);
-      return response;
+      return response.data || response;
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.response.data);
+      return thunkAPI.rejectWithValue(
+        error.response ? error.response.data : error.message
+      );
     }
   }
 );
 
+// Update Task Status
+// export const updateTaskStatuss = createAsyncThunk(
+//   "tasks/updateStatus",
+//   async ({ id, stage }, { rejectWithValue }) => {
+//     try {
+//       const response = await httpPutService(`api/tasks/updatetask/${id}`, {
+//         stage,
+//       });
+//       return response;
+//     } catch (error) {
+//       return rejectWithValue(error.message);
+//     }
+//   }
+// );
+export const updateTaskStatuss = createAsyncThunk(
+  "tasks/updateStatus",
+  async ({ id, data }, { rejectWithValue }) => {
+    try {
+      const response = await httpPutService(`api/tasks/updatetask/${id}`, data);
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// Delete Task
 export const deleteTask = createAsyncThunk(
   "/api/tasks/deltask",
   async (data, thunkAPI) => {
     const { id } = data;
     try {
       const response = await httpDeleteService(`api/tasks/deltask/${id}`, data);
-      return response;
+      return { id, ...response };
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.response.data);
+      return thunkAPI.rejectWithValue(
+        error.response ? error.response.data : error.message
+      );
     }
   }
 );
 
+// In taskSlice.js
+export const fetchTasksbyId = createAsyncThunk(
+  "api/tasks/gettaskbyId/task_id",
+  async ({ task_id }, thunkAPI) => {
+    try {
+      const response = await httpGetService(`api/tasks/gettaskbyId/${task_id}`);
+      return response;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error);
+    }
+  }
+);
+
+// Update Task (general task update)
+export const updateTask = createAsyncThunk(
+  "tasks/updateTask",
+  async ({ id, updatedTaskData }, thunkAPI) => {
+    try {
+      const response = await httpPutService(
+        `api/tasks/updatetask/${id}`,
+        updatedTaskData
+      );
+
+      if (!response.success) {
+        throw new Error(response.error || "Update failed");
+      }
+
+      return {
+        id: id, // Consistent ID naming
+        ...response.task,
+      };
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
+// Create Sub Task
 export const createSubTask = createAsyncThunk(
   "tasks/createSubTask",
   async ({ id, title, due_date, tag }) => {
@@ -88,24 +141,12 @@ export const createSubTask = createAsyncThunk(
       });
       return response;
     } catch (error) {
-      throw new Error(error.message); // Handle errors appropriately
+      throw new Error(error.message);
     }
   }
 );
 
-
-// export const getSubTask = createAsyncThunk(
-//   "/api/tasks/getsubtasks",
-//   async (id,data, thunkAPI) => {
-//     // const { id } = data;
-//     try {
-//       const response = await httpGetService(`api/tasks/getsubtasks/${id}`, data);
-//       return response.data;
-//     } catch (error) {
-//       return thunkAPI.rejectWithValue(error.response.data);
-//     }
-//   }
-// );
+// Get Sub Tasks
 export const getSubTask = createAsyncThunk(
   "/api/tasks/getsubtasks",
   async (taskId) => {
@@ -114,138 +155,134 @@ export const getSubTask = createAsyncThunk(
   }
 );
 
-export const updateTaskStatuss = createAsyncThunk(
-  'tasks/updateStatus',
-  async ({ id, stage }, { rejectWithValue }) => {
-    try {
-      const response = await httpPutService(`api/tasks/updatetask/${id}`, { stage });
-      return response; 
-    } catch (error) {
-      return rejectWithValue(error.message);
-    }
-  }
-);
-
 const taskSlice = createSlice({
   name: "tasks",
   initialState,
-  reducers: {},
+  reducers: {
+    // Add temporary task for immediate UI update
+    addTempTask: (state, action) => {
+      state.tasks.unshift({ ...action.payload, isTemp: true });
+    },
+    // Replace temporary task with actual task from server
+    confirmTask: (state, action) => {
+      state.tasks = state.tasks.map((task) =>
+        task.isTemp && task.title === action.payload.title
+          ? action.payload
+          : task
+      );
+    },
+  },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchTasks.pending, (state) => {
-        state.status = 'loading';
-      })
-      .addCase(fetchTasks.fulfilled, (state, action) => {
-        state.status = 'succeeded';
-        state.tasks = action.payload; 
-      })
-      .addCase(fetchTasks.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error = action.payload; 
-      })
+      // Fetch Tasks
       .addCase(fetchTaskss.pending, (state) => {
-        state.status = 'loading';
+        state.status = "loading";
       })
       .addCase(fetchTaskss.fulfilled, (state, action) => {
-        state.status = 'succeeded';
-        state.tasks = action.payload; 
+        state.status = "succeeded";
+        state.tasks = action.payload;
       })
       .addCase(fetchTaskss.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error = action.payload; 
+        state.status = "failed";
+        state.error = action.payload;
       })
-      .addCase(fetchTasksbyId.pending, (state) => {
-        state.status = 'loading';
+      .addCase(updateTask.pending, (state) => {
+        state.status = "loading";
       })
-      .addCase(fetchTasksbyId.fulfilled, (state, action) => {
-        state.status = 'succeeded';
-        state.tasks = state.tasks.concat(action.payload);
+      .addCase(updateTask.fulfilled, (state, action) => {
+        state.status = "succeeded";
+
+        const updatedId =
+          action.payload._id || action.payload.id || action.payload.task_id;
+
+        state.tasks = state.tasks.map((task) =>
+          (task._id || task.id || task.task_id) === updatedId
+            ? { ...task, ...action.payload }
+            : task
+        );
       })
-      .addCase(fetchTasksbyId.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error = action.error.message;
-      })
-      .addCase(createTask.pending, (state) => {
-        state.status = 'loading';
-      })
-      .addCase(createTask.fulfilled, (state, action) => {
-        state.status = 'succeeded';
-        state.tasks.push(action.payload);
-      })
-      .addCase(createTask.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error = action.payload; 
-      })
-      .addCase(deleteTask.pending, (state) => {
-        state.status = 'loading';
-      })
-      .addCase(deleteTask.fulfilled, (state, action) => {
-        state.status = 'succeeded';
-        state.tasks = state.users.filter((task) => task.id !== action.payload);
-      })
-      .addCase(deleteTask.rejected, (state, action) => {
-        state.status = 'failed';
+
+      .addCase(updateTask.rejected, (state, action) => {
+        state.status = "failed";
         state.error = action.payload;
       })
 
-
-
-
-      .addCase(createSubTask.pending, (state) => {
-        state.status = 'loading';
+      // Create Task
+      .addCase(createTask.pending, (state) => {
+        state.status = "loading";
       })
-      .addCase(createSubTask.fulfilled, (state, action) => {
-        state.status = 'succeeded';
-        state.subs.push(action.payload);
-      })
-      .addCase(createSubTask.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error = action.payload; 
-      })
-      .addCase(getSubTask.pending, (state) => {
-        state.status = 'loading';
-      })
-      .addCase(getSubTask.fulfilled, (state, action) => {
-        state.status = 'succeeded';
-        state.subs.push(action.payload);
-        // state.tasks.push(action.payload);
-      })
-      .addCase(getSubTask.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error = action.payload; 
-      })
-
-
-
-      .addCase(updateTaskStatuss.pending, (state) => {
-        state.loading = true; 
-      })
-      .addCase(updateTaskStatuss.fulfilled, (state, action) => {
-        state.loading = false; 
-        const updatedTask = action.payload;
-        
-        const index = state.tasks.findIndex(task => task.id === updatedTask.id);
-        if (index !== -1) {
-          state.tasks[index] = updatedTask; 
+      .addCase(createTask.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        // Replace temp task or add new if not found
+        const tempTaskIndex = state.tasks.findIndex(
+          (t) => t.isTemp && t.title === action.payload.title
+        );
+        if (tempTaskIndex >= 0) {
+          state.tasks[tempTaskIndex] = action.payload;
+        } else {
+          state.tasks.unshift(action.payload);
         }
       })
+      .addCase(createTask.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload;
+        // Remove temporary task if creation failed
+        state.tasks = state.tasks.filter((task) => !task.isTemp);
+      })
+
+      // Update Task Status
+      .addCase(updateTaskStatuss.pending, (state) => {
+        state.status = "loading";
+      })
+      .addCase(updateTaskStatuss.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.tasks = state.tasks.map((task) =>
+          task._id === action.payload._id ? action.payload : task
+        );
+      })
       .addCase(updateTaskStatuss.rejected, (state, action) => {
-        state.loading = false; 
-        state.error = action.error.message;
+        state.status = "failed";
+        state.error = action.payload;
+      })
+
+      // Delete Task
+      .addCase(deleteTask.pending, (state) => {
+        state.status = "loading";
+      })
+      .addCase(deleteTask.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.tasks = state.tasks.filter(
+          (task) => task._id !== action.payload.id
+        );
+      })
+      .addCase(deleteTask.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload;
+      })
+
+      // Sub Tasks
+      .addCase(createSubTask.fulfilled, (state, action) => {
+        state.subs.push(action.payload);
+      })
+      .addCase(getSubTask.fulfilled, (state, action) => {
+        state.subs = action.payload;
       });
   },
 });
 
+// Export actions
+export const { addTempTask, confirmTask } = taskSlice.actions;
+
 // Selectors
-export const selectTaskById = (state, taskId) =>
-  state.tasks.tasks.find((task) => task.id === taskId);
-
-
-export const selectSubTasks = (state) => state.tasks.subs;
-// export const selectSubTasks = (state) => state.tasks.tasks;
 export const selectTasks = (state) => state.tasks.tasks;
 export const selectTaskStatus = (state) => state.tasks.status;
 export const selectTaskError = (state) => state.tasks.error;
+// export const selectTaskById = (state, taskId) =>
+//   state.tasks.tasks.find((task) => task._id === taskId);
+export const selectTaskById = (state, taskId) =>
+  state.tasks.tasks.find(
+    (task) => task._id === taskId || task.task_id === taskId
+  );
+export const selectSubTasks = (state) => state.tasks.subs;
 
-// Reducer
 export default taskSlice.reducer;

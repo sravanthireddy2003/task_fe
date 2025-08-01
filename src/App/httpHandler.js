@@ -69,3 +69,16 @@ export function httpGetService(url) {
         })
         .catch(err => console.log(err))
 }
+
+const handleError = (error) => {
+  if (error.response) {
+    // Server responded with a status code that falls out of 2xx
+    return Promise.reject(error.response.data?.message || error.message);
+  } else if (error.request) {
+    // Request was made but no response received
+    return Promise.reject('No response from server');
+  } else {
+    // Something happened in setting up the request
+    return Promise.reject(error.message);
+  }
+};

@@ -3,55 +3,18 @@ import { httpGetService, httpPutService, httpPostService, httpDeleteService } fr
 
 const initialState = {
   clients: [],
-  status: null,
+  status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
   error: null,
 };
 
-// Async thunks for CRUD operations
 export const fetchClients = createAsyncThunk(
   'clients/fetchClients',
   async (_, thunkAPI) => {
     try {
-      const response = await httpGetService('api/clients/getclients');
+      const response = await httpGetService('api/clients/clients'); // Updated endpoint
       return response;
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.response ? error.response.data : error.message);
-    }
-  }
-);
-
-export const fetchClientById = createAsyncThunk(
-  'clients/fetchClientById',
-  async (clientId, thunkAPI) => {
-    try {
-      const response = await httpGetService(`api/clients/getclient/${clientId}`);
-      return response;
-    } catch (error) {
-      return thunkAPI.rejectWithValue(error.response ? error.response.data : error.message);
-    }
-  }
-);
-
-export const createClient = createAsyncThunk(
-  'clients/createClient',
-  async (clientData, thunkAPI) => {
-    try {
-      const response = await httpPostService('api/clients/create', clientData);
-      return response;
-    } catch (error) {
-      return thunkAPI.rejectWithValue(error.response ? error.response.data : error.message);
-    }
-  }
-);
-
-export const updateClient = createAsyncThunk(
-  'clients/updateClient',
-  async ({ clientId, clientData }, thunkAPI) => {
-    try {
-      const response = await httpPutService(`api/clients/update/${clientId}`, clientData);
-      return response;
-    } catch (error) {
-      return thunkAPI.rejectWithValue(error.response ? error.response.data : error.message);
+      return thunkAPI.rejectWithValue(error.message);
     }
   }
 );
@@ -60,22 +23,32 @@ export const deleteClient = createAsyncThunk(
   'clients/deleteClient',
   async (clientId, thunkAPI) => {
     try {
-      const response = await httpDeleteService(`api/clients/delete/${clientId}`);
-      return response;
+      await httpDeleteService(`api/clients/clients/${clientId}`);
+      return clientId;
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.response ? error.response.data : error.message);
+      return thunkAPI.rejectWithValue(error.message);
     }
   }
 );
 
-// Slice
+export const updateClient = createAsyncThunk(
+  'clients/updateClient',
+  async ({ clientId, clientData }, thunkAPI) => {
+    try {
+      const response = await httpPutService(`api/clients/clients/${clientId}`, clientData);
+      return response;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.message);
+    }
+  }
+);
+
 const clientSlice = createSlice({
   name: 'clients',
   initialState,
   reducers: {},
   extraReducers: (builder) => {
     builder
-      // Fetch clients
       .addCase(fetchClients.pending, (state) => {
         state.status = 'loading';
       })
@@ -87,69 +60,20 @@ const clientSlice = createSlice({
         state.status = 'failed';
         state.error = action.payload;
       })
-
-      // Fetch client by ID
-      .addCase(fetchClientById.pending, (state) => {
-        state.status = 'loading';
-      })
-      .addCase(fetchClientById.fulfilled, (state, action) => {
-        state.status = 'succeeded';
-        state.clients = state.clients.concat(action.payload);
-      })
-      .addCase(fetchClientById.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error = action.payload;
-      })
-
-      // Create client
-      .addCase(createClient.pending, (state) => {
-        state.status = 'loading';
-      })
-      .addCase(createClient.fulfilled, (state, action) => {
-        state.status = 'succeeded';
-        state.clients.push(action.payload);
-      })
-      .addCase(createClient.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error = action.payload;
-      })
-
-      // Update client
-      .addCase(updateClient.pending, (state) => {
-        state.status = 'loading';
-      })
-      .addCase(updateClient.fulfilled, (state, action) => {
-        state.status = 'succeeded';
-        const updatedClient = action.payload;
-        const index = state.clients.findIndex(client => client.id === updatedClient.id);
-        if (index !== -1) {
-          state.clients[index] = updatedClient;
-        }
-      })
-      .addCase(updateClient.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error = action.payload;
-      })
-
-      // Delete client
-      .addCase(deleteClient.pending, (state) => {
-        state.status = 'loading';
-      })
       .addCase(deleteClient.fulfilled, (state, action) => {
-        state.status = 'succeeded';
         state.clients = state.clients.filter(client => client.id !== action.payload);
       })
-      .addCase(deleteClient.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error = action.payload;
+      .addCase(updateClient.fulfilled, (state, action) => {
+        const index = state.clients.findIndex(client => client.id === action.payload.id);
+        if (index !== -1) {
+          state.clients[index] = action.payload;
+        }
       });
   },
 });
 
-// Selectors
-export const selectClients = (state) => state.clients.clients;
+export const selectClients = (state) => state.clients.clients || [];
 export const selectClientStatus = (state) => state.clients.status;
 export const selectClientError = (state) => state.clients.error;
 
-// Reducer
 export default clientSlice.reducer;

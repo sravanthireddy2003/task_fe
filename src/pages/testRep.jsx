@@ -27,10 +27,6 @@ const WeekCalendar = () => {
     startOfWeek.clone().add(i, "days")
   );
 
-// const start_date = moment().startOf('week').format("YYYY-MM-DD");
-// const end_date = moment().endOf('week').format("YYYY-MM-DD");
-
-
   const handlePrevWeek = () => {
     setCurrentWeek(currentWeek.clone().subtract(1, "week"));
   };
@@ -76,28 +72,6 @@ const WeekCalendar = () => {
     fetchTasks();
   }, []);
 
-  
-  //  useEffect(() => {
-  //   const fetchtaskhours = async () => {
-  //     const userInfo = JSON.parse(localStorage.getItem("userInfo"));
-  //     const userId = userInfo._id;
-
-  //     try {
-  //       const response = await fetch(
-  //         `${import.meta.env.VITE_SERVERURL}/api/tasks/fetchtaskhours?user_id=${userId}`
-  //       );
-  //       if (!response.ok) {
-  //         throw new Error("Failed to fetch tasks");
-  //       }
-  //       const data = await response.json();
-  //       console.log(data);
-  //       setfetchTaskhours(data);
-  //     } catch (error) {
-  //       console.error(error.message);
-  //     }
-  //   };
-  //   fetchtaskhours();
-  // }, []);
   useEffect(() => {
     const fetchTaskHours = async () => {
       const userInfo = JSON.parse(localStorage.getItem("userInfo"));
@@ -223,78 +197,6 @@ const WeekCalendar = () => {
           <FaChevronRight />
         </button>
       </div>
-
-      {/* <table className="calendar-table">
-        <thead>
-          <tr>
-            <th className="w-1/4">Task Title</th>
-            {daysOfWeek.map((day) => (
-              <th key={day.format("YYYY-MM-DD")}>
-                {day.format("ddd, MMM DD")}
-              </th>
-            ))}
-          </tr>
-        </thead>
-
-        <tbody>
-          {currentTasks.map((task) => (
-            <tr key={task.id}>
-              <td>
-                <input
-                  type="checkbox"
-                  checked={!!selectedTasks[task.id]}
-                  onChange={() => toggleTaskSelection(task.id)}
-                />
-              &nbsp;&nbsp; {task.title}</td>
-              {daysOfWeek.map((day) => {
-                const isWeekend = day.day() === 0 || day.day() === 6;
-                return (
-                  <td
-                    key={day.format("YYYY-MM-DD")}
-                    className={isWeekend ? "bg-red-500" : ""}
-                  >
-                    <div className="flex justify-between items-center p-2">
-                      <h3 className="text-lg">
-                        {task.hours?.[day.format("YYYY-MM-DD")] || "0"}
-                      </h3>
-                      <MdModeEdit
-                        className={`cursor-pointer text-gray-700 ${
-                          !selectedTasks[task.id] ? "opacity-50" : ""
-                        }`}
-                        onClick={() => handleEditClick(task, day)}
-                        disabled={!selectedTasks[task.id]}
-                      />
-                    </div>
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
-        <tr>
-        <td className="font-bold text-left">Total Hrs/day</td>
-{daysOfWeek.map((day) => {
-  const totalHours = currentTasks.reduce((sum, task) => {
-    const hours = parseFloat(task.hours?.[day.format("YYYY-MM-DD")] || 0);
-    return sum + hours;
-  }, 0);
-
-  const bgColor = totalHours < 8 ? 'bg-orange-500' : 'bg-green-500'; 
-
-  return (
-    <td 
-      key={day.format("YYYY-MM-DD")} 
-      className={`font-bold text-center ${bgColor}`}
-    >
-      {totalHours}
-    </td>
-  );
-})}
-</tr>
-        </tbody>
-      </table> */}
-
-
-
 
 <table className="calendar-table">
         <thead>

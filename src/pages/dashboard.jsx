@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   MdAdminPanelSettings,
   MdKeyboardArrowDown,
@@ -9,156 +9,90 @@ import { LuClipboardEdit } from "react-icons/lu";
 import { FaNewspaper, FaUsers } from "react-icons/fa";
 import { FaArrowsToDot } from "react-icons/fa6";
 import moment from "moment";
-import { summary } from "../assets/data";
 import clsx from "clsx";
-// import { Chart } from "../components/Chart";
-import { BGS, PRIOTITYSTYELS, TASK_TYPE, getInitials } from "../utils";
+import { useSelector, useDispatch } from "react-redux";
+import {
+  selectUsers,
+  selectUserStatus,
+  selectUserError,
+  fetchUsers,
+} from "../redux/slices/userSlice";
+import {
+  selectTasks,
+  fetchTaskss,
+} from "../redux/slices/taskSlice";
+import { BGS, PRIOTITYSTYELS, TASK_TYPE } from "../utils";
 import UserInfo from "../components/UserInfo";
-import { useSelector,useDispatch } from "react-redux";
-import { useEffect ,useState} from "react";
-import Navbar from "../components/Navbar"; // Import the Navbar component
 
+// Updated getInitials utility function
+const getInitials = (name = "") => {
+  if (!name || typeof name !== "string") return "??";
+  return name
+    .split(" ")
+    .map(part => part[0]?.toUpperCase() || "")
+    .join("")
+    .slice(0, 2);
+};
 
-
-// userTable
-import { fetchUsers } from "../redux/slices/userSlice";
-import { selectUsers, selectUserStatus, selectUserError } from "../redux/slices/userSlice";
-
-// TaskTable
-import { fetchTasks, fetchTaskss } from "../redux/slices/taskSlice";
-import {selectTaskError,selectTaskStatus,selectTasks} from "../redux/slices/taskSlice"
-
-
-
-const TaskTable = ({ tasks }) => {
-
-  const ICONS = {
-    HIGH: <MdKeyboardDoubleArrowUp className="text-red-500" />, 
-    MEDIUM: <MdKeyboardArrowUp className="text-yellow-500" />, 
+const TaskTable = ({ tasks = [] }) => {
+  const PRIORITY_ICONS = {
+    HIGH: <MdKeyboardDoubleArrowUp className="text-red-500" />,
+    MEDIUM: <MdKeyboardArrowUp className="text-yellow-500" />,
     LOW: <MdKeyboardArrowDown className="text-green-500" />,
   };
 
-  const TableHeader = () => (
-    <thead className='border-b border-gray-300 '>
-      <tr className='text-black text-left'>
-        <th className='py-2'>Task Title</th>
-        <th className='py-2'>Priority</th>
-        <th className='py-2'>Team</th>
-        <th className='py-2 hidden md:block'>Created At</th>
-      </tr>
-    </thead>
-  );
-
-  const TableRow = ({ task }) => (
-    <tr className='border-b border-gray-300 text-gray-600 hover:bg-gray-300/10'>
-      <td className='py-2'>
-        <div className='flex items-center gap-2'>
-          <div
-            className={clsx("w-4 h-4 rounded-full", TASK_TYPE[task.stage])}
-          />
-          <p className='text-base text-black'>{task.title}</p>
-        </div>
-      </td>
-
-      <td className='py-2'>
-        <div className='flex gap-1 items-center'>
-          <span className={clsx("text-lg", PRIOTITYSTYELS[task.priority])}>
-            {ICONS[task.priority]}
-          </span>
-          <span className='capitalize'>{task.priority}</span>
-        </div>
-      </td>
-
-      <td className='py-2'>
-        <div className='flex'>
-          {task.assigned_users.map((m, index) => (
-            <div
-              key={index}
-              className={clsx(
-                "w-7 h-7 rounded-full text-white flex items-center justify-center text-sm -mr-1",
-                BGS[index % BGS.length]
-              )}
-            >
-                    <UserInfo user={m} />
-             </div>
-          ))} 
-        </div>
-      </td>
-      <td className='py-2 hidden md:block'>
-        <span className='text-base text-gray-600'>
-          {moment(task?.createdAt).fromNow()}
-        </span>
-      </td>
-    </tr>
-  );
   return (
-    <>
-      <div className='w-full md:w-2/3 bg-white px-2 md:px-4 pt-4 pb-4 shadow-md rounded'>
-        <table className='w-full'>
-          <TableHeader />
-          <tbody>
-            {tasks?.map((task, id) => (
-              <TableRow key={id} task={task} />
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </>
-  );
-};
-
-
-const UserTable = ({ users }) => {
-  const TableHeader = () => (
-    <thead className='border-b border-gray-300 '>
-      <tr className='text-black  text-left'>
-        <th className='py-2'>Full Name</th>
-        <th className='py-2'>Status</th>
-        <th className='py-2'>Created At</th>
-      </tr>
-    </thead>
-  );
-
-
-  const TableRow = ({ user }) => (
-    <tr className='border-b border-gray-200  text-gray-600 hover:bg-gray-400/10'>
-      <td className='py-2'>
-        <div className='flex items-center gap-3'>
-          <div className='w-9 h-9 rounded-full text-white flex items-center justify-center text-sm bg-violet-700'>
-            <span className='text-center'>{getInitials(user?.name)}</span>
-          </div>
-
-          <div>
-            <p> {user.name}</p>
-            <span className='text-xs text-black'>{user?.role}</span>
-          </div>
-        </div>
-      </td>
-
-      <td>
-        <p
-          className={clsx(
-            "w-fit px-3 py-1 rounded-full text-sm",
-            user?.isActive ? "bg-blue-200" : "bg-yellow-100"
-          )}
-        >
-          {user?.isActive ? "Active" : "Disabled"}
-        </p>
-      </td>
-      {/* <td className='py-2 text-sm'>{moment(user?.createdAt).fromNow()}</td> */}
-      <td className='py-2 text-sm'>{moment(user?.createdAt).fromNow()}</td>
-    </tr>
-  );
-
-  return (
-
-
-    <div className='w-full md:w-1/3 bg-white h-fit px-2 md:px-6 py-4 shadow-md rounded'>
-      <table className='w-full mb-5'>
-        <TableHeader />
+    <div className="w-full md:w-2/3 bg-white px-2 md:px-4 pt-4 pb-4 shadow-md rounded">
+      <table className="w-full">
+        <thead className="border-b border-gray-300">
+          <tr className="text-black text-left">
+            <th className="py-2">Task Title</th>
+            <th className="py-2">Priority</th>
+            <th className="py-2">Team</th>
+            <th className="py-2 hidden md:block">Created At</th>
+          </tr>
+        </thead>
         <tbody>
-          {users?.map((user, index) => (
-            <TableRow key={index + user?._id} user={user} />
+          {tasks.map((task, index) => (
+            <tr
+              key={task?._id || index}
+              className="border-b border-gray-300 text-gray-600 hover:bg-gray-300/10"
+            >
+              <td className="py-2">
+                <div className="flex items-center gap-2">
+                  <div className={clsx("w-4 h-4 rounded-full", TASK_TYPE[task?.stage || "TODO"])} />
+                  <p className="text-base text-black">{task?.title || "Untitled Task"}</p>
+                </div>
+              </td>
+              <td className="py-2">
+                <div className="flex gap-1 items-center">
+                  <span className={clsx("text-lg", PRIOTITYSTYELS[task?.priority || "MEDIUM"])}>
+                    {PRIORITY_ICONS[task?.priority || "MEDIUM"]}
+                  </span>
+                  <span className="capitalize">{task?.priority || "Medium"}</span>
+                </div>
+              </td>
+              <td className="py-2">
+                <div className="flex">
+                  {(task?.assigned_users || []).map((user, i) => (
+                    <div
+                      key={user?._id || i}
+                      className={clsx(
+                        "w-7 h-7 rounded-full text-white flex items-center justify-center text-sm -mr-1",
+                        BGS[i % BGS.length]
+                      )}
+                    >
+                      <UserInfo user={user} />
+                    </div>
+                  ))}
+                </div>
+              </td>
+              <td className="py-2 hidden md:block">
+                <span className="text-base text-gray-600">
+                  {task?.createdAt ? moment(task.createdAt).fromNow() : "Recently"}
+                </span>
+              </td>
+            </tr>
           ))}
         </tbody>
       </table>
@@ -166,124 +100,156 @@ const UserTable = ({ users }) => {
   );
 };
 
+const UserTable = ({ users = [] }) => (
+  <div className="w-full md:w-1/3 bg-white h-fit px-2 md:px-6 py-4 shadow-md rounded">
+    <table className="w-full mb-5">
+      <thead className="border-b border-gray-300">
+        <tr className="text-black text-left">
+          <th className="py-2">Full Name</th>
+          <th className="py-2">Status</th>
+          <th className="py-2">Created At</th>
+        </tr>
+      </thead>
+      <tbody>
+        {users.map((user, index) => (
+          <tr
+            key={user?._id || index}
+            className="border-b border-gray-200 text-gray-600 hover:bg-gray-400/10"
+          >
+            <td className="py-2">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full text-white flex items-center justify-center text-sm bg-violet-700">
+                  <span>{getInitials(user?.name)}</span>
+                </div>
+                <div>
+                  <p>{user?.name || "Unknown User"}</p>
+                  <span className="text-xs text-black">{user?.role || "No role"}</span>
+                </div>
+              </div>
+            </td>
+            <td>
+              <p
+                className={clsx(
+                  "w-fit px-3 py-1 rounded-full text-sm",
+                  user?.isActive ? "bg-blue-200" : "bg-yellow-100"
+                )}
+              >
+                {user?.isActive ? "Active" : "Disabled"}
+              </p>
+            </td>
+            <td className="py-2 text-sm">
+              {user?.createdAt ? moment(user.createdAt).fromNow() : "N/A"}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+);
 
+const Card = ({ label, count, bg, icon, thought }) => (
+  <div className="w-full h-32 bg-white p-5 shadow-md rounded-md flex items-center justify-between">
+    <div className="h-full flex flex-1 flex-col justify-between">
+      <p className="text-base text-gray-600">{label}</p>
+      <span className="text-2xl font-semibold">{count}</span>
+      <span className="text-sm text-gray-400">{thought}</span>
+    </div>
+    <div
+      className={clsx(
+        "w-10 h-10 rounded-full flex items-center justify-center text-white",
+        bg
+      )}
+    >
+      {icon}
+    </div>
+  </div>
+);
 
 const Dashboard = () => {
-
-// user
   const dispatch = useDispatch();
-  const users = useSelector(selectUsers); 
-  const isLoading = useSelector(selectUserStatus) === 'loading';
-  const error = useSelector(selectUserError);
-  const tasks = useSelector(selectTasks); 
+  const users = useSelector(selectUsers) || [];
+  const tasks = useSelector(selectTasks) || [];
+  const userStatus = useSelector(selectUserStatus);
+  const userError = useSelector(selectUserError);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     dispatch(fetchUsers());
-    // dispatch(fetchTasks());
     dispatch(fetchTaskss());
   }, [dispatch]);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [openAction, setOpenAction] = useState(false);
-  const [selected, setSelected] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
+
+  if (userStatus === "loading") {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (userError) {
+    return (
+      <div className="h-full flex items-center justify-center text-red-500 p-4">
+        Error loading dashboard data: {userError.message || userError}
+      </div>
+    );
+  }
 
   const filteredTasks = tasks.filter(task =>
-    task.title.toLowerCase().includes(searchQuery.toLowerCase())
+    task?.title?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const stats = [
     {
-      _id: "1",
       label: "TOTAL TASK",
-      total: `${tasks.length}` || 0,
+      total: tasks.length,
       icon: <FaNewspaper />,
       bg: "bg-[#1d4ed8]",
-      thought:"Assigned OverAll "
-
+      thought: "Assigned OverAll",
     },
     {
-      _id: "2",
-      label: "COMPLTED TASK",
-      // total: totals["completed"] || 0,
-      // total: `${tasks.filter(task => task.stage === "COMPLETED").length}`,    
-      total: tasks.filter(task => task.stage === "COMPLETED").length,    
+      label: "COMPLETED TASK",
+      total: tasks.filter(task => task?.stage === "COMPLETED").length,
       icon: <MdAdminPanelSettings />,
       bg: "bg-[#0f766e]",
-      thought:"Well Done "
-
+      thought: "Well Done",
     },
     {
-      _id: "3",
-      label: "TASK IN PROGRESS ",
-      // total: totals["in progress"] || 0,
-      total: tasks.filter(task => task.stage === "IN PROGRESS").length,    
+      label: "TASK IN PROGRESS",
+      total: tasks.filter(task => task?.stage === "IN PROGRESS").length,
       icon: <LuClipboardEdit />,
       bg: "bg-[#f59e0b]",
-      thought:"progress "
-
+      thought: "Progressing",
     },
     {
-      _id: "4",
       label: "TODOS",
-      // total: totals["todo"],
-      total: tasks.filter(task => task.stage === "TODO").length,    
+      total: tasks.filter(task => task?.stage === "TODO").length,
       icon: <FaArrowsToDot />,
-      bg: "bg-[#be185d]" || 0,
-      thought:"Remaining "
+      bg: "bg-[#be185d]",
+      thought: "Remaining",
     },
   ];
 
-  const Card = ({ label, count, bg, icon,thought }) => {
-    return (
-      <div className='w-full h-32 bg-white p-5 shadow-md rounded-md flex items-center justify-between'>
-        <div className='h-full flex flex-1 flex-col justify-between'>
-          <p className='text-base text-gray-600'>{label}</p>
-          <span className='text-2xl font-semibold'>{count}</span>
-          <span className='text-sm text-gray-400'>{thought}</span>
-        </div>
-
-        <div
-          className={clsx(
-            "w-10 h-10 rounded-full flex items-center justify-center text-white",
-            bg
-          )}
-        >
-          {icon}
-        </div>
-      </div>
-    );
-  };
-
-
   return (
-    <div classNamee='h-full py-4'>
-  {/* <Navbar searchQuery={searchQuery} setSearchQuery={setSearchQuery} /> */}
+    <div className="h-full py-4">
+      <div className="w-full flex py-4 text-black text-left font-bold">
+        Client Name
+      </div>
 
-<div className='w-full flex py-4 text-black text-left font-bold'>Client Name</div>
-<div className='grid grid-cols-1 md:grid-cols-4 gap-5'>
-        {stats.map(({ icon, bg, label, total,thought }, index) => (
-          <Card key={index} icon={icon} bg={bg} label={label} count={total} thought={thought}/>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+        {stats.map((stat, index) => (
+          <Card
+            key={index}
+            label={stat.label}
+            count={stat.total}
+            bg={stat.bg}
+            icon={stat.icon}
+            thought={stat.thought}
+          />
         ))}
       </div>
 
-      {/* <div className='w-full bg-white my-16 p-4 rounded shadow-sm'>
-        <h4 className='text-xl text-gray-600 font-semibold'>
-          Chart by Priority
-        </h4>
-        <Chart /> 
-      </div>  */}
-
-      <div className='w-full flex flex-col md:flex-row gap-4 2xl:gap-10 py-8'>
-        {/* /left */}
-
-        {/* <TaskTable tasks={summary.last10Task} /> */}
-        {/* <TaskTable tasks={tasks} />  */}
-        <TaskTable tasks={filteredTasks} /> 
-
-        {/* /right */}
-
-        {/* <UserTable users={summary.users} /> */}
+      <div className="w-full flex flex-col md:flex-row gap-4 2xl:gap-10 py-8">
+        <TaskTable tasks={filteredTasks} />
         <UserTable users={users} />
       </div>
     </div>

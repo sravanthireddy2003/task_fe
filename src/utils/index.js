@@ -24,14 +24,29 @@ export function dateFormatter(dateString) {
   return formattedDate;
 }
 
+// export function getInitials(fullName) {
+//   const names = fullName.split(" ");
+
+//   const initials = names.slice(0, 2).map((name) => name[0].toUpperCase());
+
+//   const initialsStr = initials.join("");
+
+//   return initialsStr;
+// }
+
 export function getInitials(fullName) {
-  const names = fullName.split(" ");
+  if (!fullName || typeof fullName !== "string") {
+    return ""; // or return "NA"
+  }
 
-  const initials = names.slice(0, 2).map((name) => name[0].toUpperCase());
+  const names = fullName.trim().split(" ").filter(Boolean);
 
-  const initialsStr = initials.join("");
+  const initials = names.slice(0, 2).map((name) => {
+    if (!name) return "";
+    return name[0].toUpperCase();
+  });
 
-  return initialsStr;
+  return initials.join("");
 }
 
 export const PRIOTITYSTYELS = {
@@ -47,7 +62,7 @@ export const PRIOTITYSTYELS = {
 
 export const TASK_TYPE = {
   TODO: "bg-blue-600",
-  "IN PROGRESS": "bg-yellow-600",
+  INPROGRESS: "bg-yellow-600",
   COMPLETED: "bg-green-600",
 };
 // export const TASK_TYPE = {

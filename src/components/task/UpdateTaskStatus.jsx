@@ -6,7 +6,14 @@ import Button from "../Button";
 const UpdateTaskStatus = ({ openStage, setOpenStage, id, onStatusUpdate }) => {
   const { register, handleSubmit, formState: { errors } } = useForm();
 
+// const handleOnSubmit = (data) => {
+//   onStatusUpdate(data.status);  
+//   setOpenStage(false);
+// };
+
 const handleOnSubmit = (data) => {
+  if (!data.status) return;
+  
   onStatusUpdate(data.status);  
   setOpenStage(false);
 };

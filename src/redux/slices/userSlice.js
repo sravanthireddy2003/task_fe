@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { httpGetService,httpDeleteService } from "../../App/httpHandler";
+import { httpGetService,httpDeleteService, httpPutService } from "../../App/httpHandler";
 
 const initialState = {
   isSidebarOpen: false,
@@ -17,6 +17,19 @@ export const fetchUsers = createAsyncThunk(
       return response;
     } catch (error) {
       return thunkAPI.rejectWithValue(error.response.data);
+    }
+  }
+);
+
+export const updateUser = createAsyncThunk(
+  'users/update',
+  async (userData, { rejectWithValue }) => {
+    try {
+      const { _id, ...data } = userData;
+      const response = await httpPutService(`api/users/update/${_id}`, data);
+      return { _id, ...response.user }; // Return the updated user data
+    } catch (error) {
+      return rejectWithValue(error.message || 'Something went wrong');
     }
   }
 );
@@ -52,6 +65,20 @@ const userSlice = createSlice({
         state.status = 'failed';
         state.error = action.payload; 
       })
+      .addCase(updateUser.pending, (state) => {
+  state.status = 'loading';
+})
+.addCase(updateUser.fulfilled, (state, action) => {
+  state.status = 'succeeded';
+  const updatedUser = action.payload;
+  state.users = state.users.map(user => 
+    user._id === updatedUser._id ? updatedUser : user
+  );
+})
+.addCase(updateUser.rejected, (state, action) => {
+  state.status = 'failed';
+  state.error = action.payload;
+})
       .addCase(deleteUser.pending, (state) => {
         state.status = 'loading';
       })
