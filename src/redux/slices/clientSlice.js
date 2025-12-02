@@ -77,3 +77,5 @@ export const selectClientStatus = (state) => state.clients.status;
 export const selectClientError = (state) => state.clients.error;
 
 export default clientSlice.reducer;
+
+// Thunks for adding a new client
