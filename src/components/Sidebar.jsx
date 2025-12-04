@@ -7,9 +7,9 @@ import {
   MdSettings,
   MdTaskAlt,
 } from "react-icons/md";
-import { Tb360, TbReportSearch } from "react-icons/tb";
+import { TbReportSearch } from "react-icons/tb";
 import { BsFileEarmarkSpreadsheetFill } from "react-icons/bs";
-import { FaTasks, FaTrashAlt, FaUsers } from "react-icons/fa";
+import { FaTasks, FaTrashAlt, FaUsers, FaGlobe } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useLocation } from "react-router-dom";
 import { setOpenSidebar } from "../redux/slices/authSlice";
@@ -17,57 +17,14 @@ import clsx from "clsx";
 import { PiHeartLight } from "react-icons/pi";
 
 const linkData = [
-  {
-    label: "Client",
-    link: "client",
-    icon: <Tb360 />
-  },
-  {
-    label: "Analysis",
-    link: "analysis",
-    icon: <MdTaskAlt />,
-  },
-  {
-    label: "Dashboard",
-    link: "dashboard",
-    icon: <MdDashboard />,
-  },
-  {
-    label: "Tasks",
-    link: "tasks",
-    icon: <FaTasks />,
-  },
-  // {
-    //   label: "Completed",
-    //   link: "completed/completed",
-    //   icon: <MdTaskAlt />,
-    // },
-    // {
-      //   label: "In Progress",
-      //   link: "in-progress/in progress",
-      //   icon: <MdOutlinePendingActions />,
-      // },
-      // {
-        //   label: "To Do",
-        //   link: "todo/todo",
-        //   icon: <MdOutlinePendingActions />,
-        // },
-        {
-          label: "Test Sheet Fill",
-          link: "Testrep",
-          icon: <BsFileEarmarkSpreadsheetFill />
-        },
-        {
-          label: "Team",
-          link: "team",
-          icon: <FaUsers />,
-        },
-        {
-          label: "Report",
-          link: "report",
-          icon: <TbReportSearch />
-        },
-
+  { label: "Dashboard", link: "dashboard", icon: <MdDashboard /> },
+  { label: "User Management", link: "team", icon: <FaUsers /> },
+  { label: "Clients", link: "client", icon: <FaGlobe /> },
+  { label: "Departments", link: "dashboard", icon: <MdHeight /> },
+  { label: "Projects", link: "dashboard", icon: <MdOutlineAddTask /> },
+  { label: "Tasks", link: "tasks", icon: <FaTasks /> },
+  { label: "Reports & Analytics", link: "report", icon: <TbReportSearch /> },
+  { label: "Document & File Management", link: "dashboard", icon: <BsFileEarmarkSpreadsheetFill /> },
 ];
 
 const Sidebar = () => {
@@ -79,14 +36,38 @@ const Sidebar = () => {
   const path = location.pathname.split("/")[1];
 
   // const sidebarLinks = user?.isAdmin ? linkData : linkData.slice(1, 4);
+  // Build sidebar links from user.modules if provided, otherwise fall back to default linkData
   const sidebarLinks = (() => {
-    if (user?.isAdmin === 1) {
-      return linkData;
-    } else if (user?.isAdmin === 2) {
-      return linkData.slice(1,5);
-    } else {
-      return linkData.slice(1, 4);
+    if (user?.modules && Array.isArray(user.modules) && user.modules.length > 0) {
+      // map module name to known route path
+      const moduleToRoute = (modName) => {
+        const map = {
+          'Dashboard': 'dashboard',
+          'User Management': 'team',
+          'Team & Employees': 'team',
+          'Clients': 'client',
+          'Departments': 'departments',
+          'Projects': 'projects',
+          'Tasks': 'tasks',
+          'Reports & Analytics': 'report',
+          'Document & File Management': 'documents',
+          'Settings & Master Configuration': 'settings',
+          'Chat / Real-Time Collaboration': 'chat',
+          'Workflow (Project & Task Flow)': 'workflow',
+          'Notifications': 'notifications'
+        };
+        return map[modName] || 'dashboard';
+      };
+
+      return user.modules.map((m) => ({
+        label: m.name,
+        link: moduleToRoute(m.name),
+        access: m.access,
+        icon: linkData.find((l) => l.label === m.name)?.icon || <MdDashboard />,
+      }));
     }
+
+    return linkData;
   })();
 
   const closeSidebar = () => {

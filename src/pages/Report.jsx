@@ -23,7 +23,8 @@ const ReportPage = () => {
   useEffect(() => {
     const fetchTasks = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_SERVERURL}/api/tasks/taskdropdown`);
+        const fetchWithTenant = (await import('../utils/fetchWithTenant')).default;
+        const response = await fetchWithTenant(`/api/tasks/taskdropdown`);
         if (!response.ok) {
           throw new Error('Failed to fetch tasks');
         }
@@ -43,11 +44,12 @@ const ReportPage = () => {
     setError(null);
 
     try {
-      const response = await fetch(`/api/tasks/report?task_name=${selectedTask}&start_date=${startDate}&end_date=${endDate}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch report data');
-      }
-      const data = await response.json();
+        const fetchWithTenant = (await import('../utils/fetchWithTenant')).default;
+        const response = await fetchWithTenant(`/api/tasks/report?task_name=${selectedTask}&start_date=${startDate}&end_date=${endDate}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch report data');
+        }
+        const data = await response.json();
       setReportData(data);
     } catch (error) {
       setError(error.message);

@@ -9,7 +9,8 @@ const Analysis = () => {
  useEffect(() => {
     const fetchTasks = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_SERVERURL}/api/tasks/gettasks`);
+        const fetchWithTenant = (await import('../utils/fetchWithTenant')).default;
+        const response = await fetchWithTenant(`/api/tasks/gettasks`);
         if (!response.ok) {
           throw new Error("Failed to fetch tasks");
         }

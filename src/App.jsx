@@ -8,6 +8,7 @@ import { Toaster } from "sonner";
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 import Login from "./pages/Login";
+import VerifyOTP from "./pages/VerifyOTP";
 import TaskDetails from "./pages/TaskDetails";
 import Tasks from "./pages/Tasks";
 import Report from "./pages/Report";
@@ -19,10 +20,26 @@ import Dashboard from "./pages/dashboard";
 import AddClient from "./pages/AddClientsP";
 // import ClientDetails from "./pages/ClientDetails";
 import ClientDashboard from "./pages/ClientDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
+import ManagerDashboard from "./pages/ManagerDashboard";
+import EmployeeDashboard from "./pages/EmployeeDashboard";
+import Profile from "./pages/Profile";
+import ChangePassword from "./pages/ChangePassword";
+import Forgot from "./pages/Forgot";
+import Reset from "./pages/Reset";
+import RoleRedirect from "./components/RoleRedirect";
+import ProtectedRoute from "./components/ProtectedRoute";
 import { setOpenSidebar } from "./redux/slices/authSlice";
 import { selectTasks } from "./redux/slices/taskSlice";
 import PageNotFound from "./pages/PageNotFound";
 import Analysis from "./pages/Analysis";
+import Departments from "./pages/Departments";
+import Projects from "./pages/Projects";
+import Documents from "./pages/Documents";
+import Settings from "./pages/Settings";
+import Chat from "./pages/Chat";
+import Workflow from "./pages/Workflow";
+import Notifications from "./pages/Notifications";
 // import VC from "./pages/VC";
  
 import {  GoogleOAuthProvider } from "@react-oauth/google";
@@ -118,8 +135,24 @@ function App() {
     <main className='w-full min-h-screen bg-[#f3f4f6] '>
       <Routes>
         <Route element={<Layout />}>
-          <Route index path='/' element={<Navigate to='/dashboard' />} />
+          <Route index path='/' element={<RoleRedirect/>} />
           <Route path='/dashboard' element={<Dashboard />} />
+          <Route element={<ProtectedRoute allowedRoles={['Admin']} />}>
+            <Route path='/admin' element={<AdminDashboard/>} />
+          </Route>
+          <Route element={<ProtectedRoute allowedRoles={['Manager']} />}>
+            <Route path='/manager' element={<ManagerDashboard/>} />
+          </Route>
+          <Route element={<ProtectedRoute allowedRoles={['Employee']} />}>
+            <Route path='/employee' element={<EmployeeDashboard/>} />
+          </Route>
+          <Route element={<ProtectedRoute allowedRoles={['Client']} />}>
+            <Route path='/client-portal' element={<ClientDashboard/>} />
+          </Route>
+          <Route path='/profile' element={<Profile/>} />
+          <Route path='/change-password' element={<ChangePassword/>} />
+          <Route path='/forgot' element={<Forgot/>} />
+          <Route path='/reset' element={<Reset/>} />
           <Route path='/analysis' element={<Analysis />} />
           <Route path='*' element={<PageNotFound/>} />
           <Route path='/client' element={<Client />} />
@@ -132,6 +165,13 @@ function App() {
           <Route path='/in-progress/:status' element={<Tasks />} />
           <Route path='/todo/:status' element={<Tasks />} />
           <Route path='/team' element={<Users />} />
+          <Route path='/departments' element={<Departments />} />
+          <Route path='/projects' element={<Projects />} />
+          <Route path='/documents' element={<Documents />} />
+          <Route path='/settings' element={<Settings />} />
+          <Route path='/chat' element={<Chat />} />
+          <Route path='/workflow' element={<Workflow />} />
+          <Route path='/notifications' element={<Notifications />} />
           <Route path='/report' element={<Report/>} />
           {/* <Route path='/vc' element={<VC/>} /> */}
           <Route path='/testRep' element={<TestRep/>} />
@@ -139,6 +179,7 @@ function App() {
           <Route path='/task/:id' element={<TaskDetails/>} />
         </Route>
         <Route path='/log-in' element={<GoogleAuthWrapper/>} />
+        <Route path='/verify-otp' element={<VerifyOTP/>} />
       </Routes>
  
       <Toaster richColors />

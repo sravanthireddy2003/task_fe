@@ -2,8 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { FaNewspaper } from "react-icons/fa";
 import { FaArrowsToDot } from "react-icons/fa6";
-import { MdAdminPanelSettings } from "react-icons/md";
-import { LuClipboardEdit } from "react-icons/lu";
+import { MdAdminPanelSettings, MdEdit } from "react-icons/md";
 import TaskCard from "../components/TaskCard";
 import clsx from "clsx";
 
@@ -40,7 +39,7 @@ const ClientDashboard = () => {
       _id: "3",
       label: "TASK IN PROGRESS",
       total: tasks.filter((task) => task.stage === "IN PROGRESS").length,
-      icon: <LuClipboardEdit />,
+      icon: <MdEdit />,
       bg: "bg-[#f59e0b]",
       thought: "Progress",
     },

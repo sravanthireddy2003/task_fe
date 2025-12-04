@@ -21,21 +21,19 @@ const AddWorkingHours = ({ open, setOpen, idWH }) => {
     console.log(idWH);  // Corrected variable name
   
     try {
-      const response = await fetch(`${import.meta.env.VITE_SERVERURL}/api/tasks/working-hours`, {
+      const fetchWithTenant = (await import('../utils/fetchWithTenant')).default;
+      const response = await fetchWithTenant(`/api/tasks/working-hours`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify(workingHoursData),
       });
-  
+
       if (response.ok) {
         const result = await response.json();
         console.log(result.message);
         setOpen(false);
       } else {
         const errorData = await response.json();
-        console.error("Error:", errorData.error);
+        console.error("Error:", errorData.error || errorData.message || 'Unknown');
       }
     } catch (error) {
       console.error("Network error:", error);

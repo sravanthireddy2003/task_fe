@@ -22,6 +22,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { selectTasks, fetchTasksbyId, selectSubTasks, getSubTask } from "../redux/slices/taskSlice";
 import { Clock, User, Info } from 'lucide-react';
 import axios from "axios";
+import fetchWithTenant from '../utils/fetchWithTenant';
 
 
 const assets = [
@@ -134,13 +135,14 @@ const TaskDetails = () => {
   useEffect(() => {
     const fetchTaskActivities = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_SERVERURL}/api/tasks/taskdetail/getactivity/${task_id}`);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-  
-        const data = await response.json();
-        setActivitiesdata(data);
+          const response = await fetchWithTenant(`/api/tasks/taskdetail/getactivity/${task_id}`);
+          if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`HTTP error! status: ${response.status} - ${text}`);
+          }
+
+          const data = await response.json();
+          setActivitiesdata(data);
       } catch (err) {
         console.error("Error fetching task activities:", err);
         setError("Failed to load task activities.");
@@ -159,13 +161,11 @@ const TaskDetails = () => {
   useEffect(() => {
     const fetchTotalWorkingHours = async (task_id) => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_SERVERURL}/api/tasks/total-working-hours/${task_id}`);
-        
+        const response = await fetchWithTenant(`/api/tasks/total-working-hours/${task_id}`);
         if (!response.ok) {
           const errorText = await response.text();
           throw new Error(`Failed to fetch total working hours: ${errorText}`);
         }
-        
         const data = await response.json();
         
         if (data.error) {
@@ -196,11 +196,11 @@ const TaskDetails = () => {
     useEffect(() => {
       const fetchupload = async () => {
         try {
-          const response = await fetch(`${import.meta.env.VITE_SERVERURL}/api/uploads/getuploads/${task_id}`);
+          const response = await fetchWithTenant(`/api/uploads/getuploads/${task_id}`);
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
-  
+
           const result = await response.json();
           setgetfile(result.data);
         } catch (err) {
@@ -275,7 +275,7 @@ const TaskDetails = () => {
 
     try {
       setMessage('Uploading...');
-      const response = await fetch(`${import.meta.env.VITE_SERVERURL}/api/uploads/upload`, {
+      const response = await fetchWithTenant(`/api/uploads/upload`, {
         method: 'POST',
         body: formData,
       });
@@ -588,11 +588,8 @@ const Activities = ({ activity, taskId}) => {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch(`${import.meta.env.VITE_SERVERURL}/api/tasks/taskdetail/Postactivity`, {
+      const response = await fetchWithTenant(`/api/tasks/taskdetail/Postactivity`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           task_id: taskId,
           user_id: user_id,

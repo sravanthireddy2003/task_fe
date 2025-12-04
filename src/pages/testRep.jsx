@@ -57,8 +57,9 @@ const WeekCalendar = () => {
       const userInfo = JSON.parse(localStorage.getItem("userInfo"));
       const userId = userInfo._id;
       try {
-        const response = await fetch(
-          `${import.meta.env.VITE_SERVERURL}/api/tasks/taskdropdownfortaskHrs?user_id=${userId}`
+        const fetchWithTenant = (await import('../utils/fetchWithTenant')).default;
+        const response = await fetchWithTenant(
+          `/api/tasks/taskdropdownfortaskHrs?user_id=${userId}`
         );
         if (!response.ok) {
           throw new Error("Failed to fetch tasks");
@@ -78,8 +79,9 @@ const WeekCalendar = () => {
       const userId = userInfo._id;
 
       try {
-        const response = await fetch(
-          `${import.meta.env.VITE_SERVERURL}/api/tasks/fetchtaskhours?user_id=${userId}`
+        const fetchWithTenant = (await import('../utils/fetchWithTenant')).default;
+        const response = await fetchWithTenant(
+          `/api/tasks/fetchtaskhours?user_id=${userId}`
         );
         if (!response.ok) {
           throw new Error("Failed to fetch task hours");
@@ -136,13 +138,11 @@ const WeekCalendar = () => {
       const secret = "secretKeysecretK";
       const encryptedData = CryptoJS.AES.encrypt(JSON.stringify(data), secret).toString();
       try {
-        const response = await fetch(
-          `${import.meta.env.VITE_SERVERURL}/api/tasks/taskhours`,
+        const fetchWithTenant = (await import('../utils/fetchWithTenant')).default;
+        const response = await fetchWithTenant(
+          `/api/tasks/taskhours`,
           {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
             body: JSON.stringify({ encryptedData }), // Wrap encryptedData in an object
           }
         );

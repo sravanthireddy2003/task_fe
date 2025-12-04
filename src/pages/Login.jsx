@@ -5,6 +5,7 @@ import { useSelector, useDispatch } from "react-redux";
 
 import Textbox from "../components/Textbox";
 import Button from "../components/Button";
+import TenantSelector from "../components/TenantSelector";
 
 import {
   authLogin,
@@ -20,7 +21,7 @@ const Login = () => {
   const user = useSelector(selectUser);
   const authStatus = useSelector(selectAuthStatus);
   const authError = useSelector(selectAuthError);
-console.log({ authStatus, authError });
+  console.log({ authStatus, authError });
 
   const {
     register,
@@ -29,12 +30,21 @@ console.log({ authStatus, authError });
   } = useForm();
 
   const onSubmit = async (data) => {
-    dispatch(authLogin(data));
+    dispatch(authLogin(data)).then((res) => {
+      if (res.type && res.type.endsWith('fulfilled')) {
+        // if backend sent tempToken, navigate to OTP verification
+        const temp = res.payload?.tempToken || res.payload?.temp_token;
+        if (temp) {
+          // tempToken stored in auth state by the slice
+          navigate('/verify-otp');
+        }
+      }
+    });
   };
 
   useEffect(() => {
     if (user) {
-      navigate("/dashboard");
+      navigate('/dashboard');
     }
   }, [user, navigate]);
 
@@ -64,6 +74,9 @@ console.log({ authStatus, authError });
             onSubmit={handleSubmit(onSubmit)}
             className='form-container w-full md:w-[400px] flex flex-col gap-y-8 bg-white px-10 pt-14 pb-14'
           >
+            <div className='mb-3'>
+              <TenantSelector />
+            </div>
             <div>
               <p className='text-blue-600 text-3xl font-bold text-center'>
                 Welcome back!
@@ -99,13 +112,16 @@ console.log({ authStatus, authError });
               />
 
               {/* Show login error */}
-{authStatus === "failed" && authError && (
-  <p className='text-sm text-red-500 text-center'>
-    {authError}
-  </p>
-)}
+              {authStatus === "failed" && authError && (
+                <p className='text-sm text-red-500 text-center'>
+                  {authError}
+                </p>
+              )}
 
-              <span className='text-sm text-gray-500 hover:text-blue-600 hover:underline cursor-pointer'>
+              <span
+                className='text-sm text-gray-500 hover:text-blue-600 hover:underline cursor-pointer text-center'
+                onClick={() => navigate('/forgot-password')}
+              >
                 Forgot Password?
               </span>
 
