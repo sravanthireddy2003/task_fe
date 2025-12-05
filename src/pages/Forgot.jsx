@@ -12,23 +12,37 @@ const Forgot = () => {
   const status = useSelector(selectAuthStatus);
   const error = useSelector(selectAuthError);
   const navigate = useNavigate();
-  const { register, handleSubmit } = useForm();
+  const { register, handleSubmit, setValue } = useForm();
 
   const onSubmit = (data) => {
     dispatch(forgotPassword(data)).then((res) => {
       if (res.type && res.type.endsWith('fulfilled')) {
-        const message = res.payload?.message || 'OTP sent to email';
+        const message = (res.payload && (res.payload.message || res.payload.msg)) || 'OTP sent to email';
         toast.success(message);
         // navigate to reset page and pass email in state for convenience
         navigate('/reset', { state: { email: data.email } });
       } else {
-        const err = res.payload || 'Failed to send OTP';
-        toast.error(err);
+        // res.payload may be a string or object
+        const errMsg = res.payload?.message || res.payload || res.error || 'Failed to send OTP';
+        toast.error(errMsg);
       }
     }).catch((err) => {
       toast.error(err?.message || 'Failed to send OTP');
     });
   };
+
+  // If email passed in location state (e.g., after signup), prefill the input
+  React.useEffect(() => {
+    try {
+      const s = window.history.state && window.history.state.usr && window.history.state.usr.state;
+      // fallback: some routers put state differently; attempt to read location.state
+      // We'll also check URL query param ?email=
+      const params = new URLSearchParams(window.location.search);
+      const emailFromQuery = params.get('email');
+      const emailToSet = emailFromQuery || (s && s.email) || null;
+      if (emailToSet) setValue('email', emailToSet);
+    } catch (e) {}
+  }, [setValue]);
 
   return (
     <div className="w-full min-h-screen flex items-center justify-center">

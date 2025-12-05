@@ -1,67 +1,37 @@
-// import api from "./apiClient";
-
-// export async function httpPostService(url, data, config = {}) {
-//     try {
-//         const resp = await api.post(`/${url}`.replace(/^\/+/, ""), data, config);
-//         return resp.data;
-//     } catch (error) {
-//         throw formatAxiosError(error);
-//     }
-// }
-
-// export async function httpDeleteService(url, config = {}) {
-//     try {
-//         const resp = await api.delete(`/${url}`.replace(/^\/+/, ""), config);
-//         return resp.data;
-//     } catch (error) {
-//         throw formatAxiosError(error);
-//     }
-// }
-
-// export async function httpPatchService(url, data, config = {}) {
-//     try {
-//         const resp = await api.patch(`/${url}`.replace(/^\/+/, ""), data, config);
-//         return resp.data;
-//     } catch (error) {
-//         throw formatAxiosError(error);
-//     }
-// }
-
-// export async function httpPutService(url, data, config = {}) {
-//     try {
-//         const resp = await api.put(`/${url}`.replace(/^\/+/, ""), data, config);
-//         return resp.data;
-//     } catch (error) {
-//         throw formatAxiosError(error);
-//     }
-// }
-
-// export async function httpGetService(url, config = {}) {
-//     try {
-//         const resp = await api.get(`/${url}`.replace(/^\/+/, ""), config);
-//         return resp.data;
-//     } catch (error) {
-//         throw formatAxiosError(error);
-//     }
-// }
-
-// const formatAxiosError = (error) => {
-//     if (error.response) {
-//         return error.response.data || { message: error.response.statusText };
-//     }
-//     if (error.request) {
-//         return { message: "No response from server" };
-//     }
-//     return { message: error.message };
-// };
 
 
 // httpHandler.js
 import api from "./apiClient";
+import { setTokens, clearTokens, getAccessToken } from "../utils/tokenService";
+
+const defaultTenantId = import.meta.env.VITE_TENANT_ID || null;
+
+const getTenantFromStorage = () => {
+    try {
+        const tenantFromLocal = localStorage.getItem('tenantId');
+        if (tenantFromLocal) return tenantFromLocal;
+
+        const userJson = localStorage.getItem('userInfo') || localStorage.getItem('user');
+        if (userJson) {
+            const user = JSON.parse(userJson);
+            // possible tenant keys
+            return user?.tenantId || user?.tenant_id || user?.public_id || user?.publicId || user?.tenant || user?.company || null;
+        }
+    } catch (e) {
+        // ignore
+    }
+    return null;
+}
 
 export async function httpPostService(url, data, config = {}) {
     try {
-        const resp = await api.post(`/${url}`.replace(/^\/+/, ""), data, config);
+        const token = getAccessToken();
+        const tenantId = localStorage.getItem("tenantId") || getTenantFromStorage() || defaultTenantId;
+        const headers = Object.assign({}, config.headers || {});
+        if (tenantId) headers["x-tenant-id"] = tenantId;
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        else console.warn(`[httpPostService] no access token found for request to ${url}`);
+        const resp = await api.post(`/${url}`.replace(/^\/+/, ""), data, { ...config, headers });
         return resp.data;
     } catch (error) {
         throw formatAxiosError(error);
@@ -70,7 +40,12 @@ export async function httpPostService(url, data, config = {}) {
 
 export async function httpDeleteService(url, config = {}) {
     try {
-        const resp = await api.delete(`/${url}`.replace(/^\/+/, ""), config);
+        const token = getAccessToken();
+        const tenantId = localStorage.getItem("tenantId") || getTenantFromStorage() || defaultTenantId;
+        const headers = Object.assign({}, config.headers || {});
+        if (tenantId) headers["x-tenant-id"] = tenantId;
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        const resp = await api.delete(`/${url}`.replace(/^\/+/, ""), { ...config, headers });
         return resp.data;
     } catch (error) {
         throw formatAxiosError(error);
@@ -79,16 +54,26 @@ export async function httpDeleteService(url, config = {}) {
 
 export async function httpPatchService(url, data, config = {}) {
     try {
-        const resp = await api.patch(`/${url}`.replace(/^\/+/, ""), data, config);
+        const token = getAccessToken();
+        const tenantId = localStorage.getItem("tenantId") || getTenantFromStorage() || defaultTenantId;
+        const headers = Object.assign({}, config.headers || {});
+        if (tenantId) headers["x-tenant-id"] = tenantId;
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        const resp = await api.patch(`/${url}`.replace(/^\/+/, ""), data, { ...config, headers });
         return resp.data;
     } catch (error) {
         throw formatAxiosError(error);
     }
 }
-
+    
 export async function httpPutService(url, data, config = {}) {
     try {
-        const resp = await api.put(`/${url}`.replace(/^\/+/, ""), data, config);
+        const token = getAccessToken();
+        const tenantId = localStorage.getItem("tenantId") || getTenantFromStorage() || defaultTenantId;
+        const headers = Object.assign({}, config.headers || {});
+        if (tenantId) headers["x-tenant-id"] = tenantId;
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        const resp = await api.put(`/${url}`.replace(/^\/+/, ""), data, { ...config, headers });
         return resp.data;
     } catch (error) {
         throw formatAxiosError(error);
@@ -97,7 +82,12 @@ export async function httpPutService(url, data, config = {}) {
 
 export async function httpGetService(url, config = {}) {
     try {
-        const resp = await api.get(`/${url}`.replace(/^\/+/, ""), config);
+        const token = getAccessToken();
+        const tenantId = localStorage.getItem("tenantId") || getTenantFromStorage() || defaultTenantId;
+        const headers = Object.assign({}, config.headers || {});
+        if (tenantId) headers["x-tenant-id"] = tenantId;
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        const resp = await api.get(`/${url}`.replace(/^\/+/, ""), { ...config, headers });
         return resp.data;
     } catch (error) {
         throw formatAxiosError(error);
@@ -106,7 +96,29 @@ export async function httpGetService(url, config = {}) {
 
 const formatAxiosError = (error) => {
     if (error.response) {
-        return error.response.data || { message: error.response.statusText };
+    // Normalize axios error into a plain object with useful fields
+    try {
+        if (error && error.response) {
+            return {
+                message: error.response.data?.message || error.response.data?.error || error.message || 'Request failed',
+                status: error.response.status,
+                data: error.response.data,
+                headers: error.response.headers,
+            };
+        }
+
+        if (error && error.request) {
+            return {
+                message: 'No response received from server',
+                status: null,
+                data: null,
+            };
+        }
+    } catch (e) {
+        // fallback
+    }
+
+    return { message: error?.message || 'Unknown error', status: null };
     }
     if (error.request) {
         return { message: "No response from server" };
@@ -114,30 +126,26 @@ const formatAxiosError = (error) => {
     return { message: error.message };
 };
 
-// Helper functions for token management
+// Helper functions for token management — delegate to tokenService to keep keys consistent
 export const setAuthToken = (accessToken, refreshToken = null, storageType = 'local') => {
-    if (storageType === 'local') {
-        localStorage.setItem('accessToken', accessToken);
-        if (refreshToken) {
-            localStorage.setItem('refreshToken', refreshToken);
+    setTokens(accessToken, refreshToken, storageType === 'session' ? 'session' : 'local');
+    try {
+        if (accessToken) {
+            api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+        } else {
+            delete api.defaults.headers.common['Authorization'];
         }
-    } else {
-        sessionStorage.setItem('accessToken', accessToken);
-        if (refreshToken) {
-            sessionStorage.setItem('refreshToken', refreshToken);
-        }
+    } catch (e) {
+        // ignore
     }
 };
 
-export const getAuthToken = () => {
-    return localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
-};
-
 export const clearAuthTokens = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user');
-    sessionStorage.removeItem('accessToken');
-    sessionStorage.removeItem('refreshToken');
-    sessionStorage.removeItem('user');
+    clearTokens();
+    try {
+      localStorage.removeItem('user');
+      sessionStorage.removeItem('user');
+            // also clear axios default auth header if set
+            try { delete api.defaults.headers.common['Authorization']; } catch (e) {}
+    } catch (e) {}
 };

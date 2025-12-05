@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 
 import Textbox from "../components/Textbox";
@@ -21,7 +21,6 @@ const Login = () => {
   const user = useSelector(selectUser);
   const authStatus = useSelector(selectAuthStatus);
   const authError = useSelector(selectAuthError);
-  console.log({ authStatus, authError });
 
   const {
     register,
@@ -118,12 +117,12 @@ const Login = () => {
                 </p>
               )}
 
-              <span
+              <Link
+                to="/forgot"
                 className='text-sm text-gray-500 hover:text-blue-600 hover:underline cursor-pointer text-center'
-                onClick={() => navigate('/forgot-password')}
               >
                 Forgot Password?
-              </span>
+              </Link>
 
               <Button
                 type='submit'

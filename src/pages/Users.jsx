@@ -42,14 +42,18 @@ const Users = () => {
   const userActionHandler = () => {};
   
   const deleteHandler = () => {
-    if (selected !== null) {
-      dispatch(deleteUser({ id: selected }));
+    if (selected) {
+      dispatch(deleteUser(selected))
+        .unwrap()
+        .catch((err) => console.error('Delete failed', err));
       setSelected(null);
       setOpenDialog(false);
     }
   };
 
-  const deleteClick = (id) => {
+  const deleteClick = (user) => {
+    // prefer server public id if present, then _id or id
+    const id = user?.public_id || user?.publicId || user?._id || user?.id || null;
     setSelected(id);
     setOpenDialog(true);
   };
@@ -108,7 +112,7 @@ const Users = () => {
           className="text-red-700 hover:text-red-500 font-semibold sm:px-0"
           label="Delete"
           type="button"
-          onClick={() => deleteClick(user?._id)}
+          onClick={() => deleteClick(user)}
         />
       </td>
     </tr>

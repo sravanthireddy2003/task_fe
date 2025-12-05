@@ -292,7 +292,8 @@ import {
   httpPatchService,
   httpGetService,
 } from "../../App/httpHandler";
-import { setTokens, clearTokens } from "../../utils/tokenService";
+import { setTokens, clearTokens, getRefreshToken } from "../../utils/tokenService";
+import { setAuthToken } from "../../App/httpHandler";
 
 // ✅ Safely parse user from localStorage
 let userInfo = null;
@@ -378,16 +379,30 @@ export const refreshToken = createAsyncThunk(
   "api/auth/refreshToken",
   async (_, thunkAPI) => {
     try {
+      // use tokenService helper to read refresh token from local/session storage
+      const storedRefresh = getRefreshToken();
       const response = await httpPostService("api/auth/refresh", {
-        refreshToken: localStorage.getItem("tm_refresh_token"),
+        refreshToken: storedRefresh,
       });
       if (response?.accessToken) {
+        // persist tokens and update axios default header for immediate use
         setTokens(response.accessToken, response.refreshToken);
+        try { setAuthToken(response.accessToken, response.refreshToken, 'local'); } catch (e) {}
       }
       return response;
     } catch (error) {
-      clearTokens();
-      return thunkAPI.rejectWithValue(error?.message || "Refresh failed");
+        // error comes from httpHandler.formatAxiosError and includes `status`
+        try {
+          const status = error?.status || error?.response?.status;
+          if (status === 404) {
+            // Refresh endpoint not present on backend — clear tokens and return a clear message
+            clearTokens();
+            return thunkAPI.rejectWithValue('Refresh endpoint not found (404)');
+          }
+        } catch (e) {}
+
+        clearTokens();
+        return thunkAPI.rejectWithValue(error?.message || "Refresh failed");
     }
   }
 );

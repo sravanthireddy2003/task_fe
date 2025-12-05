@@ -19,11 +19,12 @@ export const fetchTaskss = createAsyncThunk(
   "tasks/fetchTasks",
   async (_, thunkAPI) => {
     try {
-      const userInfo = JSON.parse(localStorage.getItem("userInfo"));
-      const params =
-        userInfo.isAdmin === 1 ? { isAdmin: 1 } : { userId: userInfo._id };
+      // read current user from either 'userInfo' or legacy 'user'
+      const rawUser = localStorage.getItem("userInfo") || localStorage.getItem('user') || null;
+      const userInfo = rawUser ? JSON.parse(rawUser) : null;
+      const params = userInfo ? (userInfo.isAdmin === 1 ? { isAdmin: 1 } : { userId: userInfo._id || userInfo.id }) : {};
       const queryString = new URLSearchParams(params).toString();
-      const url = `api/tasks/gettaskss${queryString ? `?${queryString}` : ""}`;
+      const url = `api/tasks/gettasks`;
       const response = await httpGetService(url);
       return response;
     } catch (error) {

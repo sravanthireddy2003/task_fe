@@ -21,8 +21,7 @@ import Button from "../components/Button";
 import { useSelector, useDispatch } from "react-redux";
 import { selectTasks, fetchTasksbyId, selectSubTasks, getSubTask } from "../redux/slices/taskSlice";
 import { Clock, User, Info } from 'lucide-react';
-import axios from "axios";
-import fetchWithTenant from '../utils/fetchWithTenant';
+import { httpPostService, httpGetService } from '../App/httpHandler';
 
 
 const assets = [
@@ -135,14 +134,9 @@ const TaskDetails = () => {
   useEffect(() => {
     const fetchTaskActivities = async () => {
       try {
-          const response = await fetchWithTenant(`/api/tasks/taskdetail/getactivity/${task_id}`);
-          if (!response.ok) {
-            const text = await response.text();
-            throw new Error(`HTTP error! status: ${response.status} - ${text}`);
-          }
-
-          const data = await response.json();
-          setActivitiesdata(data);
+        const data = await httpGetService(`api/tasks/taskdetail/getactivity/${task_id}`);
+        // normalize shapes (some endpoints return { data: [...] } or [...])
+        setActivitiesdata(Array.isArray(data) ? data : data?.data || []);
       } catch (err) {
         console.error("Error fetching task activities:", err);
         setError("Failed to load task activities.");
@@ -161,18 +155,10 @@ const TaskDetails = () => {
   useEffect(() => {
     const fetchTotalWorkingHours = async (task_id) => {
       try {
-        const response = await fetchWithTenant(`/api/tasks/total-working-hours/${task_id}`);
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Failed to fetch total working hours: ${errorText}`);
-        }
-        const data = await response.json();
-        
-        if (data.error) {
-          throw new Error(data.error);
-        }
-
-        return data.total_working_hours;
+        const data = await httpGetService(`api/tasks/total-working-hours/${task_id}`);
+        // backend may return { total_working_hours } or the value directly
+        const hours = data?.total_working_hours ?? data?.total ?? data;
+        return hours;
       } catch (error) {
         console.error('Error fetching total working hours:', error);
         throw error;
@@ -196,16 +182,11 @@ const TaskDetails = () => {
     useEffect(() => {
       const fetchupload = async () => {
         try {
-          const response = await fetchWithTenant(`/api/uploads/getuploads/${task_id}`);
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-
-          const result = await response.json();
-          setgetfile(result.data);
+          const result = await httpGetService(`api/uploads/getuploads/${task_id}`);
+          setgetfile(Array.isArray(result) ? result : result?.data || []);
         } catch (err) {
-          console.error("Error fetching task activities:", err);
-          setError("Failed to load task activities.");
+          console.error("Error fetching uploads:", err);
+          setError("Failed to load uploads.");
         }
       };
   
@@ -275,19 +256,21 @@ const TaskDetails = () => {
 
     try {
       setMessage('Uploading...');
-      const response = await fetchWithTenant(`/api/uploads/upload`, {
-        method: 'POST',
-        body: formData,
-      });
 
-      if (response.ok) {
-        setMessage(`File uploaded successfully:`);
-      } else {
-        setMessage(`Error: SomeThing went Wrong`);
+      // httpPostService returns parsed data (not full response)
+      const result = await httpPostService('api/uploads/upload', formData, { headers: {} });
+
+      setMessage('File uploaded successfully');
+      // refresh upload list
+      try {
+        const latest = await httpGetService(`api/uploads/getuploads/${task_id}`);
+        setgetfile(Array.isArray(latest) ? latest : latest?.data || []);
+      } catch (e) {
+        // ignore refresh errors
       }
     } catch (error) {
       console.error('Error uploading file:', error);
-      setMessage('Internal Server Error');
+      setMessage(error?.message || 'Internal Server Error');
     }
   };
 
@@ -588,22 +571,12 @@ const Activities = ({ activity, taskId}) => {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetchWithTenant(`/api/tasks/taskdetail/Postactivity`, {
-        method: "POST",
-        body: JSON.stringify({
-          task_id: taskId,
-          user_id: user_id,
-          type: selected,
-          activity: text,
-        }),
+      const result = await httpPostService('api/tasks/taskdetail/Postactivity', {
+        task_id: taskId,
+        user_id: user_id,
+        type: selected,
+        activity: text,
       });
-
-      // if (!response.ok) {
-      //   throw new Error("Failed to submit activity");
-      // }
-
-      const result = await response.json();
-      // console.log("Activity added successfully:", result);
 
       // Reset form
       setText("");

@@ -40,6 +40,8 @@ import Settings from "./pages/Settings";
 import Chat from "./pages/Chat";
 import Workflow from "./pages/Workflow";
 import Notifications from "./pages/Notifications";
+import Trash from "./pages/Trash";
+import Approvals from "./pages/Approvals";
 // import VC from "./pages/VC";
  
 import {  GoogleOAuthProvider } from "@react-oauth/google";
@@ -151,8 +153,6 @@ function App() {
           </Route>
           <Route path='/profile' element={<Profile/>} />
           <Route path='/change-password' element={<ChangePassword/>} />
-          <Route path='/forgot' element={<Forgot/>} />
-          <Route path='/reset' element={<Reset/>} />
           <Route path='/analysis' element={<Analysis />} />
           <Route path='*' element={<PageNotFound/>} />
           <Route path='/client' element={<Client />} />
@@ -172,6 +172,8 @@ function App() {
           <Route path='/chat' element={<Chat />} />
           <Route path='/workflow' element={<Workflow />} />
           <Route path='/notifications' element={<Notifications />} />
+          <Route path='/approvals' element={<Approvals />} />
+          <Route path='/trash' element={<Trash />} />
           <Route path='/report' element={<Report/>} />
           {/* <Route path='/vc' element={<VC/>} /> */}
           <Route path='/testRep' element={<TestRep/>} />
@@ -180,6 +182,8 @@ function App() {
         </Route>
         <Route path='/log-in' element={<GoogleAuthWrapper/>} />
         <Route path='/verify-otp' element={<VerifyOTP/>} />
+        <Route path='/forgot' element={<Forgot/>} />
+        <Route path='/reset' element={<Reset/>} />
       </Routes>
  
       <Toaster richColors />

@@ -1,109 +1,3 @@
-// import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-// import { httpGetService,httpDeleteService, httpPutService } from "../../App/httpHandler";
-
-// const initialState = {
-//   isSidebarOpen: false,
-//   status: null,
-//   error: null,
-//   users: []
-// };
-
-
-// export const fetchUsers = createAsyncThunk(
-//   "api/users/getusers",
-//   async (data, thunkAPI) => {
-//     try {
-//       const response = await httpGetService("api/users/getusers", data);
-//       return response;
-//     } catch (error) {
-//       return thunkAPI.rejectWithValue(error.response.data);
-//     }
-//   }
-// );
-
-// export const updateUser = createAsyncThunk(
-//   'users/update',
-//   async (userData, { rejectWithValue }) => {
-//     try {
-//       const { _id, ...data } = userData;
-//       const response = await httpPutService(`api/users/update/${_id}`, data);
-//       return { _id, ...response.user }; // Return the updated user data
-//     } catch (error) {
-//       return rejectWithValue(error.message || 'Something went wrong');
-//     }
-//   }
-// );
-
-// export const deleteUser = createAsyncThunk(
-//   'users/delete',
-//   async (data, thunkAPI) => {
-//     const { id } = data;
-//     try {
-//       const response = await httpDeleteService(`api/users/delete/${id}`, data);
-//       return response;
-//     } catch (error) {
-//       return thunkAPI.rejectWithValue(error.message || 'Something went wrong');
-//     }
-//   }
-// );
-
-
-// const userSlice = createSlice({
-//   name: "users",
-//   initialState,
-//   reducers: {},
-//   extraReducers: (builder) => {
-//     builder
-//       .addCase(fetchUsers.pending, (state) => {
-//         state.status = 'loading';
-//       })
-//       .addCase(fetchUsers.fulfilled, (state, action) => {
-//         state.status = 'succeeded';
-//         state.users = action.payload; 
-//       })
-//       .addCase(fetchUsers.rejected, (state, action) => {
-//         state.status = 'failed';
-//         state.error = action.payload; 
-//       })
-//       .addCase(updateUser.pending, (state) => {
-//   state.status = 'loading';
-// })
-// .addCase(updateUser.fulfilled, (state, action) => {
-//   state.status = 'succeeded';
-//   const updatedUser = action.payload;
-//   state.users = state.users.map(user => 
-//     user._id === updatedUser._id ? updatedUser : user
-//   );
-// })
-// .addCase(updateUser.rejected, (state, action) => {
-//   state.status = 'failed';
-//   state.error = action.payload;
-// })
-//       .addCase(deleteUser.pending, (state) => {
-//         state.status = 'loading';
-//       })
-//       .addCase(deleteUser.fulfilled, (state, action) => {
-//         state.status = 'succeeded';
-//         // Filter out the deleted user based on the ID returned by the fulfilled action
-//         state.users = state.users.filter((user) => user._id !== action.payload);
-//       })
-//       .addCase(deleteUser.rejected, (state, action) => {
-//         state.status = 'failed';
-//         state.error = action.payload;
-//       });
-// }
-// });
-
-// export const { setOpenSidebar } = userSlice.actions;
-
-// // Selectors
-// export const selectUsers = (state) => state.users.users;
-// export const selectUserStatus = (state) => state.users.status;
-// export const selectUserError = (state) => state.users.error;
-
-// // Reducer
-// export default userSlice.reducer;
-
 
 
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
@@ -115,6 +9,7 @@ import {
   setAuthToken,
   clearAuthTokens 
 } from "../../App/httpHandler";
+import { getAccessToken } from "../../utils/tokenService";
 
 const initialState = {
   isSidebarOpen: false,
@@ -123,9 +18,9 @@ const initialState = {
   users: [],
   // Add auth state
   auth: {
-    token: localStorage.getItem('accessToken') || null,
+    token: getAccessToken(),
     user: JSON.parse(localStorage.getItem('user') || 'null'),
-    isAuthenticated: !!(localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken')),
+    isAuthenticated: !!getAccessToken(),
   }
 };
 
@@ -198,16 +93,23 @@ export const fetchUsers = createAsyncThunk(
   "api/users/getusers",
   async (data = {}, thunkAPI) => {
     try {
-      // Get tenant ID from localStorage or state
-      const tenantId = localStorage.getItem("tenantId") || import.meta.env.VITE_TENANT_ID;
-      
-      const config = {
-        headers: tenantId ? { "x-tenant-id": tenantId } : {},
-        params: data
-      };
-      
-      const response = await httpGetService("api/users/getusers", config);
+      // httpGetService attaches tenant and auth headers itself; pass params only
+      const response = await httpGetService("api/users/getusers", { params: data });
       return response;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error);
+    }
+  }
+);
+
+// Create user async thunk (admin creates team member)
+export const createUser = createAsyncThunk(
+  'api/users/create',
+  async (userData, thunkAPI) => {
+    try {
+      const resp = await httpPostService('api/users/create', userData);
+      // return backend response (expected { success, data })
+      return resp;
     } catch (error) {
       return thunkAPI.rejectWithValue(error);
     }
@@ -232,10 +134,22 @@ export const updateUser = createAsyncThunk(
 export const deleteUser = createAsyncThunk(
   'users/delete',
   async (data, { rejectWithValue }) => {
-    const { id } = data;
+    // Accept multiple id variants (plain string, public_id, id, _id) to match backend expectations
+    let id;
+    if (!data) {
+      id = undefined;
+    } else if (typeof data === 'string' || typeof data === 'number') {
+      id = data;
+    } else {
+      id = data?.id || data?._id || data?.public_id || data?.publicId || data?.userId;
+    }
+    if (!id) {
+      return rejectWithValue('Missing user id for delete');
+    }
     try {
       const response = await httpDeleteService(`api/users/delete/${id}`);
-      return { id, ...response };
+      // Return normalized payload with the id we attempted to delete
+      return { removedId: id, ...(response || {}) };
     } catch (error) {
       return rejectWithValue(error);
     }
@@ -323,6 +237,21 @@ const userSlice = createSlice({
       .addCase(fetchUsers.pending, (state) => {
         state.status = 'loading';
       })
+        // Create user cases
+        .addCase(createUser.pending, (state) => {
+          state.status = 'loading';
+          state.error = null;
+        })
+        .addCase(createUser.fulfilled, (state, action) => {
+          state.status = 'succeeded';
+          // backend returns { success, data }
+          const created = action.payload?.data || action.payload;
+          if (created) state.users.unshift(created);
+        })
+        .addCase(createUser.rejected, (state, action) => {
+          state.status = 'failed';
+          state.error = action.payload;
+        })
       .addCase(fetchUsers.fulfilled, (state, action) => {
         state.status = 'succeeded';
         state.users = action.payload.users || action.payload; 
@@ -354,7 +283,14 @@ const userSlice = createSlice({
       })
       .addCase(deleteUser.fulfilled, (state, action) => {
         state.status = 'succeeded';
-        state.users = state.users.filter((user) => user._id !== action.payload.id);
+        // Determine which id was removed (thunk returns `removedId`)
+        const removedId = action.payload?.removedId || action.payload?.id || action.meta?.arg?.id || action.meta?.arg?._id || action.meta?.arg?.public_id;
+        if (removedId) {
+          state.users = state.users.filter((user) => {
+            const ids = [user._id, user.id, user.public_id, user.publicId].filter(Boolean);
+            return !ids.includes(removedId);
+          });
+        }
       })
       .addCase(deleteUser.rejected, (state, action) => {
         state.status = 'failed';

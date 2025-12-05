@@ -156,12 +156,18 @@ api.interceptors.response.use(
           { refreshToken },
           { headers: { "x-tenant-id": tenantId } }
         );
-        const { accessToken, refreshToken: newRefresh } = resp.data;
-        setTokens(accessToken, newRefresh || refreshToken);
-        api.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
-        processQueue(null, accessToken);
-        originalRequest.headers["Authorization"] = `Bearer ${accessToken}`;
-        return api(originalRequest);
+        // Support backend returning either { accessToken, refreshToken } or { token, refreshToken }
+        const newAccess = resp.data?.accessToken || resp.data?.token || null;
+        const newRefresh = resp.data?.refreshToken || resp.data?.refresh || null;
+        if (newAccess) {
+          setTokens(newAccess, newRefresh || refreshToken);
+          api.defaults.headers.common["Authorization"] = `Bearer ${newAccess}`;
+          processQueue(null, newAccess);
+          originalRequest.headers["Authorization"] = `Bearer ${newAccess}`;
+          return api(originalRequest);
+        }
+        // If no access token was returned, treat as failure
+        throw new Error('No access token returned from refresh');
       } catch (err) {
         processQueue(err, null);
         clearTokens();

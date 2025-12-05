@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import fetchWithTenant from '../utils/fetchWithTenant';
+import { httpGetService } from '../App/httpHandler';
 
 const AdminDashboard = () => {
   const [metrics, setMetrics] = useState(null);
@@ -10,16 +10,11 @@ const AdminDashboard = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const resp = await fetchWithTenant('/api/admin/dashboard');
-        if (!resp.ok) throw new Error('Failed to load dashboard');
-        const data = await resp.json();
-        setMetrics(data.data || data);
+        const data = await httpGetService('api/admin/dashboard');
+        setMetrics(data?.data || data);
 
-        const uresp = await fetchWithTenant('/api/admin/users');
-        if (uresp.ok) {
-          const udata = await uresp.json();
-          setUsers(udata.data || []);
-        }
+        const udata = await httpGetService('api/admin/users');
+        setUsers(udata?.data || udata || []);
       } catch (err) {
         setError(err.message || 'Error');
       } finally {
