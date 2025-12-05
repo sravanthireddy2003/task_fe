@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import ModalWrapper from "./ModalWrapper";
@@ -7,14 +6,13 @@ import Textbox from "./Textbox";
 import Loading from "./Loader";
 import Button from "./Button";
 import { useSelector, useDispatch } from "react-redux";
-import { authRegister } from "../redux/slices/authSlice";
 import { updateUser, createUser, fetchUsers } from "../redux/slices/userSlice";
 import { fetchDepartments, selectDepartments } from "../redux/slices/departmentSlice";
 import { toast } from 'sonner';
 
 const AddUser = ({ open, setOpen, userData }) => {
   const dispatch = useDispatch();
-  const { isLoading, isUpdating } = useSelector((state) => state.auth); // Adjust if your userSlice has isUpdating
+  const { isLoading, isUpdating } = useSelector((state) => state.auth);
   const departments = useSelector(selectDepartments) || [];
 
   const {
@@ -23,57 +21,90 @@ const AddUser = ({ open, setOpen, userData }) => {
     formState: { errors },
     reset,
   } = useForm({
-    defaultValues: userData ?? {
+    defaultValues: {
       name: "",
       email: "",
       title: "",
       password: "",
       role: "Employee",
-      phone: '',
-      departmentId: '',
+      phone: "",
+      departmentId: "",
       isGuest: false,
       isActive: true,
     },
   });
 
+  /** 🔥 FIXED: Reset form when modal opens - clean slate first, then populate if editing */
   useEffect(() => {
-    // fetch departments for select list
+    if (open) {
+      if (userData && (userData._id || userData.id || userData.public_id)) {
+        // EDIT MODE - populate form with user data
+        reset({
+          name: userData.name || "",
+          email: userData.email || "",
+          title: userData.title || "",
+          phone: userData.phone || "",
+          role: userData.role || "Employee",
+          departmentId: userData.departmentId || "",
+          isGuest: userData.isGuest || false,
+          isActive: userData.isActive ?? true,
+        });
+      } else {
+        // ADD MODE - clean form
+        reset({
+          name: "",
+          email: "",
+          title: "",
+          password: "",
+          role: "Employee",
+          phone: "",
+          departmentId: "",
+          isGuest: false,
+          isActive: true,
+        });
+      }
+    }
+  }, [open, userData, reset]);
+
+  /** Load departments once */
+  useEffect(() => {
     dispatch(fetchDepartments());
   }, [dispatch]);
 
   const handleOnSubmit = (data) => {
-    if (userData && userData._id) {
-      // Edit user
-      dispatch(updateUser({ _id: userData._id, ...data }))
+    if (userData && (userData._id || userData.id || userData.public_id)) {
+      // UPDATE
+      const idToSend = userData._id || userData.id || userData.public_id;
+      dispatch(updateUser({ _id: idToSend, ...data }))
         .unwrap()
-        .then(() => {
+        .then((resp) => {
+          toast.success(`Updated ${resp?.name || 'User'}`);
           setOpen(false);
-          reset();
+          dispatch(fetchUsers());
         })
         .catch((err) => {
           console.error("Update failed:", err);
+          toast.error(err?.message || 'Update user failed');
         });
     } else {
-      // Add new user via admin API
+      // CREATE
       dispatch(createUser(data))
         .unwrap()
         .then((resp) => {
-          // resp expected to be { success, data }
           const created = resp?.data || resp;
           setOpen(false);
-          reset();
-          // refresh list
           dispatch(fetchUsers());
-          // show useful info (tempPassword may be provided)
-          const pw = created?.tempPassword;
-          toast.success(created?.name ? `Created ${created.name}` : 'User created');
-          if (pw) toast(`Temporary password: ${pw}`);
+          toast.success(`Created ${created?.name || "User"}`);
+          if (created?.tempPassword) toast(`Temporary password: ${created.tempPassword}`);
         })
-        .catch((err) => {
-          console.error("Create user failed:", err);
-          toast.error(err?.message || 'Create user failed');
-        });
+        .catch((err) => toast.error(err?.message || 'Create user failed'));
     }
+  };
+
+  /** Handle cancel - reset form and close */
+  const handleCancel = () => {
+    reset();
+    setOpen(false);
   };
 
   return (
@@ -81,12 +112,13 @@ const AddUser = ({ open, setOpen, userData }) => {
       <form onSubmit={handleSubmit(handleOnSubmit)}>
         <Dialog.Title
           as="h2"
-          className="text-base font-bold leading-6 text-gray-900 mb-4"
+          className="text-xl font-bold text-gray-900 mb-6"
         >
           {userData ? "EDIT USER" : "ADD NEW USER"}
         </Dialog.Title>
 
-        <div className="mt-2 flex flex-col gap-6">
+        {/* FORM GRID */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Textbox
             placeholder="Full name"
             type="text"
@@ -98,7 +130,7 @@ const AddUser = ({ open, setOpen, userData }) => {
           />
 
           <Textbox
-            placeholder="Title"
+            placeholder="Job title"
             type="text"
             name="title"
             label="Title"
@@ -108,10 +140,10 @@ const AddUser = ({ open, setOpen, userData }) => {
           />
 
           <Textbox
-            placeholder="Email Address"
+            placeholder="Email address"
             type="email"
             name="email"
-            label="Email Address"
+            label="Email"
             className="w-full rounded"
             register={register("email", { required: "Email is required!" })}
             error={errors.email?.message}
@@ -127,81 +159,67 @@ const AddUser = ({ open, setOpen, userData }) => {
             error={errors.phone?.message}
           />
 
-          <div className="flex justify-around">
-            <div className="flex items-center">
-              <label htmlFor="role" className="text-sm font-medium mr-2">
-                Role
-              </label>
-              <select
-                id="role"
-                {...register("role", { required: "Role is required!" })}
-                className="p-2 border rounded-md"
-              >
-                <option value="Admin">Admin</option>
-                <option value="Manager">Manager</option>
-                <option value="Employee">Employee</option>
-                <option value="Client">Client</option>
-              </select>
-            </div>
-
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="isGuest"
-                {...register("isGuest")}
-                className="mr-2"
-              />
-              <label htmlFor="isGuest" className="text-sm font-medium">
-                Is Guest
-              </label>
-            </div>
-          </div>
-
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="isActive"
-              {...register("isActive")}
-              className="mr-2"
-              defaultChecked
-            />
-            <label htmlFor="isActive" className="text-sm font-medium">
-              Is Active
-            </label>
-          </div>
-
-          {/* Department select populated from departments API */}
-          <div className="mt-2">
-            <label className="block text-sm mb-1">Department (optional)</label>
+          {/* Role */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Role</label>
             <select
-              {...register('departmentId')}
-              className="w-full border px-3 py-2 rounded"
-              defaultValue=""
+              {...register("role", { required: "Role is required!" })}
+              className="w-full border px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="Admin">Admin</option>
+              <option value="Manager">Manager</option>
+              <option value="Employee">Employee</option>
+              <option value="Client">Client</option>
+            </select>
+          </div>
+
+          {/* Department - UNCOMMENT IF NEEDED */}
+          {/* <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Department (optional)
+            </label>
+            <select
+              {...register("departmentId")}
+              className="w-full border px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500"
             >
               <option value="">-- Select department --</option>
               {departments.map((dept) => (
-                <option key={dept.public_id || dept.id} value={dept.public_id || dept.id}>{dept.name}</option>
+                <option key={dept.public_id || dept.id} value={dept.public_id || dept.id}>
+                  {dept.name}
+                </option>
               ))}
             </select>
-          </div>
+          </div> */}
         </div>
 
+        {/* SWITCHES */}
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <label className="flex items-center gap-2">
+            <input type="checkbox" {...register("isGuest")} className="h-4 w-4" />
+            <span className="text-sm">Is Guest User</span>
+          </label>
+
+          <label className="flex items-center gap-2">
+            <input type="checkbox" {...register("isActive")} className="h-4 w-4" />
+            <span className="text-sm">Active Status</span>
+          </label>
+        </div>
+
+        {/* BUTTONS */}
         {isLoading || isUpdating ? (
-          <div className="py-5">
-            <Loading />
-          </div>
+          <div className="py-5"><Loading /></div>
         ) : (
-          <div className="py-3 mt-4 sm:flex sm:flex-row-reverse">
-            <Button
-              type="submit"
-              className="bg-blue-600 px-8 text-sm font-semibold text-white hover:bg-blue-700 sm:w-auto"
-              label="Submit"
-            />
+          <div className="flex justify-end gap-4 mt-8 border-t pt-4">
             <Button
               type="button"
-              className="bg-white px-5 text-sm font-semibold text-gray-900 sm:w-auto"
-              onClick={() => setOpen(false)}
+              className="bg-gray-200 px-6 text-sm font-semibold text-gray-900 rounded-md"
+              onClick={handleCancel}
               label="Cancel"
+            />
+            <Button
+              type="submit"
+              className="bg-blue-600 px-8 text-sm font-semibold text-white hover:bg-blue-700 rounded-md"
+              label="Submit"
             />
           </div>
         )}

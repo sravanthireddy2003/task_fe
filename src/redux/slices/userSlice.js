@@ -1,13 +1,13 @@
 
 
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { 
-  httpGetService, 
-  httpDeleteService, 
-  httpPutService, 
+import {
+  httpGetService,
+  httpDeleteService,
+  httpPutService,
   httpPostService,
   setAuthToken,
-  clearAuthTokens 
+  clearAuthTokens
 } from "../../App/httpHandler";
 import { getAccessToken } from "../../utils/tokenService";
 
@@ -30,7 +30,7 @@ export const loginUser = createAsyncThunk(
   async (credentials, { rejectWithValue }) => {
     try {
       const response = await httpPostService("api/auth/login", credentials);
-      
+
       // Store tokens based on rememberMe preference
       if (credentials.rememberMe) {
         setAuthToken(response.accessToken, response.refreshToken, 'local');
@@ -39,7 +39,7 @@ export const loginUser = createAsyncThunk(
         setAuthToken(response.accessToken, response.refreshToken, 'session');
         sessionStorage.setItem('user', JSON.stringify(response.user || response.data));
       }
-      
+
       return {
         accessToken: response.accessToken,
         refreshToken: response.refreshToken,
@@ -74,13 +74,13 @@ export const registerUser = createAsyncThunk(
   async (userData, { rejectWithValue }) => {
     try {
       const response = await httpPostService("api/auth/register", userData);
-      
+
       // Auto-login after registration if API returns tokens
       if (response.accessToken) {
         setAuthToken(response.accessToken, response.refreshToken);
         localStorage.setItem('user', JSON.stringify(response.user || response.data));
       }
-      
+
       return response;
     } catch (error) {
       return rejectWithValue(error);
@@ -203,7 +203,7 @@ const userSlice = createSlice({
         state.error = action.payload;
         state.auth.isAuthenticated = false;
       })
-      
+
       // Logout cases
       .addCase(logoutUser.pending, (state) => {
         state.status = 'loading';
@@ -214,7 +214,7 @@ const userSlice = createSlice({
         state.auth.user = null;
         state.auth.isAuthenticated = false;
       })
-      
+
       // Register cases
       .addCase(registerUser.pending, (state) => {
         state.status = 'loading';
@@ -232,35 +232,35 @@ const userSlice = createSlice({
         state.status = 'failed';
         state.error = action.payload;
       })
-      
+
       // Fetch users cases
       .addCase(fetchUsers.pending, (state) => {
         state.status = 'loading';
       })
-        // Create user cases
-        .addCase(createUser.pending, (state) => {
-          state.status = 'loading';
-          state.error = null;
-        })
-        .addCase(createUser.fulfilled, (state, action) => {
-          state.status = 'succeeded';
-          // backend returns { success, data }
-          const created = action.payload?.data || action.payload;
-          if (created) state.users.unshift(created);
-        })
-        .addCase(createUser.rejected, (state, action) => {
-          state.status = 'failed';
-          state.error = action.payload;
-        })
+      // Create user cases
+      .addCase(createUser.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(createUser.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        // backend returns { success, data }
+        const created = action.payload?.data || action.payload;
+        if (created) state.users.unshift(created);
+      })
+      .addCase(createUser.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload;
+      })
       .addCase(fetchUsers.fulfilled, (state, action) => {
         state.status = 'succeeded';
-        state.users = action.payload.users || action.payload; 
+        state.users = action.payload.users || action.payload;
       })
       .addCase(fetchUsers.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = action.payload; 
+        state.error = action.payload;
       })
-      
+
       // Update user cases
       .addCase(updateUser.pending, (state) => {
         state.status = 'loading';
@@ -268,7 +268,7 @@ const userSlice = createSlice({
       .addCase(updateUser.fulfilled, (state, action) => {
         state.status = 'succeeded';
         const updatedUser = action.payload;
-        state.users = state.users.map(user => 
+        state.users = state.users.map(user =>
           user._id === updatedUser._id ? updatedUser : user
         );
       })
@@ -276,7 +276,7 @@ const userSlice = createSlice({
         state.status = 'failed';
         state.error = action.payload;
       })
-      
+
       // Delete user cases
       .addCase(deleteUser.pending, (state) => {
         state.status = 'loading';
@@ -299,12 +299,12 @@ const userSlice = createSlice({
   }
 });
 
-export const { 
-  setOpenSidebar, 
-  setTenantId, 
-  clearTenantId, 
-  setAuth, 
-  clearAuth 
+export const {
+  setOpenSidebar,
+  setTenantId,
+  clearTenantId,
+  setAuth,
+  clearAuth
 } = userSlice.actions;
 
 // Selectors
