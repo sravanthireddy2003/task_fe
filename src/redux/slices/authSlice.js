@@ -36,11 +36,39 @@ export const authLogin = createAsyncThunk(
       const response = await httpPostService("api/auth/login", data);
 
       // Expected response: { message, tempToken }
-      if (!response) return thunkAPI.rejectWithValue("No response from server");
-      if (response.auth === false || response.error) {
-        return thunkAPI.rejectWithValue(response.message || response.error);
-      }
-      return response; // caller (UI) should use tempToken for OTP step
+        if (!response) return thunkAPI.rejectWithValue("No response from server");
+
+        // If backend indicates 2FA is required, return the response so UI can navigate to OTP flow.
+        const requires2fa = response?.requires2fa || response?.requires_2fa || false;
+        if (requires2fa) {
+          // persist temp token into redux so VerifyOTP can use it even if navigation flow doesn't pass it
+          const tt = response?.tempToken || response?.temp_token || response?.temp || null;
+          try {
+            thunkAPI.dispatch({ type: 'auth/setTempToken', payload: tt });
+          } catch (e) {
+            // ignore
+          }
+          return response;
+        }
+
+        // If there is a hard failure indicated by the API, reject
+        if (response.auth === false || response.error) {
+          return thunkAPI.rejectWithValue(response.message || response.error);
+        }
+
+        // If response contains access token(s), persist them immediately
+        const access = response?.accessToken || response?.token || response?.data?.accessToken || response?.data?.token;
+        const refresh = response?.refreshToken || response?.refresh || response?.data?.refreshToken || response?.data?.refresh;
+        if (access) {
+          try {
+            setTokens(access, refresh || null);
+            try { setAuthToken(access, refresh || null, 'local'); } catch (e) {}
+          } catch (e) {
+            // ignore storage errors
+          }
+        }
+
+        return response; // normal successful login
     } catch (error) {
       const message =
         error?.response?.data?.message ||
@@ -56,7 +84,8 @@ export const verifyOtp = createAsyncThunk(
   "api/auth/verifyOtp",
   async (data, thunkAPI) => {
     try {
-      const response = await httpPostService("api/auth/verify-otp", data);
+      // verify-otp uses tempToken; skip attaching any stale Authorization header
+      const response = await httpPostService("api/auth/verify-otp", data, { skipAuth: true });
       // expected response shapes: { accessToken, refreshToken, user } OR { token, user }
       const access = response?.accessToken || response?.token;
       const refresh = response?.refreshToken || response?.refresh;
@@ -78,7 +107,8 @@ export const resendOtp = createAsyncThunk(
   "api/auth/resendOtp",
   async (data, thunkAPI) => {
     try {
-      const response = await httpPostService("api/auth/resend-otp", data);
+      // resend-otp should not send Authorization header (uses temp token)
+      const response = await httpPostService("api/auth/resend-otp", data, { skipAuth: true });
       return response; // Should return new tempToken or success message
     } catch (error) {
       const msg = error?.response?.data?.message || "Failed to resend OTP";
@@ -128,6 +158,97 @@ export const getProfile = createAsyncThunk(
       return response;
     } catch (error) {
       return thunkAPI.rejectWithValue(error?.message || "Failed to get profile");
+    }
+  }
+);
+
+// 2FA: enable/verify/disable
+export const enable2FA = createAsyncThunk(
+  "api/auth/enable2FA",
+  async (_, thunkAPI) => {
+    try {
+      const response = await httpPostService("api/auth/2fa/enable");
+      return response;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error?.message || "Failed to enable 2FA");
+    }
+  }
+);
+
+export const verify2FA = createAsyncThunk(
+  "api/auth/verify2FA",
+  async (data, thunkAPI) => {
+    try {
+      const response = await httpPostService("api/auth/2fa/verify", data);
+
+      // If server returned fresh tokens, persist them for immediate use
+      const access = response?.accessToken || response?.token;
+      const refresh = response?.refreshToken || response?.refresh;
+      if (access) {
+        setTokens(access, refresh || null);
+        try { setAuthToken(access, refresh || null, 'local'); } catch (e) {}
+      }
+
+      // Refresh profile in store so UI reflects 2FA enabled state
+      try {
+        thunkAPI.dispatch(getProfile());
+      } catch (e) {}
+
+      return response;
+    } catch (error) {
+      // If access token is expired/invalid, try refreshing using refresh token and retry once
+      const status = error?.status || error?.response?.status;
+      if (status === 401) {
+        try {
+          const storedRefresh = getRefreshToken();
+          if (!storedRefresh) throw new Error('No refresh token available');
+
+          const refreshResp = await httpPostService("api/auth/refresh", { refreshToken: storedRefresh });
+          const newAccess = refreshResp?.accessToken || refreshResp?.token;
+          const newRefresh = refreshResp?.refreshToken || refreshResp?.refresh || storedRefresh;
+          if (newAccess) {
+            // Persist new tokens and update axios header
+            setTokens(newAccess, newRefresh || null);
+            try { setAuthToken(newAccess, newRefresh || null, 'local'); } catch (e) {}
+          }
+
+          // Retry verify call once with refreshed token
+          const retryResp = await httpPostService("api/auth/2fa/verify", data);
+
+          // Persist tokens if returned on retry as well
+          const retryAccess = retryResp?.accessToken || retryResp?.token;
+          const retryRefresh = retryResp?.refreshToken || retryResp?.refresh;
+          if (retryAccess) {
+            setTokens(retryAccess, retryRefresh || null);
+            try { setAuthToken(retryAccess, retryRefresh || null, 'local'); } catch (e) {}
+          }
+
+          // Refresh profile after successful verify
+          try {
+            thunkAPI.dispatch(getProfile());
+          } catch (e) {}
+
+          return retryResp;
+        } catch (refreshError) {
+          // Clear tokens and surface refresh error
+          clearTokens();
+          return thunkAPI.rejectWithValue(refreshError?.message || 'Session expired');
+        }
+      }
+
+      return thunkAPI.rejectWithValue(error?.message || "Failed to verify 2FA token");
+    }
+  }
+);
+
+export const disable2FA = createAsyncThunk(
+  "api/auth/disable2FA",
+  async (_, thunkAPI) => {
+    try {
+      const response = await httpPostService("api/auth/2fa/disable");
+      return response;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error?.message || "Failed to disable 2FA");
     }
   }
 );
@@ -224,6 +345,9 @@ const authSlice = createSlice({
       state.user = action.payload;
       localStorage.setItem("userInfo", JSON.stringify(action.payload));
     },
+      setTempToken: (state, action) => {
+        state.tempToken = action.payload;
+      },
     logout: (state) => {
       state.user = null;
       state.authError = null;
@@ -265,8 +389,22 @@ const authSlice = createSlice({
       .addCase(authLogin.fulfilled, (state, action) => {
         state.status = "succeeded";
         state.authError = null;
-        // store tempToken returned from login (OTP step)
-        state.tempToken = action.payload?.tempToken || action.payload?.temp_token || null;
+        // If login returned access tokens, persist user and clear any tempToken
+        const payload = action.payload || {};
+        const access = payload?.accessToken || payload?.token || payload?.data?.accessToken || payload?.data?.token;
+        const returnedUser = payload?.user || payload?.userInfo || payload?.data?.user || null;
+
+        if (access) {
+          // persist user if present
+          if (returnedUser) {
+            state.user = returnedUser;
+            localStorage.setItem("userInfo", JSON.stringify(returnedUser));
+          }
+          state.tempToken = null;
+        } else {
+          // no access token -> likely OTP flow, store tempToken for VerifyOTP
+          state.tempToken = payload?.tempToken || payload?.temp_token || payload?.temp || null;
+        }
       })
       .addCase(authLogin.rejected, (state, action) => {
         state.status = "failed";
@@ -344,9 +482,11 @@ const authSlice = createSlice({
 
       // Get Profile
       .addCase(getProfile.fulfilled, (state, action) => {
-        state.user = action.payload;
+        // backend may return { user: { ... } } or the user object directly
+        const payloadUser = action.payload?.user || action.payload;
+        state.user = payloadUser;
         state.authError = null;
-        localStorage.setItem("userInfo", JSON.stringify(action.payload));
+        localStorage.setItem("userInfo", JSON.stringify(payloadUser));
       })
       .addCase(getProfile.rejected, (state, action) => {
         state.authError = action.payload;
@@ -410,7 +550,7 @@ const authSlice = createSlice({
 });
 
 // ✅ Actions
-export const { setCredentials, logout, setOpenSidebar, clearTempToken } = authSlice.actions;
+export const { setCredentials, setTempToken, logout, setOpenSidebar, clearTempToken } = authSlice.actions;
 
 // ✅ Selectors
 export const selectUser = (state) => state.auth.user;

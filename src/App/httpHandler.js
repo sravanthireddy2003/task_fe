@@ -29,7 +29,8 @@ export async function httpPostService(url, data, config = {}) {
         const tenantId = localStorage.getItem("tenantId") || getTenantFromStorage() || defaultTenantId;
         const headers = Object.assign({}, config.headers || {});
         if (tenantId) headers["x-tenant-id"] = tenantId;
-        if (token) headers["Authorization"] = `Bearer ${token}`;
+        // allow callers to skip attaching Authorization (for verify-otp/resend flows)
+        if (!config.skipAuth && token) headers["Authorization"] = `Bearer ${token}`;
         else console.warn(`[httpPostService] no access token found for request to ${url}`);
         const resp = await api.post(`/${url}`.replace(/^\/+/, ""), data, { ...config, headers });
         return resp.data;
@@ -44,7 +45,7 @@ export async function httpDeleteService(url, config = {}) {
         const tenantId = localStorage.getItem("tenantId") || getTenantFromStorage() || defaultTenantId;
         const headers = Object.assign({}, config.headers || {});
         if (tenantId) headers["x-tenant-id"] = tenantId;
-        if (token) headers["Authorization"] = `Bearer ${token}`;
+        if (!config.skipAuth && token) headers["Authorization"] = `Bearer ${token}`;
         const resp = await api.delete(`/${url}`.replace(/^\/+/, ""), { ...config, headers });
         return resp.data;
     } catch (error) {
@@ -58,7 +59,7 @@ export async function httpPatchService(url, data, config = {}) {
         const tenantId = localStorage.getItem("tenantId") || getTenantFromStorage() || defaultTenantId;
         const headers = Object.assign({}, config.headers || {});
         if (tenantId) headers["x-tenant-id"] = tenantId;
-        if (token) headers["Authorization"] = `Bearer ${token}`;
+        if (!config.skipAuth && token) headers["Authorization"] = `Bearer ${token}`;
         const resp = await api.patch(`/${url}`.replace(/^\/+/, ""), data, { ...config, headers });
         return resp.data;
     } catch (error) {
@@ -72,7 +73,7 @@ export async function httpPutService(url, data, config = {}) {
         const tenantId = localStorage.getItem("tenantId") || getTenantFromStorage() || defaultTenantId;
         const headers = Object.assign({}, config.headers || {});
         if (tenantId) headers["x-tenant-id"] = tenantId;
-        if (token) headers["Authorization"] = `Bearer ${token}`;
+        if (!config.skipAuth && token) headers["Authorization"] = `Bearer ${token}`;
         const resp = await api.put(`/${url}`.replace(/^\/+/, ""), data, { ...config, headers });
         return resp.data;
     } catch (error) {
@@ -86,7 +87,7 @@ export async function httpGetService(url, config = {}) {
         const tenantId = localStorage.getItem("tenantId") || getTenantFromStorage() || defaultTenantId;
         const headers = Object.assign({}, config.headers || {});
         if (tenantId) headers["x-tenant-id"] = tenantId;
-        if (token) headers["Authorization"] = `Bearer ${token}`;
+        if (!config.skipAuth && token) headers["Authorization"] = `Bearer ${token}`;
         const resp = await api.get(`/${url}`.replace(/^\/+/, ""), { ...config, headers });
         return resp.data;
     } catch (error) {

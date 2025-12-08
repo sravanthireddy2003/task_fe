@@ -1,17 +1,507 @@
 import React, { useEffect, useState } from 'react';
 import fetchWithTenant from '../utils/fetchWithTenant';
+import { 
+  FaCog, 
+  FaDatabase, 
+  FaShieldAlt, 
+  FaBell, 
+  FaGlobe, 
+  FaKey, 
+  FaUserShield,
+  FaSave,
+  FaSpinner,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaQrcode,
+  FaMobileAlt,
+  FaExclamationTriangle,
+  FaCopy
+} from 'react-icons/fa';
+import { toast } from 'sonner';
 
+// 2FA Component
+const TwoFactorAuth = () => {
+  const [isEnabled, setIsEnabled] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState('initial'); // initial, setup, verify, backup
+  const [qrCode, setQrCode] = useState('');
+  const [secret, setSecret] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [backupCodes, setBackupCodes] = useState([]);
+
+  const check2FAStatus = async () => {
+    try {
+      const res = await fetchWithTenant('/api/auth/2fa/status', { method: 'GET' });
+      setIsEnabled(res?.enabled || false);
+    } catch (err) {
+      console.error('Failed to check 2FA status:', err);
+    }
+  };
+
+  const handleEnable2FA = async () => {
+    try {
+      setLoading(true);
+      const res = await fetchWithTenant('/api/auth/2fa/setup', { method: 'POST' });
+      
+      if (res?.qrCode && res?.secret) {
+        setQrCode(res.qrCode);
+        setSecret(res.secret);
+        setStep('setup');
+        toast.success('Scan QR code to set up 2FA');
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to setup 2FA');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerify2FA = async () => {
+    if (!verificationCode || verificationCode.length !== 6) {
+      toast.error('Please enter a valid 6-digit code');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const res = await fetchWithTenant('/api/auth/2fa/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: verificationCode, secret })
+      });
+
+      if (res?.success) {
+        const backupRes = await fetchWithTenant('/api/auth/2fa/backup-codes', { method: 'GET' });
+        setBackupCodes(backupRes?.codes || []);
+        setStep('backup');
+        setIsEnabled(true);
+        toast.success('2FA enabled successfully!');
+      }
+    } catch (err) {
+      toast.error(err.message || 'Verification failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDisable2FA = async () => {
+    if (!window.confirm('Are you sure you want to disable 2FA? This will reduce your account security.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await fetchWithTenant('/api/auth/2fa/disable', { method: 'POST' });
+      setIsEnabled(false);
+      setStep('initial');
+      toast.success('2FA disabled successfully');
+    } catch (err) {
+      toast.error(err.message || 'Failed to disable 2FA');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    toast.success('Copied to clipboard!');
+  };
+
+  const downloadBackupCodes = () => {
+    const codesText = backupCodes.join('\n');
+    const blob = new Blob([codesText], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '2fa-backup-codes.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success('Backup codes downloaded');
+  };
+
+  useEffect(() => {
+    check2FAStatus();
+  }, []);
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+      {/* Header */}
+      <div className="flex items-start justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-blue-50 rounded-lg">
+            <FaKey className="w-6 h-6 text-blue-600" />
+          </div>
+          <div>
+            <h3 className="text-xl font-semibold text-gray-900">Two-Factor Authentication (2FA)</h3>
+            <p className="text-gray-600 mt-1">Add an extra layer of security using TOTP authenticator apps</p>
+          </div>
+        </div>
+        
+        <div className={`px-4 py-2 rounded-full text-sm font-medium ${
+          isEnabled 
+            ? 'bg-green-100 text-green-800 border border-green-200' 
+            : 'bg-gray-100 text-gray-800 border border-gray-200'
+        }`}>
+          {isEnabled ? 'Enabled' : 'Disabled'}
+        </div>
+      </div>
+
+      {/* Main Content */}
+      {step === 'initial' && (
+        <div className="space-y-6">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-white rounded-lg shadow-sm">
+                <FaShieldAlt className="w-8 h-8 text-blue-600" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-semibold text-gray-900 mb-2">Enhanced Account Security</h4>
+                <p className="text-gray-600 mb-4">
+                  Two-factor authentication adds an extra layer of security to your account. 
+                  When enabled, you'll need to enter both your password and a verification code from 
+                  an authenticator app when signing in.
+                </p>
+                <div className="flex items-center gap-3 text-sm text-gray-600">
+                  <FaExclamationTriangle className="text-yellow-500" />
+                  <span>Recommended for all accounts with sensitive data</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-5 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-blue-50 rounded">
+                  <FaMobileAlt className="w-5 h-5 text-blue-600" />
+                </div>
+                <h5 className="font-semibold text-gray-900">Authenticator Apps</h5>
+              </div>
+              <p className="text-sm text-gray-600 mb-4">
+                Use Google Authenticator, Authy, Microsoft Authenticator, or any TOTP-compatible app
+              </p>
+            </div>
+            
+            <div className="p-5 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-green-50 rounded">
+                  <FaCheckCircle className="w-5 h-5 text-green-600" />
+                </div>
+                <h5 className="font-semibold text-gray-900">How It Works</h5>
+              </div>
+              <p className="text-sm text-gray-600 mb-4">
+                1. Scan QR code<br />
+                2. Enter 6-digit code<br />
+                3. Save backup codes
+              </p>
+            </div>
+            
+            <div className="p-5 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-purple-50 rounded">
+                  <FaQrcode className="w-5 h-5 text-purple-600" />
+                </div>
+                <h5 className="font-semibold text-gray-900">Always Available</h5>
+              </div>
+              <p className="text-sm text-gray-600 mb-4">
+                Works offline - no SMS or email required. Codes refresh every 30 seconds.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 pt-4 border-t border-gray-200">
+            {!isEnabled ? (
+              <button
+                onClick={handleEnable2FA}
+                disabled={loading}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <>
+                    <FaSpinner className="animate-spin" />
+                    Setting up...
+                  </>
+                ) : (
+                  <>
+                    <FaKey />
+                    Enable 2FA
+                  </>
+                )}
+              </button>
+            ) : (
+              <button
+                onClick={handleDisable2FA}
+                disabled={loading}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <>
+                    <FaSpinner className="animate-spin" />
+                    Disabling...
+                  </>
+                ) : (
+                  'Disable 2FA'
+                )}
+              </button>
+            )}
+            
+            <button className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+              Learn More About 2FA
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Setup Step - QR Code */}
+      {step === 'setup' && (
+        <div className="space-y-6">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+            <div className="flex items-start gap-3">
+              <FaExclamationTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
+              <div>
+                <p className="font-medium text-yellow-800">Complete setup within 5 minutes</p>
+                <p className="text-sm text-yellow-700 mt-1">
+                  The QR code will expire. If it does, you'll need to start the setup process again.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* QR Code Section */}
+            <div className="space-y-6">
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-3">Step 1: Scan QR Code</h4>
+                <div className="bg-white border border-gray-300 rounded-lg p-6 flex items-center justify-center">
+                  {qrCode ? (
+                    <img 
+                      src={qrCode} 
+                      alt="2FA QR Code" 
+                      className="w-64 h-64"
+                    />
+                  ) : (
+                    <div className="w-64 h-64 bg-gray-100 rounded flex items-center justify-center">
+                      <FaSpinner className="w-8 h-8 text-gray-400 animate-spin" />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-3">Step 2: Enter Verification Code</h4>
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    value={verificationCode}
+                    onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    placeholder="Enter 6-digit code"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none text-center text-2xl tracking-widest"
+                    maxLength={6}
+                  />
+                  <p className="text-sm text-gray-500 text-center">
+                    Enter the 6-digit code from your authenticator app
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleVerify2FA}
+                  disabled={loading || verificationCode.length !== 6}
+                  className="flex-1 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? (
+                    <>
+                      <FaSpinner className="animate-spin inline mr-2" />
+                      Verifying...
+                    </>
+                  ) : (
+                    'Verify and Enable'
+                  )}
+                </button>
+                <button
+                  onClick={() => setStep('initial')}
+                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+
+            {/* Instructions Section */}
+            <div className="space-y-6">
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-4">Setup Instructions</h4>
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
+                    <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="font-semibold text-blue-600">1</span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">Install Authenticator App</p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Install Google Authenticator, Authy, Microsoft Authenticator, or any TOTP app on your phone.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
+                    <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="font-semibold text-blue-600">2</span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">Scan QR Code</p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Open your authenticator app and scan the QR code above, or enter the secret key manually.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
+                    <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="font-semibold text-blue-600">3</span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">Enter Code</p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Enter the 6-digit code from your authenticator app in the verification field.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
+                    <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="font-semibold text-blue-600">4</span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">Save Backup Codes</p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        After verification, you'll receive backup codes. Save them in a secure place.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Manual Entry */}
+              <div className="border border-gray-200 rounded-lg p-4">
+                <h5 className="font-semibold text-gray-900 mb-2">Can't scan QR code?</h5>
+                <p className="text-sm text-gray-600 mb-3">Enter this secret key manually in your app:</p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 bg-gray-100 px-3 py-2 rounded text-sm font-mono break-all">
+                    {secret}
+                  </code>
+                  <button
+                    onClick={() => copyToClipboard(secret)}
+                    className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+                    title="Copy secret key"
+                  >
+                    <FaCopy />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Backup Codes Step */}
+      {step === 'backup' && backupCodes.length > 0 && (
+        <div className="space-y-6">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <FaCheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+              <div>
+                <p className="font-medium text-green-800">Two-Factor Authentication Enabled Successfully!</p>
+                <p className="text-sm text-green-700 mt-1">
+                  Your account is now protected with 2FA. Please save your backup codes.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="border border-gray-200 rounded-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h4 className="font-semibold text-gray-900">Backup Codes</h4>
+                <p className="text-sm text-gray-600 mt-1">
+                  Save these codes in a secure place. Each code can be used once if you lose access to your authenticator app.
+                </p>
+              </div>
+              <button
+                onClick={downloadBackupCodes}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+              >
+                <FaCopy />
+                Download Codes
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              {backupCodes.map((code, index) => (
+                <div
+                  key={index}
+                  className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center font-mono"
+                >
+                  {code}
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <FaExclamationTriangle className="w-5 h-5 text-red-600 mt-0.5" />
+                <div>
+                  <p className="font-medium text-red-800">Important Security Notice</p>
+                  <ul className="text-sm text-red-700 mt-1 list-disc list-inside space-y-1">
+                    <li>Save these codes in a secure, offline location</li>
+                    <li>Do not store them in plain text files or emails</li>
+                    <li>Each code can only be used once</li>
+                    <li>Generate new codes if you lose them</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
+              <button
+                onClick={() => copyToClipboard(backupCodes.join('\n'))}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+              >
+                <FaCopy />
+                Copy All Codes
+              </button>
+              <button
+                onClick={() => setStep('initial')}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Main Settings Component
 const Settings = () => {
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState(null);
+  const [expandedSection, setExpandedSection] = useState('general');
 
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
         const res = await fetchWithTenant('/api/admin/settings', { method: 'GET' });
-        setSettings(res?.data || res || null);
+        setSettings(res?.data || res || {});
       } catch (err) {
         setError(err.message || 'Failed to load settings');
       } finally {
@@ -21,13 +511,325 @@ const Settings = () => {
     load();
   }, []);
 
-  if (loading) return <div className='p-4'>Loading settings...</div>;
-  if (error) return <div className='p-4 text-red-600'>Error: {error}</div>;
+  const handleSettingChange = (category, key, value) => {
+    setSettings(prev => ({
+      ...prev,
+      [category]: {
+        ...prev[category],
+        [key]: value
+      }
+    }));
+  };
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      setSaveStatus(null);
+      await fetchWithTenant('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings)
+      });
+      setSaveStatus('success');
+      toast.success('Settings saved successfully!');
+      setTimeout(() => setSaveStatus(null), 3000);
+    } catch (err) {
+      setSaveStatus('error');
+      toast.error(err.message || 'Failed to save settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const SettingCard = ({ title, icon: Icon, children, sectionKey }) => (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
+      <button
+        onClick={() => setExpandedSection(expandedSection === sectionKey ? null : sectionKey)}
+        className="w-full flex items-center justify-between p-6 hover:bg-gray-50 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-blue-50 rounded-lg">
+            <Icon className="text-blue-600 w-5 h-5" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+        </div>
+        <svg
+          className={`w-5 h-5 text-gray-400 transform transition-transform ${
+            expandedSection === sectionKey ? 'rotate-180' : ''
+          }`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      
+      {expandedSection === sectionKey && (
+        <div className="px-6 pb-6 border-t border-gray-100">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+
+  const ToggleSwitch = ({ checked, onChange, label, description }) => (
+    <div className="flex items-center justify-between py-4 border-b border-gray-100 last:border-b-0">
+      <div>
+        <p className="font-medium text-gray-900">{label}</p>
+        {description && <p className="text-sm text-gray-500 mt-1">{description}</p>}
+      </div>
+      <button
+        type="button"
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+          checked ? 'bg-blue-600' : 'bg-gray-300'
+        }`}
+        onClick={() => onChange(!checked)}
+      >
+        <span
+          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+            checked ? 'translate-x-6' : 'translate-x-1'
+          }`}
+        />
+      </button>
+    </div>
+  );
+
+  const InputField = ({ label, value, onChange, type = 'text', placeholder, description }) => (
+    <div className="space-y-2 py-4 border-b border-gray-100 last:border-b-0">
+      <label className="block text-sm font-medium text-gray-900">{label}</label>
+      {description && <p className="text-sm text-gray-500">{description}</p>}
+      <input
+        type={type}
+        value={value || ''}
+        onChange={(e) => onChange(e.target.value)}
+        className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+        placeholder={placeholder}
+      />
+    </div>
+  );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white p-4 md:p-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-300 rounded w-64 mb-6"></div>
+            <div className="space-y-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-48 bg-gray-300 rounded-lg"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white p-8 flex items-center justify-center">
+        <div className="max-w-md text-center">
+          <div className="bg-red-50 border border-red-200 rounded-xl p-8">
+            <FaTimesCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-red-800 mb-2">Error Loading Settings</h3>
+            <p className="text-red-600">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className='p-6'>
-      <h2 className='text-xl font-semibold mb-4'>Settings & Master Configuration</h2>
-      <pre className='bg-gray-50 p-4 rounded border overflow-auto'>{JSON.stringify(settings, null, 2)}</pre>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white p-4 md:p-8">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+              <FaCog className="text-blue-600" />
+              System Settings
+            </h1>
+            <p className="text-gray-600 mt-2">Configure your system preferences and security settings</p>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            {saveStatus === 'success' && (
+              <div className="flex items-center gap-2 text-green-600">
+                <FaCheckCircle />
+                <span>Saved!</span>
+              </div>
+            )}
+            {saveStatus === 'error' && (
+              <div className="flex items-center gap-2 text-red-600">
+                <FaTimesCircle />
+                <span>Failed to save</span>
+              </div>
+            )}
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {saving ? (
+                <>
+                  <FaSpinner className="animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <FaSave />
+                  Save Changes
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* 2FA Component - Placed prominently */}
+        <TwoFactorAuth />
+
+        {/* Other Settings Sections */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Navigation */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-6">
+              <h3 className="font-semibold text-gray-900 mb-4">Settings Sections</h3>
+              <nav className="space-y-2">
+                {[
+                  { key: 'general', label: 'General Settings', icon: FaCog },
+                  { key: 'database', label: 'Database Config', icon: FaDatabase },
+                  { key: 'security', label: 'Security', icon: FaShieldAlt },
+                  { key: 'notifications', label: 'Notifications', icon: FaBell },
+                  { key: 'api', label: 'API Settings', icon: FaGlobe },
+                ].map((item) => (
+                  <button
+                    key={item.key}
+                    onClick={() => setExpandedSection(item.key)}
+                    className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                      expandedSection === item.key
+                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                        : 'text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <item.icon className="w-5 h-5" />
+                    <span className="font-medium">{item.label}</span>
+                  </button>
+                ))}
+              </nav>
+              
+              <div className="mt-8 pt-6 border-t border-gray-200">
+                <div className="flex items-center gap-3 text-gray-600">
+                  <FaUserShield />
+                  <div>
+                    <p className="font-medium">Settings Version</p>
+                    <p className="text-sm">v{settings?.version || '1.0.0'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - Settings Content */}
+          <div className="lg:col-span-2">
+            {/* General Settings */}
+            <SettingCard title="General Settings" icon={FaCog} sectionKey="general">
+              <div className="space-y-1">
+                {Object.entries(settings?.general || {}).map(([key, value]) => (
+                  <InputField
+                    key={key}
+                    label={key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    value={value}
+                    onChange={(val) => handleSettingChange('general', key, val)}
+                  />
+                ))}
+              </div>
+            </SettingCard>
+
+            {/* Database Configuration */}
+            <SettingCard title="Database Configuration" icon={FaDatabase} sectionKey="database">
+              <div className="space-y-1">
+                {Object.entries(settings?.database || {}).map(([key, value]) => (
+                  <div key={key} className="py-4 border-b border-gray-100 last:border-b-0">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </p>
+                        <p className="text-sm text-gray-500 mt-1">{value}</p>
+                      </div>
+                      <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        value ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {value ? 'Active' : 'Inactive'}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </SettingCard>
+
+            {/* Security Settings */}
+            <SettingCard title="Security Settings" icon={FaShieldAlt} sectionKey="security">
+              <div className="space-y-1">
+                <ToggleSwitch
+                  checked={settings?.security?.password_expiry || false}
+                  onChange={(val) => handleSettingChange('security', 'password_expiry', val)}
+                  label="Password Expiry"
+                  description="Require users to change passwords periodically"
+                />
+                <ToggleSwitch
+                  checked={settings?.security?.login_notifications || false}
+                  onChange={(val) => handleSettingChange('security', 'login_notifications', val)}
+                  label="Login Notifications"
+                  description="Send email notifications for new logins"
+                />
+                <ToggleSwitch
+                  checked={settings?.security?.session_timeout || false}
+                  onChange={(val) => handleSettingChange('security', 'session_timeout', val)}
+                  label="Session Timeout"
+                  description="Automatically log out inactive users"
+                />
+              </div>
+            </SettingCard>
+
+            {/* Notification Settings */}
+            <SettingCard title="Notification Settings" icon={FaBell} sectionKey="notifications">
+              <div className="space-y-1">
+                {Object.entries(settings?.notifications || {}).map(([key, value]) => (
+                  <ToggleSwitch
+                    key={key}
+                    checked={value}
+                    onChange={(val) => handleSettingChange('notifications', key, val)}
+                    label={key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                  />
+                ))}
+              </div>
+            </SettingCard>
+
+            {/* API Settings */}
+            <SettingCard title="API Settings" icon={FaGlobe} sectionKey="api">
+              <div className="space-y-4">
+                {Object.entries(settings?.api || {}).map(([key, value]) => (
+                  <InputField
+                    key={key}
+                    label={key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    value={value}
+                    onChange={(val) => handleSettingChange('api', key, val)}
+                    type={key.toLowerCase().includes('key') || key.toLowerCase().includes('secret') ? 'password' : 'text'}
+                  />
+                ))}
+              </div>
+            </SettingCard>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

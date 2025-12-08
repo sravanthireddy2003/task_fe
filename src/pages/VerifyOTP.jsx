@@ -1,64 +1,11 @@
-// import React, { useEffect } from 'react';
-// import { useForm } from 'react-hook-form';
-// import { useDispatch, useSelector } from 'react-redux';
-// import { useNavigate } from 'react-router-dom';
-// import { verifyOtp, selectAuthError, selectAuthStatus } from '../redux/slices/authSlice';
-// import Button from '../components/Button';
-// import Textbox from '../components/Textbox';
-
-// const VerifyOTP = () => {
-//   const dispatch = useDispatch();
-//   const navigate = useNavigate();
-//   const { register, handleSubmit } = useForm();
-//   const status = useSelector(selectAuthStatus);
-//   const error = useSelector(selectAuthError);
-//   const tempToken = useSelector((state) => state.auth.tempToken);
-
-//   useEffect(() => {
-//     if (!tempToken) {
-//       navigate('/log-in');
-//     }
-//   }, [tempToken, navigate]);
-
-//   const onSubmit = (data) => {
-//     const payload = { tempToken, otp: data.otp };
-//     dispatch(verifyOtp(payload)).then((res) => {
-//       if (res.type && res.type.endsWith('fulfilled')) {
-//         navigate('/dashboard');
-//       }
-//     });
-//   };
-
-//   return (
-//     <div className="w-full min-h-screen flex items-center justify-center">
-//       <div className="w-full max-w-md bg-white p-8 rounded-lg shadow">
-//         <h2 className="text-2xl font-bold mb-4">Verify OTP</h2>
-//         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-//           <Textbox
-//             label="Enter OTP"
-//             name="otp"
-//             placeholder="123456"
-//             register={register('otp', { required: 'OTP is required' })}
-//           />
-//           {status === 'failed' && error && (
-//             <p className="text-red-500">{error}</p>
-//           )}
-
-//           <Button type="submit" label={status === 'loading' ? 'Verifying...' : 'Verify'} className="bg-blue-600 text-white rounded" />
-//         </form>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default VerifyOTP;
-
 
 import React, { useEffect, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { verifyOtp, selectAuthError, selectAuthStatus, resendOtp } from '../redux/slices/authSlice';
+import { toast } from 'sonner';
+import { useLocation } from 'react-router-dom';
 import Button from '../components/Button';
 import Textbox from '../components/Textbox';
 
@@ -69,16 +16,20 @@ const VerifyOTP = () => {
   const status = useSelector(selectAuthStatus);
   const error = useSelector(selectAuthError);
   const tempToken = useSelector((state) => state.auth.tempToken);
+  const location = useLocation();
+  const locationTempToken = location?.state?.tempToken || location?.state?.temp || null;
   const [countdown, setCountdown] = useState(60);
   const [canResend, setCanResend] = useState(false);
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
   const inputsRef = useRef([]);
+  const [friendlyError, setFriendlyError] = useState(null);
 
   useEffect(() => {
-    if (!tempToken) {
+    // If neither Redux nor location state provide a tempToken, redirect to login.
+    if (!tempToken && !locationTempToken) {
       navigate('/log-in');
     }
-  }, [tempToken, navigate]);
+  }, [tempToken, locationTempToken, navigate]);
 
   useEffect(() => {
     let timer;
@@ -128,22 +79,46 @@ const VerifyOTP = () => {
     }
   };
 
-  const onSubmit = (data) => {
-    const payload = { tempToken, otp: data.otp };
-    dispatch(verifyOtp(payload)).then((res) => {
-      if (res.type && res.type.endsWith('fulfilled')) {
-        navigate('/dashboard');
-      }
-    });
+  const mapOtpError = (err) => {
+    const msg = (err && (err.message || err.payload || err))?.toString?.() || String(err);
+    const text = msg.toLowerCase();
+    if (text.includes('expired') || text.includes('otp expired')) return 'OTP expired — please resend and try the new code.';
+    if (text.includes('invalid') || text.includes('invalid token') || text.includes('invalid otp')) return 'Invalid code — check the digits and try again.';
+    if (text.includes('too many') || text.includes('attempts')) return 'Too many attempts — please wait a moment and request a new code.';
+    return msg || 'Failed to verify code';
+  };
+
+  const onSubmit = async (data) => {
+    const tokenToUse = tempToken || locationTempToken;
+    const payload = { tempToken: tokenToUse, otp: data.otp };
+    setFriendlyError(null);
+    try {
+      await dispatch(verifyOtp(payload)).unwrap();
+      navigate('/dashboard');
+    } catch (err) {
+      const friendly = mapOtpError(err);
+      setFriendlyError(friendly);
+      toast.error(friendly);
+    }
   };
 
   const handleResendOtp = () => {
-    dispatch(resendOtp({ tempToken })).then(() => {
-      setCountdown(60);
-      setCanResend(false);
-      setOtpDigits(['', '', '', '', '', '']);
-      inputsRef.current[0]?.focus();
-    });
+    const tokenToUse = tempToken || locationTempToken;
+    setFriendlyError(null);
+    dispatch(resendOtp({ tempToken: tokenToUse }))
+      .unwrap()
+      .then(() => {
+        toast.success('A new verification code was sent');
+        setCountdown(60);
+        setCanResend(false);
+        setOtpDigits(['', '', '', '', '', '']);
+        inputsRef.current[0]?.focus();
+      })
+      .catch((err) => {
+        const friendly = mapOtpError(err);
+        setFriendlyError(friendly);
+        toast.error(friendly);
+      });
   };
 
   return (
@@ -201,13 +176,13 @@ const VerifyOTP = () => {
             </div>
 
             {/* Error Message */}
-            {status === 'failed' && error && (
+            {(friendlyError || (status === 'failed' && error)) && (
               <div className="bg-red-50 border border-red-200 rounded-xl p-4">
                 <div className="flex items-center">
                   <svg className="w-5 h-5 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                   </svg>
-                  <span className="text-red-700 text-sm">{error}</span>
+                  <span className="text-red-700 text-sm">{friendlyError || error}</span>
                 </div>
               </div>
             )}

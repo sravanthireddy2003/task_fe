@@ -29,16 +29,38 @@ const Login = () => {
   } = useForm();
 
   const onSubmit = async (data) => {
-    dispatch(authLogin(data)).then((res) => {
-      if (res.type && res.type.endsWith('fulfilled')) {
-        // if backend sent tempToken, navigate to OTP verification
-        const temp = res.payload?.tempToken || res.payload?.temp_token;
-        if (temp) {
-          // tempToken stored in auth state by the slice
-          navigate('/verify-otp');
-        }
+    try {
+      const res = await dispatch(authLogin(data)).unwrap();
+      // If backend requires 2FA, it may return a flag like { requires2fa: true }
+      // or a message indicating OTP is required. Prefer tempToken if provided.
+      const requires2fa = res?.requires2fa || res?.requires_2fa || false;
+      const msg = (res?.message || "").toString().toLowerCase();
+      const temp = res?.tempToken || res?.temp_token || null;
+      const returnedUser = res?.user || res?.data?.user || null;
+      const userHas2FA = !!(
+        returnedUser &&
+        (returnedUser.twoFactorEnabled || returnedUser.twoFaEnabled || returnedUser.is2faEnabled || returnedUser.twoFA)
+      );
+      const accessTokenPresent = !!(res?.accessToken || res?.token || res?.data?.accessToken || res?.data?.token);
+
+      // If API explicitly requires 2FA, or message hints at OTP, or the returned user has 2FA and no access token was issued yet
+      if (
+        requires2fa ||
+        msg.includes("otp") ||
+        msg.includes("two-factor") ||
+        msg.includes("2fa") ||
+        (userHas2FA && !accessTokenPresent)
+      ) {
+        // navigate to verify page and pass tempToken or email so VerifyOTP can complete flow
+        navigate('/verify-otp', { state: { tempToken: temp, email: data.email } });
+        return;
       }
-    });
+
+      // otherwise authLogin succeeded and user will be set in store; login effect will redirect
+    } catch (err) {
+      // authLogin rejected — UI already shows authError from slice
+      // nothing to do here
+    }
   };
 
   useEffect(() => {
@@ -109,6 +131,7 @@ const Login = () => {
                 })}
                 error={errors.password?.message}
               />
+
 
               {/* Show login error */}
               {authStatus === "failed" && authError && (
