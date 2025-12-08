@@ -37,29 +37,34 @@ const Users = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [open, setOpen] = useState(false);
   const [openAction, setOpenAction] = useState(false);
-  const [selected, setSelected] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null); // 🔥 FIXED: Renamed for clarity
 
   const userActionHandler = () => {};
   
   const deleteHandler = () => {
-    if (selected) {
-      dispatch(deleteUser(selected))
+    if (selectedUser) {
+      dispatch(deleteUser(selectedUser))
         .unwrap()
         .catch((err) => console.error('Delete failed', err));
-      setSelected(null);
+      setSelectedUser(null);
       setOpenDialog(false);
     }
   };
 
   const deleteClick = (user) => {
-    // prefer server public id if present, then _id or id
     const id = user?.public_id || user?.publicId || user?._id || user?.id || null;
-    setSelected(id);
+    setSelectedUser(id);
     setOpenDialog(true);
   };
 
-  const editClick = (el) => {
-    setSelected(el);
+  // 🔥 FIXED: Separate states for add/edit + explicit null for add
+  const addClick = () => {
+    setSelectedUser(null); // Clear any previous selection
+    setOpen(true);
+  };
+
+  const editClick = (user) => {
+    setSelectedUser(user); // Pass full user object
     setOpen(true);
   };
 
@@ -80,7 +85,7 @@ const Users = () => {
     <tr className="border-b border-gray-200 text-gray-600 hover:bg-gray-400/10">
       <td className="p-2">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full text-white flex items-center justify-center text-sm bg-blue-700">
+         <div className="w-9 h-9 rounded-full text-white flex items-center justify-center text-sm bg-blue-700">
             <span className="text-xs md:text-sm text-center">
               {getInitials(user?.name)}
             </span>
@@ -143,7 +148,7 @@ const Users = () => {
             label="Add New User"
             icon={<IoMdAdd className="text-lg" />}
             className="flex flex-row-reverse gap-1 items-center bg-blue-600 text-white rounded-md 2xl:py-2.5"
-            onClick={() => setOpen(true)}
+            onClick={addClick} // 🔥 FIXED: Use dedicated add handler
           />
         </div>
         <div className="bg-white px-2 md:px-4 py-4 shadow-md rounded">
@@ -152,7 +157,7 @@ const Users = () => {
               <TableHeader />
               <tbody>
                 {users.map((user, index) => (
-                  <TableRow key={user?._id || index} user={user} />
+                  <TableRow key={user?._id || user?.public_id || index} user={user} />
                 ))}
               </tbody>
             </table>
@@ -160,11 +165,11 @@ const Users = () => {
         </div>
       </div>
       
+      {/* 🔥 FIXED: Pass full user object or null explicitly */}
       <AddUser
         open={open}
         setOpen={setOpen}
-        userData={selected}
-        key={selected?._id || "add-user-modal"}
+        userData={selectedUser} 
       />
       
       <ConfirmatioDialog
