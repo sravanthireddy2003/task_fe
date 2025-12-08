@@ -31,6 +31,7 @@ const Profile = () => {
   });
   
   const [avatarPreview, setAvatarPreview] = useState(user?.photo || null);
+  const [selectedFile, setSelectedFile] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [qrData, setQrData] = useState(null);
   const [showVerify, setShowVerify] = useState(false);
@@ -61,6 +62,7 @@ const Profile = () => {
         toast.error('Image size should be less than 5MB');
         return;
       }
+      setSelectedFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setAvatarPreview(reader.result);
@@ -70,18 +72,27 @@ const Profile = () => {
   };
 
   const onSubmit = (data) => {
-    const payload = {
-      name: data.name,
-      email: data.email,
-      phone: data.phone,
-      photo: avatarPreview
-    };
+    // Build multipart form data so backend multer can process `photo` file
+    const formData = new FormData();
+    formData.append('name', data.name || '');
+    formData.append('email', data.email || '');
+    formData.append('phone', data.phone || '');
+    // include title if present in form values
+    if (data.title) formData.append('title', data.title);
+    if (selectedFile) {
+      formData.append('photo', selectedFile, selectedFile.name);
+    }
 
     (async () => {
       try {
-        const resp = await dispatch(updateProfile(payload)).unwrap();
+        const resp = await dispatch(updateProfile(formData)).unwrap();
         toast.success(resp?.message || 'Profile updated');
         setIsEditing(false);
+        // If API returned photo or user.photo, update preview immediately
+        const returnedPhoto = resp?.photo || resp?.user?.photo || (resp?.data && resp.data.photo) || null;
+        if (returnedPhoto && typeof returnedPhoto === 'string' && !returnedPhoto.includes('undefined')) {
+          setAvatarPreview(returnedPhoto);
+        }
         // refresh profile from server to pick up any server-side changes
         dispatch(getProfile()).catch(() => {});
       } catch (err) {

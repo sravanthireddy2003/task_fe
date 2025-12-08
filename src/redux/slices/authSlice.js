@@ -36,39 +36,39 @@ export const authLogin = createAsyncThunk(
       const response = await httpPostService("api/auth/login", data);
 
       // Expected response: { message, tempToken }
-        if (!response) return thunkAPI.rejectWithValue("No response from server");
+      if (!response) return thunkAPI.rejectWithValue("No response from server");
 
-        // If backend indicates 2FA is required, return the response so UI can navigate to OTP flow.
-        const requires2fa = response?.requires2fa || response?.requires_2fa || false;
-        if (requires2fa) {
-          // persist temp token into redux so VerifyOTP can use it even if navigation flow doesn't pass it
-          const tt = response?.tempToken || response?.temp_token || response?.temp || null;
-          try {
-            thunkAPI.dispatch({ type: 'auth/setTempToken', payload: tt });
-          } catch (e) {
-            // ignore
-          }
-          return response;
+      // If backend indicates 2FA is required, return the response so UI can navigate to OTP flow.
+      const requires2fa = response?.requires2fa || response?.requires_2fa || false;
+      if (requires2fa) {
+        // persist temp token into redux so VerifyOTP can use it even if navigation flow doesn't pass it
+        const tt = response?.tempToken || response?.temp_token || response?.temp || null;
+        try {
+          thunkAPI.dispatch({ type: 'auth/setTempToken', payload: tt });
+        } catch (e) {
+          // ignore
         }
+        return response;
+      }
 
-        // If there is a hard failure indicated by the API, reject
-        if (response.auth === false || response.error) {
-          return thunkAPI.rejectWithValue(response.message || response.error);
+      // If there is a hard failure indicated by the API, reject
+      if (response.auth === false || response.error) {
+        return thunkAPI.rejectWithValue(response.message || response.error);
+      }
+
+      // If response contains access token(s), persist them immediately
+      const access = response?.accessToken || response?.token || response?.data?.accessToken || response?.data?.token;
+      const refresh = response?.refreshToken || response?.refresh || response?.data?.refreshToken || response?.data?.refresh;
+      if (access) {
+        try {
+          setTokens(access, refresh || null);
+          try { setAuthToken(access, refresh || null, 'local'); } catch (e) { }
+        } catch (e) {
+          // ignore storage errors
         }
+      }
 
-        // If response contains access token(s), persist them immediately
-        const access = response?.accessToken || response?.token || response?.data?.accessToken || response?.data?.token;
-        const refresh = response?.refreshToken || response?.refresh || response?.data?.refreshToken || response?.data?.refresh;
-        if (access) {
-          try {
-            setTokens(access, refresh || null);
-            try { setAuthToken(access, refresh || null, 'local'); } catch (e) {}
-          } catch (e) {
-            // ignore storage errors
-          }
-        }
-
-        return response; // normal successful login
+      return response; // normal successful login
     } catch (error) {
       const message =
         error?.response?.data?.message ||
@@ -130,22 +130,22 @@ export const refreshToken = createAsyncThunk(
       if (response?.accessToken) {
         // persist tokens and update axios default header for immediate use
         setTokens(response.accessToken, response.refreshToken);
-        try { setAuthToken(response.accessToken, response.refreshToken, 'local'); } catch (e) {}
+        try { setAuthToken(response.accessToken, response.refreshToken, 'local'); } catch (e) { }
       }
       return response;
     } catch (error) {
-        // error comes from httpHandler.formatAxiosError and includes `status`
-        try {
-          const status = error?.status || error?.response?.status;
-          if (status === 404) {
-            // Refresh endpoint not present on backend — clear tokens and return a clear message
-            clearTokens();
-            return thunkAPI.rejectWithValue('Refresh endpoint not found (404)');
-          }
-        } catch (e) {}
+      // error comes from httpHandler.formatAxiosError and includes `status`
+      try {
+        const status = error?.status || error?.response?.status;
+        if (status === 404) {
+          // Refresh endpoint not present on backend — clear tokens and return a clear message
+          clearTokens();
+          return thunkAPI.rejectWithValue('Refresh endpoint not found (404)');
+        }
+      } catch (e) { }
 
-        clearTokens();
-        return thunkAPI.rejectWithValue(error?.message || "Refresh failed");
+      clearTokens();
+      return thunkAPI.rejectWithValue(error?.message || "Refresh failed");
     }
   }
 );
@@ -186,13 +186,13 @@ export const verify2FA = createAsyncThunk(
       const refresh = response?.refreshToken || response?.refresh;
       if (access) {
         setTokens(access, refresh || null);
-        try { setAuthToken(access, refresh || null, 'local'); } catch (e) {}
+        try { setAuthToken(access, refresh || null, 'local'); } catch (e) { }
       }
 
       // Refresh profile in store so UI reflects 2FA enabled state
       try {
         thunkAPI.dispatch(getProfile());
-      } catch (e) {}
+      } catch (e) { }
 
       return response;
     } catch (error) {
@@ -209,7 +209,7 @@ export const verify2FA = createAsyncThunk(
           if (newAccess) {
             // Persist new tokens and update axios header
             setTokens(newAccess, newRefresh || null);
-            try { setAuthToken(newAccess, newRefresh || null, 'local'); } catch (e) {}
+            try { setAuthToken(newAccess, newRefresh || null, 'local'); } catch (e) { }
           }
 
           // Retry verify call once with refreshed token
@@ -220,13 +220,13 @@ export const verify2FA = createAsyncThunk(
           const retryRefresh = retryResp?.refreshToken || retryResp?.refresh;
           if (retryAccess) {
             setTokens(retryAccess, retryRefresh || null);
-            try { setAuthToken(retryAccess, retryRefresh || null, 'local'); } catch (e) {}
+            try { setAuthToken(retryAccess, retryRefresh || null, 'local'); } catch (e) { }
           }
 
           // Refresh profile after successful verify
           try {
             thunkAPI.dispatch(getProfile());
-          } catch (e) {}
+          } catch (e) { }
 
           return retryResp;
         } catch (refreshError) {
@@ -256,15 +256,27 @@ export const disable2FA = createAsyncThunk(
 // Update profile thunk (PUT /api/auth/profile)
 export const updateProfile = createAsyncThunk(
   "api/auth/updateProfile",
-  async (data, thunkAPI) => {
+  async (formData, thunkAPI) => {
     try {
-      const response = await httpPutService("api/auth/profile", data);
+      // Check if it's FormData (file upload)
+      const isFormData = formData instanceof FormData;
+
+      const response = await (isFormData
+        ? httpPutService("api/auth/profile", formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+          skipContentType: true // Tell httpPutService NOT to override Content-Type
+        })
+        : httpPutService("api/auth/profile", formData)
+      );
+
       return response;
     } catch (error) {
+      console.error('Update profile error:', error); // ✅ Add logging
       return thunkAPI.rejectWithValue(error?.message || "Failed to update profile");
     }
   }
 );
+
 
 export const forgotPassword = createAsyncThunk(
   "api/auth/forgotPassword",
@@ -337,6 +349,19 @@ export const changePassword = createAsyncThunk(
   }
 );
 
+// ✅ ADD THIS - Complete logout with backend call
+export const logoutUser = createAsyncThunk(
+  "api/auth/apiLogout",
+  async (_, thunkAPI) => {
+    try {
+      await httpPostService("api/auth/logout", {});
+      console.log('✅ Backend logout called');
+    } catch (error) {
+      console.warn('⚠️ Logout API failed (OK):', error.message);
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -345,16 +370,50 @@ const authSlice = createSlice({
       state.user = action.payload;
       localStorage.setItem("userInfo", JSON.stringify(action.payload));
     },
-      setTempToken: (state, action) => {
-        state.tempToken = action.payload;
-      },
+    setTempToken: (state, action) => {
+      state.tempToken = action.payload;
+    },
     logout: (state) => {
+      console.log('🔥 LOGOUT - Full cleanup');
+
+      // Clear Redux
       state.user = null;
       state.authError = null;
       state.status = null;
       state.tempToken = null;
-      localStorage.removeItem("userInfo");
+
+      // ✅ NUCLEAR CLEANUP
+      localStorage.clear();      // Everything gone
+      sessionStorage.clear();    // Everything gone
+
+      // Clear tokens
       clearTokens();
+
+      // Clear cookies (best-effort) so Application > Cookies is empty
+      try {
+        if (typeof document !== 'undefined' && document.cookie) {
+          document.cookie.split(';').forEach(function(c) {
+            const idx = c.indexOf('=');
+            const name = idx > -1 ? c.substr(0, idx).trim() : c.trim();
+            if (!name) return;
+            document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;';
+          });
+        }
+      } catch (e) {}
+
+      // Clear axios headers (multiple possible refs)
+      try {
+        if (window.api?.defaults?.headers?.common?.Authorization) {
+          delete window.api.defaults.headers.common['Authorization'];
+        }
+        if (window.__API_CLIENT__?.defaults?.headers?.common?.Authorization) {
+          delete window.__API_CLIENT__.defaults.headers.common['Authorization'];
+        }
+      } catch (e) { }
+    },
+
+    setOpenSidebar: (state, action) => {
+      state.isSidebarOpen = action.payload;
     },
     setOpenSidebar: (state, action) => {
       state.isSidebarOpen = action.payload;
@@ -481,6 +540,10 @@ const authSlice = createSlice({
       })
 
       // Get Profile
+      // ✅ ADD THIS in extraReducers (before getProfile.fulfilled):
+      .addCase(getProfile.pending, (state) => {
+        state.status = "loading profile";
+      })
       .addCase(getProfile.fulfilled, (state, action) => {
         // backend may return { user: { ... } } or the user object directly
         const payloadUser = action.payload?.user || action.payload;
@@ -545,6 +608,16 @@ const authSlice = createSlice({
         state.tempToken = null;
         state.authError = "Session expired";
         localStorage.removeItem("userInfo");
+      })
+      // ✅ ADD THESE 3 CASES in extraReducers builder:
+      .addCase(logoutUser .pending, (state) => {
+        state.status = "logging out";
+      })
+      .addCase(logoutUser .fulfilled, (state) => {
+        state.status = "logged out";
+      })
+      .addCase(logoutUser .rejected, (state) => {
+        state.status = "logged out"; // Always succeed
       });
   },
 });
