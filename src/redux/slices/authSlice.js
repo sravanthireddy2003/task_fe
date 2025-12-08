@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import {
   httpPostService,
   httpPatchService,
+  httpPutService,
   httpGetService,
 } from "../../App/httpHandler";
 import { setTokens, clearTokens, getRefreshToken } from "../../utils/tokenService";
@@ -131,6 +132,19 @@ export const getProfile = createAsyncThunk(
   }
 );
 
+// Update profile thunk (PUT /api/auth/profile)
+export const updateProfile = createAsyncThunk(
+  "api/auth/updateProfile",
+  async (data, thunkAPI) => {
+    try {
+      const response = await httpPutService("api/auth/profile", data);
+      return response;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error?.message || "Failed to update profile");
+    }
+  }
+);
+
 export const forgotPassword = createAsyncThunk(
   "api/auth/forgotPassword",
   async (data, thunkAPI) => {
@@ -192,8 +206,8 @@ export const changePassword = createAsyncThunk(
   "api/auth/changePassword",
   async (data, thunkAPI) => {
     try {
-      // backend expects /api/auth/change-password (Postman); accept both
-      const response = await httpPatchService("api/auth/change-password", data);
+      // Use POST to /api/auth/change-password per API collection
+      const response = await httpPostService("api/auth/change-password", data);
       return response;
     } catch (error) {
       const message = error?.message || "Password change failed.";
@@ -336,6 +350,25 @@ const authSlice = createSlice({
       })
       .addCase(getProfile.rejected, (state, action) => {
         state.authError = action.payload;
+      })
+
+      // Update Profile
+      .addCase(updateProfile.pending, (state) => {
+        state.status = 'loading';
+        state.authError = null;
+      })
+      .addCase(updateProfile.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        // update local user
+        const payloadUser = action.payload?.user || action.payload || null;
+        if (payloadUser) {
+          state.user = payloadUser;
+          localStorage.setItem('userInfo', JSON.stringify(payloadUser));
+        }
+      })
+      .addCase(updateProfile.rejected, (state, action) => {
+        state.status = 'failed';
+        state.authError = action.payload || action.error?.message;
       })
 
       // Forgot Password

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
-import { getProfile } from '../redux/slices/authSlice';
+import { getProfile, updateProfile } from '../redux/slices/authSlice';
+import { toast } from 'sonner';
 import Button from '../components/Button';
 import Textbox from '../components/Textbox';
 
@@ -12,8 +13,23 @@ const Profile = () => {
   const [avatarPreview, setAvatarPreview] = useState(user?.photo || null);
 
   const onSubmit = (data) => {
-    // For now, just console.log. Hook this up to users API when ready.
-    console.log('Profile update payload', data);
+    // Dispatch updateProfile with normalized payload the backend expects
+    const payload = {
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+    };
+
+    dispatch(updateProfile(payload)).then((res) => {
+      if (res.type && res.type.endsWith('fulfilled')) {
+        toast.success('Profile updated');
+      } else {
+        const err = res.payload?.message || res.payload || res.error || 'Update failed';
+        toast.error(err);
+      }
+    }).catch((err) => {
+      toast.error(err?.message || 'Update failed');
+    });
   };
 
   return (
