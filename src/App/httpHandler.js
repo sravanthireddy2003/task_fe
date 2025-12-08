@@ -96,29 +96,7 @@ export async function httpGetService(url, config = {}) {
 
 const formatAxiosError = (error) => {
     if (error.response) {
-    // Normalize axios error into a plain object with useful fields
-    try {
-        if (error && error.response) {
-            return {
-                message: error.response.data?.message || error.response.data?.error || error.message || 'Request failed',
-                status: error.response.status,
-                data: error.response.data,
-                headers: error.response.headers,
-            };
-        }
-
-        if (error && error.request) {
-            return {
-                message: 'No response received from server',
-                status: null,
-                data: null,
-            };
-        }
-    } catch (e) {
-        // fallback
-    }
-
-    return { message: error?.message || 'Unknown error', status: null };
+        return error.response.data || { message: error.response.statusText };
     }
     if (error.request) {
         return { message: "No response from server" };
