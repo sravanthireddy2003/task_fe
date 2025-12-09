@@ -1,16 +1,22 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { logout, selectUser } from "../redux/slices/authSlice";
+import { logout, selectUser, getProfile,logoutUser  } from "../redux/slices/authSlice";
 import { FaUser, FaKey, FaCog, FaSignOutAlt } from "react-icons/fa";
 import { toast } from 'sonner';
 
 const UserAvatar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  
+  // ✅ SINGLE SOURCE - Use selectUser only (your inspect shows this structure)
   const user = useSelector(selectUser) || {};
-
+  
+  // ✅ Your API returns: user.photo = "http://localhost:4000/uploads/profiles/..."
+  const photoUrl = user.photo;
+  
   const initials = (() => {
     if (user?.firstName && user?.lastName) return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
     if (user?.name) return user.name.split(' ').map(s => s[0]).slice(0,2).join('').toUpperCase();
@@ -20,17 +26,36 @@ const UserAvatar = () => {
 
   const displayName = user?.firstName || user?.name || user?.email || 'User';
 
+  const handleImageError = useCallback(() => {
+    console.log('❌ Image failed:', photoUrl);
+    setImageError(true);
+  }, [photoUrl]);
+
+  const handleImageLoad = useCallback(() => {
+    console.log('✅ Image loaded:', photoUrl);
+    setImageError(false);
+  }, [photoUrl]);
+
   const go = (path) => {
     setIsDropdownOpen(false);
     navigate(path);
   };
 
-  const handleLogout = () => {
-    setIsDropdownOpen(false);
-    dispatch(logout());
-    toast.success('Signed out');
-    navigate('/log-in');
-  };
+const handleLogout = async () => {
+  setIsDropdownOpen(false);
+  await dispatch(logoutUser ()); 
+  dispatch(logout());         
+  toast.success('Signed out');
+  navigate('/log-in', { replace: true });
+};
+
+  // ✅ Load profile on mount if no photo
+  useEffect(() => {
+    if (user && !photoUrl && !imageError) {
+      console.log('🔄 Fetching profile for avatar...');
+      dispatch(getProfile());
+    }
+  }, [dispatch, photoUrl, imageError, user]);
 
   return (
     <div className="relative">
@@ -41,51 +66,67 @@ const UserAvatar = () => {
         </div>
 
         <button
-          aria-label="User menu"
           onClick={() => setIsDropdownOpen(v => !v)}
-          className="relative inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md hover:scale-105 transition-transform"
+          className="relative w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md hover:scale-105 transition-all duration-200 flex items-center justify-center"
+          aria-label="User menu"
         >
-          {user?.profilePicture ? (
-            <img src={user.profilePicture} alt={displayName} className="w-full h-full rounded-full object-cover" />
+          {photoUrl && !imageError ? (
+            <img 
+              src={photoUrl}
+              alt={displayName}
+              className="w-full h-full rounded-full object-cover"
+              onError={handleImageError}
+              onLoad={handleImageLoad}
+              loading="lazy"
+            />
           ) : (
-            <span className="font-bold">{initials}</span>
+            <span className="font-bold text-sm leading-none">{initials}</span>
           )}
         </button>
       </div>
 
+      {/* Dropdown - SAME AS YOURS */}
       {isDropdownOpen && (
-        <div className="absolute right-0 mt-3 w-72 bg-white rounded-xl shadow-xl z-50 border border-gray-100 overflow-hidden">
-          <div className="p-4 bg-gradient-to-r from-white to-gray-50">
+        <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-2xl z-50 border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="p-4 bg-gradient-to-r from-white to-gray-50 border-b border-gray-100">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-xl text-gray-700">{initials}</div>
-              <div className="flex-1">
-                <div className="font-semibold text-gray-800">{displayName}</div>
-                <div className="text-xs text-gray-500 truncate">{user?.email || ''}</div>
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-sm font-bold text-white shadow-md">
+                {initials}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-gray-800 truncate">{displayName}</div>
+                <div className="text-xs text-gray-500 truncate">{user?.email}</div>
+                {photoUrl && !imageError && (
+                  <div className="text-xs text-blue-600 truncate mt-1 font-mono">
+                    📸 {photoUrl.split('/').pop()?.slice(0, 15)}...
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
-          <div className="p-2">
-            <button onClick={() => go('/profile')} className="w-full text-left px-3 py-2 rounded-md hover:bg-gray-50 flex items-center gap-3">
-              <FaUser className="text-gray-500" />
-              <span className="text-sm text-gray-700">My Profile</span>
+          <div className="p-2 divide-y divide-gray-100">
+            <button onClick={() => go('/profile')} className="w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 flex items-center gap-3 text-sm transition-colors">
+              <FaUser className="text-gray-500 w-4 h-4" />
+              <span className="text-gray-700 font-medium">My Profile</span>
             </button>
 
-            <button onClick={() => go('/change-password')} className="w-full text-left px-3 py-2 rounded-md hover:bg-gray-50 flex items-center gap-3">
-              <FaKey className="text-gray-500" />
-              <span className="text-sm text-gray-700">Change Password</span>
+            <button onClick={() => go('/change-password')} className="w-full text-left px-4 py-3 rounded-lg hover:bg-amber-50 flex items-center gap-3 text-sm transition-colors">
+              <FaKey className="text-gray-500 w-4 h-4" />
+              <span className="text-gray-700 font-medium">Change Password</span>
             </button>
 
-            <button onClick={() => go('/settings')} className="w-full text-left px-3 py-2 rounded-md hover:bg-gray-50 flex items-center gap-3">
-              <FaCog className="text-gray-500" />
-              <span className="text-sm text-gray-700">Settings</span>
+            <button onClick={() => go('/settings')} className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-50 flex items-center gap-3 text-sm transition-colors">
+              <FaCog className="text-gray-500 w-4 h-4" />
+              <span className="text-gray-700 font-medium">Settings</span>
             </button>
-          </div>
 
-          <div className="border-t border-gray-100 p-2">
-            <button onClick={handleLogout} className="w-full text-left px-3 py-2 rounded-md hover:bg-red-50 flex items-center gap-3">
-              <FaSignOutAlt className="text-red-600" />
-              <span className="text-sm text-red-600">Sign out</span>
+            <button 
+              onClick={handleLogout}
+              className="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 flex items-center gap-3 text-sm transition-colors text-red-600 font-medium"
+            >
+              <FaSignOutAlt className="w-4 h-4" />
+              <span>Sign Out</span>
             </button>
           </div>
         </div>
