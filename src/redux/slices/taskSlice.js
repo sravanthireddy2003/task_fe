@@ -17,20 +17,37 @@ const initialState = {
 // Fetch Tasks
 export const fetchTaskss = createAsyncThunk(
   "tasks/fetchTasks",
-  async (_, thunkAPI) => {
+  // params: optional object { clientId, extraParams }
+  async (params = {}, thunkAPI) => {
     try {
-      // read current user from either 'userInfo' or legacy 'user'
-      const rawUser = localStorage.getItem("userInfo") || localStorage.getItem('user') || null;
-      const userInfo = rawUser ? JSON.parse(rawUser) : null;
-      const params = userInfo ? (userInfo.isAdmin === 1 ? { isAdmin: 1 } : { userId: userInfo._id || userInfo.id }) : {};
-      const queryString = new URLSearchParams(params).toString();
-      const url = `api/tasks/gettasks`;
-      const response = await httpGetService(url);
+      // Build query params: include clientId if provided and any extra params
+      const query = {};
+      if (params.clientId) query.clientId = params.clientId;
+      if (params.userId) query.userId = params.userId;
+      if (params.isAdmin) query.isAdmin = params.isAdmin;
+
+      const queryString = new URLSearchParams(query).toString();
+      const url = queryString ? `api/tasks/gettasks?${queryString}` : `api/tasks/gettasks`;
+
+      // Ensure tenant header is explicitly sent for multi-tenant APIs
+      const tenantId = (() => {
+        try {
+          return localStorage.getItem('tenantId') || import.meta.env.VITE_TENANT_ID || '';
+        } catch (e) {
+          return import.meta.env.VITE_TENANT_ID || '';
+        }
+      })();
+
+      const config = {};
+      if (tenantId) config.headers = { 'x-tenant-id': tenantId };
+
+      const response = await httpGetService(url, config);
       return response;
     } catch (error) {
       console.error("Error fetching tasks:", error);
       return thunkAPI.rejectWithValue(
-        error.response ? error.response.data : error.message
+        // Normalize error message
+        (error && (error.message || (error.data && error.data.message))) || error
       );
     }
   }

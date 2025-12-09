@@ -28,6 +28,12 @@ export async function httpPostService(url, data, config = {}) {
         const token = getAccessToken();
         const tenantId = localStorage.getItem("tenantId") || getTenantFromStorage() || defaultTenantId;
         const headers = Object.assign({}, config.headers || {});
+            // If sending multipart FormData, let axios set the correct Content-Type/boundary
+            if (typeof FormData !== 'undefined' && data instanceof FormData) {
+                // remove any forced content-type so axios can set multipart boundary
+                if (headers['Content-Type']) delete headers['Content-Type'];
+                if (headers['content-type']) delete headers['content-type'];
+            }
         if (tenantId) headers["x-tenant-id"] = tenantId;
         // allow callers to skip attaching Authorization (for verify-otp/resend flows)
         if (!config.skipAuth && token) headers["Authorization"] = `Bearer ${token}`;

@@ -3,6 +3,7 @@ import { httpGetService, httpPutService, httpPostService, httpDeleteService } fr
 
 const initialState = {
   clients: [],
+  deletedClients: [],
   status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
   error: null,
 };
@@ -12,6 +13,18 @@ export const fetchClients = createAsyncThunk(
   async (_, thunkAPI) => {
     try {
       const response = await httpGetService('api/clients');
+      return response;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.message);
+    }
+  }
+);
+
+export const fetchDeletedClients = createAsyncThunk(
+  'clients/fetchDeletedClients',
+  async (_, thunkAPI) => {
+    try {
+      const response = await httpGetService('api/clients/deleted');
       return response;
     } catch (error) {
       return thunkAPI.rejectWithValue(error.message);
@@ -73,6 +86,13 @@ export const createClient = createAsyncThunk(
       }
 
       const response = await httpPostService('api/clients', payload);
+
+      // If backend returns a structured error like { success: false, error: '...' }
+      if (response && (response.success === false || response.error)) {
+        const msg = response.error || response.message || (response.data && response.data.error) || 'Failed to create client';
+        return thunkAPI.rejectWithValue(msg);
+      }
+
       return response;
     } catch (error) {
       return thunkAPI.rejectWithValue(error.message || error);
@@ -85,6 +105,27 @@ export const getClient = createAsyncThunk(
   async (clientId, thunkAPI) => {
     try {
       const response = await httpGetService(`api/clients/${clientId}`);
+      // Backend may return a wrapped payload like { success:true, data: { client, documents, contacts, activities, dashboard } }
+      // Normalize to return a single client object with documents/contacts merged in for UI convenience.
+      if (response) {
+        // If response.data exists (fetchWithTenant returns parsed body), handle both shapes
+        const body = response.data || response;
+        // If body contains nested 'client' object, merge related arrays into it
+        if (body && body.client) {
+          const merged = {
+            ...body.client,
+            documents: Array.isArray(body.documents) ? body.documents : (body.client.documents || []),
+            contacts: Array.isArray(body.contacts) ? body.contacts : (body.client.contacts || []),
+            activities: Array.isArray(body.activities) ? body.activities : (body.client.activities || []),
+            dashboard: body.dashboard || body.client.dashboard || {},
+          };
+          return merged;
+        }
+        // If the response itself is the client object, return it directly
+        if (body && (body.id || body._id || body.public_id)) {
+          return body;
+        }
+      }
       return response;
     } catch (error) {
       return thunkAPI.rejectWithValue(error.message);
@@ -187,6 +228,18 @@ export const attachDocument = createAsyncThunk(
       // Shape the payload according to backend examples:
       // - single: { file_url, file_name, file_type }
       // - multiple: { documents: [ { file_url, file_name }, ... ] }
+      // If caller passed a FormData (file upload), send it as-is so multipart is used
+      if (typeof FormData !== 'undefined' && document instanceof FormData) {
+        const response = await httpPostService(`api/clients/${clientId}/documents`, document);
+
+        // Normalize server response: if backend returns { success: true, data: [...] }
+        if (response && response.success && Array.isArray(response.data)) {
+          return { clientId, documents: response.data };
+        }
+
+        return response;
+      }
+
       let payload;
       if (Array.isArray(document)) {
         payload = { documents: document };
@@ -215,6 +268,18 @@ export const attachDocument = createAsyncThunk(
       return response;
     } catch (error) {
       return thunkAPI.rejectWithValue(error.message || error);
+    }
+  }
+);
+
+export const deleteDocument = createAsyncThunk(
+  'clients/deleteDocument',
+  async ({ clientId, documentId }, thunkAPI) => {
+    try {
+      await httpDeleteService(`api/clients/${clientId}/documents/${documentId}`);
+      return { clientId, documentId };
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.message);
     }
   }
 );
@@ -259,6 +324,39 @@ const clientSlice = createSlice({
         state.status = 'failed';
         state.error = action.payload;
       })
+      
+      .addCase(fetchDeletedClients.pending, (state) => {
+        state.status = 'loading';
+      })
+      .addCase(fetchDeletedClients.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        // Normalize API response shapes for deleted clients
+        const payload = action.payload;
+        if (!payload) {
+          state.deletedClients = [];
+          return;
+        }
+        if (Array.isArray(payload)) {
+          state.deletedClients = payload;
+          return;
+        }
+        // support { success, data, meta }
+        if (payload.data && Array.isArray(payload.data)) {
+          state.deletedClients = payload.data;
+          return;
+        }
+        // support { deletedClients: [...] }
+        if (payload.deletedClients && Array.isArray(payload.deletedClients)) {
+          state.deletedClients = payload.deletedClients;
+          return;
+        }
+        // fallback: try to coerce to array
+        state.deletedClients = Array.isArray(payload) ? payload : [];
+      })
+      .addCase(fetchDeletedClients.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload;
+      })
       .addCase(deleteClient.fulfilled, (state, action) => {
         state.clients = state.clients.filter(client => client.id !== action.payload);
       })
@@ -270,15 +368,24 @@ const clientSlice = createSlice({
       });
       
       // create client
-      builder.addCase(createClient.fulfilled, (state, action) => {
-        if (!action.payload) return;
-        // Normalize created client shape: support { success, data } or raw object
-        const payload = action.payload;
-        const created = (payload.data && typeof payload.data === 'object') ? payload.data : payload;
-        // prepend newly created client
-        state.clients = [created, ...state.clients];
-        state.status = 'succeeded';
-      });
+      builder
+        .addCase(createClient.pending, (state) => {
+          state.status = 'loading';
+          state.error = null;
+        })
+        .addCase(createClient.fulfilled, (state, action) => {
+          if (!action.payload) return;
+          // Normalize created client shape: support { success, data } or raw object
+          const payload = action.payload;
+          const created = (payload.data && typeof payload.data === 'object') ? payload.data : payload;
+          // prepend newly created client
+          state.clients = [created, ...state.clients];
+          state.status = 'succeeded';
+        })
+        .addCase(createClient.rejected, (state, action) => {
+          state.status = 'failed';
+          state.error = action.payload || action.error?.message || 'Failed to create client';
+        });
 
       // get single client (upsert)
       builder.addCase(getClient.fulfilled, (state, action) => {
@@ -351,32 +458,24 @@ const clientSlice = createSlice({
         if (idx !== -1) state.clients[idx] = client;
       });
 
-      builder.addCase(attachDocument.fulfilled, (state, action) => {
-        const payload = action.payload;
-        if (!payload) return;
-
-        // Case A: backend returned { clientId, documents: [...] }
-        if (payload.clientId && Array.isArray(payload.documents)) {
-          const id = payload.clientId;
-          const idx = state.clients.findIndex(c => (c.id === id || c._id === id || c.public_id === id));
-          if (idx !== -1) {
-            const client = state.clients[idx];
-            client.documents = Array.isArray(client.documents) ? [...client.documents, ...payload.documents] : payload.documents;
-            state.clients[idx] = client;
-          }
-          return;
+      builder.addCase(deleteDocument.fulfilled, (state, action) => {
+        const { clientId, documentId } = action.payload || {};
+        if (!clientId || !documentId) return;
+        const idx = state.clients.findIndex(c => (c.id === clientId || c._id === clientId || c.public_id === clientId));
+        if (idx === -1) return;
+        const client = state.clients[idx];
+        if (Array.isArray(client.documents)) {
+          client.documents = client.documents.filter(doc => (doc.id !== documentId && doc._id !== documentId && doc.public_id !== documentId));
+          state.clients[idx] = client;
         }
-
-        // Case B: backend returned the updated client object (backwards compatibility)
-        const client = payload;
-        const id = client.id || client._id || client.public_id;
-        const idx = state.clients.findIndex(c => (c.id === id || c._id === id || c.public_id === id));
-        if (idx !== -1) state.clients[idx] = client;
       });
   },
 });
 
+// Thunks are exported where they are declared above (no bulk re-export here).
+
 export const selectClients = (state) => state.clients.clients || [];
+export const selectDeletedClients = (state) => state.clients.deletedClients || [];
 export const selectClientStatus = (state) => state.clients.status;
 export const selectClientError = (state) => state.clients.error;
 

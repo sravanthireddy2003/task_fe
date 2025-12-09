@@ -14,6 +14,9 @@ const emptyClient = {
   ref: "",
   status: "",
   created_at: "",
+  taxId: "",
+  industry: "",
+  notes: "",
   manager_public_id: "",
   manager_name: "",
   documents: [],
@@ -35,6 +38,9 @@ const normalizeClient = (c) => {
     pincode: c.pincode || c.postal_code || c.zip || c.zipcode || "",
     status: c.status || "",
     created_at: c.created_at || c.createdAt || "",
+    taxId: c.taxId || c.gstId || "",
+    industry: c.industry || "",
+    notes: c.notes || "",
     manager_public_id: c.manager_public_id || c.manager_publicId || c.managerId || c.manager_id || "",
     manager_name: c.manager_name || c.managerName || (c.manager && (c.manager.name || c.manager.fullName)) || "",
     documents: Array.isArray(c.documents) ? c.documents : (Array.isArray(c.docs) ? c.docs : []),
@@ -150,13 +156,16 @@ const UpdateClient = ({ open, setOpen, client, onUpdate }) => {
               placeholder="Ref"
               className="border p-2 mb-2 w-full bg-gray-100"
             />
-            <input
+            <select
               name="status"
               value={clientData.status || ""}
               onChange={handleChange}
-              placeholder="Status"
               className="border p-2 mb-2 w-full"
-            />
+            >
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+              <option value="Lead">Lead</option>
+            </select>
             <input
               name="created_at"
               value={clientData.created_at || ""}
@@ -198,6 +207,32 @@ const UpdateClient = ({ open, setOpen, client, onUpdate }) => {
               className="border p-2 mb-2 w-full"
             />
           </div>
+
+          {/* Additional Details */}
+          <div className="grid grid-cols-2 gap-3">
+            <input
+              name="taxId"
+              value={clientData.taxId || ""}
+              onChange={handleChange}
+              placeholder="GST/Tax ID"
+              className="border p-2 mb-2 w-full"
+            />
+            <input
+              name="industry"
+              value={clientData.industry || ""}
+              onChange={handleChange}
+              placeholder="Industry"
+              className="border p-2 mb-2 w-full"
+            />
+          </div>
+          <textarea
+            name="notes"
+            value={clientData.notes || ""}
+            onChange={handleChange}
+            placeholder="Notes"
+            className="border p-2 mb-2 w-full"
+            rows="3"
+          />
 
           {/* Manager dropdown (show currently assigned manager) */}
           <div className="grid grid-cols-1 gap-2">

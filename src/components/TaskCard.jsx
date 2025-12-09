@@ -44,7 +44,7 @@ useEffect(() => {
     dispatch(getSubTask(task.task_id));
     setLocalTask(task);  // Only set if task_id changes
   }
-}, [dispatch, task?.task_id]);
+}, [dispatch, task?.tassk_id]);
 
   
   const handleStatusUpdate = async (status) => {

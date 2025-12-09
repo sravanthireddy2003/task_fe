@@ -51,11 +51,11 @@ const handleLogout = async () => {
 
   // ✅ Load profile on mount if no photo
   useEffect(() => {
-    if (user && !photoUrl && !imageError) {
+    if (!photoUrl && !imageError) {
       console.log('🔄 Fetching profile for avatar...');
       dispatch(getProfile());
     }
-  }, [dispatch, photoUrl, imageError, user]);
+  }, [dispatch, photoUrl, imageError]);
 
   return (
     <div className="relative">
@@ -96,11 +96,12 @@ const handleLogout = async () => {
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-gray-800 truncate">{displayName}</div>
                 <div className="text-xs text-gray-500 truncate">{user?.email}</div>
-                {photoUrl && !imageError && (
-                  <div className="text-xs text-blue-600 truncate mt-1 font-mono">
-                    📸 {photoUrl.split('/').pop()?.slice(0, 15)}...
-                  </div>
-                )}
+                <div className="text-xs text-gray-500 truncate">{user?.phone}</div>
+                {/* {photoUrl && !imageError && (
+                  // <div className="text-xs text-blue-600 truncate mt-1 font-mono">
+                  //   📸 {photoUrl.split('/').pop()?.slice(0, 15)}...
+                  // </div>
+                )} */}
               </div>
             </div>
           </div>

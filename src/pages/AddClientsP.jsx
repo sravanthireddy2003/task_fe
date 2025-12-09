@@ -47,14 +47,34 @@ const AddClientsPage = () => {
 
   const onSubmit = async (data) => {
     try {
+      const formatError = (err) => {
+        if (!err) return null;
+        if (typeof err === 'string') return err;
+        if (err.message) return err.message;
+        if (err.error) return err.error;
+        if (err.data) {
+          if (typeof err.data === 'string') return err.data;
+          if (err.data.message) return err.data.message;
+          if (err.data.error) return err.data.error;
+        }
+        try { return JSON.stringify(err); } catch (e) { return String(err); }
+      };
       // Dispatch createClient thunk which updates the Redux store
       // ensure managerId is present if selected
       const payloadToSend = { ...data };
       if (data.managerId) payloadToSend.managerId = data.managerId;
       const result = await dispatch(createClient(payloadToSend));
       if (createClient.fulfilled.match(result)) {
-        // creation succeeded, show success message and refresh list
+        // Defensive: some backends return { success: false, error: '...' } but the thunk
+        // may still resolve. Treat that as a rejection and show the server error.
         const payload = result.payload;
+        if (payload && (payload.success === false || payload.error)) {
+          const errMsg = payload.error || payload.message || (payload.data && payload.data.error) || 'Failed to create client';
+          setSubmitError(errMsg);
+          return;
+        }
+
+        // creation succeeded, show success message and refresh list
         const created = payload?.data || payload;
         setSubmitSuccess(`Client "${created?.name || created?.company || 'Created'}" added successfully.`);
         // refresh clients list in store so clients page shows latest
@@ -69,8 +89,7 @@ const AddClientsPage = () => {
               form.append('file', f, f.name);
               // include commonly-required metadata keys some backends expect
               form.append('file_name', f.name);
-              // if backend expects a URL (e.g., when uploading via signed URL) include blank placeholder
-              form.append('file_url', '');
+              // Do not append a blank file_url — backend requires real values; send actual file and name only
               // include uploader info when available
               try {
                 const userJson = localStorage.getItem('userInfo') || localStorage.getItem('user');
@@ -81,19 +100,33 @@ const AddClientsPage = () => {
               } catch (e) {
                 // ignore
               }
+
+              // Append tenantId explicitly to FormData to help backends that don't read headers when multipart is used
+              const tenantId = localStorage.getItem('tenantId') || '';
+              if (tenantId) form.append('tenantId', tenantId);
+
               // log tenant/token state for easier debugging of server errors
               // eslint-disable-next-line no-console
-              console.debug('upload: tenantId=', localStorage.getItem('tenantId'), 'accessToken=', !!localStorage.getItem('tm_access_token') || !!localStorage.getItem('accessToken'));
-              // dispatch attachDocument thunk
-              // attachDocument posts to `api/clients/{clientId}/documents`
-              // use unwrap to catch errors if any
+              console.debug('upload: tenantId=', tenantId, 'accessToken=', !!localStorage.getItem('tm_access_token') || !!localStorage.getItem('accessToken'));
+
+              // dispatch attachDocument thunk and check result so we surface server errors (e.g., missing tenant / invalid token)
               // eslint-disable-next-line no-await-in-loop
-              await dispatch(attachDocument({ clientId, document: form }));
+              const attachResult = await dispatch(attachDocument({ clientId, document: form }));
+              if (attachDocument.fulfilled.match(attachResult)) {
+                // success - continue
+              } else {
+                // surface the backend error and stop further processing
+                const errMsg = formatError(attachResult.payload) || attachResult.error?.message || 'Failed to upload document';
+                setSubmitError(errMsg);
+                return;
+              }
             }
           }
         } catch (err) {
-          // non-fatal: log but do not block success flow
+          // surface as an error to the UI instead of silently continuing
           console.warn('Failed to attach documents:', err);
+          setSubmitError(err?.message || 'Failed to attach documents');
+          return;
         }
 
         // create default onboarding tasks and assign to manager if provided
@@ -108,20 +141,40 @@ const AddClientsPage = () => {
           ];
           if (clientId) {
             for (const title of onboardingTasks) {
-              const taskPayload = { title, clientId, assignedTo: managerId };
+              // Align payload with existing AddTask submit shape:
+              // { title, assigned_to, stage, taskDate, priority, time_alloted, description, client_id }
+              const taskPayload = {
+                title,
+                client_id: clientId,
+                assigned_to: managerId ? [managerId] : [],
+                stage: 'TODO',
+                taskDate: new Date().toISOString(),
+                priority: 'MEDIUM',
+              };
               // eslint-disable-next-line no-await-in-loop
-              await dispatch(createTask(taskPayload));
+              const taskResult = await dispatch(createTask(taskPayload));
+              if (createTask.fulfilled.match(taskResult)) {
+                // ok
+              } else {
+                const errMsg = formatError(taskResult.payload) || taskResult.error?.message || 'Failed to create onboarding task';
+                console.warn('Failed to create onboarding task:', errMsg);
+                // surface to user and stop further processing
+                setSubmitError(errMsg);
+                return;
+              }
             }
           }
         } catch (err) {
           console.warn('Failed to create onboarding tasks:', err);
+          setSubmitError(err?.message || 'Failed to create onboarding tasks');
+          return;
         }
         // clear form (react-hook-form will keep values — navigate away for now)
         // navigate to clients list and pass success message
         navigate('/client', { state: { created: true, message: `Client "${created?.name || created?.company || 'Created'}" added successfully.` } });
       } else {
-        // show error message returned from thunk
-        const err = result.payload || result.error?.message || 'Failed to create client';
+        // show error message returned from thunk (rejectWithValue or thrown errors)
+        const err = formatError(result.payload) || result.error?.message || 'Failed to create client';
         setSubmitError(err);
       }
     } catch (error) {
@@ -274,6 +327,49 @@ const AddClientsPage = () => {
                     placeholder="Pincode"
                   />
                   {errors.pincode && <p className="text-red-500 text-sm mt-1">{errors.pincode.message}</p>}
+                </div>
+              </div>
+            </div>
+
+            {/* More Details Section */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Additional Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">GST/Tax ID</label>
+                  <input
+                    {...register("taxId")}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="GST or Tax ID"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Industry</label>
+                  <input
+                    {...register("industry")}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., Technology, Finance"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium mb-1">Notes</label>
+                  <textarea
+                    {...register("notes")}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Any additional notes about the client"
+                    rows="3"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Status</label>
+                  <select
+                    {...register("status")}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                    <option value="Lead">Lead</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -435,7 +531,6 @@ export default AddClientsPage;
 //                   {errors.ref && <p className="text-red-500 text-sm mt-1">{errors.ref.message}</p>}
 //                 </div>
 
-//                 {/* Other input fields remain the same */}
 //                 <div>
 //                   <label className="block text-sm font-medium mb-1">Client Name</label>
 //                   <div className="relative">
@@ -449,7 +544,6 @@ export default AddClientsPage;
 //                   {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
 //                 </div>
 
-//                 {/* Email input with validation */}
 //                 <div>
 //                   <label className="block text-sm font-medium mb-1">Email</label>
 //                   <div className="relative">
@@ -470,7 +564,6 @@ export default AddClientsPage;
 //                   {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
 //                 </div>
 
-//                 {/* Phone input */}
 //                 <div>
 //                   <label className="block text-sm font-medium mb-1">Phone</label>
 //                   <div className="relative">
@@ -490,7 +583,6 @@ export default AddClientsPage;
 //                   {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>}
 //                 </div>
 
-//                 {/* Company input */}
 //                 <div>
 //                   <label className="block text-sm font-medium mb-1">Company</label>
 //                   <div className="relative">
@@ -593,16 +685,10 @@ export default AddClientsPage;
 //                 <div>
 //                   <label className="block text-sm font-medium mb-1">Credit Limit</label>
 //                   <input
-//                     {...register("creditLimit", {
-//                       pattern: {
-//                         value: /^[0-9]+$/,
-//                         message: "Credit Limit must be a number"
-//                       }
-//                     })}
+//                     {...register("creditLimit")}
 //                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
 //                     placeholder="Credit Limit"
 //                   />
-//                   {errors.creditLimit && <p className="text-red-500 text-sm mt-1">{errors.creditLimit.message}</p>}
 //                 </div>
 //               </div>
 //             </div>
@@ -793,7 +879,7 @@ export default AddClientsPage;
 //               </div>
 //             </div>
 
-//             {/* Finance Information */}
+//             {/* Financial Information */}
 //             <div>
 //               <h3 className="text-lg font-semibold mb-4">Financial Information</h3>
 //               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
