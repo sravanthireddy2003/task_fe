@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { FiUser, FiMail, FiPhone } from 'react-icons/fi';
-import axios from 'axios'; // Make sure to install axios: npm install axios
+import { useDispatch, useSelector } from 'react-redux';
+import { createClient, fetchClients, attachDocument } from '../redux/slices/clientSlice';
+import { fetchUsers, selectUsers } from '../redux/slices/userSlice';
+import { createTask } from '../redux/slices/taskSlice';
 
 const indianStates = [
   "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
@@ -19,29 +22,112 @@ const AddClientsPage = () => {
   const navigate = useNavigate();
   const { register, handleSubmit, formState: { errors } } = useForm();
   const [submitError, setSubmitError] = useState(null);
+  const dispatch = useDispatch();
+  const [submitSuccess, setSubmitSuccess] = useState(null);
+  const [files, setFiles] = useState([]);
+
+  // load users so we can filter managers
+  const users = useSelector(selectUsers) || [];
+  useEffect(() => {
+    dispatch(fetchUsers());
+  }, [dispatch]);
+
+  const isManager = (u) => {
+    if (!u) return false;
+    const role = (u.role || u.designation || u.title || u.roleName || '').toString().toLowerCase();
+    if (role.includes('manager')) return true;
+    // also support roles array or permissions
+    if (Array.isArray(u.roles) && u.roles.some(r => (r || '').toString().toLowerCase().includes('manager'))) return true;
+    // fallback: try role id/name fields
+    if ((u.roleId || u.role_id || u.roleName) && ('' + (u.roleId || u.role_id || u.roleName)).toLowerCase().includes('manager')) return true;
+    return false;
+  };
+
+  const managers = Array.isArray(users) ? users.filter(isManager) : [];
 
   const onSubmit = async (data) => {
     try {
-      // Send data to the backend API
-      const response = await axios.post(`${import.meta.env.VITE_SERVERURL}/api/clients/clients`, data);
-      console.log('Client added successfully:', response.data);
+      // Dispatch createClient thunk which updates the Redux store
+      // ensure managerId is present if selected
+      const payloadToSend = { ...data };
+      if (data.managerId) payloadToSend.managerId = data.managerId;
+      const result = await dispatch(createClient(payloadToSend));
+      if (createClient.fulfilled.match(result)) {
+        // creation succeeded, show success message and refresh list
+        const payload = result.payload;
+        const created = payload?.data || payload;
+        setSubmitSuccess(`Client "${created?.name || created?.company || 'Created'}" added successfully.`);
+        // refresh clients list in store so clients page shows latest
+        dispatch(fetchClients());
+        // attach any uploaded documents
+        try {
+          const clientId = created?.id || created?._id || created?.public_id;
+          if (clientId && files && files.length) {
+            for (const f of files) {
+              const form = new FormData();
+              // backend may expect 'file' or 'document' key; we'll send the file blob
+              form.append('file', f, f.name);
+              // include commonly-required metadata keys some backends expect
+              form.append('file_name', f.name);
+              // if backend expects a URL (e.g., when uploading via signed URL) include blank placeholder
+              form.append('file_url', '');
+              // include uploader info when available
+              try {
+                const userJson = localStorage.getItem('userInfo') || localStorage.getItem('user');
+                if (userJson) {
+                  const u = JSON.parse(userJson);
+                  if (u && (u.id || u._id || u.public_id)) form.append('uploaded_by', u.id || u._id || u.public_id);
+                }
+              } catch (e) {
+                // ignore
+              }
+              // log tenant/token state for easier debugging of server errors
+              // eslint-disable-next-line no-console
+              console.debug('upload: tenantId=', localStorage.getItem('tenantId'), 'accessToken=', !!localStorage.getItem('tm_access_token') || !!localStorage.getItem('accessToken'));
+              // dispatch attachDocument thunk
+              // attachDocument posts to `api/clients/{clientId}/documents`
+              // use unwrap to catch errors if any
+              // eslint-disable-next-line no-await-in-loop
+              await dispatch(attachDocument({ clientId, document: form }));
+            }
+          }
+        } catch (err) {
+          // non-fatal: log but do not block success flow
+          console.warn('Failed to attach documents:', err);
+        }
 
-      // Navigate to the client list or a success page
-      navigate("/client");
-    } catch (error) {
-      if (error.response) {
-        // Server responded with a status other than 2xx
-        console.error('Server error:', error.response.data);
-        setSubmitError(error.response.data.message || 'An error occurred while adding the client');
-      } else if (error.request) {
-        // Request was made, but no response was received
-        console.error('Network error:', error.request);
-        setSubmitError('Network error. Please try again.');
+        // create default onboarding tasks and assign to manager if provided
+        try {
+          const clientId = created?.id || created?._id || created?.public_id;
+          const managerId = data.managerId || created?.managerId || created?.assignedManager || null;
+          const onboardingTasks = [
+            'KYC Verification',
+            'Contract Signing',
+            'Project Setup',
+            'Access Provision',
+          ];
+          if (clientId) {
+            for (const title of onboardingTasks) {
+              const taskPayload = { title, clientId, assignedTo: managerId };
+              // eslint-disable-next-line no-await-in-loop
+              await dispatch(createTask(taskPayload));
+            }
+          }
+        } catch (err) {
+          console.warn('Failed to create onboarding tasks:', err);
+        }
+        // clear form (react-hook-form will keep values — navigate away for now)
+        // navigate to clients list and pass success message
+        navigate('/client', { state: { created: true, message: `Client "${created?.name || created?.company || 'Created'}" added successfully.` } });
       } else {
-        // Something happened in setting up the request
-        console.error('Error:', error.message);
-        setSubmitError('Unexpected error. Please try again.');
+        // show error message returned from thunk
+        const err = result.payload || result.error?.message || 'Failed to create client';
+        setSubmitError(err);
       }
+    } catch (error) {
+      // handle unexpected errors
+      console.error('Create client error:', error);
+      setSubmitError(error?.message || 'Unexpected error. Please try again.');
     }
   };
 
@@ -193,6 +279,41 @@ const AddClientsPage = () => {
             </div>
 
             {/* Action Buttons */}
+            {/* Manager Assignment & Documents */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Assignment & Documents</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Assign Manager</label>
+                  <select
+                    {...register('managerId')}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">-- Select Manager (optional) --</option>
+                    {managers.length === 0 ? (
+                      <option value="">No managers available</option>
+                    ) : (
+                      managers.map((m) => (
+                        <option key={m.public_id || m._id || m.id} value={m.public_id || m._id || m.id}>
+                          {m.name || m.firstName || m.email}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Attach Documents</label>
+                  <input
+                    type="file"
+                    multiple
+                    onChange={(e) => setFiles(Array.from(e.target.files || []))}
+                    className="w-full"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Accepted: PDF, DOCX, images. Max size enforced by backend.</p>
+                </div>
+              </div>
+            </div>
             <div className="flex space-x-4">
               <button
                 type="submit"

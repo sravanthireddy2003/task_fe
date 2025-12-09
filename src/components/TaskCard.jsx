@@ -44,28 +44,28 @@ useEffect(() => {
     dispatch(getSubTask(task.task_id));
     setLocalTask(task);  // Only set if task_id changes
   }
-}, [dispatch, task.task_id]);
+}, [dispatch, task?.task_id]);
 
   
   const handleStatusUpdate = async (status) => {
-  if (!task?.task_id) return;
+    const id = task?.task_id ?? task?.id ?? task?._id;
+    if (!id) return;
 
-  try {
-    const result = await dispatch(
-      updateTaskStatuss({
-        id: task.task_id.toString(), 
-        data: { stage: status }    
-      })
-    ).unwrap();
+    try {
+      const result = await dispatch(
+        updateTaskStatuss({
+          id: id.toString(),
+          data: { stage: status },
+        })
+      ).unwrap();
 
-    if (result) {
-      setLocalTask(prev => ({ ...prev, stage: status }));
+      if (result) {
+        setLocalTask((prev) => ({ ...prev, stage: status }));
+      }
+    } catch (error) {
+      console.error("Update failed:", error);
+      setLocalTask((prev) => ({ ...prev }));
     }
-  } catch (error) {
-    console.error("Update failed:", error);
-    // Revert UI if update fails
-    setLocalTask(prev => ({ ...prev }));
-  }
 };
 
   if (!task) {
@@ -165,12 +165,16 @@ useEffect(() => {
         </div>
       </div>
 
-      <AddSubTask open={open} setOpen={setOpen} id={localTask.task_id} />
+      <AddSubTask
+        open={open}
+        setOpen={setOpen}
+        id={localTask?.task_id ?? localTask?.id ?? localTask?._id}
+      />
 
       <UpdateTaskStatus
         openStage={openStage}
         setOpenStage={setOpenStage}
-        id={localTask.task_id}
+        id={localTask?.task_id ?? localTask?.id ?? localTask?._id}
         onStatusUpdate={handleStatusUpdate}
       />
     </>

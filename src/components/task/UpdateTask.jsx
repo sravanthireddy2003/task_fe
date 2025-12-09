@@ -52,7 +52,7 @@ const UpdateTask = ({ open, setOpen, taskId }) => {
   useEffect(() => {
     const fetchClients = async () => {
       try {
-        const response = await httpGetService("api/clients/clients");
+        const response = await httpGetService("api/clients");
         setClients(response);
       } catch (error) {
         console.error("Error fetching clients:", error);

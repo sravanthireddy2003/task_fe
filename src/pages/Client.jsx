@@ -7,7 +7,7 @@ import Title from "../components/Title";
 import Button from "../components/Button";
 import Table from "../components/client/EditInClient";
 import UpdateClient from "../components/client/UpdateClient";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Link } from "react-router-dom";
 import {
   fetchClients,
@@ -21,6 +21,7 @@ import {
 const Clients = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const location = useLocation();
   
   const clients = useSelector(selectClients);
   const status = useSelector(selectClientStatus);
@@ -71,6 +72,9 @@ const Clients = () => {
     );
   }
 
+  // If navigation provided a success message (after create), show a small banner
+  const createdMsg = location?.state?.message;
+
   return (
     <div className="w-full p-4">
       <div className="flex items-center justify-between mb-6">
@@ -83,6 +87,12 @@ const Clients = () => {
           />
         </Link>
       </div>
+
+      {createdMsg && (
+        <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-800 rounded">
+          {createdMsg}
+        </div>
+      )}
 
       {clients.length === 0 ? (
         <div className="text-center py-8">

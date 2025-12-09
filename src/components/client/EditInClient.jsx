@@ -24,15 +24,29 @@ const Table = ({ clients, onEdit, onRowClick, onDelete }) => {
   // Filtered and sorted clients based on input
   const filteredClients = clients
     .filter((client) =>
-      client.name.toLowerCase().includes(filter.toLowerCase()) ||
-      client.company.toLowerCase().includes(filter.toLowerCase())
+      client.name?.toLowerCase().includes(filter.toLowerCase()) ||
+      client.company?.toLowerCase().includes(filter.toLowerCase()) ||
+      // support multiple possible manager name keys
+      (client.manager_name || client.managerName || client.manager)?.toString().toLowerCase().includes(filter.toLowerCase())
     )
     .sort((a, b) => {
       if (sortField) {
         if (sortDirection === "asc") {
-          return a[sortField] > b[sortField] ? 1 : -1;
+          const va = (a[sortField] ?? a[sortField] ?? "")
+            .toString()
+            .toLowerCase();
+          const vb = (b[sortField] ?? b[sortField] ?? "")
+            .toString()
+            .toLowerCase();
+          return va > vb ? 1 : -1;
         } else {
-          return a[sortField] < b[sortField] ? 1 : -1;
+          const va = (a[sortField] ?? a[sortField] ?? "")
+            .toString()
+            .toLowerCase();
+          const vb = (b[sortField] ?? b[sortField] ?? "")
+            .toString()
+            .toLowerCase();
+          return va < vb ? 1 : -1;
         }
       }
       return 0;
@@ -80,6 +94,12 @@ const Table = ({ clients, onEdit, onRowClick, onDelete }) => {
                 <FaSort />
               </button>
             </th>
+            <th className="border px-4 py-2">
+              Manager{" "}
+              <button onClick={() => handleSort("manager_name")} className="ml-2">
+                <FaSort />
+              </button>
+            </th>
             <th className="border px-4 py-2">Email</th>
             <th className="border px-4 py-2">Phone</th>
             <th className="border px-4 py-2">
@@ -100,6 +120,7 @@ const Table = ({ clients, onEdit, onRowClick, onDelete }) => {
             >
               <td className="border px-4 py-2">{client.ref}</td>
               <td className="border px-4 py-2">{client.company}</td>
+              <td className="border px-4 py-2">{client.manager_name || client.managerName || client.manager || ''}</td>
               <td className="border px-4 py-2">{client.email}</td>
               <td className="border px-4 py-2">{client.phone}</td>
               <td className="border px-4 py-2">{client.name}</td>
