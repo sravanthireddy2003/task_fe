@@ -13,12 +13,10 @@ import TaskDetails from "./pages/TaskDetails";
 import Tasks from "./pages/Tasks";
 import Report from "./pages/Report";
 import TestRep from "./pages/testRep";
-// import Trash from "./pages/Trash";
 import Users from "./pages/Users";
-import Client from "./pages/Client"
+import Client from "./pages/Client";
 import Dashboard from "./pages/dashboard";
 import AddClient from "./pages/AddClientsP";
-// import ClientDetails from "./pages/ClientDetails";
 import ClientDashboard from "./pages/ClientDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import ManagerDashboard from "./pages/ManagerDashboard";
@@ -43,78 +41,86 @@ import Notifications from "./pages/Notifications";
 import Trash from "./pages/Trash";
 import Approvals from "./pages/Approvals";
 import LandingPage from "./Landingpage";
-// import VC from "./pages/VC";
- 
-import {  GoogleOAuthProvider } from "@react-oauth/google";
- 
- 
+import { GoogleOAuthProvider } from "@react-oauth/google";
+
 function Layout() {
-  const { user } = useSelector((state) => state.auth);
- 
   const location = useLocation();
- 
+  const { user, isSidebarCollapsed } = useSelector((state) => state.auth);
+
   return user ? (
-    <div className='w-full h-screen flex flex-col md:flex-row'>
-      <div className='w-1/5 h-screen bg-white sticky top-0 hidden md:block'>
+    <div className="w-full h-screen flex flex-row bg-gray-50">
+      {/* Desktop Sidebar - Hover-based collapse/expand */}
+      <div
+        className={clsx(
+          "h-screen bg-white border-r border-gray-200 hidden md:block sticky top-0 z-40 transition-all duration-200 group",
+          isSidebarCollapsed ? "w-16 group-hover:w-64" : "w-64"
+        )}
+      >
         <Sidebar />
       </div>
- 
-      <MobileSidebar />
- 
-      <div className='flex-1 overflow-y-auto'>
+      {/* Main content - flex-1 takes all remaining space */}
+      <div className="flex-1 flex flex-col overflow-hidden">
         <Navbar />
- 
-        <div className='p-4 2xl:px-10'>
+        <div className="flex-1 overflow-y-auto p-4 2xl:px-10">
           <Outlet />
         </div>
       </div>
+
+      {/* Mobile Sidebar Overlay */}
+      <MobileSidebar />
     </div>
   ) : (
-    <Navigate to='/log-in' state={{ from: location }} replace />
+    <Navigate to="/log-in" state={{ from: location }} replace />
   );
 }
- 
+
 const MobileSidebar = () => {
   const { isSidebarOpen } = useSelector((state) => state.auth);
   const mobileMenuRef = useRef(null);
   const dispatch = useDispatch();
- 
+
   const closeSidebar = () => {
     dispatch(setOpenSidebar(false));
   };
- 
+
   return (
     <>
       <Transition
         show={isSidebarOpen}
         as={Fragment}
-        enter='transition-opacity duration-700'
-        enterFrom='opacity-x-10'
-        enterTo='opacity-x-100'
-        leave='transition-opacity duration-700'
-        leaveFrom='opacity-x-100'
-        leaveTo='opacity-x-0'
+        enter="transition-all duration-300 ease-in-out"
+        enterFrom="translate-x-full opacity-0"
+        enterTo="translate-x-0 opacity-100"
+        leave="transition-all duration-300 ease-in-out"
+        leaveFrom="translate-x-0 opacity-100"
+        leaveTo="translate-x-full opacity-0"
       >
         {(ref) => (
           <div
             ref={(node) => (mobileMenuRef.current = node)}
-            className={clsx(
-              "md:hidden w-full h-full bg-black/40 transition-all duration-700 transform ",
-              isSidebarOpen ? "translate-x-0" : "translate-x-full"
-            )}
-            onClick={() => closeSidebar()}
+            className="md:hidden fixed inset-0 bg-black/50 z-50 flex"
+            onClick={closeSidebar}
           >
-            <div className='bg-white w-3/4 h-full'>
-              <div className='w-full flex justify-end px-5 mt-5'>
+            <div 
+              className="bg-white w-80 h-full shadow-2xl transform transition-transform duration-300"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Mobile Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <div className="flex items-center gap-3">
+                  <img src="/nmit.png" alt="Logo" className="h-10 w-12 rounded-lg shadow-sm" />
+                  <span className="text-xl font-semibold text-gray-900">Task Manager</span>
+                </div>
                 <button
-                  onClick={() => closeSidebar()}
-                  className='flex justify-end items-end'
+                  onClick={closeSidebar}
+                  className="p-2 rounded-xl hover:bg-gray-100 transition-colors flex items-center justify-center"
                 >
-                  <IoClose size={25} />
+                  <IoClose size={24} className="text-gray-600" />
                 </button>
               </div>
- 
-              <div className='-mt-10'>
+
+              {/* Mobile Sidebar Content */}
+              <div className="p-4 overflow-y-auto h-[calc(100%-80px)]">
                 <Sidebar />
               </div>
             </div>
@@ -124,7 +130,7 @@ const MobileSidebar = () => {
     </>
   );
 };
- 
+
 function App() {
   const GoogleAuthWrapper = () => {
     return (
@@ -135,7 +141,7 @@ function App() {
   };
 
   return (
-    <main className="w-full min-h-screen bg-[#f3f4f6]">
+    <main className="w-full min-h-screen bg-gray-50">
       <Routes>
         {/* Public landing page */}
         <Route path="/" element={<LandingPage />} />
@@ -160,7 +166,6 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/change-password" element={<ChangePassword />} />
           <Route path="/analysis" element={<Analysis />} />
-          <Route path="*" element={<PageNotFound />} />
           <Route path="/client" element={<Client />} />
           <Route path="/add-client" element={<AddClient />} />
           <Route path="/client-dashboard/:id" element={<ClientDashboard />} />
@@ -181,6 +186,7 @@ function App() {
           <Route path="/report" element={<Report />} />
           <Route path="/testRep" element={<TestRep />} />
           <Route path="/task/:id" element={<TaskDetails />} />
+          <Route path="*" element={<PageNotFound />} />
         </Route>
 
         {/* Authentication routes */}

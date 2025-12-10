@@ -18,10 +18,20 @@ try {
   userInfo = null;
 }
 
+// Read persisted sidebar collapsed state from localStorage (boolean stored as 'true'/'false')
+let persistedCollapsed = false;
+try {
+  const sc = localStorage.getItem('sidebarCollapsed');
+  persistedCollapsed = sc === 'true';
+} catch (e) {
+  persistedCollapsed = false;
+}
+
 const initialState = {
   user: userInfo,
   tempToken: null,
   isSidebarOpen: false,
+  isSidebarCollapsed: persistedCollapsed,
   status: null,
   error: null,
   authError: null,
@@ -370,6 +380,14 @@ const authSlice = createSlice({
       state.user = action.payload;
       localStorage.setItem("userInfo", JSON.stringify(action.payload));
     },
+    setSidebarCollapsed: (state, action) => {  
+      state.isSidebarCollapsed = action.payload;
+      try {
+        localStorage.setItem('sidebarCollapsed', action.payload ? 'true' : 'false');
+      } catch (e) {
+        // ignore
+      }
+    },
     setTempToken: (state, action) => {
       state.tempToken = action.payload;
     },
@@ -383,8 +401,8 @@ const authSlice = createSlice({
       state.tempToken = null;
 
       // ✅ NUCLEAR CLEANUP
-      localStorage.clear();      // Everything gone
-      sessionStorage.clear();    // Everything gone
+      localStorage.clear();      
+      sessionStorage.clear();  
 
       // Clear tokens
       clearTokens();
@@ -412,9 +430,6 @@ const authSlice = createSlice({
       } catch (e) { }
     },
 
-    setOpenSidebar: (state, action) => {
-      state.isSidebarOpen = action.payload;
-    },
     setOpenSidebar: (state, action) => {
       state.isSidebarOpen = action.payload;
     },
@@ -623,7 +638,7 @@ const authSlice = createSlice({
 });
 
 // ✅ Actions
-export const { setCredentials, setTempToken, logout, setOpenSidebar, clearTempToken } = authSlice.actions;
+export const { setCredentials, setTempToken, logout, setOpenSidebar,setSidebarCollapsed, clearTempToken } = authSlice.actions;
 
 // ✅ Selectors
 export const selectUser = (state) => state.auth.user;
