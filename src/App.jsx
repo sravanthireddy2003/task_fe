@@ -42,6 +42,7 @@ import Workflow from "./pages/Workflow";
 import Notifications from "./pages/Notifications";
 import Trash from "./pages/Trash";
 import Approvals from "./pages/Approvals";
+import LandingPage from "./Landingpage";
 // import VC from "./pages/VC";
  
 import {  GoogleOAuthProvider } from "@react-oauth/google";
@@ -125,70 +126,73 @@ const MobileSidebar = () => {
 };
  
 function App() {
- 
-  const GoogleAuthWrapper = ()=>{
-    return(
+  const GoogleAuthWrapper = () => {
+    return (
       <GoogleOAuthProvider clientId="1050244552283-mqheend1fvhoguv0b9vuf3t1pp5o9fgv.apps.googleusercontent.com">
-        <Login></Login>
+        <Login />
       </GoogleOAuthProvider>
-    )
-  }
+    );
+  };
+
   return (
-    <main className='w-full min-h-screen bg-[#f3f4f6] '>
+    <main className="w-full min-h-screen bg-[#f3f4f6]">
       <Routes>
+        {/* Public landing page */}
+        <Route path="/" element={<LandingPage />} />
+
+        {/* Authenticated layout */}
         <Route element={<Layout />}>
-          <Route index path='/' element={<RoleRedirect/>} />
-          <Route path='/dashboard' element={<Dashboard />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route element={<ProtectedRoute allowedRoles={['Admin']} />}>
-            <Route path='/admin' element={<AdminDashboard/>} />
+            <Route path="/admin" element={<AdminDashboard />} />
           </Route>
           <Route element={<ProtectedRoute allowedRoles={['Manager']} />}>
-            <Route path='/manager' element={<ManagerDashboard/>} />
+            <Route path="/manager" element={<ManagerDashboard />} />
           </Route>
           <Route element={<ProtectedRoute allowedRoles={['Employee']} />}>
-            <Route path='/employee' element={<EmployeeDashboard/>} />
+            <Route path="/employee" element={<EmployeeDashboard />} />
           </Route>
           <Route element={<ProtectedRoute allowedRoles={['Client']} />}>
-            <Route path='/client-portal' element={<ClientDashboard/>} />
+            <Route path="/client-portal" element={<ClientDashboard />} />
           </Route>
-          <Route path='/profile' element={<Profile/>} />
-          <Route path='/change-password' element={<ChangePassword/>} />
-          <Route path='/analysis' element={<Analysis />} />
-          <Route path='*' element={<PageNotFound/>} />
-          <Route path='/client' element={<Client />} />
-          <Route path="/add-client" element={<AddClient/>} />
+
+          {/* Common routes */}
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/change-password" element={<ChangePassword />} />
+          <Route path="/analysis" element={<Analysis />} />
+          <Route path="*" element={<PageNotFound />} />
+          <Route path="/client" element={<Client />} />
+          <Route path="/add-client" element={<AddClient />} />
           <Route path="/client-dashboard/:id" element={<ClientDashboard />} />
- 
-          {/* <Route path='/client/:id' element={<ClientDetails/>} /> */}
-          <Route path='/tasks' element={<Tasks />} />
-          <Route path='/completed/:status' element={<Tasks />} />
-          <Route path='/in-progress/:status' element={<Tasks />} />
-          <Route path='/todo/:status' element={<Tasks />} />
-          <Route path='/team' element={<Users />} />
-          <Route path='/departments' element={<Departments />} />
-          <Route path='/projects' element={<Projects />} />
-          <Route path='/documents' element={<Documents />} />
-          <Route path='/settings' element={<Settings />} />
-          <Route path='/chat' element={<Chat />} />
-          <Route path='/workflow' element={<Workflow />} />
-          <Route path='/notifications' element={<Notifications />} />
-          <Route path='/approvals' element={<Approvals />} />
-          <Route path='/trash' element={<Trash />} />
-          <Route path='/report' element={<Report/>} />
-          {/* <Route path='/vc' element={<VC/>} /> */}
-          <Route path='/testRep' element={<TestRep/>} />
-          {/* <Route path='/trashed' element={<Trash />} /> */}
-          <Route path='/task/:id' element={<TaskDetails/>} />
+          <Route path="/tasks" element={<Tasks />} />
+          <Route path="/completed/:status" element={<Tasks />} />
+          <Route path="/in-progress/:status" element={<Tasks />} />
+          <Route path="/todo/:status" element={<Tasks />} />
+          <Route path="/team" element={<Users />} />
+          <Route path="/departments" element={<Departments />} />
+          <Route path="/projects" element={<Projects />} />
+          <Route path="/documents" element={<Documents />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/chat" element={<Chat />} />
+          <Route path="/workflow" element={<Workflow />} />
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/approvals" element={<Approvals />} />
+          <Route path="/trash" element={<Trash />} />
+          <Route path="/report" element={<Report />} />
+          <Route path="/testRep" element={<TestRep />} />
+          <Route path="/task/:id" element={<TaskDetails />} />
         </Route>
-        <Route path='/log-in' element={<GoogleAuthWrapper/>} />
-        <Route path='/verify-otp' element={<VerifyOTP/>} />
-        <Route path='/forgot' element={<Forgot/>} />
-        <Route path='/reset' element={<Reset/>} />
+
+        {/* Authentication routes */}
+        <Route path="/log-in" element={<GoogleAuthWrapper />} />
+        <Route path="/verify-otp" element={<VerifyOTP />} />
+        <Route path="/forgot" element={<Forgot />} />
+        <Route path="/reset" element={<Reset />} />
       </Routes>
- 
+
       <Toaster richColors />
     </main>
   );
 }
- 
+
 export default App;
