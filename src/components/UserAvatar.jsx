@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { logout, selectUser, getProfile,logoutUser  } from "../redux/slices/authSlice";
+import { logout, selectUser, getProfile, logoutUser } from "../redux/slices/authSlice";
 import { FaUser, FaKey, FaCog, FaSignOutAlt } from "react-icons/fa";
 import { toast } from 'sonner';
 
@@ -10,11 +10,9 @@ const UserAvatar = () => {
   const [imageError, setImageError] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const fetchRef = useRef(false); // ✅ Prevent multiple calls
   
-  // ✅ SINGLE SOURCE - Use selectUser only (your inspect shows this structure)
   const user = useSelector(selectUser) || {};
-  
-  // ✅ Your API returns: user.photo = "http://localhost:4000/uploads/profiles/..."
   const photoUrl = user.photo;
   
   const initials = (() => {
@@ -41,21 +39,45 @@ const UserAvatar = () => {
     navigate(path);
   };
 
-const handleLogout = async () => {
-  setIsDropdownOpen(false);
-  await dispatch(logoutUser ()); 
-  dispatch(logout());         
-  toast.success('Signed out');
-  navigate('/log-in', { replace: true });
-};
+  const handleLogout = async () => {
+    setIsDropdownOpen(false);
+    await dispatch(logoutUser()); 
+    dispatch(logout());         
+    toast.success('Signed out');
+    navigate('/log-in', { replace: true });
+  };
 
-  // ✅ Load profile on mount if no photo
+  // ✅ FIXED useEffect - NO MORE INFINITE CALLS
   useEffect(() => {
-    if (!photoUrl && !imageError) {
-      console.log('🔄 Fetching profile for avatar...');
-      dispatch(getProfile());
+    // Guards: Skip if no user, already fetching, has modules, or has photo
+    if (!user?.id || fetchRef.current || user.modules?.length > 0 || photoUrl) {
+      return;
     }
-  }, [dispatch, photoUrl, imageError]);
+    
+    fetchRef.current = true;
+    console.log('🔄 Fetching profile for avatar...');
+
+    const fetchProfile = async () => {
+      try {
+        await dispatch(getProfile()).unwrap();
+      } catch (err) {
+        console.error('Profile fetch failed:', err);
+        if (err.status === 401) {
+          dispatch(logout());
+          navigate('/log-in', { replace: true });
+        }
+      } finally {
+        fetchRef.current = false; // ✅ Reset for cleanup
+      }
+    };
+
+    fetchProfile();
+
+    // ✅ Cleanup on unmount
+    return () => {
+      fetchRef.current = false;
+    };
+  }, [dispatch, user?.id]); // ✅ ONLY user ID - no photoUrl/imageError
 
   return (
     <div className="relative">
@@ -85,7 +107,7 @@ const handleLogout = async () => {
         </button>
       </div>
 
-      {/* Dropdown - SAME AS YOURS */}
+      {/* Dropdown - UNCHANGED */}
       {isDropdownOpen && (
         <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-2xl z-50 border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="p-4 bg-gradient-to-r from-white to-gray-50 border-b border-gray-100">
@@ -97,11 +119,6 @@ const handleLogout = async () => {
                 <div className="font-semibold text-gray-800 truncate">{displayName}</div>
                 <div className="text-xs text-gray-500 truncate">{user?.email}</div>
                 <div className="text-xs text-gray-500 truncate">{user?.phone}</div>
-                {/* {photoUrl && !imageError && (
-                  // <div className="text-xs text-blue-600 truncate mt-1 font-mono">
-                  //   📸 {photoUrl.split('/').pop()?.slice(0, 15)}...
-                  // </div>
-                )} */}
               </div>
             </div>
           </div>
