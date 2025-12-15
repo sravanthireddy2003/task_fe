@@ -19,6 +19,7 @@ import Report from "./pages/Report";
 import TestRep from "./pages/testRep";
 import Users from "./pages/Users";
 import Client from "./pages/Client";
+import ClientDashboard from "./pages/ClientDashboard";
 import Dashboard from "./pages/dashboard";
 import AddClient from "./pages/AddClientsP";
 import Profile from "./pages/Profile";
@@ -151,6 +152,7 @@ function App() {
           <Route element={<ModuleRouteGuard moduleName="Clients" />}>
             <Route path="/client" element={<Client />} />
             <Route path="/add-client" element={<AddClient />} />
+            <Route path="/client-dashboard/:id" element={<ClientDashboard />} />
           </Route>
 
           {/* Departments */}
@@ -216,6 +218,8 @@ function App() {
 
         {/* Auth Routes */}
         <Route path="/log-in" element={<Login />} />
+        {/* legacy route redirect */}
+        <Route path="/login" element={<Navigate to="/log-in" replace />} />
         <Route path="/verify-otp" element={<VerifyOTP />} />
         <Route path="/forgot" element={<Forgot />} />
         <Route path="/reset" element={<Reset />} />

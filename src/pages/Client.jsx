@@ -137,11 +137,14 @@ const Clients = () => {
           className="border rounded-md p-2"
         >
           <option value="all">All Managers</option>
-          {managers.map((manager) => (
-            <option key={manager._id} value={manager._id}>
-              {manager.name}
-            </option>
-          ))}
+          {managers.map((manager, idx) => {
+            const mgrId = manager.public_id || manager._id || manager.id || manager.publicId || manager.email || `mgr-${idx}`;
+            return (
+              <option key={mgrId} value={mgrId}>
+                {manager.name}
+              </option>
+            );
+          })}
         </select>
       </div>
 
