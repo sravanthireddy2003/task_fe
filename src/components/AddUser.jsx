@@ -45,7 +45,8 @@ const AddUser = ({ open, setOpen, userData }) => {
           title: userData.title || "",
           phone: userData.phone || "",
           role: userData.role || "Employee",
-          departmentId: userData.departmentId || "",
+          departmentId:
+            userData.departmentId || userData.department_id || userData.department || userData.dept_id || userData.departmentId || userData.departmentId || (userData.department && (userData.department.public_id || userData.department.id)) || "",
           isGuest: userData.isGuest || false,
           isActive: userData.isActive ?? true,
         });
@@ -174,22 +175,20 @@ const AddUser = ({ open, setOpen, userData }) => {
           </div>
 
           {/* Department - UNCOMMENT IF NEEDED */}
-          {/* <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Department (optional)
-            </label>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Department (optional)</label>
             <select
               {...register("departmentId")}
               className="w-full border px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500"
             >
               <option value="">-- Select department --</option>
               {departments.map((dept) => (
-                <option key={dept.public_id || dept.id} value={dept.public_id || dept.id}>
+                <option key={dept.public_id || dept.id || dept._id} value={dept.public_id || dept.id || dept._id}>
                   {dept.name}
                 </option>
               ))}
             </select>
-          </div> */}
+          </div>
         </div>
 
         {/* SWITCHES */}

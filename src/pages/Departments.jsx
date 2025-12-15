@@ -383,21 +383,29 @@ const Departments = () => {
   }, [dispatch]);
 
   const processedDepartments = departments.map((dept, index) => {
-    let managerDetails = allUsers.find(
-      (u) =>
-        u.public_id === dept.manager_id ||
-        u._id === dept.manager_id ||
-        u.id === dept.manager_id ||
-        u.public_id === dept.managerId ||
-        u._id === dept.managerId ||
-        u.id === dept.managerId
-    );
+    // Normalize possible manager id fields from backend
+    const mgrId = dept.manager_id || dept.managerId || dept.manager || dept.managerId;
+
+    // Try to find matching user by multiple id fields
+    let managerDetails = null;
+    if (mgrId) {
+      managerDetails = allUsers.find((u) =>
+        u.public_id === mgrId || u._id === mgrId || u.id === mgrId ||
+        // also allow match by email or name fallback (unlikely but safe)
+        u.email === mgrId || u.name === mgrId
+      );
+    }
+
+    // Determine manager display name and normalized managerId for forms
+    const managerName = managerDetails?.name || dept.manager_name || dept.managerName || dept.manager || '-';
+    const managerId = managerDetails?.public_id || managerDetails?._id || managerDetails?.id || mgrId || '';
 
     return {
       ...dept,
       displayId: index + 1,
       actualId: dept.public_id || dept._id || dept.id,
-      managerName: managerDetails?.name || dept.manager_name || dept.managerName || '-',
+      managerName,
+      managerId,
       createdAt: dept.createdAt || dept.created_at || 'N/A',
       name: dept.name || 'Unnamed Department',
       color: ['#6366F1', '#10B981', '#F59E0B'][index % 3]

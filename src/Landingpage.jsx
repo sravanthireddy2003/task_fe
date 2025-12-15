@@ -28,8 +28,8 @@ export default function TaskFlowEnterprise() {
   };
 
   const handlePageNav = (path) => window.location.href = path;
-  const handleLogin = () => window.location.href = '/login';
-  const handleSignup = () => window.location.href = '/signup';
+  const handleLogin = () => window.location.href = '/log-in';
+  const handleSignup = () => window.location.href = '/log-in';
   const handleLogoClick = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setActiveNavItem('home');
@@ -43,7 +43,7 @@ export default function TaskFlowEnterprise() {
     { icon: FaMobileAlt, text: 'Mobile First', color: 'text-pink-400' }
   ];
 
-  const modules = [
+const modules = [
     { id: 'auth', icon: FaLock, title: 'Secure Authentication', description: '2FA, SSO, RBAC with multi-tenant SaaS architecture', features: ['Google SSO', 'Password Policies', 'Login History', 'Suspicious Alerts'], color: 'from-blue-500/20 to-cyan-500/20' },
     { id: 'dashboard', icon: FaChartPie, title: 'Smart Dashboard', description: 'AI-powered insights with real-time KPIs and predictive analytics', features: ['Task Heatmaps', 'AI Insights', 'Productivity Scores', 'Trend Analysis'], color: 'from-purple-500/20 to-pink-500/20' },
     { id: 'clients', icon: FaUsers, title: 'Client Management', description: 'Complete client lifecycle with portal access and automation', features: ['Client Portals', 'Auto Onboarding', 'Multiple Contacts', 'Document Mgmt'], color: 'from-emerald-500/20 to-green-500/20' },
