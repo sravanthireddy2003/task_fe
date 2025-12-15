@@ -1,5 +1,3 @@
-
-
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import {
   httpGetService,
@@ -10,13 +8,13 @@ import {
   clearAuthTokens
 } from "../../App/httpHandler";
 import { getAccessToken } from "../../utils/tokenService";
+import { toast } from 'sonner';
 
 const initialState = {
   isSidebarOpen: false,
   status: null,
   error: null,
   users: [],
-  // Add auth state
   auth: {
     token: getAccessToken(),
     user: JSON.parse(localStorage.getItem('user') || 'null'),
@@ -24,14 +22,11 @@ const initialState = {
   }
 };
 
-// Login async thunk
 export const loginUser = createAsyncThunk(
   "auth/login",
   async (credentials, { rejectWithValue }) => {
     try {
       const response = await httpPostService("api/auth/login", credentials);
-
-      // Store tokens based on rememberMe preference
       if (credentials.rememberMe) {
         setAuthToken(response.accessToken, response.refreshToken, 'local');
         localStorage.setItem('user', JSON.stringify(response.user || response.data));
@@ -39,119 +34,121 @@ export const loginUser = createAsyncThunk(
         setAuthToken(response.accessToken, response.refreshToken, 'session');
         sessionStorage.setItem('user', JSON.stringify(response.user || response.data));
       }
-
       return {
         accessToken: response.accessToken,
         refreshToken: response.refreshToken,
         user: response.user || response.data
       };
     } catch (error) {
-      return rejectWithValue(error);
+      return rejectWithValue(error.response?.data || { message: error.message });
     }
   }
 );
 
-// Logout async thunk
 export const logoutUser = createAsyncThunk(
   "auth/logout",
   async (_, { rejectWithValue }) => {
     try {
-      // Call logout API if needed
       await httpPostService("api/auth/logout");
     } catch (error) {
-      // Continue with clearing tokens even if API call fails
     } finally {
-      // Clear all tokens and user data
       clearAuthTokens();
     }
     return null;
   }
 );
 
-// Register async thunk
 export const registerUser = createAsyncThunk(
   "auth/register",
   async (userData, { rejectWithValue }) => {
     try {
       const response = await httpPostService("api/auth/register", userData);
-
-      // Auto-login after registration if API returns tokens
       if (response.accessToken) {
         setAuthToken(response.accessToken, response.refreshToken);
         localStorage.setItem('user', JSON.stringify(response.user || response.data));
       }
-
       return response;
     } catch (error) {
-      return rejectWithValue(error);
+      return rejectWithValue(error.response?.data || { message: error.message });
     }
   }
 );
 
-// Fetch users async thunk (with tenant ID)
 export const fetchUsers = createAsyncThunk(
   "api/users/getusers",
-  async (data = {}, thunkAPI) => {
+  async (_, { rejectWithValue }) => {
     try {
-      // httpGetService attaches tenant and auth headers itself; pass params only
-      const response = await httpGetService("api/users/getusers", { params: data });
+      const response = await httpGetService("api/users/getusers");
       return response;
     } catch (error) {
-      return thunkAPI.rejectWithValue(error);
+      return rejectWithValue(error.response?.data || { message: error.message });
     }
   }
 );
 
-// Create user async thunk (admin creates team member)
+// ✅ FIXED: Create user
 export const createUser = createAsyncThunk(
   'api/users/create',
-  async (userData, thunkAPI) => {
-    try {
-      const resp = await httpPostService('api/users/create', userData);
-      // return backend response (expected { success, data })
-      return resp;
-    } catch (error) {
-      return thunkAPI.rejectWithValue(error);
-    }
-  }
-);
-
-// Update user async thunk
-export const updateUser = createAsyncThunk(
-  'users/update',
   async (userData, { rejectWithValue }) => {
     try {
-      const { _id, ...data } = userData;
-      const response = await httpPutService(`api/users/update/${_id}`, data);
-      return { _id, ...response.user };
+      const resp = await httpPostService('api/users/create', userData);
+      if (!resp.success) {
+        return rejectWithValue(resp);
+      }
+      return resp;
     } catch (error) {
-      return rejectWithValue(error);
+      return rejectWithValue(error.response?.data || { message: error.message });
     }
   }
 );
 
-// Delete user async thunk
+export const updateUser = createAsyncThunk(
+  'users/update',
+  async ({ id, ...userData }, { rejectWithValue }) => {
+    try {
+      console.log('🔍 UPDATE THUNK - ID:', id, 'Data:', userData);
+      const response = await httpPutService(`api/users/update/${id}`, userData);
+      
+      if (!response.success) {
+        return rejectWithValue(response);
+      }
+      
+      return response.user || response.data || response;
+    } catch (error) {
+      console.error('Update error:', error.response?.data);
+      return rejectWithValue(error.response?.data || { message: error.message });
+    }
+  }
+);
+
 export const deleteUser = createAsyncThunk(
   'users/delete',
-  async (data, { rejectWithValue }) => {
-    // Accept multiple id variants (plain string, public_id, id, _id) to match backend expectations
-    let id;
-    if (!data) {
-      id = undefined;
-    } else if (typeof data === 'string' || typeof data === 'number') {
-      id = data;
-    } else {
-      id = data?.id || data?._id || data?.public_id || data?.publicId || data?.userId;
-    }
-    if (!id) {
-      return rejectWithValue('Missing user id for delete');
-    }
+  async (userData, { rejectWithValue }) => {
     try {
+      let id;
+      if (!userData) {
+        return rejectWithValue({ message: 'Missing user data' });
+      }
+      
+      if (typeof userData === 'string' || typeof userData === 'number') {
+        id = userData;
+      } else {
+        id = userData.id || userData.public_id || userData._id || userData.publicId;
+      }
+      
+      if (!id) {
+        return rejectWithValue({ message: 'Missing user ID for delete' });
+      }
+      console.log('🗑️ DELETE THUNK - ID:', id);
+      
       const response = await httpDeleteService(`api/users/delete/${id}`);
-      // Return normalized payload with the id we attempted to delete
-      return { removedId: id, ...(response || {}) };
+      if (!response.success) {
+        return rejectWithValue(response);
+      }
+      
+      return { removedId: id, success: true };
     } catch (error) {
-      return rejectWithValue(error);
+      return rejectWithValue(error.response?.data || { message: error.message });
     }
   }
 );
@@ -184,10 +181,13 @@ const userSlice = createSlice({
       state.auth.isAuthenticated = false;
       clearAuthTokens();
     },
+    clearError: (state) => {
+      state.error = null;
+    }
   },
   extraReducers: (builder) => {
     builder
-      // Login cases
+      // Login
       .addCase(loginUser.pending, (state) => {
         state.status = 'loading';
         state.error = null;
@@ -204,7 +204,7 @@ const userSlice = createSlice({
         state.auth.isAuthenticated = false;
       })
 
-      // Logout cases
+      // Logout
       .addCase(logoutUser.pending, (state) => {
         state.status = 'loading';
       })
@@ -215,7 +215,7 @@ const userSlice = createSlice({
         state.auth.isAuthenticated = false;
       })
 
-      // Register cases
+      // Register
       .addCase(registerUser.pending, (state) => {
         state.status = 'loading';
         state.error = null;
@@ -233,60 +233,72 @@ const userSlice = createSlice({
         state.error = action.payload;
       })
 
-      // Fetch users cases
+      // Fetch users
       .addCase(fetchUsers.pending, (state) => {
-        state.status = 'loading';
-      })
-      // Create user cases
-      .addCase(createUser.pending, (state) => {
         state.status = 'loading';
         state.error = null;
       })
-      .addCase(createUser.fulfilled, (state, action) => {
-        state.status = 'succeeded';
-        // backend returns { success, data }
-        const created = action.payload?.data || action.payload;
-        if (created) state.users.unshift(created);
-      })
-      .addCase(createUser.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error = action.payload;
-      })
       .addCase(fetchUsers.fulfilled, (state, action) => {
         state.status = 'succeeded';
-        state.users = action.payload.users || action.payload;
+        state.users = Array.isArray(action.payload) ? action.payload : action.payload || [];
       })
       .addCase(fetchUsers.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.payload;
       })
 
-      // Update user cases
+      // Create user
+      .addCase(createUser.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(createUser.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        const created = action.payload?.data || action.payload;
+        if (created) {
+          state.users.unshift(created);
+        }
+      })
+      .addCase(createUser.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload;
+      })
+
+      // 🔥 FIXED: Update user - matches frontend call pattern
       .addCase(updateUser.pending, (state) => {
         state.status = 'loading';
+        state.error = null;
       })
       .addCase(updateUser.fulfilled, (state, action) => {
         state.status = 'succeeded';
         const updatedUser = action.payload;
-        state.users = state.users.map(user =>
-          user._id === updatedUser._id ? updatedUser : user
-        );
+        
+        // Update user in list - comprehensive ID matching
+        state.users = state.users.map(user => {
+          const userIds = [user._id, user.id, user.public_id, user.publicId].filter(Boolean);
+          const updatedIds = [updatedUser._id, updatedUser.id, updatedUser.public_id, updatedUser.publicId].filter(Boolean);
+          
+          if (userIds.some(id => updatedIds.includes(id))) {
+            return updatedUser;
+          }
+          return user;
+        });
       })
       .addCase(updateUser.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.payload;
       })
 
-      // Delete user cases
+      // Delete user
       .addCase(deleteUser.pending, (state) => {
         state.status = 'loading';
       })
       .addCase(deleteUser.fulfilled, (state, action) => {
         state.status = 'succeeded';
-        // Determine which id was removed (thunk returns `removedId`)
-        const removedId = action.payload?.removedId || action.payload?.id || action.meta?.arg?.id || action.meta?.arg?._id || action.meta?.arg?.public_id;
+        const removedId = action.payload?.removedId || action.payload?.id || action.meta.arg?.id;
+        
         if (removedId) {
-          state.users = state.users.filter((user) => {
+          state.users = state.users.filter(user => {
             const ids = [user._id, user.id, user.public_id, user.publicId].filter(Boolean);
             return !ids.includes(removedId);
           });
@@ -304,7 +316,8 @@ export const {
   setTenantId,
   clearTenantId,
   setAuth,
-  clearAuth
+  clearAuth,
+  clearError
 } = userSlice.actions;
 
 // Selectors
@@ -316,5 +329,4 @@ export const selectIsAuthenticated = (state) => state.users.auth.isAuthenticated
 export const selectCurrentUser = (state) => state.users.auth.user;
 export const selectTenantId = () => localStorage.getItem("tenantId") || import.meta.env.VITE_TENANT_ID;
 
-// Reducer
 export default userSlice.reducer;

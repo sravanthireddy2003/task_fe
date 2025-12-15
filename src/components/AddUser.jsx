@@ -1,189 +1,235 @@
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import ModalWrapper from "./ModalWrapper";
+import ModalWrapper from "../components/ModalWrapper";
 import { Dialog } from "@headlessui/react";
-import Textbox from "./Textbox";
-import Loading from "./Loader";
-import Button from "./Button";
+import Textbox from "../components/Textbox";
+import Loading from "../components/Loader";
+import Button from "../components/Button";
 import { useSelector, useDispatch } from "react-redux";
 import { updateUser, createUser, fetchUsers } from "../redux/slices/userSlice";
 import { fetchDepartments, selectDepartments } from "../redux/slices/departmentSlice";
 import { toast } from 'sonner';
+import clsx from "clsx";
 
 const AddUser = ({ open, setOpen, userData }) => {
   const dispatch = useDispatch();
-  const { isLoading, isUpdating } = useSelector((state) => state.auth);
+  const { isLoading: authLoading } = useSelector((state) => state.auth);
+  const userStatus = useSelector((state) => state.user?.status); // User slice loading
   const departments = useSelector(selectDepartments) || [];
+  
+  const isSubmitting = userStatus === 'loading' || authLoading;
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
+  const { 
+    register, 
+    handleSubmit, 
+    formState: { errors }, 
+    reset, 
+    setError,
+    clearErrors,
+    watch 
   } = useForm({
     defaultValues: {
       name: "",
       email: "",
       title: "",
-      password: "",
-      role: "Employee",
       phone: "",
+      role: "Employee",
       departmentId: "",
       isGuest: false,
       isActive: true,
     },
   });
 
-  /** 🔥 FIXED: Reset form when modal opens - clean slate first, then populate if editing */
-  useEffect(() => {
-    if (open) {
-      if (userData && (userData._id || userData.id || userData.public_id)) {
-        // EDIT MODE - populate form with user data
-        reset({
-          name: userData.name || "",
-          email: userData.email || "",
-          title: userData.title || "",
-          phone: userData.phone || "",
-          role: userData.role || "Employee",
-          departmentId:
-            userData.departmentId || userData.department_id || userData.department || userData.dept_id || userData.departmentId || userData.departmentId || (userData.department && (userData.department.public_id || userData.department.id)) || "",
-          isGuest: userData.isGuest || false,
-          isActive: userData.isActive ?? true,
-        });
-      } else {
-        // ADD MODE - clean form
-        reset({
-          name: "",
-          email: "",
-          title: "",
-          password: "",
-          role: "Employee",
-          phone: "",
-          departmentId: "",
-          isGuest: false,
-          isActive: true,
-        });
-      }
-    }
-  }, [open, userData, reset]);
+  // ✅ Native RHF validation rules (NO ZOD)
+  const nameValidation = {
+    required: "Full name is required!",
+    minLength: { value: 2, message: "Name must be at least 2 characters" },
+    maxLength: { value: 100, message: "Name too long (max 100 chars)" }
+  };
 
-  /** Load departments once */
-  useEffect(() => {
-    dispatch(fetchDepartments());
-  }, [dispatch]);
-
-  const handleOnSubmit = (data) => {
-    if (userData && (userData._id || userData.id || userData.public_id)) {
-      // UPDATE
-      const idToSend = userData._id || userData.id || userData.public_id;
-      dispatch(updateUser({ _id: idToSend, ...data }))
-        .unwrap()
-        .then((resp) => {
-          toast.success(`Updated ${resp?.name || 'User'}`);
-          setOpen(false);
-          dispatch(fetchUsers());
-        })
-        .catch((err) => {
-          console.error("Update failed:", err);
-          toast.error(err?.message || 'Update user failed');
-        });
-    } else {
-      // CREATE
-      dispatch(createUser(data))
-        .unwrap()
-        .then((resp) => {
-          const created = resp?.data || resp;
-          setOpen(false);
-          dispatch(fetchUsers());
-          toast.success(`Created ${created?.name || "User"}`);
-          if (created?.tempPassword) toast(`Temporary password: ${created.tempPassword}`);
-        })
-        .catch((err) => toast.error(err?.message || 'Create user failed'));
+  const emailValidation = {
+    required: "Email is required!",
+    pattern: {
+      value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+      message: "Invalid email format"
     }
   };
 
-  /** Handle cancel - reset form and close */
+  const phoneValidation = {
+    maxLength: { value: 20, message: "Phone too long (max 20 chars)" }
+  };
+
+  // Populate form for edit or reset for add
+  useEffect(() => {
+    if (!open) {
+      reset();
+      clearErrors();
+      return;
+    }
+    
+    if (userData) {
+      reset({
+        name: userData.name || "",
+        email: userData.email || "",
+        title: userData.title || "",
+        phone: userData.phone || "",
+        role: userData.role || "Employee",
+        departmentId: userData.departmentPublicId || "",
+        isGuest: userData.isGuest || false,
+        isActive: userData.isActive ?? true,
+      });
+      clearErrors();
+    } else {
+      reset();
+    }
+  }, [open, userData, reset, clearErrors]);
+
+  // Load departments when modal opens
+  useEffect(() => {
+    if (open) {
+      dispatch(fetchDepartments());
+    }
+  }, [dispatch, open]);
+
+  const handleOnSubmit = async (data) => {
+    try {
+      clearErrors(); // Clear any previous errors
+      
+      if (userData && (userData._id || userData.id || userData.public_id)) {
+        // UPDATE
+        const idToSend = userData._id || userData.id || userData.public_id;
+        const resp = await dispatch(updateUser({ id: idToSend, ...data })).unwrap();
+        toast.success(`Updated ${resp?.user?.name || resp?.name || 'User'} successfully`);
+      } else {
+        // CREATE
+        const resp = await dispatch(createUser(data)).unwrap();
+        const created = resp?.data || resp;
+        toast.success(`Created ${created?.name || "User"} successfully`);
+        if (created?.tempPassword) {
+          toast.info(`Temporary password: ${created.tempPassword}`);
+        }
+      }
+      
+      setOpen(false);
+      dispatch(fetchUsers());
+    } catch (err) {
+      console.error('Submit error:', err);
+      
+      // ✅ Handle backend validation errors
+      if (err?.message) {
+        toast.error(err.message);
+      } else {
+        toast.error('Operation failed. Please try again.');
+      }
+      
+      // Set field-specific errors from backend response
+      if (err?.errors && typeof err.errors === 'object') {
+        Object.entries(err.errors).forEach(([field, message]) => {
+          setError(field, { 
+            type: 'server', 
+            message: Array.isArray(message) ? message[0] : message 
+          });
+        });
+      } else if (err?.data?.message) {
+        // Single error message
+        setError('root.serverError', { 
+          type: 'server', 
+          message: err.data.message 
+        });
+      }
+    }
+  };
+
   const handleCancel = () => {
     reset();
+    clearErrors();
     setOpen(false);
   };
 
   return (
     <ModalWrapper open={open} setOpen={setOpen}>
-      <form onSubmit={handleSubmit(handleOnSubmit)}>
-        <Dialog.Title
-          as="h2"
-          className="text-xl font-bold text-gray-900 mb-6"
-        >
-          {userData ? "EDIT USER" : "ADD NEW USER"}
+      <form onSubmit={handleSubmit(handleOnSubmit)} className="space-y-6">
+        <Dialog.Title as="h2" className="text-2xl font-bold text-gray-900 border-b pb-4">
+          {userData ? "Edit User" : "Add New User"}
         </Dialog.Title>
 
-        {/* FORM GRID */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Full Name */}
           <Textbox
-            placeholder="Full name"
+            placeholder="Enter full name (e.g. John Doe)"
             type="text"
-            name="name"
-            label="Full Name"
-            className="w-full rounded"
-            register={register("name", { required: "Full name is required!" })}
+            label="Full Name *"
+            register={register("name", nameValidation)}
             error={errors.name?.message}
           />
-
+          
+          {/* Title */}
           <Textbox
-            placeholder="Job title"
+            placeholder="Job title/position"
             type="text"
-            name="title"
             label="Title"
-            className="w-full rounded"
-            register={register("title", { required: "Title is required!" })}
+            register={register("title", {
+              maxLength: { value: 100, message: "Title too long" }
+            })}
             error={errors.title?.message}
           />
-
+          
+          {/* Email */}
           <Textbox
-            placeholder="Email address"
+            placeholder="user@company.com"
             type="email"
-            name="email"
-            label="Email"
-            className="w-full rounded"
-            register={register("email", { required: "Email is required!" })}
+            label="Email Address *"
+            register={register("email", emailValidation)}
             error={errors.email?.message}
           />
-
+          
+          {/* Phone */}
           <Textbox
-            placeholder="Phone number"
-            type="text"
-            name="phone"
-            label="Phone"
-            className="w-full rounded"
-            register={register("phone")}
+            placeholder="+1 (555) 123-4567"
+            type="tel"
+            label="Phone Number"
+            register={register("phone", phoneValidation)}
             error={errors.phone?.message}
           />
 
           {/* Role */}
           <div>
-            <label className="block text-sm font-medium mb-1">Role</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Role *</label>
             <select
-              {...register("role", { required: "Role is required!" })}
-              className="w-full border px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500"
+              {...register("role", { 
+                required: "Role is required!" 
+              })}
+              disabled={isSubmitting}
+              className={clsx(
+                "w-full px-3 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm",
+                errors.role ? "border-red-300 bg-red-50" : "border-gray-300"
+              )}
             >
+              <option value="">Select Role</option>
               <option value="Admin">Admin</option>
               <option value="Manager">Manager</option>
               <option value="Employee">Employee</option>
               <option value="Client">Client</option>
             </select>
+            {errors.role && (
+              <p className="mt-1 text-sm text-red-600">{errors.role.message}</p>
+            )}
           </div>
 
-          {/* Department - UNCOMMENT IF NEEDED */}
+          {/* Department */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Department (optional)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
             <select
               {...register("departmentId")}
-              className="w-full border px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500"
+              disabled={isSubmitting || departments.length === 0}
+              className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm"
             >
-              <option value="">-- Select department --</option>
+              <option value="">-- Select Department --</option>
               {departments.map((dept) => (
-                <option key={dept.public_id || dept.id || dept._id} value={dept.public_id || dept.id || dept._id}>
+                <option 
+                  key={dept.public_id || dept.id || dept._id} 
+                  value={dept.public_id || dept.id || dept._id}
+                >
                   {dept.name}
                 </option>
               ))}
@@ -191,37 +237,85 @@ const AddUser = ({ open, setOpen, userData }) => {
           </div>
         </div>
 
-        {/* SWITCHES */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <label className="flex items-center gap-2">
-            <input type="checkbox" {...register("isGuest")} className="h-4 w-4" />
-            <span className="text-sm">Is Guest User</span>
-          </label>
+        {/* Status Checkboxes */}
+        <fieldset className="border-t border-gray-200 pt-6">
+          <legend className="text-sm font-medium text-gray-700 px-1">Status Settings</legend>
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-200 cursor-pointer group">
+              <input 
+                type="checkbox" 
+                {...register("isActive", { 
+                  required: userData ? false : "Active status required" 
+                })} 
+                className={clsx(
+                  "h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-all duration-200",
+                  isSubmitting && "cursor-not-allowed opacity-50"
+                )}
+                disabled={isSubmitting}
+              />
+              <div>
+                <span className="text-sm font-semibold text-gray-900 group-hover:text-blue-600">Active User</span>
+                <p className="text-xs text-gray-500">User can login and access system</p>
+              </div>
+            </label>
+            
+            <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-200 cursor-pointer group">
+              <input 
+                type="checkbox" 
+                {...register("isGuest")} 
+                className={clsx(
+                  "h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-all duration-200",
+                  isSubmitting && "cursor-not-allowed opacity-50"
+                )}
+                disabled={isSubmitting}
+              />
+              <div>
+                <span className="text-sm font-semibold text-gray-700 group-hover:text-blue-600">Guest User</span>
+                <p className="text-xs text-gray-500">Limited access user</p>
+              </div>
+            </label>
+          </div>
+          {errors.isActive && (
+            <p className="mt-2 text-sm text-red-600 ml-1">{errors.isActive.message}</p>
+          )}
+        </fieldset>
 
-          <label className="flex items-center gap-2">
-            <input type="checkbox" {...register("isActive")} className="h-4 w-4" />
-            <span className="text-sm">Active Status</span>
-          </label>
-        </div>
-
-        {/* BUTTONS */}
-        {isLoading || isUpdating ? (
-          <div className="py-5"><Loading /></div>
-        ) : (
-          <div className="flex justify-end gap-4 mt-8 border-t pt-4">
-            <Button
-              type="button"
-              className="bg-gray-200 px-6 text-sm font-semibold text-gray-900 rounded-md"
-              onClick={handleCancel}
-              label="Cancel"
-            />
-            <Button
-              type="submit"
-              className="bg-blue-600 px-8 text-sm font-semibold text-white hover:bg-blue-700 rounded-md"
-              label="Submit"
-            />
+        {/* Server Error Display */}
+        {errors.root?.serverError && (
+          <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+            <p className="text-sm text-red-800">{errors.root.serverError.message}</p>
           </div>
         )}
+
+        {/* Submit Buttons */}
+        <div className="flex justify-end gap-3 pt-8 border-t border-gray-200">
+          <Button 
+            type="button" 
+            className="px-8 py-3 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-xl font-semibold transition-all duration-200 shadow-sm"
+            onClick={handleCancel}
+            disabled={isSubmitting}
+            label="Cancel"
+          />
+          <Button 
+            type="submit" 
+            className={clsx(
+              "px-10 py-3 font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2 min-w-[120px] justify-center",
+              isSubmitting 
+                ? "bg-gray-400 text-gray-600 cursor-not-allowed" 
+                : "bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800"
+            )}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/80 border-t-transparent rounded-full animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save User"
+            )}
+          </Button>
+        </div>
       </form>
     </ModalWrapper>
   );
