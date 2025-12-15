@@ -420,6 +420,8 @@ const Departments = () => {
     try {
       const resp = await dispatch(deleteDepartment(id)).unwrap();
       toast.success(resp?.message || 'Department deleted');
+      // Refetch departments immediately after delete
+      await dispatch(fetchDepartments()).unwrap();
     } catch (e) {
       toast.error(e?.message || 'Delete failed');
     }
@@ -444,11 +446,14 @@ const Departments = () => {
         const departmentId = editDept.actualId;
         await dispatch(updateDepartment({ departmentId, data: form })).unwrap();
         toast.success('Department updated');
+        // Refetch departments immediately after update
+        await dispatch(fetchDepartments()).unwrap();
         setShowModal(false);
         return;
       }
 
       await dispatch(createDepartment(form)).unwrap();
+      // Refetch departments immediately after create
       await dispatch(fetchDepartments()).unwrap();
       toast.success('Department created');
       setForm({ name: '', managerId: '', headId: '' });

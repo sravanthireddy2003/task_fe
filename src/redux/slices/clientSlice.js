@@ -4,6 +4,7 @@ import { httpGetService, httpPutService, httpPostService, httpDeleteService } fr
 const initialState = {
   clients: [],
   deletedClients: [],
+  currentClient: null, // Store fetched single client details
   status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
   error: null,
 };
@@ -391,6 +392,8 @@ const clientSlice = createSlice({
       builder.addCase(getClient.fulfilled, (state, action) => {
         const client = action.payload;
         if (!client) return;
+        // Store in currentClient for immediate access in ClientDashboard
+        state.currentClient = client;
         const id = client.id || client._id || client.public_id;
         const idx = state.clients.findIndex(c => (c.id === id || c._id === id || c.public_id === id));
         if (idx !== -1) state.clients[idx] = client;

@@ -27,10 +27,10 @@ const ClientDashboard = () => {
   const [activeTab, setActiveTab] = useState(TABS.OVERVIEW);
 
   const clientsState = useSelector((state) => state.clients);
-  const { status: clientStatus, error: clientError } = clientsState || {};
+  const { status: clientStatus, error: clientError, selectedClient, currentClient } = clientsState || {};
 
-  // Find the client object in the clients list (client may be stored in clients array)
-  const client = (clientsState?.clients || []).find((c) => {
+  // Priority: use selectedClient/currentClient (from getClient thunk), then search clients array
+  const client = selectedClient || currentClient || (clientsState?.clients || []).find((c) => {
     const id = c?.id || c?._id || c?.public_id || c?.client_id;
     // allow numeric/string comparison
     return id == clientIdParam;
