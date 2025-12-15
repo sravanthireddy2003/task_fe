@@ -225,7 +225,7 @@ const Users = () => {
             className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-xl flex items-center gap-2 font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
           />
         </div>
-
+{/* database */}
         {/* Table */}
         {users.length === 0 ? (
           <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-3xl p-16 text-center">
