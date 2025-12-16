@@ -5,6 +5,8 @@ import userReducer from "./slices/userSlice";
 import taskReducer from "./slices/taskSlice";
 import clientReducer from "./slices/clientSlice"; 
 import departmentReducer from "./slices/departmentSlice";
+import projectReducer from "./slices/projectSlice";
+import subtaskReducer from "./slices/subtaskSlice";
 
 const store = configureStore({
   reducer: {
@@ -14,6 +16,8 @@ const store = configureStore({
     departments: departmentReducer,
     clients: clientReducer,
     tasks: taskReducer,
+    projects: projectReducer,
+    subtasks: subtaskReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(apiSlice.middleware),
