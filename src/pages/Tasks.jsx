@@ -1,213 +1,98 @@
-// import React, { useState, useEffect } from "react";
-// import { FaList } from "react-icons/fa";
-// import { MdGridView } from "react-icons/md";
-// import { useParams } from "react-router-dom";
-// import Loading from "../components/Loader";
-// import Title from "../components/Title";
-// import Button from "../components/Button";
-// import { IoMdAdd } from "react-icons/io";
-// import Tabs from "../components/Tabs";
-// import TaskTitle from "../components/TaskTitle";
-// import BoardView from "../components/BoardView";
-// import Table from "../components/task/Table";
-// import AddTask from "../components/task/AddTask";
-// import UpdateTask from "../components/task/UpdateTask";
-// import { useDispatch, useSelector } from "react-redux";
-// import { fetchTaskss, selectTasks } from "../redux/slices/taskSlice";
-
-// const TABS = [
-//   { title: "Board View", icon: <MdGridView /> },
-//   { title: "List View", icon: <FaList /> },
-// ];
-
-// const TASK_TYPE = {
-//   todo: "bg-blue-600",
-//   "in progress": "bg-yellow-600",
-//   completed: "bg-green-600",
-// };
-
-// const Tasks = () => {
-//   const params = useParams();
-//   const dispatch = useDispatch();
-
-//   useEffect(() => {
-//     dispatch(fetchTaskss());
-//   }, [dispatch]);
-
-//   const tasks = useSelector(selectTasks);
-//   const [selected, setSelected] = useState(0);
-//   const [open, setOpen] = useState(false);
-//   const [updateOpen, setUpdateOpen] = useState(false);
-//   const [selectedTask, setSelectedTask] = useState(null);
-//   const [loading, setLoading] = useState(false);
-//   const [isAdmin, setIsAdmin] = useState(false);
-//   const status = params?.status || "";
-
-//   useEffect(() => {
-//     const userInfo = localStorage.getItem("userInfo");
-//     if (userInfo) {
-//       const parsedUserInfo = JSON.parse(userInfo);
-//       setIsAdmin(parsedUserInfo.isAdmin === 1);
-//     }
-//   }, []);
-
-//   return loading ? (
-//     <div className="py-10">
-//       <Loading />
-//     </div>
-//   ) : (
-//     <div className="w-full">
-//       <div className="flex items-center justify-between mb-4">
-//         <Title title={status ? `${status} Tasks` : "Tasks"} />
-
-//         {!status && isAdmin && (
-//           <Button
-//             onClick={() => setOpen(true)}
-//             label="Create Task"
-//             icon={<IoMdAdd className="text-lg" />}
-//             className="flex flex-row-reverse gap-1 items-center bg-blue-600 text-white rounded-md py-2 2xl:py-2.5"
-//           />
-//         )}
-//       </div>
-
-//       <Tabs tabs={TABS} setSelected={setSelected}>
-//         {!status && (
-//           <div className="w-full flex justify-between gap-4 md:gap-x-12 py-4">
-//             <TaskTitle label="To Do" className={TASK_TYPE.todo} />
-//             <TaskTitle label="In Progress" className={TASK_TYPE["in progress"]} />
-//             <TaskTitle label="Completed" className={TASK_TYPE.completed} />
-//           </div>
-//         )}
-
-//         {selected !== 1 ? (
-//           <BoardView
-//             tasks={tasks}
-//             setUpdateOpen={setUpdateOpen}
-//             setSelectedTask={setSelectedTask}
-//           />
-//         ) : (
-//           <div className="w-full">
-//             <Table
-//               tasks={tasks}
-//               setUpdateOpen={setUpdateOpen}
-//               setSelectedTask={setSelectedTask}
-//             />
-//           </div>
-//         )}
-//       </Tabs>
-
-//       <AddTask open={open} setOpen={setOpen} />
-
-//       {selectedTask && (
-//         <UpdateTask
-//           open={updateOpen}
-//           setOpen={setUpdateOpen}
-//           task={selectedTask}
-//         />
-//       )}
-//     </div>
-//   );
-// };
-
-// export default Tasks;
-
-
-
-
-
-
-
-
-
-
-
-import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, AlertCircle, Filter, List, Grid, Clock, Calendar, User } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Edit2, Trash2, AlertCircle, Filter, List, Grid } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  fetchTasks,
+  createTask,
+  updateTask,
+  deleteTask,
+  selectTasks,
+  selectTaskStatus,
+  selectTaskError,
+} from '../redux/slices/taskSlice';
+import { fetchProjects, selectProjects } from '../redux/slices/projectSlice';
+import { fetchDepartments, selectDepartments } from '../redux/slices/departmentSlice';
+import { fetchUsers, selectUsers } from '../redux/slices/userSlice';
+import { toast } from 'sonner';
 
 export default function Tasks() {
-  // --- STATIC DATA ---
-  const [tasks, setTasks] = useState([
-    {
-      id: "t1",
-      name: "Design Homepage",
-      description: "Create responsive homepage wireframes with modern UI/UX patterns",
-      projectId: "p1",
-      status: "in-progress",
-      priority: "high",
-      startDate: "2025-01-01",
-      dueDate: "2025-02-15",
-      progress: 40,
-    },
-    {
-      id: "t2",
-      name: "Mobile App Launch",
-      description: "Build new mobile app for internal workflow",
-      projectId: "p2",
-      status: "planning",
-      priority: "medium",
-      startDate: "2025-02-01",
-      dueDate: "2025-04-10",
-      progress: 10,
-    },
-    {
-      id: "t3",
-      name: "Cloud Migration",
-      description: "Shift backend infrastructure to cloud services",
-      projectId: "p3",
-      status: "on-hold",
-      priority: "low",
-      startDate: "2024-11-10",
-      dueDate: "2025-03-01",
-      progress: 20,
-    },
-  ]);
+  const dispatch = useDispatch();
 
-  const projects = [
-    { id: "p1", name: "Website Redesign", color: "#6366F1" },
-    { id: "p2", name: "Mobile App", color: "#10B981" },
-    { id: "p3", name: "Cloud Migration", color: "#F59E0B" },
-  ];
+  // Redux state
+  const tasks = useSelector(selectTasks) || [];
+  const status = useSelector(selectTaskStatus);
+  const error = useSelector(selectTaskError);
+  const projects = useSelector(selectProjects) || [];
+  const departments = useSelector(selectDepartments) || [];
+  const users = useSelector(selectUsers) || [];
 
-  // VIEW STATE → card or list
-  const [view, setView] = useState("card");
-
+  // Local state
+  const isLoading = status === 'loading';
+  const [view, setView] = useState('card');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
-  const [filterProject, setFilterProject] = useState("all");
-  const [filterStatus, setFilterStatus] = useState("all");
-
-  const statusOptions = ["planning", "in-progress", "completed", "on-hold"];
-  const priorityOptions = ["low", "medium", "high"];
-
+  const [filterProject, setFilterProject] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
   const [activeStatusEdit, setActiveStatusEdit] = useState(null);
 
+  const statusOptions = ['pending', 'in_progress', 'completed', 'on_hold'];
+  const priorityOptions = ['low', 'medium', 'high'];
+
   const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    projectId: "",
-    status: "planning",
-    priority: "medium",
-    startDate: "",
-    dueDate: "",
-    progress: 0,
+    name: '',
+    description: '',
+    project_id: '',
+    departmentId: '',
+    status: 'pending',
+    priority: 'medium',
+    due_date: '',
+    assigned_to: '',
+    estimated_hours: '',
   });
 
-  // --------------------------- MODAL LOGIC ---------------------------
-  const openModal = (task) => {
+  // Fetch tasks and projects on mount
+  useEffect(() => {
+    dispatch(fetchTasks());
+    dispatch(fetchProjects());
+    dispatch(fetchDepartments());
+    dispatch(fetchUsers());
+  }, [dispatch]);
+
+  // Show errors as toast instead of replacing the whole page
+  useEffect(() => {
+    if (error) {
+      const msg = typeof error === 'string' ? error : error?.message || 'Failed to load tasks';
+      toast.error(msg);
+    }
+  }, [error]);
+
+  // Modal handlers
+  const openModal = (task = null) => {
     if (task) {
       setEditingTask(task);
-      setFormData({ ...task });
+      setFormData({
+        name: task.name || '',
+        description: task.description || '',
+        project_id: task.project_public_id || task.project_id || '',
+        departmentId: task.department_public_id || task.department_id || '',
+        status: task.status || 'pending',
+        priority: task.priority || 'medium',
+        due_date: task.due_date || '',
+        assigned_to: task.assigned_to || task.assignedTo || '',
+        estimated_hours: task.estimated_hours || task.estimatedHours || '',
+      });
     } else {
       setEditingTask(null);
       setFormData({
-        name: "",
-        description: "",
-        projectId: projects[0].id,
-        status: "planning",
-        priority: "medium",
-        startDate: "",
-        dueDate: "",
-        progress: 0,
+        name: '',
+        description: '',
+        project_id: '',
+        departmentId: '',
+        status: 'pending',
+        priority: 'medium',
+        due_date: '',
+        assigned_to: '',
+        estimated_hours: '',
       });
     }
     setIsModalOpen(true);
@@ -216,93 +101,139 @@ export default function Tasks() {
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingTask(null);
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    if (editingTask) {
-      setTasks(
-        tasks.map((t) =>
-          t.id === editingTask.id ? { ...t, ...formData } : t
-        )
-      );
-    } else {
-      setTasks([...tasks, { id: Date.now().toString(), ...formData }]);
-    }
-
-    closeModal();
-  };
-
-  const handleDelete = (id) => {
-    if (confirm("Delete this task?")) {
-      setTasks(tasks.filter((t) => t.id !== id));
-    }
-  };
-
-  // --------------------------- FILTERS ---------------------------
-  const filteredTasks = tasks.filter((task) => {
-    const projectMatch =
-      filterProject === "all" || task.projectId === filterProject;
-    const statusMatch =
-      filterStatus === "all" || task.status === filterStatus;
-    return projectMatch && statusMatch;
-  });
-
-  const statusColors = {
-    planning: "bg-yellow-100 text-yellow-700",
-    "in-progress": "bg-blue-100 text-blue-700",
-    completed: "bg-green-100 text-green-700",
-    "on-hold": "bg-red-100 text-red-700",
-  };
-
-  const priorityColors = {
-    low: "bg-gray-100 text-gray-700",
-    medium: "bg-amber-100 text-amber-700",
-    high: "bg-red-100 text-red-700",
-  };
-
-  const updateStatusInline = (id, newStatus) => {
-    setTasks(
-      tasks.map((t) =>
-        t.id === id ? { ...t, status: newStatus } : t
-      )
-    );
     setActiveStatusEdit(null);
   };
 
-  // ----------------------------------------------------------------
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      // Validate project is selected
+      if (!formData.project_id) {
+        toast.error('Please select a project');
+        return;
+      }
+
+      // Map local form fields to API payload (Postman collection format)
+      const payload = {
+        projectPublicId: formData.project_id,
+        departmentPublicId: formData.departmentId || null,
+        title: formData.name,
+        description: formData.description,
+        assignedTo: formData.assigned_to || null,
+        estimatedHours: formData.estimated_hours ? Number(formData.estimated_hours) : 0,
+        status: formData.status,
+        priority: formData.priority,
+        dueDate: formData.due_date || null,
+      };
+
+      if (editingTask) {
+        const taskId = editingTask.public_id || editingTask.id || editingTask._id;
+        await dispatch(updateTask({ taskId, data: payload })).unwrap();
+        toast.success('Task updated successfully');
+      } else {
+        await dispatch(createTask(payload)).unwrap();
+        toast.success('Task created successfully');
+      }
+      closeModal();
+      await dispatch(fetchTasks()).unwrap();
+    } catch (err) {
+      toast.error(err?.message || 'Operation failed');
+    }
+  };
+
+  const handleDelete = async (task) => {
+    if (!window.confirm('Delete this task?')) return;
+    try {
+      const taskId = task.id || task._id;
+      await dispatch(deleteTask(taskId)).unwrap();
+      toast.success('Task deleted');
+      await dispatch(fetchTasks()).unwrap();
+    } catch (err) {
+      toast.error(err?.message || 'Delete failed');
+    }
+  };
+
+  const updateStatusInline = async (task, newStatus) => {
+    if (!newStatus) return;
+    try {
+      const taskId = task.id || task._id;
+      await dispatch(updateTask({ taskId, data: { status: newStatus } })).unwrap();
+      setActiveStatusEdit(null);
+      await dispatch(fetchTasks()).unwrap();
+    } catch (err) {
+      toast.error(err?.message || 'Status update failed');
+    }
+  };
+
+  // Filters
+  const filteredTasks = tasks.filter((task) => {
+    const projectMatch =
+      filterProject === 'all' ||
+      [
+        task.project_id,
+        task.projectId,
+        task.project_public_id,
+        task.projectPublicId,
+        String(task.project_id),
+        String(task.project_public_id),
+      ].some((v) => v !== undefined && v !== null && String(v) === String(filterProject));
+    const statusMatch = filterStatus === 'all' || task.status === filterStatus;
+    return projectMatch && statusMatch;
+  });
+
+  // Helper to get project name
+  const getProjectName = (projectId) => {
+    return projects.find((p) => (p.id || p._id || p.public_id) === projectId)?.name || '-';
+  };
+
+  const statusColors = {
+    pending: 'bg-yellow-100 text-yellow-700',
+    in_progress: 'bg-blue-100 text-blue-700',
+    completed: 'bg-green-100 text-green-700',
+    on_hold: 'bg-red-100 text-red-700',
+  };
+
+  const priorityColors = {
+    low: 'bg-gray-100 text-gray-700',
+    medium: 'bg-amber-100 text-amber-700',
+    high: 'bg-red-100 text-red-700',
+  };
+
+  // Loading and error states
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin h-12 w-12 border-4 border-blue-200 border-t-blue-600 rounded-full" />
+      </div>
+    );
+  }
+
+  // Do not render a full-page error; errors are shown via toast above
 
   return (
     <div className="p-8">
-
       {/* HEADER */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-gray-900 mb-2">Tasks</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Tasks</h1>
           <p className="text-gray-600">Manage and track all your tasks</p>
         </div>
 
-
         <div className="flex items-center gap-3">
-          {/* VIEW TOGGLE */}
           <button
-            onClick={() => setView("list")}
-            className={`p-2 rounded-lg border ${view === "list" ? "bg-blue-100 border-blue-400" : "bg-white"
-              }`}
+            onClick={() => setView('list')}
+            className={`p-2 rounded-lg border ${view === 'list' ? 'bg-blue-100 border-blue-400' : 'bg-white'}`}
           >
             <List className="w-5 h-5 text-blue-600" />
           </button>
 
           <button
-            onClick={() => setView("card")}
-            className={`p-2 rounded-lg border ${view === "card" ? "bg-blue-100 border-blue-400" : "bg-white"
-              }`}
+            onClick={() => setView('card')}
+            className={`p-2 rounded-lg border ${view === 'card' ? 'bg-blue-100 border-blue-400' : 'bg-white'}`}
           >
             <Grid className="w-5 h-5 text-blue-600" />
           </button>
 
-          {/* ADD TASK BUTTON */}
           <button
             onClick={() => openModal()}
             className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
@@ -312,25 +243,21 @@ export default function Tasks() {
           </button>
         </div>
       </div>
+
       {/* STATUS SUMMARY */}
       <div className="flex flex-wrap gap-3 mb-6">
-
         <div className="px-4 py-2 rounded-lg bg-yellow-100 text-yellow-700 font-semibold shadow-sm">
-          Planning : {tasks.filter(t => t.status === "planning").length}
+          Pending : {tasks.filter((t) => t.status === 'pending').length}
         </div>
-
         <div className="px-4 py-2 rounded-lg bg-blue-100 text-blue-700 font-semibold shadow-sm">
-          In-Progress : {tasks.filter(t => t.status === "in-progress").length}
+          In-Progress : {tasks.filter((t) => t.status === 'in_progress').length}
         </div>
-
         <div className="px-4 py-2 rounded-lg bg-green-100 text-green-700 font-semibold shadow-sm">
-          Completed : {tasks.filter(t => t.status === "completed").length}
+          Completed : {tasks.filter((t) => t.status === 'completed').length}
         </div>
-
         <div className="px-4 py-2 rounded-lg bg-red-100 text-red-700 font-semibold shadow-sm">
-          On-Hold : {tasks.filter(t => t.status === "on-hold").length}
+          On-Hold : {tasks.filter((t) => t.status === 'on_hold').length}
         </div>
-
       </div>
 
       {/* FILTERS */}
@@ -347,7 +274,9 @@ export default function Tasks() {
         >
           <option value="all">All Projects</option>
           {projects.map((p) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
+            <option key={p.public_id || p.id || p._id} value={p.public_id || p.id || p._id}>
+              {p.name}
+            </option>
           ))}
         </select>
 
@@ -358,13 +287,15 @@ export default function Tasks() {
         >
           <option value="all">All Status</option>
           {statusOptions.map((s) => (
-            <option key={s} value={s}>{s}</option>
+            <option key={s} value={s}>
+              {s.replace('_', ' ')}
+            </option>
           ))}
         </select>
       </div>
 
-      {/* --------------------------- LIST VIEW --------------------------- */}
-      {view === "list" && (
+      {/* LIST VIEW */}
+      {view === 'list' && (
         <div className="bg-white border rounded-xl overflow-hidden">
           <table className="w-full table-auto">
             <thead className="bg-gray-100 text-gray-700">
@@ -373,50 +304,51 @@ export default function Tasks() {
                 <th className="p-3 text-left">Project</th>
                 <th className="p-3 text-left">Status</th>
                 <th className="p-3 text-left">Priority</th>
-                <th className="p-3 text-left">Duration</th>
+                <th className="p-3 text-left">Due Date</th>
                 <th className="p-3 text-right">Actions</th>
               </tr>
             </thead>
 
             <tbody>
-              {filteredTasks.map((task) => {
-                const proj = projects.find((p) => p.id === task.projectId);
-
-                return (
-                  <tr key={task.id} className="border-b hover:bg-gray-50">
+              {filteredTasks.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="p-8 text-center text-gray-500">
+                    No tasks found
+                  </td>
+                </tr>
+              ) : (
+                filteredTasks.map((task) => (
+                  <tr key={task.id || task._id} className="border-b hover:bg-gray-50">
                     <td className="p-3">
                       <div className="font-medium">{task.name}</div>
                       <div className="text-sm text-gray-500">{task.description}</div>
                     </td>
 
                     <td className="p-3">
-                      <span
-                        className="px-3 py-1 rounded-full text-white text-sm"
-                        style={{ background: proj.color }}
-                      >
-                        {proj.name}
+                      <span className="px-3 py-1 rounded-full text-white text-sm bg-blue-600">
+                        {getProjectName(task.project_id)}
                       </span>
                     </td>
 
                     <td className="p-3">
-                      {activeStatusEdit === task.id ? (
+                      {activeStatusEdit === (task.id || task._id) ? (
                         <select
                           value={task.status}
-                          onChange={(e) =>
-                            updateStatusInline(task.id, e.target.value)
-                          }
+                          onChange={(e) => updateStatusInline(task, e.target.value)}
                           className="border rounded-lg px-2 py-1"
                         >
                           {statusOptions.map((s) => (
-                            <option key={s} value={s}>{s}</option>
+                            <option key={s} value={s}>
+                              {s.replace('_', ' ')}
+                            </option>
                           ))}
                         </select>
                       ) : (
                         <span
-                          onClick={() => setActiveStatusEdit(task.id)}
+                          onClick={() => setActiveStatusEdit(task.id || task._id)}
                           className={`px-3 py-1 rounded-full cursor-pointer text-sm ${statusColors[task.status]}`}
                         >
-                          {task.status}
+                          {task.status.replace('_', ' ')}
                         </span>
                       )}
                     </td>
@@ -427,9 +359,7 @@ export default function Tasks() {
                       </span>
                     </td>
 
-                    <td className="p-3">
-                      {task.startDate} → {task.dueDate}
-                    </td>
+                    <td className="p-3 text-sm">{task.due_date || '-'}</td>
 
                     <td className="p-3 text-right">
                       <div className="flex justify-end gap-2">
@@ -440,7 +370,7 @@ export default function Tasks() {
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(task.id)}
+                          onClick={() => handleDelete(task)}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -448,157 +378,136 @@ export default function Tasks() {
                       </div>
                     </td>
                   </tr>
-                );
-              })}
+                ))
+              )}
             </tbody>
           </table>
         </div>
       )}
 
-      {/* --------------------------- CARD VIEW --------------------------- */}
-      {view === "card" && (
+      {/* CARD VIEW */}
+      {view === 'card' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {filteredTasks.map((task) => {
-            const proj = projects.find((p) => p.id === task.projectId);
-
-            return (
-              <div key={task.id} className="bg-white border rounded-xl p-6">
+          {filteredTasks.length === 0 ? (
+            <div className="col-span-full text-center py-12 text-gray-500">
+              <AlertCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
+              <p>No tasks found</p>
+            </div>
+          ) : (
+            filteredTasks.map((task) => (
+              <div key={task.id || task._id} className="bg-white border rounded-xl p-6">
                 <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-start gap-3 flex-1">
-                    <div className="p-2 rounded-lg" style={{ background: `${proj.color}20` }}>
-                      <AlertCircle className="w-5 h-5" style={{ color: proj.color }} />
-                    </div>
-
-                    <div>
-                      <h3 className="text-gray-900 font-medium">{task.name}</h3>
-                      <p className="text-gray-600 text-sm">{task.description}</p>
-                    </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-900">{task.name}</h3>
+                    <p className="text-sm text-gray-600 mt-1">{task.description}</p>
                   </div>
-
                   <div className="flex gap-2">
-                    <button onClick={() => openModal(task)} className="p-2 hover:bg-gray-100 rounded-lg">
+                    <button
+                      onClick={() => openModal(task)}
+                      className="p-2 hover:bg-gray-100 rounded-lg"
+                    >
                       <Edit2 className="w-4 h-4" />
                     </button>
-
-                    <button onClick={() => handleDelete(task.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg">
+                    <button
+                      onClick={() => handleDelete(task)}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                    >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
 
-                {/* Project Pill */}
-                <span
-                  className="inline-block px-3 py-1 rounded-full text-white mb-3 text-sm"
-                  style={{ background: proj.color }}
-                >
-                  {proj.name}
-                </span>
+                <div className="mb-3">
+                  <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                    {getProjectName(task.project_id)}
+                  </span>
+                </div>
 
-                {/* Inline Status Update */}
                 <div className="mb-4">
                   <span className="text-gray-600 text-sm">Status: </span>
-                  {activeStatusEdit === task.id ? (
+                  {activeStatusEdit === (task.id || task._id) ? (
                     <select
                       value={task.status}
-                      onChange={(e) =>
-                        updateStatusInline(task.id, e.target.value)
-                      }
-                      className="border rounded-lg px-2 py-1 ml-2"
+                      onChange={(e) => updateStatusInline(task, e.target.value)}
+                      className="border rounded-lg px-2 py-1 text-sm"
                     >
                       {statusOptions.map((s) => (
-                        <option key={s} value={s}>{s}</option>
+                        <option key={s} value={s}>
+                          {s.replace('_', ' ')}
+                        </option>
                       ))}
                     </select>
                   ) : (
                     <span
                       className={`ml-2 px-3 py-1 rounded-full cursor-pointer text-sm ${statusColors[task.status]}`}
-                      onClick={() => setActiveStatusEdit(task.id)}
+                      onClick={() => setActiveStatusEdit(task.id || task._id)}
                     >
-                      {task.status}
+                      {task.status.replace('_', ' ')}
                     </span>
                   )}
                 </div>
 
-                {/* Progress */}
                 <div className="mb-3">
-                  <div className="flex justify-between text-gray-600 mb-1 text-sm">
-                    <span>Progress</span>
-                    <span>{task.progress}%</span>
-                  </div>
-                  <div className="bg-gray-200 h-2 rounded-full">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full"
-                      style={{ width: `${task.progress}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Dates */}
-                <div className="text-xs text-gray-500 mb-3">
-                  {task.startDate} → {task.dueDate}
-                </div>
-
-                {/* Priority */}
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-600 text-xs">Priority:</span>
-                  <span className={`px-2 py-1 rounded-full text-xs ${priorityColors[task.priority]}`}>
+                  <span className="text-gray-600 text-sm">Priority: </span>
+                  <span className={`ml-2 px-3 py-1 rounded-full text-sm ${priorityColors[task.priority]}`}>
                     {task.priority.toUpperCase()}
                   </span>
                 </div>
+
+                <div className="pt-4 border-t">
+                  <div className="text-xs text-gray-500">Due: {task.due_date || '-'}</div>
+                </div>
               </div>
-            );
-          })}
+            ))
+          )}
         </div>
       )}
 
-      {/* --------------------------- MODAL (same as Projects) --------------------------- */}
+      {/* MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-gray-900 mb-4 font-semibold">
-              {editingTask ? "Edit Task" : "Add Task"}
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">
+              {editingTask ? 'Edit Task' : 'Add Task'}
             </h2>
 
             <form onSubmit={handleSubmit}>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-gray-700 mb-2 font-medium">Task Name</label>
+                  <label className="block text-gray-700 font-medium mb-2">Task Name</label>
                   <input
                     type="text"
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                     required
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-gray-700 mb-2 font-medium">Description</label>
+                  <label className="block text-gray-700 font-medium mb-2">Description</label>
                   <textarea
                     value={formData.description}
-                    onChange={(e) =>
-                      setFormData({ ...formData, description: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     rows={3}
-                    className="w-full px-4 py-2 border rounded-lg resize-none focus:ring-2 focus:ring-blue-500"
-                    required
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-gray-700 mb-2 font-medium">Project</label>
+                    <label className="block text-gray-700 font-medium mb-2">
+                      Project <span className="text-red-500">*</span>
+                    </label>
                     <select
-                      value={formData.projectId}
-                      onChange={(e) =>
-                        setFormData({ ...formData, projectId: e.target.value })
-                      }
+                      required
+                      value={formData.project_id}
+                      onChange={(e) => setFormData({ ...formData, project_id: e.target.value })}
                       className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                     >
+                      <option value="">-- Select project --</option>
                       {projects.map((p) => (
-                        <option key={p.id} value={p.id}>
+                        <option key={p.id || p._id || p.public_id} value={p.public_id || p.id || p._id}>
                           {p.name}
                         </option>
                       ))}
@@ -606,66 +515,90 @@ export default function Tasks() {
                   </div>
 
                   <div>
-                    <label className="block text-gray-700 mb-2 font-medium">Priority</label>
+                    <label className="block text-gray-700 font-medium mb-2">Priority</label>
                     <select
                       value={formData.priority}
-                      onChange={(e) =>
-                        setFormData({ ...formData, priority: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
                       className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                     >
-                      {priorityOptions.map((priority) => (
-                        <option key={priority} value={priority}>
-                          {priority.toUpperCase()}
+                      {priorityOptions.map((p) => (
+                        <option key={p} value={p}>
+                          {p.toUpperCase()}
                         </option>
                       ))}
                     </select>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-gray-700 mb-2 font-medium">Start Date</label>
-                    <input
-                      type="date"
-                      value={formData.startDate}
-                      onChange={(e) =>
-                        setFormData({ ...formData, startDate: e.target.value })
-                      }
+                    <label className="block text-gray-700 font-medium mb-2">Department</label>
+                    <select
+                      value={formData.departmentId}
+                      onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
                       className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
+                    >
+                      <option value="">-- Select department (optional) --</option>
+                      {departments.map((d) => (
+                        <option key={d.public_id || d.id || d._id} value={d.public_id || d.id || d._id}>
+                          {d.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div>
-                    <label className="block text-gray-700 mb-2 font-medium">Due Date</label>
-                    <input
-                      type="date"
-                      value={formData.dueDate}
-                      onChange={(e) =>
-                        setFormData({ ...formData, dueDate: e.target.value })
-                      }
+                    <label className="block text-gray-700 font-medium mb-2">Assign To</label>
+                    <select
+                      value={formData.assigned_to}
+                      onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
                       className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">-- Select user (optional) --</option>
+                      {users.map((u) => (
+                        <option key={u.public_id || u.id || u._id} value={u.public_id || u.id || u._id}>
+                          {u.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-700 font-medium mb-2">Estimated Hours</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.estimated_hours}
+                      onChange={(e) => setFormData({ ...formData, estimated_hours: e.target.value })}
+                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="e.g. 16"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-gray-700 mb-2 font-medium">
-                    Progress ({formData.progress}%)
-                  </label>
+                  <label className="block text-gray-700 font-medium mb-2">Due Date</label>
                   <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={formData.progress}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        progress: parseInt(e.target.value),
-                      })
-                    }
-                    className="w-full h-2 bg-gray-200 rounded-lg slider"
+                    type="date"
+                    value={formData.due_date}
+                    onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-gray-700 font-medium mb-2">Status</label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    {statusOptions.map((s) => (
+                      <option key={s} value={s}>
+                        {s.replace('_', ' ')}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -677,12 +610,11 @@ export default function Tasks() {
                 >
                   Cancel
                 </button>
-
                 <button
                   type="submit"
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
                 >
-                  {editingTask ? "Update" : "Create"}
+                  {editingTask ? 'Update' : 'Create'}
                 </button>
               </div>
             </form>

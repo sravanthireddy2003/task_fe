@@ -95,9 +95,14 @@ export default function Projects() {
   // Helper function to get client name by ID
   const getClientName = (clientId) => {
     if (!clientId) return "-";
-    const client = clients.find((c) => c.id === clientId || c.public_id === clientId);
+    // clientId may be a public_id or a client object
+    if (typeof clientId === 'object') return clientId.name || '-';
+    const client = clients.find((c) => (c.public_id || c.id || c._id) === clientId) ||
+      // also check project-level client objects
+      clients.find((c) => c.name === clientId);
     return client?.name || "-";
   };
+ 
 
   // Helper function to get manager name by ID or from project_manager object
   const getManagerName = (managerId, projectManager) => {
@@ -107,7 +112,7 @@ export default function Projects() {
     }
     // Fallback to lookup from users array
     if (!managerId) return "-";
-    const manager = users.find((u) => u.id === managerId);
+    const manager = users.find((u) => (u.public_id || u.id || u._id) === managerId);
     return manager?.name || "-";
   };
 
@@ -129,16 +134,16 @@ export default function Projects() {
       setFormData({
         name: project.name || "",
         description: project.description || "",
-        clientId: project.client_id || project.clientId || "",
+        clientId: project.client?.public_id || project.client_id || project.clientId || "",
         departmentIds: (project.departments && Array.isArray(project.departments)) 
-          ? project.departments.map((d) => d.id || d.public_id || d._id) 
+          ? project.departments.map((d) => d.public_id || d.id || d._id) 
           : project.departmentIds || [],
         status: project.status || "Planning",
         priority: project.priority || "High",
         start_date: project.start_date ? new Date(project.start_date).toISOString().split('T')[0] : "",
         end_date: project.end_date ? new Date(project.end_date).toISOString().split('T')[0] : "",
         budget: project.budget || "",
-        project_manager_id: project.project_manager_id || project.projectManagerId || "",
+        project_manager_id: project.project_manager?.public_id || project.project_manager_id || project.projectManagerId || "",
       });
     } else {
       setEditingProject(null);
@@ -181,21 +186,31 @@ export default function Projects() {
         return;
       }
 
-      // Prepare data with manager name if manager is selected
-      const projectData = { ...formData };
+      // Map local form fields to API payload (Postman collection format)
+      const payload = {
+        projectName: formData.name,
+        clientPublicId: formData.clientId,
+        departmentPublicIds: formData.departmentIds,
+        projectManagerPublicId: formData.project_manager_id || null,
+        startDate: formData.start_date,
+        endDate: formData.end_date,
+        priority: formData.priority,
+        description: formData.description,
+        budget: formData.budget || null,
+      };
+
+      // include manager name if we can resolve it (optional)
       if (formData.project_manager_id) {
-        const selectedManager = managers.find((m) => m.id === formData.project_manager_id);
-        if (selectedManager) {
-          projectData.project_manager_name = selectedManager.name;
-        }
+        const selectedManager = managers.find((m) => (m.public_id || m.id) === formData.project_manager_id);
+        if (selectedManager) payload.projectManagerName = selectedManager.name;
       }
 
       if (editingProject) {
-        const projectId = editingProject.id || editingProject._id;
-        await dispatch(updateProject({ projectId, data: projectData })).unwrap();
+        const projectId = editingProject.public_id || editingProject.id || editingProject._id;
+        await dispatch(updateProject({ projectId, data: payload })).unwrap();
         toast.success("Project updated successfully");
       } else {
-        await dispatch(createProject(projectData)).unwrap();
+        await dispatch(createProject(payload)).unwrap();
         toast.success("Project created successfully");
       }
       closeModal();
@@ -208,7 +223,7 @@ export default function Projects() {
   const handleDelete = async (project) => {
     if (!window.confirm("Delete this project?")) return;
     try {
-      const projectId = project.id || project._id;
+      const projectId = project.public_id || project.id || project._id;
       await dispatch(deleteProject(projectId)).unwrap();
       toast.success("Project deleted");
       await dispatch(fetchProjects()).unwrap();
@@ -377,7 +392,7 @@ export default function Projects() {
                 <tr key={project.id || project._id} className="border-b hover:bg-gray-50">
                   <td className="p-3 font-medium">{project.name}</td>
                   <td className="p-3 text-sm">{getDepartmentName(project.departments)}</td>
-                  <td className="p-3 text-sm text-gray-600">{getClientName(project.client_id)}</td>
+                  <td className="p-3 text-sm text-gray-600">{getClientName(project.client || project.client_id)}</td>
                   <td className="p-3">
                     {activeStatusEdit === (project.id || project._id) ? (
                       <select
@@ -459,7 +474,7 @@ export default function Projects() {
                 <div className="space-y-3 mb-4">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded">Client</span>
-                    <span className="text-sm font-medium text-gray-900">{getClientName(project.client_id)}</span>
+                    <span className="text-sm font-medium text-gray-900">{getClientName(project.client || project.client_id)}</span>
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap">
@@ -571,11 +586,11 @@ export default function Projects() {
                     className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">-- Select a Client --</option>
-                    {clients.map((c) => (
-                      <option key={c.public_id || c._id || c.id} value={c.public_id || c._id || c.id}>
-                        {c.name}
-                      </option>
-                    ))}
+                      {clients.map((c) => (
+                        <option key={c.public_id || c._id || c.id} value={c.public_id || c._id || c.id}>
+                          {c.name}
+                        </option>
+                      ))}
                   </select>
                 </div>
 
@@ -590,7 +605,7 @@ export default function Projects() {
                   >
                     <option value="">-- Select a Manager --</option>
                     {managers.map((m) => (
-                      <option key={m.id} value={m.id}>
+                      <option key={m.public_id || m.id || m._id} value={m.public_id || m.id || m._id}>
                         {m.name}
                       </option>
                     ))}
