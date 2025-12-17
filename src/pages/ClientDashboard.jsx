@@ -7,7 +7,6 @@ import { MdAdminPanelSettings, MdEdit } from "react-icons/md";
 import TaskCard from "../components/TaskCard";
 import clsx from "clsx";
 import { getClient } from "../redux/slices/clientSlice";
-import { fetchTaskss } from "../redux/slices/taskSlice";
 import ClientContacts from "../components/client/ClientContacts";
 import ClientDocuments from "../components/client/ClientDocuments";
 import ClientAnalytics from "../components/client/ClientAnalytics";
@@ -35,20 +34,11 @@ const ClientDashboard = () => {
     // allow numeric/string comparison
     return id == clientIdParam;
   });
-  const { tasks, status: taskStatus, error: taskError } = useSelector(
-    (state) => state.tasks
-  );
+  const { tasks } = useSelector((state) => state.tasks || {});
 
   useEffect(() => {
     if (clientIdParam) {
       dispatch(getClient(clientIdParam));
-      // fetch tasks - existing thunk may accept params or fetch all and filter
-      try {
-        dispatch(fetchTaskss({ clientId: clientIdParam }));
-      } catch (e) {
-        // fallback: just dispatch without params
-        dispatch(fetchTaskss());
-      }
     }
   }, [clientIdParam, dispatch]);
 
@@ -151,16 +141,12 @@ const ClientDashboard = () => {
     }
   };
 
-  if (clientStatus === "loading" || taskStatus === "loading") {
+  if (clientStatus === "loading") {
     return <div>Loading...</div>;
   }
 
-  if (clientStatus === "failed" || taskStatus === "failed") {
-    return (
-      <div>
-        Error: {clientError || taskError || "Failed to load dashboard"}
-      </div>
-    );
+  if (clientStatus === "failed") {
+    return <div>Error: {clientError || "Failed to load dashboard"}</div>;
   }
 
   return (

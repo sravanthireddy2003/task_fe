@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, AlertCircle, Filter, List, Grid } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
+import { toast } from 'sonner';
+
 import {
   fetchTasks,
   createTask,
@@ -11,9 +13,8 @@ import {
   selectTaskError,
 } from '../redux/slices/taskSlice';
 import { fetchProjects, selectProjects } from '../redux/slices/projectSlice';
-import { fetchDepartments, selectDepartments } from '../redux/slices/departmentSlice';
+import { selectDepartments } from '../redux/slices/departmentSlice';
 import { fetchUsers, selectUsers } from '../redux/slices/userSlice';
-import { toast } from 'sonner';
 
 export default function Tasks() {
   const dispatch = useDispatch();
@@ -26,11 +27,21 @@ export default function Tasks() {
   const departments = useSelector(selectDepartments) || [];
   const users = useSelector(selectUsers) || [];
 
-  // Local state
-  const isLoading = status === 'loading';
-  const [view, setView] = useState('card');
+  // Local UI state
+  const [view, setView] = useState('list');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    project_id: '',
+    assigned_to: '',
+    estimated_hours: '',
+    due_date: '',
+    priority: 'medium',
+    status: 'pending',
+  });
+
   const [filterProject, setFilterProject] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [activeStatusEdit, setActiveStatusEdit] = useState(null);
@@ -38,48 +49,30 @@ export default function Tasks() {
   const statusOptions = ['pending', 'in_progress', 'completed', 'on_hold'];
   const priorityOptions = ['low', 'medium', 'high'];
 
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    project_id: '',
-    departmentId: '',
-    status: 'pending',
-    priority: 'medium',
-    due_date: '',
-    assigned_to: '',
-    estimated_hours: '',
-  });
+  const isLoading = status === 'loading';
 
-  // Fetch tasks and projects on mount
   useEffect(() => {
     dispatch(fetchTasks());
     dispatch(fetchProjects());
-    dispatch(fetchDepartments());
     dispatch(fetchUsers());
   }, [dispatch]);
 
-  // Show errors as toast instead of replacing the whole page
   useEffect(() => {
-    if (error) {
-      const msg = typeof error === 'string' ? error : error?.message || 'Failed to load tasks';
-      toast.error(msg);
-    }
+    if (error) toast.error(error?.message || String(error));
   }, [error]);
 
-  // Modal handlers
   const openModal = (task = null) => {
     if (task) {
       setEditingTask(task);
       setFormData({
-        name: task.name || '',
+        name: task.title || task.name || '',
         description: task.description || '',
-        project_id: task.project_public_id || task.project_id || '',
-        departmentId: task.department_public_id || task.department_id || '',
-        status: task.status || 'pending',
+        project_id: task.projectPublicId || task.project_public_id || task.project_id || '',
+        assigned_to: task.assignedTo || task.assigned_to || '',
+        estimated_hours: task.estimatedHours || task.estimated_hours || '',
+        due_date: task.dueDate || task.due_date || '',
         priority: task.priority || 'medium',
-        due_date: task.due_date || '',
-        assigned_to: task.assigned_to || task.assignedTo || '',
-        estimated_hours: task.estimated_hours || task.estimatedHours || '',
+        status: task.status || 'pending',
       });
     } else {
       setEditingTask(null);
@@ -87,12 +80,11 @@ export default function Tasks() {
         name: '',
         description: '',
         project_id: '',
-        departmentId: '',
-        status: 'pending',
-        priority: 'medium',
-        due_date: '',
         assigned_to: '',
         estimated_hours: '',
+        due_date: '',
+        priority: 'medium',
+        status: 'pending',
       });
     }
     setIsModalOpen(true);
@@ -101,22 +93,40 @@ export default function Tasks() {
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingTask(null);
-    setActiveStatusEdit(null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Validate project is selected
-      if (!formData.project_id) {
-        toast.error('Please select a project');
+      const projectPublicId = formData.project_id || null;
+
+      // Resolve selected project object from projects slice
+      const selectedProject = projects.find(
+        (p) => (p.public_id || p.id || p._id) === projectPublicId
+      );
+
+      // Derive department ids: prefer explicit form field, else use first department of selected project
+      const departmentPublicId =
+        formData.department_id ||
+        selectedProject?.departments?.[0]?.public_id ||
+        selectedProject?.departments?.[0]?.id ||
+        null;
+
+      // Also include backup numeric/internal ids where available to satisfy APIs that accept either
+      const projectId = selectedProject?.id || selectedProject?._id || null;
+      const departmentId =
+        selectedProject?.departments?.[0]?.id || selectedProject?.departments?.[0]?._id || null;
+
+      if (!formData.name || (!projectPublicId && !projectId)) {
+        toast.error('Please provide a task name and select a project');
         return;
       }
 
-      // Map local form fields to API payload (Postman collection format)
       const payload = {
-        projectPublicId: formData.project_id,
-        departmentPublicId: formData.departmentId || null,
+        projectPublicId: projectPublicId || undefined,
+        projectId: projectId || undefined,
+        departmentPublicId: departmentPublicId || undefined,
+        departmentId: departmentId || undefined,
         title: formData.name,
         description: formData.description,
         assignedTo: formData.assigned_to || null,
@@ -134,6 +144,7 @@ export default function Tasks() {
         await dispatch(createTask(payload)).unwrap();
         toast.success('Task created successfully');
       }
+
       closeModal();
       await dispatch(fetchTasks()).unwrap();
     } catch (err) {
@@ -144,7 +155,7 @@ export default function Tasks() {
   const handleDelete = async (task) => {
     if (!window.confirm('Delete this task?')) return;
     try {
-      const taskId = task.id || task._id;
+      const taskId = task.public_id || task.id || task._id;
       await dispatch(deleteTask(taskId)).unwrap();
       toast.success('Task deleted');
       await dispatch(fetchTasks()).unwrap();
@@ -156,7 +167,7 @@ export default function Tasks() {
   const updateStatusInline = async (task, newStatus) => {
     if (!newStatus) return;
     try {
-      const taskId = task.id || task._id;
+      const taskId = task.public_id || task.id || task._id;
       await dispatch(updateTask({ taskId, data: { status: newStatus } })).unwrap();
       setActiveStatusEdit(null);
       await dispatch(fetchTasks()).unwrap();
@@ -181,7 +192,6 @@ export default function Tasks() {
     return projectMatch && statusMatch;
   });
 
-  // Helper to get project name
   const getProjectName = (projectId) => {
     return projects.find((p) => (p.id || p._id || p.public_id) === projectId)?.name || '-';
   };
@@ -199,7 +209,6 @@ export default function Tasks() {
     high: 'bg-red-100 text-red-700',
   };
 
-  // Loading and error states
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -207,8 +216,6 @@ export default function Tasks() {
       </div>
     );
   }
-
-  // Do not render a full-page error; errors are shown via toast above
 
   return (
     <div className="p-8">
@@ -318,20 +325,20 @@ export default function Tasks() {
                 </tr>
               ) : (
                 filteredTasks.map((task) => (
-                  <tr key={task.id || task._id} className="border-b hover:bg-gray-50">
+                  <tr key={task.public_id || task.id || task._id} className="border-b hover:bg-gray-50">
                     <td className="p-3">
-                      <div className="font-medium">{task.name}</div>
+                      <div className="font-medium">{task.title || task.name}</div>
                       <div className="text-sm text-gray-500">{task.description}</div>
                     </td>
 
                     <td className="p-3">
                       <span className="px-3 py-1 rounded-full text-white text-sm bg-blue-600">
-                        {getProjectName(task.project_id)}
+                        {getProjectName(task.projectPublicId || task.project_public_id || task.project_id)}
                       </span>
                     </td>
 
                     <td className="p-3">
-                      {activeStatusEdit === (task.id || task._id) ? (
+                      {activeStatusEdit === (task.public_id || task.id || task._id) ? (
                         <select
                           value={task.status}
                           onChange={(e) => updateStatusInline(task, e.target.value)}
@@ -345,21 +352,21 @@ export default function Tasks() {
                         </select>
                       ) : (
                         <span
-                          onClick={() => setActiveStatusEdit(task.id || task._id)}
+                          onClick={() => setActiveStatusEdit(task.public_id || task.id || task._id)}
                           className={`px-3 py-1 rounded-full cursor-pointer text-sm ${statusColors[task.status]}`}
                         >
-                          {task.status.replace('_', ' ')}
+                          {task.status?.replace('_', ' ') || '-'}
                         </span>
                       )}
                     </td>
 
                     <td className="p-3">
                       <span className={`px-3 py-1 rounded-full text-sm ${priorityColors[task.priority]}`}>
-                        {task.priority.toUpperCase()}
+                        {(task.priority || 'medium').toUpperCase()}
                       </span>
                     </td>
 
-                    <td className="p-3 text-sm">{task.due_date || '-'}</td>
+                    <td className="p-3 text-sm">{task.dueDate || task.due_date || '-'}</td>
 
                     <td className="p-3 text-right">
                       <div className="flex justify-end gap-2">
@@ -395,23 +402,17 @@ export default function Tasks() {
             </div>
           ) : (
             filteredTasks.map((task) => (
-              <div key={task.id || task._id} className="bg-white border rounded-xl p-6">
+              <div key={task.public_id || task.id || task._id} className="bg-white border rounded-xl p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900">{task.name}</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">{task.title || task.name}</h3>
                     <p className="text-sm text-gray-600 mt-1">{task.description}</p>
                   </div>
                   <div className="flex gap-2">
-                    <button
-                      onClick={() => openModal(task)}
-                      className="p-2 hover:bg-gray-100 rounded-lg"
-                    >
+                    <button onClick={() => openModal(task)} className="p-2 hover:bg-gray-100 rounded-lg">
                       <Edit2 className="w-4 h-4" />
                     </button>
-                    <button
-                      onClick={() => handleDelete(task)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                    >
+                    <button onClick={() => handleDelete(task)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -419,43 +420,24 @@ export default function Tasks() {
 
                 <div className="mb-3">
                   <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                    {getProjectName(task.project_id)}
+                    {getProjectName(task.projectPublicId || task.project_public_id || task.project_id)}
                   </span>
                 </div>
 
                 <div className="mb-4">
                   <span className="text-gray-600 text-sm">Status: </span>
-                  {activeStatusEdit === (task.id || task._id) ? (
-                    <select
-                      value={task.status}
-                      onChange={(e) => updateStatusInline(task, e.target.value)}
-                      className="border rounded-lg px-2 py-1 text-sm"
-                    >
-                      {statusOptions.map((s) => (
-                        <option key={s} value={s}>
-                          {s.replace('_', ' ')}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <span
-                      className={`ml-2 px-3 py-1 rounded-full cursor-pointer text-sm ${statusColors[task.status]}`}
-                      onClick={() => setActiveStatusEdit(task.id || task._id)}
-                    >
-                      {task.status.replace('_', ' ')}
-                    </span>
-                  )}
+                  <span className={`ml-2 px-3 py-1 rounded-full text-sm ${statusColors[task.status]}`}>{task.status}</span>
                 </div>
 
                 <div className="mb-3">
                   <span className="text-gray-600 text-sm">Priority: </span>
                   <span className={`ml-2 px-3 py-1 rounded-full text-sm ${priorityColors[task.priority]}`}>
-                    {task.priority.toUpperCase()}
+                    {(task.priority || 'medium').toUpperCase()}
                   </span>
                 </div>
 
                 <div className="pt-4 border-t">
-                  <div className="text-xs text-gray-500">Due: {task.due_date || '-'}</div>
+                  <div className="text-xs text-gray-500">Due: {task.dueDate || task.due_date || '-'}</div>
                 </div>
               </div>
             ))
@@ -467,9 +449,7 @@ export default function Tasks() {
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">
-              {editingTask ? 'Edit Task' : 'Add Task'}
-            </h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">{editingTask ? 'Edit Task' : 'Add Task'}</h2>
 
             <form onSubmit={handleSubmit}>
               <div className="space-y-4">
@@ -496,9 +476,7 @@ export default function Tasks() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-gray-700 font-medium mb-2">
-                      Project <span className="text-red-500">*</span>
-                    </label>
+                    <label className="block text-gray-700 font-medium mb-2">Project <span className="text-red-500">*</span></label>
                     <select
                       required
                       value={formData.project_id}
@@ -507,7 +485,7 @@ export default function Tasks() {
                     >
                       <option value="">-- Select project --</option>
                       {projects.map((p) => (
-                        <option key={p.id || p._id || p.public_id} value={p.public_id || p.id || p._id}>
+                        <option key={p.public_id || p.id || p._id} value={p.public_id || p.id || p._id}>
                           {p.name}
                         </option>
                       ))}
@@ -531,22 +509,6 @@ export default function Tasks() {
                 </div>
 
                 <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-gray-700 font-medium mb-2">Department</label>
-                    <select
-                      value={formData.departmentId}
-                      onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
-                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">-- Select department (optional) --</option>
-                      {departments.map((d) => (
-                        <option key={d.public_id || d.id || d._id} value={d.public_id || d.id || d._id}>
-                          {d.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">Assign To</label>
                     <select
@@ -574,16 +536,16 @@ export default function Tasks() {
                       placeholder="e.g. 16"
                     />
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-gray-700 font-medium mb-2">Due Date</label>
-                  <input
-                    type="date"
-                    value={formData.due_date}
-                    onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
+                  <div>
+                    <label className="block text-gray-700 font-medium mb-2">Due Date</label>
+                    <input
+                      type="date"
+                      value={formData.due_date}
+                      onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -603,17 +565,10 @@ export default function Tasks() {
               </div>
 
               <div className="flex gap-3 mt-6">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50 font-medium"
-                >
+                <button type="button" onClick={closeModal} className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50 font-medium">
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
-                >
+                <button type="submit" className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
                   {editingTask ? 'Update' : 'Create'}
                 </button>
               </div>

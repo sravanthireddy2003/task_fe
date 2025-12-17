@@ -5,7 +5,6 @@ import { FiUser, FiMail, FiPhone } from 'react-icons/fi';
 import { useDispatch, useSelector } from 'react-redux';
 import { createClient, fetchClients, attachDocument } from '../redux/slices/clientSlice';
 import { fetchUsers, selectUsers } from '../redux/slices/userSlice';
-import { createTask } from '../redux/slices/taskSlice';
 
 const indianStates = [
   "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
@@ -129,46 +128,12 @@ const AddClientsPage = () => {
           return;
         }
 
-        // create default onboarding tasks and assign to manager if provided
-        try {
-          const clientId = created?.id || created?._id || created?.public_id;
-          const managerId = data.managerId || created?.managerId || created?.assignedManager || null;
-          const onboardingTasks = [
-            'KYC Verification',
-            'Contract Signing',
-            'Project Setup',
-            'Access Provision',
-          ];
-          if (clientId) {
-            for (const title of onboardingTasks) {
-              // Align payload with existing AddTask submit shape:
-              // { title, assigned_to, stage, taskDate, priority, time_alloted, description, client_id }
-              const taskPayload = {
-                title,
-                client_id: clientId,
-                assigned_to: managerId ? [managerId] : [],
-                stage: 'TODO',
-                taskDate: new Date().toISOString(),
-                priority: 'MEDIUM',
-              };
-              // eslint-disable-next-line no-await-in-loop
-              const taskResult = await dispatch(createTask(taskPayload));
-              if (createTask.fulfilled.match(taskResult)) {
-                // ok
-              } else {
-                const errMsg = formatError(taskResult.payload) || taskResult.error?.message || 'Failed to create onboarding task';
-                console.warn('Failed to create onboarding task:', errMsg);
-                // surface to user and stop further processing
-                setSubmitError(errMsg);
-                return;
-              }
-            }
-          }
-        } catch (err) {
-          console.warn('Failed to create onboarding tasks:', err);
-          setSubmitError(err?.message || 'Failed to create onboarding tasks');
-          return;
-        }
+        // Onboarding tasks creation is skipped here to avoid making
+        // POST calls to the tasks endpoint immediately after client creation.
+        // If the backend returns onboarding tasks inside the `created` response
+        // (e.g. `created.tasks`), handle them here without additional API calls.
+        // Example: const tasksFromServer = created?.tasks || created?.onboarding_tasks;
+        // Optionally dispatch a local action to upsert these into the task store.
         // clear form (react-hook-form will keep values — navigate away for now)
         // navigate to clients list and pass success message
         navigate('/client', { state: { created: true, message: `Client "${created?.name || created?.company || 'Created'}" added successfully.` } });

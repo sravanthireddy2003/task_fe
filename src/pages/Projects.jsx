@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { Plus, Edit2, Trash2, FolderKanban, Filter, List, Grid } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import { 
-  fetchProjects, 
-  createProject, 
-  updateProject, 
+import {
+  fetchProjects,
+  createProject,
+  updateProject,
   deleteProject,
   selectProjects,
   selectProjectStatus,
@@ -14,10 +14,10 @@ import { fetchDepartments, selectDepartments } from "../redux/slices/departmentS
 import { fetchClients, selectClients } from "../redux/slices/clientSlice";
 import { fetchUsers, selectUsers } from "../redux/slices/userSlice";
 import { toast } from "sonner";
-
+ 
 export default function Projects() {
   const dispatch = useDispatch();
-  
+ 
   // Redux state
   const projects = useSelector(selectProjects) || [];
   const status = useSelector(selectProjectStatus);
@@ -25,10 +25,10 @@ export default function Projects() {
   const departments = useSelector(selectDepartments) || [];
   const clients = useSelector(selectClients) || [];
   const users = useSelector(selectUsers) || [];
-
+ 
   // Local state
   const isLoading = status === 'loading';
-
+ 
   const statusOptions = ["Planning", "Active", "On Hold", "Completed", "Cancelled"];
   const statusColors = {
     "Planning": "bg-yellow-100 text-yellow-700",
@@ -37,9 +37,9 @@ export default function Projects() {
     "On Hold": "bg-red-100 text-red-700",
     "Cancelled": "bg-gray-100 text-gray-700",
   };
-
+ 
   const priorityOptions = ["Low", "Medium", "High"];
-
+ 
   // View and modal state
   const [view, setView] = useState("card");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -47,7 +47,7 @@ export default function Projects() {
   const [filterDept, setFilterDept] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [activeStatusEdit, setActiveStatusEdit] = useState(null);
-
+ 
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -60,16 +60,16 @@ export default function Projects() {
     budget: "",
     project_manager_id: "",
   });
-
+ 
   // Helper function to calculate total duration in hours (8 hours per working day, excluding weekends)
   const calculateDuration = (startDate, endDate) => {
     if (!startDate || !endDate) return 0;
     const start = new Date(startDate);
     const end = new Date(endDate);
-    
+ 
     let workingDays = 0;
     const current = new Date(start);
-    
+ 
     // Iterate through each day and count working days (Mon-Fri)
     while (current <= end) {
       const dayOfWeek = current.getDay();
@@ -79,19 +79,19 @@ export default function Projects() {
       }
       current.setDate(current.getDate() + 1);
     }
-    
+ 
     return workingDays * 8; // 8 hours per working day
   };
-
+ 
   const totalDuration = calculateDuration(formData.start_date, formData.end_date);
-
+ 
   // Helper function to format date from ISO string
   const formatDate = (dateStr) => {
     if (!dateStr) return "-";
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
-
+ 
   // Helper function to get client name by ID
   const getClientName = (clientId) => {
     if (!clientId) return "-";
@@ -103,7 +103,7 @@ export default function Projects() {
     return client?.name || "-";
   };
  
-
+ 
   // Helper function to get manager name by ID or from project_manager object
   const getManagerName = (managerId, projectManager) => {
     // Check if project_manager object exists with name
@@ -115,10 +115,10 @@ export default function Projects() {
     const manager = users.find((u) => (u.public_id || u.id || u._id) === managerId);
     return manager?.name || "-";
   };
-
+ 
   // Get managers array (filter users with Manager role)
   const managers = users.filter((u) => u.role === "Manager");
-
+ 
   // Fetch projects, departments, clients, and users on mount
   useEffect(() => {
     dispatch(fetchProjects());
@@ -126,7 +126,7 @@ export default function Projects() {
     dispatch(fetchClients());
     dispatch(fetchUsers());
   }, [dispatch]);
-
+ 
   // Modal handlers
   const openModal = (project = null) => {
     if (project) {
@@ -135,8 +135,8 @@ export default function Projects() {
         name: project.name || "",
         description: project.description || "",
         clientId: project.client?.public_id || project.client_id || project.clientId || "",
-        departmentIds: (project.departments && Array.isArray(project.departments)) 
-          ? project.departments.map((d) => d.public_id || d.id || d._id) 
+        departmentIds: (project.departments && Array.isArray(project.departments))
+          ? project.departments.map((d) => d.public_id || d.id || d._id)
           : project.departmentIds || [],
         status: project.status || "Planning",
         priority: project.priority || "High",
@@ -162,13 +162,13 @@ export default function Projects() {
     }
     setIsModalOpen(true);
   };
-
+ 
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingProject(null);
     setActiveStatusEdit(null);
   };
-
+ 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -185,26 +185,27 @@ export default function Projects() {
         toast.error("Please select both start and end dates");
         return;
       }
-
+ 
       // Map local form fields to API payload (Postman collection format)
       const payload = {
         projectName: formData.name,
         clientPublicId: formData.clientId,
-        departmentPublicIds: formData.departmentIds,
+        department_ids: formData.departmentIds,
         projectManagerPublicId: formData.project_manager_id || null,
+        project_manager_id: formData.project_manager_id || null,
         startDate: formData.start_date,
         endDate: formData.end_date,
         priority: formData.priority,
         description: formData.description,
         budget: formData.budget || null,
       };
-
+ 
       // include manager name if we can resolve it (optional)
       if (formData.project_manager_id) {
         const selectedManager = managers.find((m) => (m.public_id || m.id) === formData.project_manager_id);
         if (selectedManager) payload.projectManagerName = selectedManager.name;
       }
-
+ 
       if (editingProject) {
         const projectId = editingProject.public_id || editingProject.id || editingProject._id;
         await dispatch(updateProject({ projectId, data: payload })).unwrap();
@@ -219,7 +220,7 @@ export default function Projects() {
       toast.error(err?.message || "Operation failed");
     }
   };
-
+ 
   const handleDelete = async (project) => {
     if (!window.confirm("Delete this project?")) return;
     try {
@@ -231,7 +232,7 @@ export default function Projects() {
       toast.error(err?.message || "Delete failed");
     }
   };
-
+ 
   const updateStatusInline = async (project, newStatus) => {
     if (!newStatus) return;
     try {
@@ -243,7 +244,7 @@ export default function Projects() {
       toast.error(err?.message || "Status update failed");
     }
   };
-
+ 
   // Filters
   const filteredProjects = projects.filter((project) => {
     // Get department IDs from either departments array or departmentIds field
@@ -253,18 +254,18 @@ export default function Projects() {
     } else if (project.departmentIds) {
       projectDepts = project.departmentIds;
     }
-    
+ 
     const deptMatch = filterDept === "all" || projectDepts.includes(filterDept);
     const statusMatch = filterStatus === "all" || project.status === filterStatus;
     return deptMatch && statusMatch;
   });
-
+ 
   // Helper to get department name from departments array
   const getDepartmentName = (departmentsArray) => {
     if (!departmentsArray || !Array.isArray(departmentsArray) || departmentsArray.length === 0) return "-";
     return departmentsArray.map((d) => d.name).join(", ");
   };
-
+ 
   // Loading and error states
   if (isLoading) {
     return (
@@ -273,7 +274,7 @@ export default function Projects() {
       </div>
     );
   }
-
+ 
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-2xl p-8 text-center">
@@ -318,37 +319,37 @@ export default function Projects() {
           </button>
         </div>
       </div>
-
+ 
       {/* Status Summary */}
       <div className="flex flex-wrap gap-3 mb-6">
         <div className="px-4 py-2 rounded-lg bg-yellow-100 text-yellow-700 font-semibold shadow-sm">
           Planning: {projects.filter(p => p.status === "Planning").length}
         </div>
-
+ 
         <div className="px-4 py-2 rounded-lg bg-blue-100 text-blue-700 font-semibold shadow-sm">
           Active: {projects.filter(p => p.status === "Active").length}
         </div>
-
+ 
         <div className="px-4 py-2 rounded-lg bg-green-100 text-green-700 font-semibold shadow-sm">
           Completed: {projects.filter(p => p.status === "Completed").length}
         </div>
-
+ 
         <div className="px-4 py-2 rounded-lg bg-red-100 text-red-700 font-semibold shadow-sm">
           On Hold: {projects.filter(p => p.status === "On Hold").length}
         </div>
-
+ 
         <div className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold shadow-sm">
           Cancelled: {projects.filter(p => p.status === "Cancelled").length}
         </div>
       </div>
-
+ 
       {/* FILTERS */}
       <div className="bg-white rounded-xl border p-4 mb-6 flex items-center gap-4 flex-wrap">
         <div className="flex items-center gap-2">
           <Filter className="w-5 h-5 text-gray-600" />
           <span className="text-gray-700">Filters:</span>
         </div>
-
+ 
         <select
           value={filterDept}
           onChange={(e) => setFilterDept(e.target.value)}
@@ -359,7 +360,7 @@ export default function Projects() {
             <option key={d.id} value={d.id}>{d.name}</option>
           ))}
         </select>
-
+ 
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
@@ -371,7 +372,7 @@ export default function Projects() {
           ))}
         </select>
       </div>
-
+ 
       {/* --------------------------- LIST VIEW --------------------------- */}
       {view === "list" && (
         <div className="bg-white border rounded-xl overflow-hidden">
@@ -386,7 +387,7 @@ export default function Projects() {
                 <th className="p-3 text-right">Actions</th>
               </tr>
             </thead>
-
+ 
             <tbody>
               {filteredProjects.map((project) => (
                 <tr key={project.id || project._id} className="border-b hover:bg-gray-50">
@@ -436,7 +437,7 @@ export default function Projects() {
           </table>
         </div>
       )}
-
+ 
       {/* CARD VIEW */}
       {view === "card" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -470,24 +471,27 @@ export default function Projects() {
                     </button>
                   </div>
                 </div>
-
+ 
                 <div className="space-y-3 mb-4">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded">Client</span>
                     <span className="text-sm font-medium text-gray-900">{getClientName(project.client || project.client_id)}</span>
                   </div>
-
+ 
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded">Manager</span>
                     <span className="text-sm font-medium text-gray-900">{getManagerName(project.project_manager_id, project.project_manager)}</span>
                   </div>
-
+ 
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded">Departments</span>
                     <div className="flex flex-wrap gap-1">
                       {project.departments && project.departments.length > 0 ? (
-                        project.departments.map((d) => (
-                          <span key={d.id || d._id} className="inline-block px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                        project.departments.map((d, index) => (
+                          <span
+                            key={d.public_id || d.id || d._id || index}
+                            className="inline-block px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full"
+                          >
                             {d.name}
                           </span>
                         ))
@@ -496,7 +500,8 @@ export default function Projects() {
                       )}
                     </div>
                   </div>
-
+ 
+ 
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded">Budget</span>
                     <span className="text-sm font-medium text-gray-900">
@@ -504,7 +509,7 @@ export default function Projects() {
                     </span>
                   </div>
                 </div>
-
+ 
                 <div className="border-t pt-4">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-gray-600 text-sm font-medium">Status</span>
@@ -514,26 +519,26 @@ export default function Projects() {
                         onChange={(e) => updateStatusInline(project, e.target.value)}
                         className="border rounded-lg px-2 py-1 text-sm"
                       >
-                      {statusOptions.map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
-                    </select>
-                  ) : (
-                    <span
-                      className={`ml-2 px-3 py-1 rounded-full cursor-pointer text-sm ${statusColors[project.status]}`}
-                      onClick={() => setActiveStatusEdit(project.id || project._id)}
-                    >
-                      {project.status}
-                    </span>
-                  )}
+                        {statusOptions.map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span
+                        className={`ml-2 px-3 py-1 rounded-full cursor-pointer text-sm ${statusColors[project.status]}`}
+                        onClick={() => setActiveStatusEdit(project.id || project._id)}
+                      >
+                        {project.status}
+                      </span>
+                    )}
                   </div>
-
+ 
                   <div className="flex items-center justify-between text-xs text-gray-500 mt-3">
                     <span>📅 {formatDate(project.start_date)}</span>
                     <span>→</span>
                     <span>{formatDate(project.end_date)}</span>
                   </div>
-
+ 
                   <div className="flex items-center justify-between text-xs text-gray-700 mt-2 pt-2 border-t">
                     <span className="font-semibold">Priority: <span className="font-bold text-sm">{project.priority || "-"}</span></span>
                   </div>
@@ -543,7 +548,7 @@ export default function Projects() {
           )}
         </div>
       )}
-
+ 
       {/* MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
@@ -551,7 +556,7 @@ export default function Projects() {
             <h2 className="text-xl font-semibold text-gray-900 mb-6">
               {editingProject ? "Edit Project" : "Add Project"}
             </h2>
-
+ 
             <form onSubmit={handleSubmit}>
               <div className="space-y-4">
                 <div>
@@ -564,7 +569,7 @@ export default function Projects() {
                     className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-
+ 
                 <div>
                   <label className="block text-gray-700 font-medium mb-2">Description</label>
                   <textarea
@@ -574,7 +579,7 @@ export default function Projects() {
                     className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"
                   />
                 </div>
-
+ 
                 <div>
                   <label className="block text-gray-700 font-medium mb-2">
                     Client <span className="text-red-500">*</span>
@@ -586,14 +591,14 @@ export default function Projects() {
                     className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">-- Select a Client --</option>
-                      {clients.map((c) => (
-                        <option key={c.public_id || c._id || c.id} value={c.public_id || c._id || c.id}>
-                          {c.name}
-                        </option>
-                      ))}
+                    {clients.map((c) => (
+                      <option key={c.public_id || c._id || c.id} value={c.public_id || c._id || c.id}>
+                        {c.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
-
+ 
                 <div>
                   <label className="block text-gray-700 font-medium mb-2">
                     Project Manager
@@ -612,7 +617,7 @@ export default function Projects() {
                   </select>
                   <p className="text-xs text-gray-500 mt-1">Optional field</p>
                 </div>
-
+ 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">
@@ -637,7 +642,7 @@ export default function Projects() {
                     </select>
                     <p className="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple departments</p>
                   </div>
-
+ 
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">Status</label>
                     <select
@@ -651,7 +656,7 @@ export default function Projects() {
                     </select>
                   </div>
                 </div>
-
+ 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">Start Date</label>
@@ -662,7 +667,7 @@ export default function Projects() {
                       className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
-
+ 
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">End Date</label>
                     <input
@@ -673,7 +678,7 @@ export default function Projects() {
                     />
                   </div>
                 </div>
-
+ 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">Budget(optional)</label>
@@ -686,7 +691,7 @@ export default function Projects() {
                       placeholder="Project budget"
                     />
                   </div>
-
+ 
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">Total Duration</label>
                     <div className="w-full px-4 py-2 border rounded-lg bg-gray-50 flex items-center">
@@ -695,7 +700,7 @@ export default function Projects() {
                     <p className="text-xs text-gray-500 mt-1">Auto-calculated from dates</p>
                   </div>
                 </div>
-
+ 
                 <div>
                   <label className="block text-gray-700 font-medium mb-2">Priority</label>
                   <select
@@ -709,7 +714,7 @@ export default function Projects() {
                   </select>
                 </div>
               </div>
-
+ 
               <div className="flex gap-3 mt-6">
                 <button
                   type="button"
@@ -732,3 +737,5 @@ export default function Projects() {
     </div>
   );
 }
+ 
+ 
