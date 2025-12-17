@@ -30,8 +30,25 @@ export const fetchTasks = createAsyncThunk(
   'tasks/fetchTasks',
   async (params = {}, thunkAPI) => {
     try {
-      const res = await httpGetService('api/projects/tasks');
-      return Array.isArray(res) ? res : res?.data || res?.tasks || [];
+      // Support query params from callers. Backend expects `project_id` (snake_case)
+      const query = {};
+      if (params.project_id) query.project_id = params.project_id;
+      if (params.projectId) query.project_id = params.projectId;
+      if (params.client_id) query.client_id = params.client_id;
+      if (params.clientId) query.client_id = params.clientId;
+      if (params.departmentId) query.departmentId = params.departmentId;
+
+      const qs = new URLSearchParams(query).toString();
+      const url = qs ? `api/projects/tasks?${qs}` : `api/projects/tasks`;
+
+      const res = await httpGetService(url);
+      // Normalize response shapes: prefer `res.data` when server returns { success:true, data: [...] }
+      const data = res && (Array.isArray(res) ? res : res.data ?? (res.success ? res.data : null)) ;
+      if (Array.isArray(data)) return data;
+      // Fallbacks: server may return array directly or wrap in .tasks
+      if (Array.isArray(res)) return res;
+      if (Array.isArray(res?.tasks)) return res.tasks;
+      return Array.isArray(res?.data) ? res.data : [];
     } catch (err) {
       return thunkAPI.rejectWithValue(formatRejectValue(err));
     }
@@ -54,7 +71,30 @@ export const createTask = createAsyncThunk(
   'tasks/createTask',
   async (payload, thunkAPI) => {
     try {
-      const res = await httpPostService('api/projects/tasks', payload);
+      // Normalize payload to backend expectations
+      const body = { ...payload };
+      // backend expects `project_id` (snake_case)
+      if (payload.projectId) body.project_id = payload.projectId;
+      if (payload.project_id == null && payload.projectId == null && payload.client_id) {
+        // leave as-is if client-only task
+      }
+
+      // normalize assigned users: convert `assigned_to` -> `assignedUsers: [{id: ...}, ...]`
+      if (Array.isArray(payload.assigned_to) && payload.assigned_to.length) {
+        body.assignedUsers = payload.assigned_to.map((u) => {
+          if (!u) return null;
+          if (typeof u === 'string' || typeof u === 'number') return { id: u };
+          // already an object with id/internalId/name
+          return u;
+        }).filter(Boolean);
+        delete body.assigned_to;
+      }
+
+      // support both `estimated_hours` and `timeAlloted`/`time_alloted`
+      if (payload.estimated_hours && !body.estimatedHours) body.estimatedHours = payload.estimated_hours;
+      if (payload.time_alloted && !body.timeAlloted) body.timeAlloted = payload.time_alloted;
+
+      const res = await httpPostService('api/projects/tasks', body);
       return res?.data || res || {};
     } catch (err) {
       return thunkAPI.rejectWithValue(formatRejectValue(err));
@@ -145,6 +185,11 @@ const taskSlice = createSlice({
           ? action.payload
           : task
       );
+    },
+    clearTasks: (state) => {
+      state.tasks = [];
+      state.status = null;
+      state.error = null;
     },
   },
   extraReducers: (builder) => {
@@ -245,8 +290,8 @@ const taskSlice = createSlice({
   },
 });
 
-// Export actions
-export const { addTempTask, confirmTask } = taskSlice.actions;
+// Export actions - ADD clearTasks HERE
+export const { addTempTask, confirmTask, clearTasks } = taskSlice.actions;
 
 // Selectors
 export const selectTasks = (state) => state.tasks.tasks || [];

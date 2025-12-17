@@ -377,7 +377,8 @@ const Dashboard = () => {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    dispatch(fetchTaskss());
+    // Avoid fetching all tasks without project context. Tasks should be fetched
+    // with a specific `project_id` where needed.
     dispatch(fetchUsers());
   }, [dispatch]);
 

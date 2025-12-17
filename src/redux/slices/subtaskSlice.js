@@ -47,8 +47,16 @@ export const createTask = createAsyncThunk(
   "/api/tasks/createjson",
   async (taskData, thunkAPI) => {
     try {
-      // Expecting payload keys like projectId, departmentId, title, description, priority, assignedTo, startDate, endDate, estimatedHours
-      const response = await httpPostService("api/projects/tasks", taskData);
+      // Normalize task payload similar to main taskSlice: accept projectId/project_id and assigned_to
+      const body = { ...taskData };
+      if (taskData.projectId) body.project_id = taskData.projectId;
+      if (Array.isArray(taskData.assigned_to) && taskData.assigned_to.length) {
+        body.assignedUsers = taskData.assigned_to.map((u) => (typeof u === 'string' || typeof u === 'number' ? { id: u } : u)).filter(Boolean);
+        delete body.assigned_to;
+      }
+      if (taskData.estimated_hours && !body.estimatedHours) body.estimatedHours = taskData.estimated_hours;
+
+      const response = await httpPostService("api/projects/tasks", body);
       return response?.data || response || {};
     } catch (error) {
       return thunkAPI.rejectWithValue(
