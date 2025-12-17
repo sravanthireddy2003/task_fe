@@ -52,7 +52,14 @@ export const createTask = createAsyncThunk(
       if (taskData.projectId) body.project_id = taskData.projectId;
       if (Array.isArray(taskData.assigned_to) && taskData.assigned_to.length) {
         body.assignedUsers = taskData.assigned_to.map((u) => (typeof u === 'string' || typeof u === 'number' ? { id: u } : u)).filter(Boolean);
-        delete body.assigned_to;
+        // also provide assigned_to array of ids for backend
+        body.assigned_to = body.assignedUsers.map(u => u.id || u.internalId || u.internal_id || u._id).filter(Boolean);
+        delete body.assigned_to; // keep normalized assignedUsers but ensure assigned_to exists below if needed
+      }
+
+      // If assignedUsers were provided directly, ensure assigned_to is populated
+      if (Array.isArray(body.assignedUsers) && body.assignedUsers.length) {
+        body.assigned_to = body.assignedUsers.map(u => u.id || u.internalId || u.internal_id || u._id).filter(Boolean);
       }
       if (taskData.estimated_hours && !body.estimatedHours) body.estimatedHours = taskData.estimated_hours;
 

@@ -90,6 +90,16 @@ export const createTask = createAsyncThunk(
         delete body.assigned_to;
       }
 
+      // Ensure backend receives `assigned_to` as an array of user IDs (many APIs expect this)
+      if (Array.isArray(body.assignedUsers) && body.assignedUsers.length) {
+        body.assigned_to = body.assignedUsers.map(u => u.id || u.internalId || u.internal_id || u._id).filter(Boolean);
+      } else if (Array.isArray(payload.assigned_to) && payload.assigned_to.length) {
+        // if caller provided assigned_to array of ids, keep it
+        body.assigned_to = payload.assigned_to;
+      } else if (payload.assigned_to && (typeof payload.assigned_to === 'string' || typeof payload.assigned_to === 'number')) {
+        body.assigned_to = [payload.assigned_to];
+      }
+
       // support both `estimated_hours` and `timeAlloted`/`time_alloted`
       if (payload.estimated_hours && !body.estimatedHours) body.estimatedHours = payload.estimated_hours;
       if (payload.time_alloted && !body.timeAlloted) body.timeAlloted = payload.time_alloted;

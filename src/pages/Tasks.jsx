@@ -850,8 +850,15 @@ export default function Tasks() {
       }
 
       // Prepare payload according to backend API
+      const projectId = selectedProject?.id ?? selectedProject?._id ?? null;
+      const projectPublicId = selectedProject?.public_id ?? selectedProject?.project_public_id ?? null;
+      const client_id = selectedProject?.client_id ?? selectedProject?.clientId ?? selectedProject?.client?.id ?? selectedProject?.client?._id ?? null;
+
       const payload = {
-        project_id: selectedProject?.id || formData.project_id,
+        project_id: projectId || formData.project_id,
+        projectId: projectId || undefined,
+        projectPublicId: projectPublicId || undefined,
+        client_id: client_id || undefined,
         title: formData.name,
         description: formData.description || '',
         stage: (formData.status || 'pending').toUpperCase(),
@@ -861,15 +868,16 @@ export default function Tasks() {
         timeAlloted: formData.estimated_hours ? Number(formData.estimated_hours) : 0,
       };
 
-      // Handle assigned user if selected
+      // Handle assigned user if selected: provide both assignedUsers objects and assigned_to id array
       if (formData.assigned_to) {
-        const assignedUser = users.find(u => u.id === formData.assigned_to);
+        const assignedUser = users.find(u => u.id === formData.assigned_to || u._id === formData.assigned_to || u.public_id === formData.assigned_to);
         if (assignedUser) {
           payload.assignedUsers = [{ 
-            id: assignedUser.public_id || assignedUser.id,
-            internalId: assignedUser.id,
-            name: assignedUser.name 
+            id: assignedUser.public_id || assignedUser.id || assignedUser._id,
+            internalId: assignedUser.id || assignedUser._id,
+            name: assignedUser.name || ''
           }];
+          payload.assigned_to = [assignedUser.public_id || assignedUser.id || assignedUser._id];
         }
       }
 
