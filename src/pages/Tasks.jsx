@@ -15,7 +15,7 @@ import {
   selectTaskError,
 } from '../redux/slices/taskSlice';
 import { fetchProjects, selectProjects } from '../redux/slices/projectSlice';
-import { fetchUsers, selectUsers } from '../redux/slices/userSlice';
+import { fetchUsers, selectUsers, selectCurrentUser } from '../redux/slices/userSlice';
 
 export default function Tasks() {
   const dispatch = useDispatch();
@@ -37,7 +37,7 @@ export default function Tasks() {
     name: '',
     description: '',
     project_id: '',
-    assigned_to: '',
+    assigned_to: [],
     estimated_hours: '',
     due_date: '',
     priority: 'medium',
@@ -176,19 +176,20 @@ export default function Tasks() {
         name: task.title || task.name || '',
         description: task.description || '',
         project_id: task.projectId || task.project_id || selectedProjectId,
-        assigned_to: task.assignedUsers?.[0]?.id || '',
+        assigned_to: (task.assignedUsers || []).map(u => u.public_id || u.id || u._id),
         estimated_hours: task.estimatedHours || task.timeAlloted || '',
         due_date: task.dueDate || task.taskDate ? task.taskDate.split('T')[0] : '',
         priority: (task.priority || 'MEDIUM').toLowerCase(),
         status: task.stage ? task.stage.toLowerCase() : 'pending',
       });
     } else {
+      // Clear form for new task
       setEditingTask(null);
       setFormData({
         name: '',
         description: '',
         project_id: selectedProjectId !== 'all' ? selectedProjectId : '',
-        assigned_to: '',
+        assigned_to: [],
         estimated_hours: '',
         due_date: '',
         priority: 'medium',
@@ -235,17 +236,22 @@ export default function Tasks() {
         timeAlloted: formData.estimated_hours ? Number(formData.estimated_hours) : 0,
       };
 
-      // Handle assigned user if selected: provide both assignedUsers objects and assigned_to id array
-      if (formData.assigned_to) {
-        const assignedUser = users.find(u => u.id === formData.assigned_to || u._id === formData.assigned_to || u.public_id === formData.assigned_to);
-        if (assignedUser) {
-          payload.assignedUsers = [{ 
-            id: assignedUser.public_id || assignedUser.id || assignedUser._id,
-            internalId: assignedUser.id || assignedUser._id,
-            name: assignedUser.name || ''
-          }];
-          payload.assigned_to = [assignedUser.public_id || assignedUser.id || assignedUser._id];
-        }
+      // Handle assigned users: support single or multiple selections
+      if (formData.assigned_to && (Array.isArray(formData.assigned_to) ? formData.assigned_to.length > 0 : !!formData.assigned_to)) {
+        const ids = Array.isArray(formData.assigned_to) ? formData.assigned_to : [formData.assigned_to];
+        payload.assignedUsers = ids.map((id) => {
+          const assignedUser = users.find(u => u.id === id || u._id === id || u.public_id === id);
+          if (assignedUser) {
+            return {
+              id: assignedUser.public_id || assignedUser.id || assignedUser._id,
+              internalId: assignedUser.id || assignedUser._id,
+              name: assignedUser.name || ''
+            };
+          }
+          // Fallback: send id only
+          return { id };
+        }).filter(Boolean);
+        payload.assigned_to = ids;
       }
 
       if (editingTask) {
@@ -383,6 +389,28 @@ export default function Tasks() {
       day: 'numeric'
     });
   };
+
+  // Helper: filter only employee-role users for assignee dropdown
+  const isEmployeeUser = (u) => {
+    if (!u) return false;
+    const role = (u.role || u.userType || u.type || '').toString().toLowerCase();
+    if (role === 'employee') return true;
+    if (Array.isArray(u.roles) && u.roles.some(r => String(r).toLowerCase().includes('employee'))) return true;
+    return false;
+  };
+
+  const employeeUsers = Array.isArray(users) ? users.filter(isEmployeeUser) : [];
+
+  // Current user and admin check
+  const currentUser = useSelector(selectCurrentUser);
+  const isAdminCurrentUser = (() => {
+    const u = currentUser;
+    if (!u) return false;
+    const role = (u.role || u.userType || u.type || '').toString().toLowerCase();
+    if (role.includes('admin') || role === 'superadmin' || role === 'administrator') return true;
+    if (Array.isArray(u.roles) && u.roles.some(r => String(r).toLowerCase().includes('admin'))) return true;
+    return false;
+  })();
 
   return (
     <div className="p-8">
@@ -818,7 +846,7 @@ export default function Tasks() {
                       <p className="text-sm text-gray-600 line-clamp-3">{task.description}</p>
                     )}
                   </div>
-                    <div className="flex gap-1">
+                  <div className="flex gap-1">
                     <button 
                       onClick={(e) => { e.stopPropagation(); openModal(task); }}
                       className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
@@ -935,16 +963,31 @@ export default function Tasks() {
                       value={formData.project_id}
                       onChange={(e) => setFormData({ ...formData, project_id: e.target.value })}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      disabled={selectedProjectId !== 'all'}
                     >
-                      <option value="">Select a project</option>
-                      {projects.map((project) => (
-                        <option 
-                          key={project.id || project._id || project.public_id} 
-                          value={project.id || project._id || project.public_id}
-                        >
-                          {project.name || project.title}
-                        </option>
-                      ))}
+                      {selectedProjectId === 'all' ? (
+                        <>
+                          <option value="">Select a project</option>
+                          {projects.map((project) => (
+                            <option 
+                              key={project.id || project._id || project.public_id} 
+                              value={project.id || project._id || project.public_id}
+                            >
+                              {project.name || project.title}
+                            </option>
+                          ))}
+                        </>
+                      ) : (
+                        // If a project is selected from the list, lock the modal project to that project only
+                        projects.filter(p => (p.id || p._id || p.public_id) === selectedProjectId).map((project) => (
+                          <option 
+                            key={project.id || project._id || project.public_id} 
+                            value={project.id || project._id || project.public_id}
+                          >
+                            {project.name || project.title}
+                          </option>
+                        ))
+                      )}
                     </select>
                   </div>
 
@@ -989,21 +1032,42 @@ export default function Tasks() {
                     <label className="block text-gray-700 font-medium mb-2">
                       Assign To
                     </label>
-                    <select
-                      value={formData.assigned_to}
-                      onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Select a user (optional)</option>
-                      {users.map((user) => (
-                        <option 
-                          key={user.id || user._id || user.public_id} 
-                          value={user.id || user._id || user.public_id}
-                        >
-                          {user.name}
-                        </option>
-                      ))}
-                    </select>
+                    {isAdminCurrentUser ? (
+                      <select
+                        multiple
+                        value={formData.assigned_to}
+                        onChange={(e) => {
+                          const vals = Array.from(e.target.selectedOptions).map(o => o.value);
+                          setFormData({ ...formData, assigned_to: vals });
+                        }}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-36"
+                      >
+                        {employeeUsers.map((user) => (
+                          <option 
+                            key={user.id || user._id || user.public_id} 
+                            value={user.id || user._id || user.public_id}
+                          >
+                            {user.name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <select
+                        value={formData.assigned_to[0] || ''}
+                        onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value ? [e.target.value] : [] })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Select a user (optional)</option>
+                        {employeeUsers.map((user) => (
+                          <option 
+                            key={user.id || user._id || user.public_id} 
+                            value={user.id || user._id || user.public_id}
+                          >
+                            {user.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                 </div>
 
