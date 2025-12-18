@@ -136,7 +136,7 @@ const AddClientsPage = () => {
         // Optionally dispatch a local action to upsert these into the task store.
         // clear form (react-hook-form will keep values — navigate away for now)
         // navigate to clients list and pass success message
-        navigate('/client', { state: { created: true, message: `Client "${created?.name || created?.company || 'Created'}" added successfully.` } });
+        navigate('/admin/clients', { state: { created: true, message: `Client "${created?.name || created?.company || 'Created'}" added successfully.` } });
       } else {
         // show error message returned from thunk (rejectWithValue or thrown errors)
         const err = formatError(result.payload) || result.error?.message || 'Failed to create client';
@@ -150,7 +150,7 @@ const AddClientsPage = () => {
   };
 
   const handleCancel = () => {
-    navigate("/client");
+    navigate("/admin/clients");
   };
 
   return (
