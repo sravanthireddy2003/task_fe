@@ -1,638 +1,3 @@
-// import { useState, useEffect } from 'react';
-// import { Plus, Edit2, Trash2, AlertCircle, Filter, List, Grid } from 'lucide-react';
-// import { useDispatch, useSelector } from 'react-redux';
-// import { toast } from 'sonner';
-
-// import {
-//   fetchTasks,
-//   createTask,
-//   updateTask,
-//   deleteTask,
-//   clearTasks,
-//   selectTasks,
-//   selectTaskStatus,
-//   selectTaskError,
-// } from '../redux/slices/taskSlice';
-// import { fetchProjects, selectProjects } from '../redux/slices/projectSlice';
-// import { selectDepartments } from '../redux/slices/departmentSlice';
-// import { fetchUsers, selectUsers } from '../redux/slices/userSlice';
-
-// export default function Tasks() {
-//   const dispatch = useDispatch();
-
-//   // Redux state
-//   const tasks = useSelector(selectTasks) || [];
-//   const status = useSelector(selectTaskStatus);
-//   const error = useSelector(selectTaskError);
-//   const projects = useSelector(selectProjects) || [];
-//   const departments = useSelector(selectDepartments) || [];
-//   const users = useSelector(selectUsers) || [];
-
-//   // Local UI state
-//   const [view, setView] = useState('list');
-//   const [isModalOpen, setIsModalOpen] = useState(false);
-//   const [editingTask, setEditingTask] = useState(null);
-//   const [formData, setFormData] = useState({
-//     name: '',
-//     description: '',
-//     project_id: '',
-//     assigned_to: '',
-//     estimated_hours: '',
-//     due_date: '',
-//     priority: 'medium',
-//     status: 'pending',
-//   });
-
-//   const [filterProject, setFilterProject] = useState('all');
-//   const [filterStatus, setFilterStatus] = useState('all');
-//   const [activeStatusEdit, setActiveStatusEdit] = useState(null);
-
-//   const statusOptions = ['pending', 'in_progress', 'completed', 'on_hold'];
-//   const priorityOptions = ['low', 'medium', 'high'];
-
-//   const isLoading = status === 'loading';
-
-//   useEffect(() => {
-//     // Only fetch tasks when a project context is available (avoid global tasks fetch)
-//     dispatch(fetchProjects());
-//     dispatch(fetchUsers());
-//   }, [dispatch]);
-
-//   const handleProjectChange = async (e) => {
-//     const val = e.target.value;
-//     setFilterProject(val);
-//     if (!val || val === 'all') {
-//       // clear tasks from the store when no project is selected
-//       dispatch(clearTasks());
-//       return;
-//     }
-
-//     // Request tasks for selected project id/public_id
-//     try {
-//       await dispatch(fetchTasks({ project_id: val }));
-//     } catch (err) {
-//       // swallow - fetchTasks thunk will update error state and toast in effect
-//     }
-//   };
-
-//   useEffect(() => {
-//     if (error) toast.error(error?.message || String(error));
-//   }, [error]);
-
-//   const openModal = (task = null) => {
-//     if (task) {
-//       setEditingTask(task);
-//       setFormData({
-//         name: task.title || task.name || '',
-//         description: task.description || '',
-//         project_id: task.projectPublicId || task.project_public_id || task.project_id || '',
-//         assigned_to: task.assignedTo || task.assigned_to || '',
-//         estimated_hours: task.estimatedHours || task.estimated_hours || '',
-//         due_date: task.dueDate || task.due_date || '',
-//         priority: task.priority || 'medium',
-//         status: task.status || 'pending',
-//       });
-//     } else {
-//       setEditingTask(null);
-//       setFormData({
-//         name: '',
-//         description: '',
-//         project_id: '',
-//         assigned_to: '',
-//         estimated_hours: '',
-//         due_date: '',
-//         priority: 'medium',
-//         status: 'pending',
-//       });
-//     }
-//     setIsModalOpen(true);
-//   };
-
-//   const closeModal = () => {
-//     setIsModalOpen(false);
-//     setEditingTask(null);
-//   };
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-//     try {
-//       const projectPublicId = formData.project_id || null;
-
-//       // Resolve selected project object from projects slice
-//       const selectedProject = projects.find(
-//         (p) => (p.public_id || p.id || p._id) === projectPublicId
-//       );
-
-//       // Derive department ids: prefer explicit form field, else use first department of selected project
-//       const departmentPublicId =
-//         formData.department_id ||
-//         selectedProject?.departments?.[0]?.public_id ||
-//         selectedProject?.departments?.[0]?.id ||
-//         null;
-
-//       // Also include backup numeric/internal ids where available to satisfy APIs that accept either
-//       const projectId = selectedProject?.id || selectedProject?._id || null;
-//       const departmentId =
-//         selectedProject?.departments?.[0]?.id || selectedProject?.departments?.[0]?._id || null;
-
-//       if (!formData.name || (!projectPublicId && !projectId)) {
-//         toast.error('Please provide a task name and select a project');
-//         return;
-//       }
-
-//       const payload = {
-//         projectPublicId: projectPublicId || undefined,
-//         projectId: projectId || undefined,
-//         departmentPublicId: departmentPublicId || undefined,
-//         departmentId: departmentId || undefined,
-//         title: formData.name,
-//         description: formData.description,
-//         assignedTo: formData.assigned_to || null,
-//         estimatedHours: formData.estimated_hours ? Number(formData.estimated_hours) : 0,
-//         status: formData.status,
-//         priority: formData.priority,
-//         dueDate: formData.due_date || null,
-//       };
-
-//       if (editingTask) {
-//         const taskId = editingTask.public_id || editingTask.id || editingTask._id;
-//         await dispatch(updateTask({ taskId, data: payload })).unwrap();
-//         toast.success('Task updated successfully');
-//       } else {
-//         await dispatch(createTask(payload)).unwrap();
-//         toast.success('Task created successfully');
-//       }
-
-//       closeModal();
-//       // Refresh tasks only for the active project context
-//       const projectToFetch = filterProject !== 'all' ? filterProject : (formData.project_id || null);
-//       if (projectToFetch) await dispatch(fetchTasks({ project_id: projectToFetch })).unwrap();
-//     } catch (err) {
-//       toast.error(err?.message || 'Operation failed');
-//     }
-//   };
-
-//   const handleDelete = async (task) => {
-//     if (!window.confirm('Delete this task?')) return;
-//     try {
-//       const taskId = task.public_id || task.id || task._id;
-//       await dispatch(deleteTask(taskId)).unwrap();
-//       toast.success('Task deleted');
-//       const projectToFetch = filterProject !== 'all' ? filterProject : (task.projectPublicId || task.project_public_id || task.project_id || null);
-//       if (projectToFetch) await dispatch(fetchTasks({ project_id: projectToFetch })).unwrap();
-//     } catch (err) {
-//       toast.error(err?.message || 'Delete failed');
-//     }
-//   };
-
-//   const updateStatusInline = async (task, newStatus) => {
-//     if (!newStatus) return;
-//     try {
-//       const taskId = task.public_id || task.id || task._id;
-//       await dispatch(updateTask({ taskId, data: { status: newStatus } })).unwrap();
-//       setActiveStatusEdit(null);
-//       const projectToFetch = filterProject !== 'all' ? filterProject : (task.projectPublicId || task.project_public_id || task.project_id || null);
-//       if (projectToFetch) await dispatch(fetchTasks({ project_id: projectToFetch })).unwrap();
-//     } catch (err) {
-//       toast.error(err?.message || 'Status update failed');
-//     }
-//   };
-
-//   // Filters
-//   const filteredTasks = tasks.filter((task) => {
-//     const projectMatch =
-//       filterProject === 'all' ||
-//       [
-//         task.project_id,
-//         task.projectId,
-//         task.project_public_id,
-//         task.projectPublicId,
-//         String(task.project_id),
-//         String(task.project_public_id),
-//       ].some((v) => v !== undefined && v !== null && String(v) === String(filterProject));
-//     const statusMatch = filterStatus === 'all' || task.status === filterStatus;
-//     return projectMatch && statusMatch;
-//   });
-
-//   const getProjectName = (projectId) => {
-//     return projects.find((p) => (p.id || p._id || p.public_id) === projectId)?.name || '-';
-//   };
-
-//   const statusColors = {
-//     pending: 'bg-yellow-100 text-yellow-700',
-//     in_progress: 'bg-blue-100 text-blue-700',
-//     completed: 'bg-green-100 text-green-700',
-//     on_hold: 'bg-red-100 text-red-700',
-//   };
-
-//   const priorityColors = {
-//     low: 'bg-gray-100 text-gray-700',
-//     medium: 'bg-amber-100 text-amber-700',
-//     high: 'bg-red-100 text-red-700',
-//   };
-
-//   if (isLoading) {
-//     return (
-//       <div className="flex items-center justify-center min-h-[400px]">
-//         <div className="animate-spin h-12 w-12 border-4 border-blue-200 border-t-blue-600 rounded-full" />
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="p-8">
-//       {/* HEADER */}
-//       <div className="flex items-center justify-between mb-8">
-//         <div>
-//           <h1 className="text-2xl font-bold text-gray-900 mb-2">Tasks</h1>
-//           <p className="text-gray-600">Manage and track all your tasks</p>
-//         </div>
-
-//         <div className="flex items-center gap-3">
-//           <select
-//             value={filterProject}
-//             onChange={handleProjectChange}
-//             className="border rounded-md p-2 mr-2 bg-white"
-//           >
-//             <option value="all">All Projects</option>
-//             {projects.map((p) => {
-//               const id = p.id ?? p._id ?? p.public_id;
-//               return (
-//                 <option key={id} value={id}>
-//                   {p.name || p.title || id}
-//                 </option>
-//               );
-//             })}
-//           </select>
-//           <button
-//             onClick={() => setView('list')}
-//             className={`p-2 rounded-lg border ${view === 'list' ? 'bg-blue-100 border-blue-400' : 'bg-white'}`}
-//           >
-//             <List className="w-5 h-5 text-blue-600" />
-//           </button>
-
-//           <button
-//             onClick={() => setView('card')}
-//             className={`p-2 rounded-lg border ${view === 'card' ? 'bg-blue-100 border-blue-400' : 'bg-white'}`}
-//           >
-//             <Grid className="w-5 h-5 text-blue-600" />
-//           </button>
-
-//           <button
-//             onClick={() => openModal()}
-//             className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-//           >
-//             <Plus className="w-5 h-5" />
-//             Add Task
-//           </button>
-//         </div>
-//       </div>
-
-//       {/* STATUS SUMMARY */}
-//       <div className="flex flex-wrap gap-3 mb-6">
-//         <div className="px-4 py-2 rounded-lg bg-yellow-100 text-yellow-700 font-semibold shadow-sm">
-//           Pending : {tasks.filter((t) => t.status === 'pending').length}
-//         </div>
-//         <div className="px-4 py-2 rounded-lg bg-blue-100 text-blue-700 font-semibold shadow-sm">
-//           In-Progress : {tasks.filter((t) => t.status === 'in_progress').length}
-//         </div>
-//         <div className="px-4 py-2 rounded-lg bg-green-100 text-green-700 font-semibold shadow-sm">
-//           Completed : {tasks.filter((t) => t.status === 'completed').length}
-//         </div>
-//         <div className="px-4 py-2 rounded-lg bg-red-100 text-red-700 font-semibold shadow-sm">
-//           On-Hold : {tasks.filter((t) => t.status === 'on_hold').length}
-//         </div>
-//       </div>
-
-//       {/* FILTERS */}
-//       <div className="bg-white rounded-xl border p-4 mb-6 flex items-center gap-4 flex-wrap">
-//         <div className="flex items-center gap-2">
-//           <Filter className="w-5 h-5 text-gray-600" />
-//           <span className="text-gray-700">Filters:</span>
-//         </div>
-
-//         <select
-//           value={filterProject}
-//           onChange={(e) => {
-//             // keep local filter state but also trigger project-specific fetch
-//             const v = e.target.value;
-//             setFilterProject(v);
-//             if (!v || v === 'all') {
-//               dispatch(clearTasks());
-//             } else {
-//               dispatch(fetchTasks({ project_id: v }));
-//             }
-//           }}
-//           className="px-4 py-2 border rounded-lg"
-//         >
-//           <option value="all">All Projects</option>
-//           {projects.map((p) => {
-//             const id = p.id ?? p._id ?? p.public_id;
-//             return (
-//               <option key={id} value={id}>
-//                 {p.name}
-//               </option>
-//             );
-//           })}
-//         </select>
-
-//         <select
-//           value={filterStatus}
-//           onChange={(e) => setFilterStatus(e.target.value)}
-//           className="px-4 py-2 border rounded-lg"
-//         >
-//           <option value="all">All Status</option>
-//           {statusOptions.map((s) => (
-//             <option key={s} value={s}>
-//               {s.replace('_', ' ')}
-//             </option>
-//           ))}
-//         </select>
-//       </div>
-
-//       {/* LIST VIEW */}
-//       {view === 'list' && (
-//         <div className="bg-white border rounded-xl overflow-hidden">
-//           <table className="w-full table-auto">
-//             <thead className="bg-gray-100 text-gray-700">
-//               <tr>
-//                 <th className="p-3 text-left">Task</th>
-//                 <th className="p-3 text-left">Project</th>
-//                 <th className="p-3 text-left">Status</th>
-//                 <th className="p-3 text-left">Priority</th>
-//                 <th className="p-3 text-left">Due Date</th>
-//                 <th className="p-3 text-right">Actions</th>
-//               </tr>
-//             </thead>
-
-//             <tbody>
-//               {filteredTasks.length === 0 ? (
-//                 <tr>
-//                   <td colSpan="6" className="p-8 text-center text-gray-500">
-//                     No tasks found
-//                   </td>
-//                 </tr>
-//               ) : (
-//                 filteredTasks.map((task) => (
-//                   <tr key={task.public_id || task.id || task._id} className="border-b hover:bg-gray-50">
-//                     <td className="p-3">
-//                       <div className="font-medium">{task.title || task.name}</div>
-//                       <div className="text-sm text-gray-500">{task.description}</div>
-//                     </td>
-
-//                     <td className="p-3">
-//                       <span className="px-3 py-1 rounded-full text-white text-sm bg-blue-600">
-//                         {getProjectName(task.projectPublicId || task.project_public_id || task.project_id)}
-//                       </span>
-//                     </td>
-
-//                     <td className="p-3">
-//                       {activeStatusEdit === (task.public_id || task.id || task._id) ? (
-//                         <select
-//                           value={task.status}
-//                           onChange={(e) => updateStatusInline(task, e.target.value)}
-//                           className="border rounded-lg px-2 py-1"
-//                         >
-//                           {statusOptions.map((s) => (
-//                             <option key={s} value={s}>
-//                               {s.replace('_', ' ')}
-//                             </option>
-//                           ))}
-//                         </select>
-//                       ) : (
-//                         <span
-//                           onClick={() => setActiveStatusEdit(task.public_id || task.id || task._id)}
-//                           className={`px-3 py-1 rounded-full cursor-pointer text-sm ${statusColors[task.status]}`}
-//                         >
-//                           {task.status?.replace('_', ' ') || '-'}
-//                         </span>
-//                       )}
-//                     </td>
-
-//                     <td className="p-3">
-//                       <span className={`px-3 py-1 rounded-full text-sm ${priorityColors[task.priority]}`}>
-//                         {(task.priority || 'medium').toUpperCase()}
-//                       </span>
-//                     </td>
-
-//                     <td className="p-3 text-sm">{task.dueDate || task.due_date || '-'}</td>
-
-//                     <td className="p-3 text-right">
-//                       <div className="flex justify-end gap-2">
-//                         <button
-//                           onClick={() => openModal(task)}
-//                           className="p-2 text-gray-600 hover:bg-gray-200 rounded-lg"
-//                         >
-//                           <Edit2 className="w-4 h-4" />
-//                         </button>
-//                         <button
-//                           onClick={() => handleDelete(task)}
-//                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-//                         >
-//                           <Trash2 className="w-4 h-4" />
-//                         </button>
-//                       </div>
-//                     </td>
-//                   </tr>
-//                 ))
-//               )}
-//             </tbody>
-//           </table>
-//         </div>
-//       )}
-
-//       {/* CARD VIEW */}
-//       {view === 'card' && (
-//         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-//           {filteredTasks.length === 0 ? (
-//             <div className="col-span-full text-center py-12 text-gray-500">
-//               <AlertCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
-//               <p>No tasks found</p>
-//             </div>
-//           ) : (
-//             filteredTasks.map((task) => (
-//               <div key={task.public_id || task.id || task._id} className="bg-white border rounded-xl p-6">
-//                 <div className="flex items-start justify-between mb-4">
-//                   <div className="flex-1">
-//                     <h3 className="text-lg font-semibold text-gray-900">{task.title || task.name}</h3>
-//                     <p className="text-sm text-gray-600 mt-1">{task.description}</p>
-//                   </div>
-//                   <div className="flex gap-2">
-//                     <button onClick={() => openModal(task)} className="p-2 hover:bg-gray-100 rounded-lg">
-//                       <Edit2 className="w-4 h-4" />
-//                     </button>
-//                     <button onClick={() => handleDelete(task)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg">
-//                       <Trash2 className="w-4 h-4" />
-//                     </button>
-//                   </div>
-//                 </div>
-
-//                 <div className="mb-3">
-//                   <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-//                     {getProjectName(task.projectPublicId || task.project_public_id || task.project_id)}
-//                   </span>
-//                 </div>
-
-//                 <div className="mb-4">
-//                   <span className="text-gray-600 text-sm">Status: </span>
-//                   <span className={`ml-2 px-3 py-1 rounded-full text-sm ${statusColors[task.status]}`}>{task.status}</span>
-//                 </div>
-
-//                 <div className="mb-3">
-//                   <span className="text-gray-600 text-sm">Priority: </span>
-//                   <span className={`ml-2 px-3 py-1 rounded-full text-sm ${priorityColors[task.priority]}`}>
-//                     {(task.priority || 'medium').toUpperCase()}
-//                   </span>
-//                 </div>
-
-//                 <div className="pt-4 border-t">
-//                   <div className="text-xs text-gray-500">Due: {task.dueDate || task.due_date || '-'}</div>
-//                 </div>
-//               </div>
-//             ))
-//           )}
-//         </div>
-//       )}
-
-//       {/* MODAL */}
-//       {isModalOpen && (
-//         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-//           <div className="bg-white rounded-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
-//             <h2 className="text-xl font-semibold text-gray-900 mb-6">{editingTask ? 'Edit Task' : 'Add Task'}</h2>
-
-//             <form onSubmit={handleSubmit}>
-//               <div className="space-y-4">
-//                 <div>
-//                   <label className="block text-gray-700 font-medium mb-2">Task Name</label>
-//                   <input
-//                     type="text"
-//                     required
-//                     value={formData.name}
-//                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-//                     className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-//                   />
-//                 </div>
-
-//                 <div>
-//                   <label className="block text-gray-700 font-medium mb-2">Description</label>
-//                   <textarea
-//                     value={formData.description}
-//                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-//                     rows={3}
-//                     className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"
-//                   />
-//                 </div>
-
-//                 <div className="grid grid-cols-2 gap-4">
-//                   <div>
-//                     <label className="block text-gray-700 font-medium mb-2">Project <span className="text-red-500">*</span></label>
-//                     <select
-//                       required
-//                       value={formData.project_id}
-//                       onChange={(e) => setFormData({ ...formData, project_id: e.target.value })}
-//                       className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-//                     >
-//                       <option value="">-- Select project --</option>
-//                       {projects.map((p) => (
-//                         <option key={p.public_id || p.id || p._id} value={p.public_id || p.id || p._id}>
-//                           {p.name}
-//                         </option>
-//                       ))}
-//                     </select>
-//                   </div>
-
-//                   <div>
-//                     <label className="block text-gray-700 font-medium mb-2">Priority</label>
-//                     <select
-//                       value={formData.priority}
-//                       onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-//                       className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-//                     >
-//                       {priorityOptions.map((p) => (
-//                         <option key={p} value={p}>
-//                           {p.toUpperCase()}
-//                         </option>
-//                       ))}
-//                     </select>
-//                   </div>
-//                 </div>
-
-//                 <div className="grid grid-cols-3 gap-4">
-//                   <div>
-//                     <label className="block text-gray-700 font-medium mb-2">Assign To</label>
-//                     <select
-//                       value={formData.assigned_to}
-//                       onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
-//                       className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-//                     >
-//                       <option value="">-- Select user (optional) --</option>
-//                       {users.map((u) => (
-//                         <option key={u.public_id || u.id || u._id} value={u.public_id || u.id || u._id}>
-//                           {u.name}
-//                         </option>
-//                       ))}
-//                     </select>
-//                   </div>
-
-//                   <div>
-//                     <label className="block text-gray-700 font-medium mb-2">Estimated Hours</label>
-//                     <input
-//                       type="number"
-//                       min="0"
-//                       value={formData.estimated_hours}
-//                       onChange={(e) => setFormData({ ...formData, estimated_hours: e.target.value })}
-//                       className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-//                       placeholder="e.g. 16"
-//                     />
-//                   </div>
-
-//                   <div>
-//                     <label className="block text-gray-700 font-medium mb-2">Due Date</label>
-//                     <input
-//                       type="date"
-//                       value={formData.due_date}
-//                       onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-//                       className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-//                     />
-//                   </div>
-//                 </div>
-
-//                 <div>
-//                   <label className="block text-gray-700 font-medium mb-2">Status</label>
-//                   <select
-//                     value={formData.status}
-//                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-//                     className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-//                   >
-//                     {statusOptions.map((s) => (
-//                       <option key={s} value={s}>
-//                         {s.replace('_', ' ')}
-//                       </option>
-//                     ))}
-//                   </select>
-//                 </div>
-//               </div>
-
-//               <div className="flex gap-3 mt-6">
-//                 <button type="button" onClick={closeModal} className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50 font-medium">
-//                   Cancel
-//                 </button>
-//                 <button type="submit" className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
-//                   {editingTask ? 'Update' : 'Create'}
-//                 </button>
-//               </div>
-//             </form>
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
-
-
-
-
-
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit2, Trash2, AlertCircle, Filter, List, Grid, Calendar, Clock, User, RefreshCw } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -640,6 +5,7 @@ import { toast } from 'sonner';
 
 import {
   fetchTasks,
+  fetchSelectedTaskDetails,
   createTask,
   updateTask,
   deleteTask,
@@ -665,6 +31,7 @@ export default function Tasks() {
   const [view, setView] = useState('list');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
+  const [selectedTaskDetails, setSelectedTaskDetails] = useState(null);
   const [selectedProjectId, setSelectedProjectId] = useState('all');
   const [formData, setFormData] = useState({
     name: '',
@@ -914,6 +281,23 @@ export default function Tasks() {
       console.error('Delete error:', err);
       toast.error(err?.message || 'Delete failed');
     }
+  };
+
+  const handleOpenTaskDetails = async (task) => {
+    const taskId = task.id || task._id || task.public_id || task.task_id;
+    if (!taskId) return;
+    try {
+      const resp = await dispatch(fetchSelectedTaskDetails([taskId])).unwrap();
+      const details = Array.isArray(resp) && resp.length ? resp[0] : resp;
+      setSelectedTaskDetails(details || null);
+    } catch (err) {
+      console.error('Failed to fetch task details:', err);
+      toast.error(err?.message || 'Failed to load task details');
+    }
+  };
+
+  const closeDetails = () => {
+    setSelectedTaskDetails(null);
   };
 
   const updateStatusInline = async (task, newStatus) => {
@@ -1209,8 +593,93 @@ export default function Tasks() {
         </div>
       )}
 
+      {/* DETAILS PANEL */}
+      {selectedTaskDetails && (
+        <div className="bg-white border rounded-xl p-6 mb-6">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div className="flex-1">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <div className="w-14 h-14 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-lg">{(selectedTaskDetails.title || selectedTaskDetails.name || '').slice(0,2).toUpperCase()}</div>
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-2xl font-bold truncate">{selectedTaskDetails.title || selectedTaskDetails.name}</h3>
+                  <p className="text-sm text-gray-500 truncate mt-1">{selectedTaskDetails.description || 'No description'}</p>
+                  <div className="mt-3 flex items-center gap-2 flex-wrap">
+                    <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">{(selectedTaskDetails.stage || selectedTaskDetails.status || '').toString()}</span>
+                    <span className="text-xs px-2 py-1 rounded-full bg-yellow-50 text-yellow-800">Priority: {(selectedTaskDetails.priority || '').toString()}</span>
+                    <span className="text-xs px-2 py-1 rounded-full bg-green-50 text-emerald-800">Estimated: {selectedTaskDetails.estimatedHours ?? selectedTaskDetails.timeAlloted ?? 0}h</span>
+                    <span className="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-700">Total: {selectedTaskDetails.totalHours ?? selectedTaskDetails.total_hours ?? 0}h</span>
+                    <span className="text-xs px-2 py-1 rounded-full bg-white border text-gray-600">Due: {selectedTaskDetails.taskDate ? new Date(selectedTaskDetails.taskDate).toLocaleString() : (selectedTaskDetails.dueDate ? new Date(selectedTaskDetails.dueDate).toLocaleString() : '-')}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="text-sm text-gray-600">{getProjectName(selectedProjectId)}</div>
+                <button onClick={() => { setSelectedTaskDetails(null); }} className="px-3 py-1 bg-gray-100 rounded-lg text-sm">Back</button>
+              </div>
+              <div className="mt-4">
+                <div className="flex -space-x-2">
+                  {(selectedTaskDetails.assignedUsers || selectedTaskDetails.assigned_users || []).map((u) => (
+                    <div key={u.id || u.internalId || u._id} className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-semibold border-2 border-white shadow" title={u.name}>
+                      {String(u.name || u.fullName || u.username || u.id).split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 bg-gray-50 p-4 rounded-lg">
+              <h4 className="font-semibold mb-3">Checklist</h4>
+              {((selectedTaskDetails.checklist || selectedTaskDetails.check_lists || selectedTaskDetails.check_items) || []).length ? (
+                <ul className="space-y-2 text-sm text-gray-700">
+                  {(selectedTaskDetails.checklist || selectedTaskDetails.check_lists || selectedTaskDetails.check_items).map((item, idx) => (
+                    <li key={item.id || item._id || idx} className="flex items-center gap-3">
+                      <input type="checkbox" checked={!!item.completed} readOnly className="w-4 h-4" />
+                      <span>{item.title || item.name || item.text}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-gray-500">No checklist items</p>
+              )}
+
+              <div className="mt-6">
+                <h4 className="font-semibold mb-3">Activities</h4>
+                {((selectedTaskDetails.activities || selectedTaskDetails.activity_log) || []).length ? (
+                  <div className="space-y-3 max-h-56 overflow-auto text-sm text-gray-700">
+                    {(selectedTaskDetails.activities || selectedTaskDetails.activity_log).map((a, i) => (
+                      <div key={a.id || a._id || i} className="border-b border-gray-100 pb-2 last:pb-0">
+                        <div className="text-xs text-gray-500">{a.by || a.user || a.actor} • {a.when || a.createdAt || a.timestamp ? new Date(a.createdAt || a.when || a.timestamp).toLocaleString() : ''}</div>
+                        <div className="text-sm">{a.text || a.message || a.summary}</div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">No activities</p>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg border">
+              <h4 className="font-semibold mb-3">Summary</h4>
+              <div className="text-sm text-gray-700 mb-2"><strong>Client:</strong> {selectedTaskDetails.client?.name || '-'}</div>
+              <div className="text-sm text-gray-700 mb-2"><strong>Estimated:</strong> {selectedTaskDetails.estimatedHours ?? selectedTaskDetails.timeAlloted ?? 0} hrs</div>
+              <div className="text-sm text-gray-700 mb-2"><strong>Total Hours:</strong> {selectedTaskDetails.totalHours ?? selectedTaskDetails.total_hours ?? 0} hrs</div>
+              <div className="text-sm text-gray-700 mb-2"><strong>Created:</strong> {selectedTaskDetails.createdAt ? new Date(selectedTaskDetails.createdAt).toLocaleString() : '-'}</div>
+              <div className="text-sm text-gray-700"><strong>Updated:</strong> {selectedTaskDetails.updatedAt ? new Date(selectedTaskDetails.updatedAt).toLocaleString() : '-'}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* LIST VIEW */}
-      {selectedProjectId !== 'all' && !isFetching && tasks.length > 0 && view === 'list' && (
+      {!selectedTaskDetails && selectedProjectId !== 'all' && !isFetching && tasks.length > 0 && view === 'list' && (
         <div className="bg-white border rounded-xl overflow-hidden">
           <table className="w-full table-auto">
             <thead className="bg-gray-50 text-gray-700">
@@ -1237,10 +706,12 @@ export default function Tasks() {
                 filteredTasks.map((task) => (
                   <tr 
                     key={task.id || task._id || task.public_id} 
-                    className="border-b hover:bg-gray-50 transition-colors"
+                    onClick={() => handleOpenTaskDetails(task)}
+                    role="button"
+                    className="border-b hover:bg-gray-50 transition-colors cursor-pointer"
                   >
                     <td className="p-4">
-                      <div className="font-medium text-gray-900">{task.title || task.name}</div>
+                      <div onClick={() => handleOpenTaskDetails(task)} title="View task details" className="font-medium text-gray-900 cursor-pointer hover:underline">{task.title || task.name}</div>
                       {task.description && (
                         <div className="text-sm text-gray-500 mt-1 line-clamp-2">{task.description}</div>
                       )}
@@ -1301,14 +772,14 @@ export default function Tasks() {
                     <td className="p-4 text-right">
                       <div className="flex justify-end gap-2">
                         <button
-                          onClick={() => openModal(task)}
+                          onClick={(e) => { e.stopPropagation(); openModal(task); }}
                           className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                           title="Edit task"
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(task)}
+                          onClick={(e) => { e.stopPropagation(); handleDelete(task); }}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title="Delete task"
                         >
@@ -1325,7 +796,7 @@ export default function Tasks() {
       )}
 
       {/* CARD VIEW */}
-      {selectedProjectId !== 'all' && !isFetching && tasks.length > 0 && view === 'card' && (
+      {!selectedTaskDetails && selectedProjectId !== 'all' && !isFetching && tasks.length > 0 && view === 'card' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTasks.length === 0 ? (
             <div className="col-span-full bg-white rounded-xl border p-12 text-center">
@@ -1336,25 +807,27 @@ export default function Tasks() {
             filteredTasks.map((task) => (
               <div 
                 key={task.id || task._id || task.public_id} 
-                className="bg-white border rounded-xl p-6 hover:shadow-lg transition-shadow"
+                onClick={() => handleOpenTaskDetails(task)}
+                role="button"
+                className="bg-white border rounded-xl p-6 hover:shadow-lg transition-shadow cursor-pointer"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{task.title || task.name}</h3>
+                    <h3 onClick={() => handleOpenTaskDetails(task)} title="View task details" className="text-lg font-semibold text-gray-900 mb-2 cursor-pointer hover:underline">{task.title || task.name}</h3>
                     {task.description && (
                       <p className="text-sm text-gray-600 line-clamp-3">{task.description}</p>
                     )}
                   </div>
-                  <div className="flex gap-1">
+                    <div className="flex gap-1">
                     <button 
-                      onClick={() => openModal(task)}
+                      onClick={(e) => { e.stopPropagation(); openModal(task); }}
                       className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                       title="Edit task"
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button 
-                      onClick={() => handleDelete(task)}
+                      onClick={(e) => { e.stopPropagation(); handleDelete(task); }}
                       className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       title="Delete task"
                     >

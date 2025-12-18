@@ -55,6 +55,30 @@ export const fetchTasks = createAsyncThunk(
   }
 );
 
+// Fetch selected task details (assignedUsers, checklist, activities, totalHours)
+export const fetchSelectedTaskDetails = createAsyncThunk(
+  'tasks/fetchSelectedTaskDetails',
+  async (taskIdsOrPayload = {}, thunkAPI) => {
+    try {
+      let body = {};
+      if (Array.isArray(taskIdsOrPayload)) body.taskIds = taskIdsOrPayload;
+      else if (taskIdsOrPayload && Array.isArray(taskIdsOrPayload.taskIds)) body = { taskIds: taskIdsOrPayload.taskIds };
+      else if (typeof taskIdsOrPayload === 'object' && taskIdsOrPayload.taskIds) body = { taskIds: taskIdsOrPayload.taskIds };
+      else return thunkAPI.rejectWithValue('Missing taskIds');
+
+      const res = await httpPostService('api/projects/tasks/selected-details', body);
+      // Normalize response: expect { success:true, data: [...] }
+      const payload = res?.data ?? res;
+      if (!payload) return [];
+      if (Array.isArray(payload)) return payload;
+      if (Array.isArray(payload.data)) return payload.data;
+      return Array.isArray(res) ? res : [];
+    } catch (err) {
+      return thunkAPI.rejectWithValue(formatRejectValue(err));
+    }
+  }
+);
+
 export const getTask = createAsyncThunk(
   'tasks/getTask',
   async (taskId, thunkAPI) => {
