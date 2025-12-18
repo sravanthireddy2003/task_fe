@@ -3,15 +3,17 @@ import { useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { changePassword, selectAuthStatus, selectAuthError, logout } from "../redux/slices/authSlice";
+import { changePassword, selectAuthStatus, selectAuthError, logout, selectUser } from "../redux/slices/authSlice";
 import PasswordStrength from "../components/PasswordStrength";
 import Button from "../components/Button";
 import Textbox from "../components/Textbox";
+import { getDefaultLandingPath } from "../utils";
 
 const ChangePassword = () => {
   const dispatch = useDispatch();
   const status = useSelector(selectAuthStatus);
   const error = useSelector(selectAuthError);
+  const user = useSelector(selectUser);
   const navigate = useNavigate();
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm();
@@ -95,7 +97,10 @@ const ChangePassword = () => {
           {/* Back to dashboard link */}
           <button
             type="button"
-            onClick={() => navigate("/dashboard")}
+            onClick={() => {
+              const target = getDefaultLandingPath(user);
+              navigate(target, { replace: true });
+            }}
             className="mt-4 text-blue-600 hover:underline text-center w-full"
           >
             Back to Dashboard

@@ -134,7 +134,7 @@ const UserAvatar = () => {
               <span className="text-gray-700 font-medium">Change Password</span>
             </button>
 
-            <button onClick={() => go('/settings')} className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-50 flex items-center gap-3 text-sm transition-colors">
+            <button onClick={() => go('/admin/settings')} className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-50 flex items-center gap-3 text-sm transition-colors">
               <FaCog className="text-gray-500 w-4 h-4" />
               <span className="text-gray-700 font-medium">Settings</span>
             </button>

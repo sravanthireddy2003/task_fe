@@ -6,7 +6,7 @@ import { IoClose } from "react-icons/io5";
 import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
 
-import { getProfile, selectUser } from "./redux/slices/authSlice";
+import { getProfile, selectUser, setCredentials } from "./redux/slices/authSlice";
 
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
@@ -16,11 +16,10 @@ import VerifyOTP from "./pages/VerifyOTP";
 import TaskDetails from "./pages/TaskDetails";
 import Tasks from "./pages/Tasks";
 import Report from "./pages/Report";
-import TestRep from "./pages/testRep";
 import Users from "./pages/Users";
 import Client from "./pages/Client";
 import ClientDashboard from "./pages/ClientDashboard";
-import Dashboard from "./pages/dashboard";
+import DashboardRouter from "./components/DashboardRouter";
 import AddClient from "./pages/AddClientsP";
 import Profile from "./pages/Profile";
 import ChangePassword from "./pages/ChangePassword";
@@ -30,7 +29,6 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ModuleRouteGuard from "./components/ModuleRouteGuard";
 
 import PageNotFound from "./pages/PageNotFound";
-import Analysis from "./pages/Analysis";
 import Departments from "./pages/Departments";
 import Projects from "./pages/Projects";
 import Documents from "./pages/Documents";
@@ -41,6 +39,48 @@ import Notifications from "./pages/Notifications";
 import Trash from "./pages/Trash";
 import Approvals from "./pages/Approvals";
 import LandingPage from "./Landingpage";
+import ModuleDetail from "./pages/ModuleDetail";
+import { getFallbackModules, getFallbackSidebar } from "./utils/apiGuide";
+import { MODULE_MAP } from "./App/moduleMap.jsx";
+import AdminDashboard from "./pages/AdminDashboard";
+import ManagerDashboard from "./pages/ManagerDashboard";
+import RoleRoute from "./components/RoleRoute";
+import EmployeeHome from "./pages/EmployeeHome";
+import ClientViewerHome from "./pages/ClientViewerHome";
+
+const ROLE_PREFIXES = ["admin", "manager", "employee", "client", "client-viewer"];
+
+const MODULE_ROUTE_CONFIG = [
+  { moduleName: "Dashboard", Component: DashboardRouter },
+  { moduleName: "User Management", Component: Users },
+  { moduleName: "Clients", Component: Client },
+  { moduleName: "Departments", Component: Departments },
+  { moduleName: "Projects", Component: Projects },
+  { moduleName: "Tasks", Component: Tasks },
+  { moduleName: "Reports & Analytics", Component: Report },
+  { moduleName: "Document & File Management", Component: Documents },
+  { moduleName: "Settings & Master Configuration", Component: Settings },
+  { moduleName: "Chat / Real-Time Collaboration", Component: Chat },
+  { moduleName: "Workflow (Project & Task Flow)", Component: Workflow },
+  { moduleName: "Notifications", Component: Notifications },
+  { moduleName: "Approval Workflows", Component: Approvals },
+];
+
+const slugifyModuleName = (name = "") =>
+  name
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+const buildModulePaths = (moduleName) => {
+  const moduleMeta = MODULE_MAP[moduleName];
+  const basePath = (moduleMeta?.link || `/${slugifyModuleName(moduleName)}`)
+    .replace(/^\//, ""); // e.g. "dashboard", "tasks"
+
+  // Only role-prefixed routes like /admin/dashboard, /manager/tasks, etc.
+  return ROLE_PREFIXES.map((prefix) => `/${prefix}/${basePath}`);
+};
 
 // -------- Layout for logged-in users --------
 function Layout() {
@@ -127,10 +167,35 @@ function App() {
   const user = useSelector(selectUser);
 
   useEffect(() => {
-    if (user && (!user.modules || user.modules.length === 0)) {
+    if (!user) return;
+
+    const needsModuleFallback = !Array.isArray(user.modules) || user.modules.length === 0;
+    const needsSidebarFallback = !Array.isArray(user.sidebar) || user.sidebar.length === 0;
+
+    const fallbackModules = needsModuleFallback ? getFallbackModules(user.role) : [];
+    const fallbackSidebar = needsSidebarFallback ? getFallbackSidebar(user.role) : [];
+
+    const shouldApplyFallback =
+      (needsModuleFallback && fallbackModules.length > 0) ||
+      (needsSidebarFallback && fallbackSidebar.length > 0);
+
+    if (shouldApplyFallback) {
+      const updatedUser = { ...user };
+
+      if (needsModuleFallback && fallbackModules.length > 0) {
+        updatedUser.modules = fallbackModules;
+      }
+      if (needsSidebarFallback && fallbackSidebar.length > 0) {
+        updatedUser.sidebar = fallbackSidebar;
+      }
+
+      dispatch(setCredentials(updatedUser));
+    }
+
+    if (needsModuleFallback) {
       dispatch(getProfile());
     }
-  }, []);
+  }, [dispatch, user]);
 
   return (
     <main className="w-full min-h-screen bg-gray-50">
@@ -138,78 +203,43 @@ function App() {
         <Route path="/" element={<LandingPage />} />
 
         <Route element={<Layout />}>
-          {/* Dashboard */}
-          <Route element={<ModuleRouteGuard moduleName="Dashboard" />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-          </Route>
+          {MODULE_ROUTE_CONFIG.map(({ moduleName, Component }) => (
+            <Route element={<ModuleRouteGuard moduleName={moduleName} />} key={`guard-${moduleName}`}>
+              {buildModulePaths(moduleName).map((path) => (
+                <Route key={`${moduleName}-${path}`} path={path} element={<Component />} />
+              ))}
+            </Route>
+          ))}
 
-          {/* User Management */}
-          <Route element={<ModuleRouteGuard moduleName="User Management" />}>
-            <Route path="/team" element={<Users />} />
-          </Route>
+          {/* Alias routes for Analytics paths (e.g. /admin/analytics) mapped to Reports module */}
+          {ROLE_PREFIXES.map((prefix) => (
+            <Route
+              element={<ModuleRouteGuard moduleName="Reports & Analytics" />}
+              key={`analytics-alias-${prefix}`}
+            >
+              <Route path={`/${prefix}/analytics`} element={<Report />} />
+            </Route>
+          ))}
 
-          {/* Clients */}
           <Route element={<ModuleRouteGuard moduleName="Clients" />}>
-            <Route path="/client" element={<Client />} />
             <Route path="/add-client" element={<AddClient />} />
             <Route path="/client-dashboard/:id" element={<ClientDashboard />} />
           </Route>
-
-          {/* Departments */}
-          <Route element={<ModuleRouteGuard moduleName="Departments" />}>
-            <Route path="/departments" element={<Departments />} />
-          </Route>
-
-          {/* Tasks */}
           <Route element={<ModuleRouteGuard moduleName="Tasks" />}>
-            <Route path="/tasks" element={<Tasks />} />
             <Route path="/task/:id" element={<TaskDetails />} />
-          </Route>
-
-          {/* Projects */}
-          <Route element={<ModuleRouteGuard moduleName="Projects" />}>
-            <Route path="/projects" element={<Projects />} />
-          </Route>
-
-          {/* Reports / Analysis */}
-          <Route element={<ModuleRouteGuard moduleName="Reports & Analytics" />}>
-            <Route path="/analysis" element={<Analysis />} />
-            <Route path="/report" element={<Report />} />
-            <Route path="/testRep" element={<TestRep />} />
-          </Route>
-
-          {/* Documents */}
-          <Route element={<ModuleRouteGuard moduleName="Document & File Management" />}>
-            <Route path="/documents" element={<Documents />} />
-          </Route>
-
-          {/* Settings */}
-          <Route element={<ModuleRouteGuard moduleName="Settings & Master Configuration" />}>
-            <Route path="/settings" element={<Settings />} />
-          </Route>
-
-          {/* Chat */}
-          <Route element={<ModuleRouteGuard moduleName="Chat / Real-Time Collaboration" />}>
-            <Route path="/chat" element={<Chat />} />
-          </Route>
-
-          {/* Workflow */}
-          <Route element={<ModuleRouteGuard moduleName="Workflow (Project & Task Flow)" />}>
-            <Route path="/workflow" element={<Workflow />} />
-          </Route>
-
-          {/* Notifications */}
-          <Route element={<ModuleRouteGuard moduleName="Notifications" />}>
-            <Route path="/notifications" element={<Notifications />} />
-          </Route>
-
-          {/* Approvals */}
-          <Route element={<ModuleRouteGuard moduleName="Approval Workflows" />}>
-            <Route path="/approvals" element={<Approvals />} />
           </Route>
 
           {/* Trash */}
           <Route path="/trash" element={<Trash />} />
+
+          {/* Module detail by moduleId */}
+          <Route path="/module/:moduleId" element={<ModuleDetail />} />
+
+          {/* Role home pages */}
+          <Route path="/home/admin" element={<RoleRoute role="Admin" Component={AdminDashboard} />} />
+          <Route path="/home/manager" element={<RoleRoute role="Manager" Component={ManagerDashboard} />} />
+          <Route path="/home/employee" element={<RoleRoute role="Employee" Component={EmployeeHome} />} />
+          <Route path="/home/client-viewer" element={<RoleRoute role="Client-Viewer" Component={ClientViewerHome} />} />
 
           {/* Profile */}
           <Route path="/profile" element={<Profile />} />

@@ -24,12 +24,12 @@ export const MODULE_MAP = {
   },
   "User Management": { 
     label: "Users & Teams", 
-    link: "/team", 
+    link: "/users", 
     icon: createIcon(GroupsRoundedIcon)
   },
   "Clients": { 
     label: "Clients", 
-    link: "/client", 
+    link: "/clients", 
     icon: createIcon(BusinessCenterRoundedIcon)
   },
   "Departments": { 
@@ -49,7 +49,7 @@ export const MODULE_MAP = {
   },
   "Reports & Analytics": { 
     label: "Analytics", 
-    link: "/report", 
+    link: "/reports", 
     icon: createIcon(InsightsRoundedIcon)
   },
   "Document & File Management": { 

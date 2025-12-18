@@ -12,7 +12,7 @@ const formatRejectValue = (err) => {
   if (typeof err === 'string') return err;
   if (err?.message) return err.message;
   try {
-    return JSON.stringify(err);
+    return JSON.stringify(serr);
   } catch (e) {
     return String(err);
   }

@@ -77,3 +77,34 @@ export const BGS = [
   "bg-red-600",
   "bg-green-600",
 ];
+
+// Compute the default landing path for a logged-in user
+// Prefers module paths from backend (e.g. "/admin/dashboard") and
+// falls back to role-prefixed dashboard routes.
+export const getDefaultLandingPath = (user) => {
+  if (!user) return "/log-in";
+
+  const modules = Array.isArray(user.modules) ? user.modules : [];
+
+  // Prefer a module whose name looks like "Dashboard"
+  const dashboardModule = modules.find((m) =>
+    (m?.name || "").toString().toLowerCase().includes("dashboard")
+  );
+  if (dashboardModule?.path) return dashboardModule.path;
+
+  // Otherwise pick the first module that has a path
+  const firstWithPath = modules.find((m) => m && m.path);
+  if (firstWithPath?.path) return firstWithPath.path;
+
+  // Fallback by normalized role -> /<role-prefix>/dashboard
+  const role = (user.role || "").toString().toLowerCase().replace(/\s|-/g, "");
+  if (role === "admin") return "/admin/dashboard";
+  if (role === "manager") return "/manager/dashboard";
+  if (role === "employee") return "/employee/dashboard";
+  if (role === "client") return "/client/dashboard";
+  if (role === "clientviewer") return "/client-viewer/dashboard";
+
+  // As a last resort, send to login
+  return "/log-in";
+};
+

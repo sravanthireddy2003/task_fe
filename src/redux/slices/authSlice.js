@@ -1100,6 +1100,7 @@ const authSlice = createSlice({
       state.user = {
         ...userData,
         modules: Array.isArray(userData.modules) ? userData.modules : [],
+        sidebar: Array.isArray(userData.sidebar) ? userData.sidebar : [],
       };
       localStorage.setItem("userInfo", JSON.stringify(state.user));
     },

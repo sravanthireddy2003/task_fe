@@ -138,6 +138,7 @@ import { useSelector, useDispatch } from "react-redux";
 import clsx from "clsx";
 import { MODULE_MAP } from "../App/moduleMap.jsx";
 import { setSidebarCollapsed } from "../redux/slices/authSlice";
+import { getFallbackModules, getFallbackSidebar } from "../utils/apiGuide";
 
 const Sidebar = () => {
   const dispatch = useDispatch();
@@ -146,10 +147,47 @@ const Sidebar = () => {
 
   const { user, isSidebarCollapsed } = useSelector((state) => state.auth);
 
-  // ✅ PERFECT - Now works with JSX icons from moduleMap
-  const sidebarLinks = user?.modules
-    ?.map((mod) => MODULE_MAP[mod.name])
-    .filter(Boolean) || [];
+  // ✅ Support backend sidebar array OR modules array
+  const sidebarLinks = React.useMemo(() => {
+    const buildLinkFromSidebar = (entry) => {
+      const moduleMeta = MODULE_MAP[entry.label] || MODULE_MAP[entry.id] || MODULE_MAP[entry.name];
+      // Prefer backend path (e.g. "/admin/dashboard") and fall back to canonical link
+      const link = entry.path || moduleMeta?.link;
+
+      if (!link) return null;
+
+      return {
+        label: entry.label || moduleMeta?.label || entry.name || "Module",
+        link,
+        icon: moduleMeta?.icon || <span className="text-lg">▣</span>,
+      };
+    };
+
+    const sourceSidebar = (user?.sidebar?.length ? user.sidebar : getFallbackSidebar(user?.role)) || [];
+    const normalizedSidebar = sourceSidebar
+      .map(buildLinkFromSidebar)
+      .filter(Boolean);
+
+    if (normalizedSidebar.length > 0) {
+      return normalizedSidebar;
+    }
+
+    const fallbackModules = (user?.modules?.length ? user.modules : getFallbackModules(user?.role)) || [];
+
+    return fallbackModules
+      .map((mod) => {
+        const moduleMeta = MODULE_MAP[mod.name];
+        // Again prefer backend-provided path if present
+        const link = mod.path || moduleMeta?.link;
+        if (!link) return null;
+        return {
+          label: moduleMeta?.label || mod.name,
+          link,
+          icon: moduleMeta?.icon || <span className="text-lg">▣</span>,
+        };
+      })
+      .filter(Boolean);
+  }, [user]);
 
   return (
     <div

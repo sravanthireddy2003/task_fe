@@ -12,6 +12,7 @@ import {
   selectAuthStatus,
   selectAuthError,
 } from "../redux/slices/authSlice";
+import { getDefaultLandingPath } from "../utils";
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -66,7 +67,8 @@ const Login = () => {
 
   useEffect(() => {
     if (user) {
-      navigate("/dashboard");
+      const target = getDefaultLandingPath(user);
+      navigate(target, { replace: true });
     }
   }, [user, navigate]);
 

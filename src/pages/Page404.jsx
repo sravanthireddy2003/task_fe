@@ -1,7 +1,13 @@
 import { Dialog } from "@headlessui/react";
 import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { selectUser } from "../redux/slices/authSlice";
+import { getDefaultLandingPath } from "../utils";
 
 const NotFoundPage = () => {
+  const user = useSelector(selectUser);
+  const homePath = user ? getDefaultLandingPath(user) : "/log-in";
+
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
       <div className="bg-white p-6 rounded-lg shadow-lg">
@@ -16,7 +22,7 @@ const NotFoundPage = () => {
         </p>
         <div className="mt-6 flex justify-center">
           <Link
-            to="/dashboard"
+            to={homePath}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
           >
             Go to Homepage

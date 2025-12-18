@@ -3,11 +3,12 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { verifyOtp, selectAuthError, selectAuthStatus, resendOtp } from '../redux/slices/authSlice';
+import { verifyOtp, selectAuthError, selectAuthStatus, resendOtp, selectUser } from '../redux/slices/authSlice';
 import { toast } from 'sonner';
 import { useLocation } from 'react-router-dom';
 import Button from '../components/Button';
 import Textbox from '../components/Textbox';
+import { getDefaultLandingPath } from '../utils';
 
 const VerifyOTP = () => {
   const dispatch = useDispatch();
@@ -15,6 +16,7 @@ const VerifyOTP = () => {
   const { register, handleSubmit, setFocus, watch, setValue } = useForm();
   const status = useSelector(selectAuthStatus);
   const error = useSelector(selectAuthError);
+  const user = useSelector(selectUser);
   const tempToken = useSelector((state) => state.auth.tempToken);
   const location = useLocation();
   const locationTempToken = location?.state?.tempToken || location?.state?.temp || null;
@@ -93,8 +95,10 @@ const VerifyOTP = () => {
     const payload = { tempToken: tokenToUse, otp: data.otp };
     setFriendlyError(null);
     try {
-      await dispatch(verifyOtp(payload)).unwrap();
-      navigate('/dashboard');
+      const res = await dispatch(verifyOtp(payload)).unwrap();
+      const returnedUser = res?.user || res?.data?.user || null;
+      const target = getDefaultLandingPath(returnedUser || user);
+      navigate(target, { replace: true });
     } catch (err) {
       const friendly = mapOtpError(err);
       setFriendlyError(friendly);
