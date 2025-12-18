@@ -55,15 +55,15 @@ const MODULE_ROUTE_CONFIG = [
   { moduleName: "User Management", Component: Users },
   { moduleName: "Clients", Component: Client },
   { moduleName: "Departments", Component: Departments },
-  { moduleName: "Projects", Component: Projects },
   { moduleName: "Tasks", Component: Tasks },
+  { moduleName: "Projects", Component: Projects },
   { moduleName: "Reports & Analytics", Component: Report },
-  { moduleName: "Document & File Management", Component: Documents },
-  { moduleName: "Settings & Master Configuration", Component: Settings },
-  { moduleName: "Chat / Real-Time Collaboration", Component: Chat },
-  { moduleName: "Workflow (Project & Task Flow)", Component: Workflow },
-  { moduleName: "Notifications", Component: Notifications },
-  { moduleName: "Approval Workflows", Component: Approvals },
+  { moduleName: "Document & File Management", Component: Documents },  
+  { moduleName: "Chat / Real-Time Collaboration", Component: Chat },    
+  { moduleName: "Workflow (Project & Task Flow)", Component: Workflow }, 
+  { moduleName: "Notifications", Component: Notifications },           
+  { moduleName: "Approval Workflows", Component: Approvals },          
+  { moduleName: "Settings & Master Configuration", Component: Settings }
 ];
 
 const slugifyModuleName = (name = "") =>
@@ -76,9 +76,8 @@ const slugifyModuleName = (name = "") =>
 const buildModulePaths = (moduleName) => {
   const moduleMeta = MODULE_MAP[moduleName];
   const basePath = (moduleMeta?.link || `/${slugifyModuleName(moduleName)}`)
-    .replace(/^\//, ""); // e.g. "dashboard", "tasks"
+    .replace(/^\//, ""); 
 
-  // Only role-prefixed routes like /admin/dashboard, /manager/tasks, etc.
   return ROLE_PREFIXES.map((prefix) => `/${prefix}/${basePath}`);
 };
 

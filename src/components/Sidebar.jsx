@@ -131,64 +131,20 @@
 
 
 
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import clsx from "clsx";
 import { MODULE_MAP } from "../App/moduleMap.jsx";
 import { setSidebarCollapsed } from "../redux/slices/authSlice";
-import { getFallbackModules, getFallbackSidebar } from "../utils/apiGuide";
 
 const Sidebar = () => {
   const dispatch = useDispatch();
   const location = useLocation();
-  const current = location.pathname.split("/")[1];
-
   const { user, isSidebarCollapsed } = useSelector((state) => state.auth);
 
-  // ✅ Support backend sidebar array OR modules array
-  const sidebarLinks = React.useMemo(() => {
-    const buildLinkFromSidebar = (entry) => {
-      const moduleMeta = MODULE_MAP[entry.label] || MODULE_MAP[entry.id] || MODULE_MAP[entry.name];
-      // Prefer backend path (e.g. "/admin/dashboard") and fall back to canonical link
-      const link = entry.path || moduleMeta?.link;
-
-      if (!link) return null;
-
-      return {
-        label: entry.label || moduleMeta?.label || entry.name || "Module",
-        link,
-        icon: moduleMeta?.icon || <span className="text-lg">▣</span>,
-      };
-    };
-
-    const sourceSidebar = (user?.sidebar?.length ? user.sidebar : getFallbackSidebar(user?.role)) || [];
-    const normalizedSidebar = sourceSidebar
-      .map(buildLinkFromSidebar)
-      .filter(Boolean);
-
-    if (normalizedSidebar.length > 0) {
-      return normalizedSidebar;
-    }
-
-    const fallbackModules = (user?.modules?.length ? user.modules : getFallbackModules(user?.role)) || [];
-
-    return fallbackModules
-      .map((mod) => {
-        const moduleMeta = MODULE_MAP[mod.name];
-        // Again prefer backend-provided path if present
-        const link = mod.path || moduleMeta?.link;
-        if (!link) return null;
-        return {
-          label: moduleMeta?.label || mod.name,
-          link,
-          icon: moduleMeta?.icon || <span className="text-lg">▣</span>,
-        };
-      })
-      .filter(Boolean);
-  }, [user]);
-
+  const modules = user?.modules || [];
+  
   return (
     <div
       className={clsx(
@@ -210,35 +166,37 @@ const Sidebar = () => {
         </button>
       </div>
 
-      {/* Links */}
-      <nav className="flex-1 mt-4 px-1">
-        {sidebarLinks.length === 0 ? (
+      <nav className="flex-1 mt-4 px-1 overflow-y-auto">
+        {modules.length === 0 ? (
           <div className="flex items-center justify-center h-32 text-gray-500 text-sm">
             Loading modules...
           </div>
         ) : (
-          sidebarLinks.map((item, idx) => {
-            const active = current === item.link.replace("/", "");
+          modules.map((mod, idx) => {
+            const moduleMeta = MODULE_MAP[mod.name];
+            if (!moduleMeta) {
+              return null;
+            }
+
+            const isActive = location.pathname === mod.path;
 
             return (
               <Link
                 key={idx}
-                to={item.link}
+                to={mod.path}
                 className={clsx(
                   "flex items-center gap-3 px-4 py-3 rounded-lg mx-2 mb-1 transition-all group",
-                  active
+                  isActive
                     ? "bg-blue-500 text-white shadow-lg"
                     : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                 )}
-                title={item.label}
+                title={moduleMeta.label || mod.name}
               >
-                {/* ✅ FIXED: Direct render - now JSX elements from moduleMap */}
                 <span className="text-xl flex-shrink-0">
-                  {item.icon}
+                  {moduleMeta.icon}
                 </span>
-                
                 {!isSidebarCollapsed && (
-                  <span className="font-medium truncate">{item.label}</span>
+                  <span className="font-medium truncate">{moduleMeta.label || mod.name}</span>
                 )}
               </Link>
             );
