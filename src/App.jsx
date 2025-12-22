@@ -15,6 +15,10 @@ import Login from "./pages/Login";
 import VerifyOTP from "./pages/VerifyOTP";
 import TaskDetails from "./pages/TaskDetails";
 import Tasks from "./pages/Tasks";
+import EmployeeTasks from "./pages/EmployeeTasks";
+import ManagerClients from "./pages/ManagerClients";
+import ManagerProjects from "./pages/ManagerProjects";
+import ManagerTasks from "./pages/ManagerTasks";
 import Report from "./pages/Report";
 import Users from "./pages/Users";
 import Client from "./pages/Client";
@@ -202,13 +206,96 @@ function App() {
         <Route path="/" element={<LandingPage />} />
 
         <Route element={<Layout />}>
-          {MODULE_ROUTE_CONFIG.map(({ moduleName, Component }) => (
-            <Route element={<ModuleRouteGuard moduleName={moduleName} />} key={`guard-${moduleName}`}>
-              {buildModulePaths(moduleName).map((path) => (
-                <Route key={`${moduleName}-${path}`} path={path} element={<Component />} />
-              ))}
-            </Route>
-          ))}
+          {MODULE_ROUTE_CONFIG.map(({ moduleName, Component }) => {
+            // Special handling for Tasks: manager and employee use dedicated pages
+            if (moduleName === "Tasks") {
+              const moduleMeta = MODULE_MAP["Tasks"];
+              const basePath = (moduleMeta?.link || "/tasks").replace(/^\//, "");
+
+              return (
+                <Route
+                  element={<ModuleRouteGuard moduleName={moduleName} />}
+                  key={`guard-${moduleName}`}
+                >
+                  {ROLE_PREFIXES.map((prefix) => {
+                    const path = `/${prefix}/${basePath}`;
+                    let ComponentForRole = Tasks;
+                    if (prefix === "employee") ComponentForRole = EmployeeTasks;
+                    if (prefix === "manager") ComponentForRole = ManagerTasks;
+                      return (
+                        <Route
+                          key={`${moduleName}-${path}`}
+                          path={path}
+                          element={<ComponentForRole />}
+                        />
+                      );
+                  })}
+                </Route>
+              );
+            }
+
+            // Special handling for Clients: manager sees manager-specific clients page
+            if (moduleName === "Clients") {
+              const moduleMeta = MODULE_MAP["Clients"];
+              const basePath = (moduleMeta?.link || "/clients").replace(/^\//, "");
+
+              return (
+                <Route
+                  element={<ModuleRouteGuard moduleName={moduleName} />}
+                  key={`guard-${moduleName}`}
+                >
+                  {ROLE_PREFIXES.map((prefix) => {
+                    const path = `/${prefix}/${basePath}`;
+                    const ComponentForRole = prefix === "manager" ? ManagerClients : Client;
+                    return (
+                      <Route
+                        key={`${moduleName}-${path}`}
+                        path={path}
+                        element={<ComponentForRole />}
+                      />
+                    );
+                  })}
+                </Route>
+              );
+            }
+
+            // Special handling for Projects: manager sees manager-specific projects page
+            if (moduleName === "Projects") {
+              const moduleMeta = MODULE_MAP["Projects"];
+              const basePath = (moduleMeta?.link || "/projects").replace(/^\//, "");
+
+              return (
+                <Route
+                  element={<ModuleRouteGuard moduleName={moduleName} />}
+                  key={`guard-${moduleName}`}
+                >
+                  {ROLE_PREFIXES.map((prefix) => {
+                    const path = `/${prefix}/${basePath}`;
+                    const ComponentForRole = prefix === "manager" ? ManagerProjects : Projects;
+                    return (
+                      <Route
+                        key={`${moduleName}-${path}`}
+                        path={path}
+                        element={<ComponentForRole />}
+                      />
+                    );
+                  })}
+                </Route>
+              );
+            }
+
+            // Default handling for all other modules
+            return (
+              <Route
+                element={<ModuleRouteGuard moduleName={moduleName} />}
+                key={`guard-${moduleName}`}
+              >
+                {buildModulePaths(moduleName).map((path) => (
+                  <Route key={`${moduleName}-${path}`} path={path} element={<Component />} />
+                ))}
+              </Route>
+            );
+          })}
 
           {/* Alias routes for Analytics paths (e.g. /admin/analytics) mapped to Reports module */}
           {ROLE_PREFIXES.map((prefix) => (
