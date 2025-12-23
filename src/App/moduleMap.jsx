@@ -57,6 +57,11 @@ export const MODULE_MAP = {
     link: "/documents", 
     icon: createIcon(ChecklistRoundedIcon)
   },
+  "Assigned Tasks": {
+    label: "Assigned Tasks",
+    link: "/tasks",
+    icon: createIcon(ChecklistRoundedIcon)
+  },
   "Settings & Master Configuration": { 
     label: "Settings", 
     link: "/settings", 

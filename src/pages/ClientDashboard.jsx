@@ -1,3 +1,225 @@
+// import React, { useEffect, useMemo } from "react";
+// import { Link, useParams } from "react-router-dom";
+// import { useDispatch, useSelector } from "react-redux";
+// import { FaChartLine, FaNewspaper, FaUsers } from "react-icons/fa";
+// import TaskCard from "../components/TaskCard";
+// import { getClient } from "../redux/slices/clientSlice";
+// import { selectUser } from "../redux/slices/authSlice";
+
+// const ClientDashboard = () => {
+// 	const params = useParams();
+// 	const clientIdParam = params.clientId || params.id || params.clientId;
+// 	const dispatch = useDispatch();
+
+// 	const user = useSelector(selectUser);
+// 	const modules = user?.modules || [];
+// 	const metrics = user?.metrics || {};
+// 	const resources = user?.resources || {};
+// 	const allowedEndpoints = Array.isArray(resources.allowedEndpoints) ? resources.allowedEndpoints : [];
+// 	const features = Array.isArray(resources.features) ? resources.features : [];
+
+// 	const clientsState = useSelector((state) => state.clients || {});
+// 	const { status: clientStatus, error: clientError, selectedClient, currentClient } = clientsState;
+// 	const { tasks = [] } = useSelector((state) => state.tasks || {});
+
+// 	const client = selectedClient || currentClient || (clientsState.clients || []).find((c) => {
+// 		const id = c?.id || c?._id || c?.public_id || c?.client_id;
+// 		return id == clientIdParam;
+// 	});
+
+// 	useEffect(() => {
+// 		if (clientIdParam) {
+// 			dispatch(getClient(clientIdParam));
+// 		}
+// 	}, [clientIdParam, dispatch]);
+
+// 	const clientTasks = tasks.filter((task) => {
+// 		return (
+// 			task?.clientId == clientIdParam ||
+// 			task?.client_id == clientIdParam ||
+// 			task?.client == clientIdParam ||
+// 			task?.clientId == (client?.id ?? client?._id)
+// 		);
+// 	});
+
+// 	const statTiles = useMemo(() => {
+// 		const assignedTasks = metrics.assignedTasks ?? clientTasks.length;
+// 		const mappedClient = resources.mappedClient ?? metrics.mappedClient ?? client?.id ?? client?.client_id ?? client?.public_id;
+// 		const accessLevel = metrics.accessLevel || resources.accessLevel || "Limited read-only";
+// 		const roleLabel = metrics.role || user?.role || "Client";
+
+// 		return [
+// 			{
+// 				key: "tasks",
+// 				label: "Assigned tasks",
+// 				value: assignedTasks ?? 0,
+// 				helper: "Visible assignments",
+// 				Icon: FaNewspaper,
+// 			},
+// 			{
+// 				key: "client",
+// 				label: "Mapped client",
+// 				value: mappedClient ? `#${mappedClient}` : "(not mapped)",
+// 				helper: "Scope inherited from login",
+// 				Icon: FaUsers,
+// 			},
+// 			{
+// 				key: "access",
+// 				label: "Access level",
+// 				value: accessLevel,
+// 				helper: roleLabel,
+// 				Icon: FaChartLine,
+// 			},
+// 		];
+// 	}, [clientTasks.length, metrics, resources, client?.id, client?.client_id, client?.public_id, user?.role]);
+
+// 	if (clientStatus === "loading") {
+// 		return <div>Loading...</div>;
+// 	}
+
+// 	if (clientStatus === "failed") {
+// 		return <div>Error: {clientError || "Failed to load client"}</div>;
+// 	}
+
+// 	return (
+// 		<div className="space-y-8">
+// 			<header className="space-y-3">
+// 				<p className="text-xs font-semibold uppercase tracking-[0.3em] text-blue-500">Client experience</p>
+// 				<h1 className="text-3xl font-semibold text-gray-900">
+// 					{`Hello, ${user?.name || client?.name || "Client"}.`}
+// 				</h1>
+// 				<p className="text-sm text-gray-500 max-w-3xl">
+// 					This view reflects the modules, endpoints, and limits that arrived with your most recent login response.
+// 				</p>
+// 				<div className="flex flex-wrap gap-3 text-xs text-gray-500">
+// 					<span className="uppercase tracking-[0.25em]">Modules {modules.length}</span>
+// 					<span className="uppercase tracking-[0.25em]">Endpoints {allowedEndpoints.length}</span>
+// 					{resources.restrictions && (
+// 						<span className="text-amber-600">{resources.restrictions}</span>
+// 					)}
+// 				</div>
+// 			</header>
+
+// 			<section className="grid gap-4 md:grid-cols-3">
+// 				{statTiles.map((tile) => (
+// 					<div key={tile.key} className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+// 						<div className="rounded-2xl bg-blue-50 p-3 text-blue-600">
+// 							<tile.Icon className="h-5 w-5" />
+// 						</div>
+// 						<div>
+// 							<p className="text-xs uppercase tracking-[0.3em] text-gray-400">{tile.label}</p>
+// 							<p className="text-2xl font-semibold text-gray-900">{tile.value}</p>
+// 							<p className="text-xs text-gray-500">{tile.helper}</p>
+// 						</div>
+// 					</div>
+// 				))}
+// 			</section>
+
+// 			<section className="space-y-3">
+// 				<div className="flex items-center justify-between">
+// 					<div>
+// 						<p className="text-xs font-semibold uppercase tracking-[0.3em] text-blue-500">Modules</p>
+// 						<h2 className="text-xl font-semibold text-gray-900">Enabled experiences</h2>
+// 					</div>
+// 					<Link to="/client/tasks" className="text-sm font-semibold text-blue-600">View tasks →</Link>
+// 				</div>
+
+// 				{modules.length === 0 ? (
+// 					<div className="rounded-2xl border border-dashed border-gray-300 bg-white/50 p-6 text-sm text-gray-500">
+// 						Your login did not expose any modules. Ask the admin to assign a profile with modules.
+// 					</div>
+// 				) : (
+// 					<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+// 						{modules.map((module) => (
+// 							<div key={module.moduleId || module.name} className="flex h-full flex-col justify-between rounded-2xl border border-gray-200 bg-white p-4">
+// 								<div>
+// 									<p className="text-base font-semibold text-gray-900">{module.name}</p>
+// 									<p className="text-xs text-gray-500">Access: {module.access || "read"}</p>
+// 								</div>
+// 								<div className="mt-4 flex items-center justify-between text-sm text-gray-500">
+// 									{module.path ? (
+// 										<Link to={module.path} className="font-semibold text-blue-600 hover:text-blue-700">
+// 											Open module →
+// 										</Link>
+// 									) : (
+// 										<span className="text-xs text-gray-400">Path not provided</span>
+// 									)}
+// 									<span className="text-xs">{module.path || "-"}</span>
+// 								</div>
+// 							</div>
+// 						))}
+// 					</div>
+// 				)}
+// 			</section>
+
+// 			<section className="space-y-3">
+// 				<div className="flex items-center justify-between">
+// 					<div>
+// 						<p className="text-xs font-semibold uppercase tracking-[0.3em] text-blue-500">Endpoints</p>
+// 						<h2 className="text-xl font-semibold text-gray-900">Allowed APIs</h2>
+// 					</div>
+// 					<span className="text-xs uppercase tracking-[0.3em] text-gray-400">from login response</span>
+// 				</div>
+// 				{allowedEndpoints.length === 0 ? (
+// 					<div className="rounded-2xl border border-dashed border-gray-300 bg-white/50 p-4 text-sm text-gray-500">
+// 						No endpoint whitelist provided. Your client view will rely on the defaults configured in the system.
+// 					</div>
+// 				) : (
+// 					<ul className="grid gap-2 text-sm font-mono text-gray-700">
+// 						{allowedEndpoints.map((endpoint, idx) => (
+// 							<li key={`${endpoint}-${idx}`} className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-2">
+// 								{endpoint}
+// 							</li>
+// 						))}
+// 					</ul>
+// 				)}
+// 			</section>
+
+// 			{features.length > 0 && (
+// 				<section className="space-y-2">
+// 					<div className="flex items-center justify-between">
+// 						<div>
+// 							<p className="text-xs font-semibold uppercase tracking-[0.3em] text-blue-500">Features</p>
+// 							<h2 className="text-xl font-semibold text-gray-900">What you can do</h2>
+// 						</div>
+// 						<span className="text-xs text-gray-400">Based on resources</span>
+// 					</div>
+// 					<div className="flex flex-wrap gap-2">
+// 						{features.map((feature) => (
+// 							<span key={feature} className="rounded-full border border-gray-200 px-3 py-1 text-xs font-semibold text-gray-600">
+// 								{feature}
+// 							</span>
+// 						))}
+// 					</div>
+// 				</section>
+// 			)}
+
+// 			<section className="space-y-3">
+// 				<div className="flex items-center justify-between">
+// 					<div>
+// 						<p className="text-xs font-semibold uppercase tracking-[0.3em] text-blue-500">Tasks</p>
+// 						<h2 className="text-xl font-semibold text-gray-900">Assigned tasks (preview)</h2>
+// 					</div>
+// 					<Link to="/client/tasks" className="text-sm font-semibold text-blue-600">View all tasks →</Link>
+// 				</div>
+// 				{clientTasks.length === 0 ? (
+// 					<div className="rounded-2xl border border-dashed border-gray-300 bg-white/50 p-6 text-sm text-gray-500">
+// 						No tasks are currently mapped to your client account.
+// 					</div>
+// 				) : (
+// 					<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+// 						{clientTasks.slice(0, 4).map((task, index) => (
+// 							<TaskCard key={task.id || task._id || index} task={task} />
+// 						))}
+// 					</div>
+// 				)}
+// 			</section>
+// 		</div>
+// 	);
+// };
+
+// export default ClientDashboard;
+
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -10,24 +232,24 @@ import { getClient } from "../redux/slices/clientSlice";
 import ClientContacts from "../components/client/ClientContacts";
 import ClientDocuments from "../components/client/ClientDocuments";
 import ClientAnalytics from "../components/client/ClientAnalytics";
-
+ 
 const TABS = {
   OVERVIEW: "overview",
   CONTACTS: "contacts",
   DOCUMENTS: "documents",
   ANALYTICS: "analytics",
 };
-
+ 
 const ClientDashboard = () => {
   const params = useParams();
   // support both route param names: :id and :clientId
   const clientIdParam = params.clientId || params.id || params.clientId;
   const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState(TABS.OVERVIEW);
-
+ 
   const clientsState = useSelector((state) => state.clients);
   const { status: clientStatus, error: clientError, selectedClient, currentClient } = clientsState || {};
-
+ 
   // Priority: use selectedClient/currentClient (from getClient thunk), then search clients array
   const client = selectedClient || currentClient || (clientsState?.clients || []).find((c) => {
     const id = c?.id || c?._id || c?.public_id || c?.client_id;
@@ -35,13 +257,13 @@ const ClientDashboard = () => {
     return id == clientIdParam;
   });
   const { tasks } = useSelector((state) => state.tasks || {});
-
+ 
   useEffect(() => {
     if (clientIdParam) {
       dispatch(getClient(clientIdParam));
     }
   }, [clientIdParam, dispatch]);
-
+ 
   const clientTasks = tasks.filter((task) => {
     return (
       task?.clientId == clientIdParam ||
@@ -50,7 +272,7 @@ const ClientDashboard = () => {
       task?.clientId == (client?.id ?? client?._id)
     );
   });
-
+ 
   const stats = [
     {
       _id: "1",
@@ -85,7 +307,7 @@ const ClientDashboard = () => {
       thought: "Remaining",
     },
   ];
-
+ 
   const Card = ({ label, count, bg, icon, thought }) => (
     <div className="w-full h-32 bg-white p-5 shadow-md rounded-md flex items-center justify-between">
       <div className="h-full flex flex-1 flex-col justify-between">
@@ -103,7 +325,7 @@ const ClientDashboard = () => {
       </div>
     </div>
   );
-
+ 
   const renderContent = () => {
     switch (activeTab) {
       case TABS.OVERVIEW:
@@ -140,15 +362,15 @@ const ClientDashboard = () => {
         return null;
     }
   };
-
+ 
   if (clientStatus === "loading") {
     return <div>Loading...</div>;
   }
-
+ 
   if (clientStatus === "failed") {
     return <div>Error: {clientError || "Failed to load dashboard"}</div>;
   }
-
+ 
   return (
     <div className="h-full py-4">
       <div className="w-full flex justify-between items-center py-4">
@@ -202,7 +424,10 @@ const ClientDashboard = () => {
     </div>
   );
 };
-
+ 
 export default ClientDashboard;
-
+ 
+ 
+ 
+ 
 

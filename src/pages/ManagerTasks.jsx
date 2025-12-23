@@ -1031,7 +1031,7 @@ const ManagerTasks = () => {
   const loadEmployees = useCallback(async () => {
     setEmployeesLoading(true);
     try {
-      const resp = await fetchWithTenant('/api/manager/employees');
+      const resp = await fetchWithTenant('/api/manager/employees/all');
       const data = Array.isArray(resp?.data) ? resp.data : resp;
       setEmployees(Array.isArray(data) ? data : []);
     } catch (err) {

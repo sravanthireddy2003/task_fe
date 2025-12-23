@@ -25,6 +25,7 @@ const ManagerDashboard = () => {
   const [metrics, setMetrics] = useState({ projectCount: 0, taskCount: 0, clientCount: 0 });
   const [clients, setClients] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -33,15 +34,17 @@ const ManagerDashboard = () => {
       setLoading(true);
       setError(null);
       try {
-        const [dashboardResponse, clientsResponse, projectsResponse] = await Promise.all([
+        const [dashboardResponse, clientsResponse, projectsResponse, employeesResponse] = await Promise.all([
           httpGetService('api/manager/dashboard'),
           httpGetService('api/manager/clients'),
           httpGetService('api/manager/projects'),
+          httpGetService('api/manager/employees/all'),
         ]);
 
         setMetrics(dashboardResponse?.data || dashboardResponse || {});
         setClients(normalizeList(clientsResponse));
         setProjects(normalizeList(projectsResponse));
+        setEmployees(normalizeList(employeesResponse));
       } catch (err) {
         const message = err?.message || err?.data?.message || 'Unable to load manager dashboard';
         setError(message);
@@ -432,7 +435,7 @@ const ManagerDashboard = () => {
           </div>
           <div className="bg-gradient-to-r from-purple-50 to-violet-50 rounded-xl p-4 border border-purple-200">
             <div className="text-sm text-purple-700 font-medium">Active Team Members</div>
-            <div className="text-2xl font-bold text-gray-900 mt-1">12</div>
+            <div className="text-2xl font-bold text-gray-900 mt-1">{loading ? '...' : employees.length}</div>
           </div>
         </div>
       </div>

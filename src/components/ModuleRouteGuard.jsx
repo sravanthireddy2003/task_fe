@@ -6,7 +6,8 @@ export default function ModuleRouteGuard({ moduleName }) {
 
   if (!user || !user.modules) return <Navigate to="/log-in" replace />;
 
-  const hasAccess = user.modules.some((m) => m.name === moduleName);
+  const moduleNames = Array.isArray(moduleName) ? moduleName : [moduleName];
+  const hasAccess = moduleNames.some((name) => user.modules.some((m) => m.name === name));
 
   return hasAccess ? <Outlet /> : <Navigate to="/404" replace />;
 }
