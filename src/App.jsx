@@ -51,6 +51,7 @@ import ManagerDashboard from "./pages/ManagerDashboard";
 import RoleRoute from "./components/RoleRoute";
 import EmployeeHome from "./pages/EmployeeHome";
 import ClientViewerHome from "./pages/ClientViewerHome";
+import ReassignTaskRequest from "./pages/ReassignTaskRequest"; 
 
 const ROLE_PREFIXES = ["admin", "manager", "employee", "client", "client-viewer"];
 
@@ -67,7 +68,8 @@ const MODULE_ROUTE_CONFIG = [
   { moduleName: "Workflow (Project & Task Flow)", Component: Workflow }, 
   { moduleName: "Notifications", Component: Notifications },           
   { moduleName: "Approval Workflows", Component: Approvals },          
-  { moduleName: "Settings & Master Configuration", Component: Settings }
+  { moduleName: "Settings & Master Configuration", Component: Settings },
+   { moduleName: "Task Reassignment Requests", Component: ReassignTaskRequest }
 ];
 
 const slugifyModuleName = (name = "") =>

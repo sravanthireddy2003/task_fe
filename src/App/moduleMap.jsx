@@ -82,4 +82,9 @@ export const MODULE_MAP = {
     link: "/approvals", 
     icon: createIcon(ApprovalRoundedIcon)
   },
+    "Task Reassignment Requests": {
+    icon: "RefreshCw",
+    link: "/task-reassignment-requests",
+    description: "Manage employee requests to reassign tasks"
+  },
 };
