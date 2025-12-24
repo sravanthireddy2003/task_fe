@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import fetchWithTenant from '../utils/fetchWithTenant';
+import ReassignTaskRequestModal from './ReassignTaskRequest';
+import { X } from 'lucide-react';
 
 const formatDateString = (value) => {
   if (!value) return '—';
@@ -29,6 +31,10 @@ const EmployeeTasks = () => {
   const [editingChecklistId, setEditingChecklistId] = useState('');
   const [editingChecklistValues, setEditingChecklistValues] = useState({ title: '', dueDate: '' });
   const [actionRunning, setActionRunning] = useState(false);
+
+  // Modal state
+  const [reassignModalOpen, setReassignModalOpen] = useState(false);
+  const [taskForReassign, setTaskForReassign] = useState(null);
 
   const loadTasks = async () => {
     setLoading(true);
@@ -207,11 +213,13 @@ const EmployeeTasks = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="space-y-1">
         <h1 className="text-2xl font-bold">My Tasks</h1>
         <p className="text-sm text-gray-600">Track your assignments and keep checklists aligned with manager expectations.</p>
       </div>
 
+      {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-gray-100 bg-white p-4 text-sm shadow-sm">
           <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">Total</p>
@@ -231,6 +239,7 @@ const EmployeeTasks = () => {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.8fr)_minmax(0,1.2fr)]">
+        {/* Task List */}
         <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -291,9 +300,6 @@ const EmployeeTasks = () => {
                         {task.client?.name || 'Client not available'}
                       </span>
                     </div>
-                    {task.description && (
-                      <p className="mt-3 text-sm text-gray-600 line-clamp-2">{task.description}</p>
-                    )}
                   </button>
                 );
               })}
@@ -301,6 +307,7 @@ const EmployeeTasks = () => {
           )}
         </section>
 
+        {/* Task Details & Checklist */}
         <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
           {!selectedTask ? (
             <div className="space-y-2 text-sm text-gray-500">
@@ -309,18 +316,29 @@ const EmployeeTasks = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              <div>
-                <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-xl font-semibold text-gray-900">{selectedTask.title}</h2>
-                  <span className="rounded-full border border-gray-200 px-3 py-1 text-xs font-semibold uppercase text-gray-600">
-                    {selectedTask.stage || selectedTask.status || 'pending'}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-500">
-                  {selectedTask.project?.name && `Project: ${selectedTask.project.name}`}
-                </p>
-                <p className="text-xs text-gray-400">Due {formatDateString(selectedTask.taskDate || selectedTask.dueDate || selectedTask.due_date)}</p>
+              {/* Task header */}
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-xl font-semibold text-gray-900">{selectedTask.title}</h2>
+                <span className="rounded-full border border-gray-200 px-3 py-1 text-xs font-semibold uppercase text-gray-600">
+                  {selectedTask.stage || selectedTask.status || 'pending'}
+                </span>
               </div>
+              <p className="text-sm text-gray-500">{selectedTask.project?.name && `Project: ${selectedTask.project.name}`}</p>
+              <p className="text-xs text-gray-400">Due {formatDateString(selectedTask.taskDate || selectedTask.dueDate || selectedTask.due_date)}</p>
+
+              {/* Reassign Request Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setTaskForReassign(selectedTask);
+                  setReassignModalOpen(true);
+                }}
+                className="mt-2 rounded-full border border-yellow-300 px-3 py-1 text-yellow-600 hover:bg-yellow-50"
+              >
+                Reassign Request
+              </button>
+
+              {/* Description */}
               {selectedTask.description && (
                 <div>
                   <p className="text-xs uppercase text-gray-500">Description</p>
@@ -328,6 +346,7 @@ const EmployeeTasks = () => {
                 </div>
               )}
 
+              {/* Checklist */}
               <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4 text-sm">
                 <p className="text-xs uppercase text-gray-500">Checklist</p>
                 {checklistItems.length === 0 ? (
@@ -338,7 +357,7 @@ const EmployeeTasks = () => {
                       const itemId = normalizeId(item) || `${index}`;
                       const isEditing = editingChecklistId === itemId;
                       const dueLabel = formatDateString(item.dueDate || item.due_date || item.date);
-                      
+
                       if (isEditing) {
                         return (
                           <li key={itemId} className="rounded-2xl border border-gray-200 bg-white p-3">
@@ -402,7 +421,7 @@ const EmployeeTasks = () => {
                                 </p>
                               )}
                             </div>
-                            {item.status?.toLowerCase?.() !== 'completed' ? (
+                            {item.status?.toLowerCase?.() !== 'completed' && (
                               <div className="flex items-center gap-2 text-xs uppercase text-gray-500">
                                 <button
                                   type="button"
@@ -427,10 +446,6 @@ const EmployeeTasks = () => {
                                   Delete
                                 </button>
                               </div>
-                            ) : (
-                              <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600">
-                                Completed
-                              </span>
                             )}
                           </div>
                         </li>
@@ -439,32 +454,27 @@ const EmployeeTasks = () => {
                   </ul>
                 )}
 
-                <form onSubmit={handleAddChecklist} className="mt-4 space-y-2 text-sm">
-                  <div>
-                    <label className="text-xs uppercase text-gray-500">Add checklist item</label>
-                    <input
-                      type="text"
-                      placeholder="Title"
-                      value={checklistForm.title}
-                      onChange={(e) => setChecklistForm((prev) => ({ ...prev, title: e.target.value }))}
-                      className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs uppercase text-gray-500">Due date</label>
-                    <input
-                      type="date"
-                      value={checklistForm.dueDate}
-                      onChange={(e) => setChecklistForm((prev) => ({ ...prev, dueDate: e.target.value }))}
-                      className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm"
-                    />
-                  </div>
+                {/* Add checklist item */}
+                <form onSubmit={handleAddChecklist} className="mt-3 flex flex-col gap-2">
+                  <input
+                    type="text"
+                    value={checklistForm.title}
+                    onChange={(e) => setChecklistForm((prev) => ({ ...prev, title: e.target.value }))}
+                    placeholder="New checklist item"
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                  />
+                  <input
+                    type="date"
+                    value={checklistForm.dueDate}
+                    onChange={(e) => setChecklistForm((prev) => ({ ...prev, dueDate: e.target.value }))}
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                  />
                   <button
                     type="submit"
                     disabled={actionRunning}
-                    className="w-full rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-60"
+                    className="rounded-full bg-indigo-600 px-4 py-2 text-white disabled:opacity-60"
                   >
-                    {actionRunning ? 'Adding…' : 'Add checklist item'}
+                    {actionRunning ? 'Adding…' : 'Add checklist'}
                   </button>
                 </form>
               </div>
@@ -472,6 +482,14 @@ const EmployeeTasks = () => {
           )}
         </section>
       </div>
+
+      {/* Reassign Modal */}
+      {reassignModalOpen && (
+        <ReassignTaskRequestModal
+          selectedTask={taskForReassign}
+          onClose={() => setReassignModalOpen(false)}
+        />
+      )}
     </div>
   );
 };
