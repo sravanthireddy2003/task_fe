@@ -32,6 +32,8 @@ import {
   IoSearchOutline,
   IoCaretDownOutline,
   IoChevronDownOutline,
+  IoTimeOutline,
+  IoCheckmarkDoneOutline,
 } from "react-icons/io5";
 
 const getInitials = (name = "") => {
@@ -44,20 +46,68 @@ const getInitials = (name = "") => {
 };
 
 const getProjectStats = (user) => {
-  const stats = [
-    { label: "Projects", value: Math.floor(Math.random() * 5) + 1, color: "blue", icon: <IoBriefcaseOutline size={14} /> },
-    { label: "Tasks", value: Math.floor(Math.random() * 10) + 2, color: "green", icon: <IoCheckmarkCircleOutline size={14} /> },
-    { label: "Issues", value: Math.floor(Math.random() * 3), color: "red", icon: <IoAlertCircleOutline size={14} /> },
-  ];
+  const projects = user?.projects || [];
+  const tasks = user?.tasks || [];
 
-  if (user?.name?.includes("Frank")) {
-    return [{ label: "Projects & Tasks", value: "2 Projects & 6 Task active", color: "blue", icon: <IoBriefcaseOutline size={14} /> }];
+  // Count tasks by status/stage
+  const taskStats = tasks.reduce((acc, task) => {
+    const stage = task?.stage || 'UNKNOWN';
+    acc[stage] = (acc[stage] || 0) + 1;
+    return acc;
+  }, {});
+
+  const stats = [];
+
+  // Projects stat
+  if (projects.length > 0) {
+    stats.push({
+      label: "Projects",
+      value: projects.length,
+      color: "blue",
+      icon: <IoBriefcaseOutline size={14} />
+    });
   }
-  if (user?.name?.includes("Willib")) {
-    return [{ label: "Issues", value: "11 issues active", color: "red", icon: <IoAlertCircleOutline size={14} /> }];
+
+  // Tasks stat - show total tasks
+  if (tasks.length > 0) {
+    stats.push({
+      label: "Tasks",
+      value: tasks.length,
+      color: "green",
+      icon: <IoCheckmarkCircleOutline size={14} />
+    });
   }
-  if (user?.name?.includes("Elaine")) {
-    return [{ label: "Projects & Tasks", value: "5 Project & 7 tasks active", color: "blue", icon: <IoBriefcaseOutline size={14} /> }];
+
+  // Active tasks (IN_PROGRESS, PENDING)
+  const activeTasks = tasks.filter(task =>
+    task?.stage === 'IN_PROGRESS' || task?.stage === 'PENDING'
+  ).length;
+  if (activeTasks > 0) {
+    stats.push({
+      label: "Active Tasks",
+      value: activeTasks,
+      color: "orange",
+      icon: <IoTimeOutline size={14} />
+    });
+  }
+
+  // Completed tasks
+  const completedTasks = tasks.filter(task => task?.stage === 'COMPLETED').length;
+  if (completedTasks > 0) {
+    stats.push({
+      label: "Completed",
+      value: completedTasks,
+      color: "emerald",
+      icon: <IoCheckmarkDoneOutline size={14} />
+    });
+  }
+
+  // If no projects or tasks, show default stats
+  if (stats.length === 0) {
+    return [
+      { label: "Projects", value: 0, color: "blue", icon: <IoBriefcaseOutline size={14} /> },
+      { label: "Tasks", value: 0, color: "green", icon: <IoCheckmarkCircleOutline size={14} /> },
+    ];
   }
 
   return stats;

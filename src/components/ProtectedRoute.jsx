@@ -7,7 +7,7 @@ const ProtectedRoute = ({ allowedRoles }) => {
   const user = useSelector((state) => state.auth.user);
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/log-in" replace />;
   }
 
   if (allowedRoles && allowedRoles.length > 0) {
@@ -24,7 +24,7 @@ const ProtectedRoute = ({ allowedRoles }) => {
         case 'Client':
           return <Navigate to="/clients" replace />;
         default:
-          return <Navigate to="/login" replace />;
+          return <Navigate to="/" replace />;
       }
     }
   }

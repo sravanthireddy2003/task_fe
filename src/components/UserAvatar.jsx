@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { logout, selectUser, getProfile, logoutUser } from "../redux/slices/authSlice";
+import { logout, selectUser, getProfile, logoutUser, selectProfileFetched, selectProfileLoading } from "../redux/slices/authSlice";
 import { FaUser, FaKey, FaCog, FaSignOutAlt } from "react-icons/fa";
 import { toast } from 'sonner';
 
@@ -10,9 +10,10 @@ const UserAvatar = () => {
   const [imageError, setImageError] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const fetchRef = useRef(false); // ✅ Prevent multiple calls
   
   const user = useSelector(selectUser) || {};
+  const profileFetched = useSelector(selectProfileFetched);
+  const profileLoading = useSelector(selectProfileLoading);
   const photoUrl = user.photo;
   
   const initials = (() => {
@@ -49,12 +50,11 @@ const UserAvatar = () => {
 
   // ✅ FIXED useEffect - NO MORE INFINITE CALLS
   useEffect(() => {
-    // Guards: Skip if no user, already fetching, has modules, or has photo
-    if (!user?.id || fetchRef.current || user.modules?.length > 0 || photoUrl) {
+    // Guards: Skip if no user, already fetched, currently loading, has modules, or has photo
+    if (!user?.id || profileFetched || profileLoading || user.modules?.length > 0 || photoUrl) {
       return;
     }
     
-    fetchRef.current = true;
     console.log('🔄 Fetching profile for avatar...');
 
     const fetchProfile = async () => {
@@ -66,18 +66,11 @@ const UserAvatar = () => {
           dispatch(logout());
           navigate('/log-in', { replace: true });
         }
-      } finally {
-        fetchRef.current = false; // ✅ Reset for cleanup
       }
     };
 
     fetchProfile();
-
-    // ✅ Cleanup on unmount
-    return () => {
-      fetchRef.current = false;
-    };
-  }, [dispatch, user?.id]); // ✅ ONLY user ID - no photoUrl/imageError
+  }, [dispatch, user?.id, profileFetched, profileLoading, photoUrl]);
 
   return (
     <div className="relative">

@@ -8,7 +8,7 @@ import "./index.css";
 import store from "./redux/store";
 import { setTokens, getAccessToken, getRefreshToken } from "./utils/tokenService";
 import { setAuthToken } from "./App/httpHandler";
-import { refreshToken } from "./redux/slices/authSlice";
+import { refreshToken, logout, getProfile } from "./redux/slices/authSlice";
 
 // Ensure tenantId default from environment is persisted for API calls
 try {
@@ -46,8 +46,18 @@ async function boot() {
         // Try silent refresh on startup
         try {
           await store.dispatch(refreshToken()).unwrap();
+          // After refresh, get full profile to ensure modules are loaded
+          try {
+            await store.dispatch(getProfile()).unwrap();
+          } catch (profileErr) {
+            console.warn("Profile fetch on startup failed", profileErr);
+            // If profile fails, logout
+            store.dispatch(logout());
+          }
         } catch (err) {
           console.warn("Token refresh on startup failed", err);
+          // Clear user state and localStorage on refresh failure
+          store.dispatch(logout());
         }
       }
     } catch (e) {

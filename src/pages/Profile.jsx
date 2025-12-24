@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
-import { getProfile, updateProfile, enable2FA, verify2FA, disable2FA } from '../redux/slices/authSlice';
+import { updateProfile, enable2FA, verify2FA, disable2FA } from '../redux/slices/authSlice';
 import { toast } from 'sonner';
 import Button from '../components/Button';
 import Textbox from '../components/Textbox';
@@ -33,6 +33,7 @@ const Profile = () => {
   const [avatarPreview, setAvatarPreview] = useState(user?.photo || null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [qrData, setQrData] = useState(null);
   const [showVerify, setShowVerify] = useState(false);
   const [tokenValue, setTokenValue] = useState("");
@@ -47,13 +48,11 @@ const Profile = () => {
     if (user) {
       reset(user);
       setTwoFAEnabled(!!(user?.twoFactor?.enabled || user?.twoFactor?.hasSecret || user?.twoFactorEnabled || user?.twoFaEnabled || user?.is2faEnabled || user?.twoFA));
+      if (user.photo) {
+        setAvatarPreview(user.photo);
+      }
     }
   }, [user, reset]);
-
-  // Fetch latest profile on mount to ensure we have freshest data
-  useEffect(() => {
-    dispatch(getProfile()).catch(() => {});
-  }, [dispatch]);
 
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
@@ -71,7 +70,10 @@ const Profile = () => {
     }
   };
 
-  const onSubmit = (data) => {
+  const onSubmit = async (data) => {
+    if (saving) return;
+    setSaving(true);
+
     // Build multipart form data so backend multer can process `photo` file
     const formData = new FormData();
     formData.append('name', data.name || '');
@@ -83,23 +85,22 @@ const Profile = () => {
       formData.append('photo', selectedFile, selectedFile.name);
     }
 
-    (async () => {
-      try {
-        const resp = await dispatch(updateProfile(formData)).unwrap();
-        toast.success(resp?.message || 'Profile updated');
-        setIsEditing(false);
-        // If API returned photo or user.photo, update preview immediately
-        const returnedPhoto = resp?.photo || resp?.user?.photo || (resp?.data && resp.data.photo) || null;
-        if (returnedPhoto && typeof returnedPhoto === 'string' && !returnedPhoto.includes('undefined')) {
-          setAvatarPreview(returnedPhoto);
-        }
-        // refresh profile from server to pick up any server-side changes
-        dispatch(getProfile()).catch(() => {});
-      } catch (err) {
-        const msg = err?.message || err?.payload || 'Update failed';
-        toast.error(msg);
+    try {
+      const resp = await dispatch(updateProfile(formData)).unwrap();
+      toast.success(resp?.message || 'Profile updated');
+      setIsEditing(false);
+      // If API returned photo or user.photo, update preview immediately
+      const returnedPhoto = resp?.photo || resp?.user?.photo || (resp?.data && resp.data.photo) || null;
+      if (returnedPhoto && typeof returnedPhoto === 'string' && !returnedPhoto.includes('undefined')) {
+        setAvatarPreview(returnedPhoto);
       }
-    })();
+      // Profile is already updated in Redux state by updateProfile thunk
+    } catch (err) {
+      const msg = err?.message || err?.payload || 'Update failed';
+      toast.error(msg);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleEnable2FA = async () => {
@@ -109,7 +110,6 @@ const Profile = () => {
       if (res && (res.enabled === true || (res?.success === true && res?.enabled === true))) {
         setTwoFAEnabled(true);
         toast.success(res.message || "2FA already enabled");
-        dispatch(getProfile());
         return;
       }
 
@@ -122,7 +122,11 @@ const Profile = () => {
   };
 
   const handleVerify2FA = async () => {
-    if (!tokenValue) return toast.error("Enter the 6-digit token from your authenticator app.");
+    if (!tokenValue) {
+      toast.error("Enter the 6-digit token from your authenticator app.");
+      return;
+    }
+    
     try {
       const res = await dispatch(verify2FA({ token: tokenValue })).unwrap();
       setShowVerify(false);
@@ -136,8 +140,6 @@ const Profile = () => {
       );
       setBackupCodes(mockBackupCodes);
       setShowBackupCodes(true);
-      
-      dispatch(getProfile());
     } catch (err) {
       toast.error(err?.message || err || "Failed to verify 2FA token");
     }
@@ -158,7 +160,6 @@ const Profile = () => {
       } else {
         setTwoFAEnabled(false);
       }
-      dispatch(getProfile());
     } catch (err) {
       toast.error(err?.message || err || "Failed to disable 2FA");
     }
@@ -181,6 +182,21 @@ const Profile = () => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     toast.success('Backup codes downloaded');
+  };
+
+  // Helper function to get avatar display class
+  const getAvatarDisplayClass = () => {
+    return avatarPreview ? 'hidden' : 'flex';
+  };
+
+  // Helper function to get 2FA status class
+  const get2FAStatusClass = () => {
+    return twoFAEnabled ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-gray-100 text-gray-800 border border-gray-200';
+  };
+
+  // Helper function to get status badge class
+  const getStatusBadgeClass = () => {
+    return twoFAEnabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
   };
 
   return (
@@ -208,13 +224,16 @@ const Profile = () => {
                             alt="Profile" 
                             className="w-full h-full rounded-full object-cover"
                           />
-                        ) : user?.name ? (
-                          <span className="text-2xl font-bold text-white">
-                            {user.name.charAt(0).toUpperCase()}
-                          </span>
-                        ) : (
-                          <FaUser className="w-10 h-10 text-white" />
-                        )}
+                        ) : null}
+                        <div className={`w-full h-full rounded-full bg-blue-500 flex items-center justify-center ${getAvatarDisplayClass()}`}>
+                          {user?.name ? (
+                            <span className="text-2xl font-bold text-white">
+                              {user.name.charAt(0).toUpperCase()}
+                            </span>
+                          ) : (
+                            <FaUser className="w-10 h-10 text-white" />
+                          )}
+                        </div>
                       </div>
                       <label className="absolute -bottom-2 -right-2 p-2 bg-white rounded-full shadow-lg cursor-pointer hover:bg-gray-50 transition-colors">
                         <FaCamera className="w-4 h-4 text-blue-600" />
@@ -317,8 +336,9 @@ const Profile = () => {
                     <div className="pt-4 border-t border-gray-200">
                       <Button
                         type="submit"
-                        label="Save Changes"
-                        className="w-full md:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+                        label={saving ? "Saving..." : "Save Changes"}
+                        disabled={saving}
+                        className="w-full md:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         icon={FaSave}
                       />
                     </div>
@@ -341,11 +361,7 @@ const Profile = () => {
                     </div>
                   </div>
                   
-                  <div className={`px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2 ${
-                    twoFAEnabled 
-                      ? 'bg-green-100 text-green-800 border border-green-200' 
-                      : 'bg-gray-100 text-gray-800 border border-gray-200'
-                  }`}>
+                  <div className={`px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2 ${get2FAStatusClass()}`}>
                     {twoFAEnabled ? (
                       <>
                         <FaCheckCircle className="w-4 h-4" />
@@ -511,11 +527,7 @@ const Profile = () => {
                 </div>
                 <div className="flex items-center justify-between py-3">
                   <span className="text-gray-600">2FA Status</span>
-                  <span className={`px-3 py-1 text-sm font-medium rounded-full ${
-                    twoFAEnabled 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
+                  <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusBadgeClass()}`}>
                     {twoFAEnabled ? 'Enabled' : 'Disabled'}
                   </span>
                 </div>
@@ -582,11 +594,15 @@ const Profile = () => {
               
               <div className="space-y-6">
                 <div className="bg-gray-50 p-6 rounded-xl flex items-center justify-center">
-                  <img 
-                    src={qrData.qrCode || qrData.qr} 
-                    alt="QR Code" 
-                    className="w-64 h-64"
-                  />
+                  {qrData.qrCode || qrData.qr ? (
+                    <img 
+                      src={qrData.qrCode || qrData.qr} 
+                      alt="QR Code" 
+                      className="w-64 h-64"
+                    />
+                  ) : (
+                    <div className="text-gray-500">QR code not available</div>
+                  )}
                 </div>
                 
                 <div>
