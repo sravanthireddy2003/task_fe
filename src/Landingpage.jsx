@@ -71,16 +71,9 @@ const modules = [
     { value: '24/7', label: 'Support', description: 'Enterprise-grade support' }
   ];
 
-  const pricingPlans = [
-    { id: 'starter', name: 'Starter', price: '$29', period: '/month', description: 'Perfect for small teams', features: ['Up to 10 users', 'Basic task management', 'Email support', '5 GB storage'], popular: false },
-    { id: 'professional', name: 'Professional', price: '$79', period: '/month', description: 'For growing businesses', features: ['Up to 50 users', 'Advanced features', 'Priority support', '50 GB storage', 'Client portals'], popular: true },
-    { id: 'enterprise', name: 'Enterprise', price: 'Custom', period: '', description: 'For large organizations', features: ['Unlimited users', 'All features', 'Dedicated support', 'Custom integrations', 'SLA guarantee'], popular: false }
-  ];
-
   const navItems = [
     { id: 'features', label: 'Features', type: 'scroll', section: 'features' },
     { id: 'solutions', label: 'Solutions', type: 'scroll', section: 'solutions' },
-    { id: 'pricing', label: 'Pricing', type: 'scroll', section: 'pricing' },
     { id: 'resources', label: 'Resources', type: 'scroll', section: 'resources' },
     { id: 'contact', label: 'Contact', type: 'scroll', section: 'contact' }
   ];
@@ -239,34 +232,6 @@ const modules = [
                     </li>
                   ))}
                 </ul>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section id="pricing" className="py-20 bg-gray-50">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-800 mb-4">Flexible Pricing Plans</h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">Choose a plan that fits your team’s needs</p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            {pricingPlans.map((plan, idx) => (
-              <motion.div key={plan.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }} whileHover={{ y: -5 }} className={`bg-white rounded-xl shadow-lg p-8 transition-all ${plan.popular ? 'border-4 border-blue-500' : ''}`}>
-                {plan.popular && <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 px-3 py-1 bg-blue-500 text-white rounded-full text-sm font-semibold">Popular</div>}
-                <h3 className="text-2xl font-bold text-gray-800 mb-2">{plan.name}</h3>
-                <p className="text-gray-600 mb-4">{plan.description}</p>
-                <div className="text-4xl font-bold text-blue-600 mb-4">{plan.price} <span className="text-lg text-gray-500">{plan.period}</span></div>
-                <ul className="space-y-2 mb-6">
-                  {plan.features.map((f, i) => (
-                    <li key={i} className="flex items-center gap-2 text-gray-700"><FaCheck className="w-4 h-4 text-green-500" /> {f}</li>
-                  ))}
-                </ul>
-                <button className={`w-full py-3 rounded-lg ${plan.popular ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-800'} font-semibold shadow-md hover:shadow-lg transition-all`} onClick={handleSignup}>
-                  {plan.popular ? 'Get Started' : 'Choose Plan'}
-                </button>
               </motion.div>
             ))}
           </div>
