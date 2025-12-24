@@ -1,134 +1,97 @@
-// import React, { useState } from "react";
-// import { useDispatch, useSelector } from "react-redux";
 // import { Link, useLocation } from "react-router-dom";
+// import { useSelector, useDispatch } from "react-redux";
 // import clsx from "clsx";
-
-// // Icons
-// import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
-// import GroupsRoundedIcon from "@mui/icons-material/GroupsRounded";
-// import BusinessCenterRoundedIcon from "@mui/icons-material/BusinessCenterRounded";
-// import ApartmentRoundedIcon from "@mui/icons-material/ApartmentRounded";
-// import WorkOutlineRoundedIcon from "@mui/icons-material/WorkOutlineRounded";
-// import ChecklistRoundedIcon from "@mui/icons-material/ChecklistRounded";
-// import InsightsRoundedIcon from "@mui/icons-material/InsightsRounded";
-// import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
-// import ChatBubbleRoundedIcon from "@mui/icons-material/ChatBubbleRounded";
-// import NotificationsRoundedIcon from "@mui/icons-material/NotificationsRounded";
-// import AutoGraphRoundedIcon from "@mui/icons-material/AutoGraphRounded";
-// import ApprovalRoundedIcon from "@mui/icons-material/ApprovalRounded";
-// import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
-// import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
-
-// import { setOpenSidebar, setSidebarCollapsed } from "../redux/slices/authSlice";
-
-// // Default Links
-// const defaultLinks = [
-//   { label: "Dashboard", link: "dashboard", icon: <DashboardRoundedIcon /> },
-//   { label: "Users & Teams", link: "team", icon: <GroupsRoundedIcon /> },
-//   { label: "Clients", link: "client", icon: <BusinessCenterRoundedIcon /> },
-//   { label: "Departments", link: "departments", icon: <ApartmentRoundedIcon /> },
-//   { label: "Projects", link: "projects", icon: <WorkOutlineRoundedIcon /> },
-//   { label: "Tasks", link: "tasks", icon: <ChecklistRoundedIcon /> },
-//   { label: "Analytics", link: "report", icon: <InsightsRoundedIcon /> },
-//   { label: "Documents", link: "documents", icon: <ChecklistRoundedIcon /> },
-//   { label: "Settings", link: "settings", icon: <SettingsRoundedIcon /> },
-//   { label: "Chat", link: "chat", icon: <ChatBubbleRoundedIcon /> },
-//   { label: "Workflow", link: "workflow", icon: <AutoGraphRoundedIcon /> },
-//   { label: "Notifications", link: "notifications", icon: <NotificationsRoundedIcon /> },
-//   { label: "Approvals", link: "approvals", icon: <ApprovalRoundedIcon /> },
-//   { label: "Trash", link: "trash", icon: <DeleteRoundedIcon /> },
-// ];
+// import { FiChevronLeft, FiMenu } from "react-icons/fi";
+// import { MODULE_MAP } from "../App/moduleMap.jsx";
+// import { setSidebarCollapsed } from "../redux/slices/authSlice";
 
 // const Sidebar = () => {
-//   const { user, isSidebarCollapsed } = useSelector((state) => state.auth);
 //   const dispatch = useDispatch();
 //   const location = useLocation();
-//   const path = location.pathname.split("/")[1];
+//   const { user, isSidebarCollapsed } = useSelector((state) => state.auth);
 
-//   const [hovered, setHovered] = useState(false);
-
-//   const sidebarLinks =
-//     user?.modules?.length
-//       ? user.modules.map((m) => defaultLinks.find((l) => l.label === m.name)).filter(Boolean)
-//       : defaultLinks;
-
-//   const closeSidebar = () => dispatch(setOpenSidebar(false));
-//   const toggleCollapse = () => dispatch(setSidebarCollapsed(!isSidebarCollapsed));
+//   const modules = user?.modules || [];
 
 //   return (
-//     <div
+//     <aside
 //       className={clsx(
-//         "h-screen flex flex-col backdrop-blur-xl bg-gradient-to-b from-blue-50/50 to-blue-100/20 border-r border-blue-200 text-gray-800 transition-all duration-300",
-//         isSidebarCollapsed ? "w-16" : "w-64"
+//         "h-screen bg-slate-900 text-slate-300 flex flex-col sticky top-0 transition-all duration-300 ease-in-out z-50",
+//         isSidebarCollapsed ? "w-20" : "w-64"
 //       )}
-//       onMouseEnter={() => setHovered(true)}
-//       onMouseLeave={() => setHovered(false)}
 //     >
 //       {/* HEADER */}
-//       <div className="flex items-center justify-between p-4 border-b border-blue-200/40">
-//         <div className="flex items-center gap-2 flex-1 min-w-0">
-//           <img src="/nmit.png" className="h-8 w-10" alt="Logo" />
-//           {(!isSidebarCollapsed || hovered) && (
-//             <span className="text-lg font-bold text-blue-700">Task Manager</span>
-//           )}
-//         </div>
-
+//       <div className="flex items-center justify-between px-5 h-16 border-b border-slate-800">
+//         {!isSidebarCollapsed && (
+//           <div className="flex items-center gap-2">
+//             <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center">
+//               <span className="text-white font-bold text-lg">T</span>
+//             </div>
+//             <span className="font-bold text-white tracking-tight text-xl">Task Manager</span>
+//           </div>
+//         )}
 //         <button
-//           onClick={toggleCollapse}
-//           className="ml-2 flex items-center justify-center h-10 w-10 rounded-xl bg-blue-100/30 hover:bg-blue-200/50 shadow-inner transition-all duration-300"
+//           onClick={() => dispatch(setSidebarCollapsed(!isSidebarCollapsed))}
+//           className="p-1.5 rounded-lg hover:bg-slate-800 transition-colors text-slate-400"
 //         >
-//           <MenuRoundedIcon className="text-blue-700 text-2xl" />
+//           {isSidebarCollapsed ? <FiMenu size={20} /> : <FiChevronLeft size={20} />}
 //         </button>
 //       </div>
 
-//       {/* NAVIGATION */}
-//       <div className="flex flex-col gap-3 p-3 flex-1 overflow-y-auto">
-//         {sidebarLinks.map((link) => {
-//           const isActive = path === link.link.split("/")[0];
-//           return (
-//             <Link
-//               key={link.label}
-//               to={link.link.startsWith("/") ? link.link : `/${link.link}`}
-//               onClick={closeSidebar}
-//               className={clsx(
-//                 "flex items-center gap-3 px-4 py-2 rounded-2xl transition-all duration-300 group",
-//                 isActive
-//                   ? "bg-blue-600/80 text-white shadow-lg shadow-blue-400/40"
-//                   : "text-blue-600 hover:bg-blue-100/40 hover:text-blue-800 hover:shadow hover:shadow-blue-200/40"
-//               )}
-//             >
-//               <span className="text-xl transition-transform duration-300 group-hover:scale-110">
-//                 {link.icon}
-//               </span>
-//               {(!isSidebarCollapsed || hovered) && (
-//                 <span className="text-sm font-medium truncate">{link.label}</span>
-//               )}
-//             </Link>
-//           );
-//         })}
-//       </div>
+//       <nav className="flex-1 mt-4 px-1 overflow-y-auto">
+//         {modules.length === 0 ? (
+//           <div className="flex items-center justify-center h-32 text-gray-500 text-sm">
+//             Loading modules...
+//           </div>
+//         ) : (
+//           modules.map((mod, idx) => {
+//             const moduleMeta = MODULE_MAP[mod.name];
+//             if (!moduleMeta) {
+//               return null;
+//             }
 
-//       {/* SUPPORT */}
-//       <div className="p-3 border-t border-blue-200/40">
-//         <a
-//           href="https://wa.me/9560737311"
-//           target="_blank"
-//           rel="noreferrer"
-//           className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-blue-100/40 hover:text-blue-700 transition-all duration-300"
-//         >
-//           <img alt="WhatsApp" src="/wp.png" className="h-7 w-7" />
-//           {(!isSidebarCollapsed || hovered) && (
-//             <span className="text-xs font-medium">Support</span>
+//             const isActive = location.pathname === mod.path;
+
+//             return (
+//               <Link
+//                 key={idx}
+//                 to={mod.path}
+//                 className={clsx(
+//                   "flex items-center gap-3 px-4 py-3 rounded-lg mx-2 mb-1 transition-all group",
+//                   isActive
+//                     ? "bg-blue-500 text-white shadow-lg"
+//                     : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+//                 )}
+//                 title={moduleMeta.label || mod.name}
+//               >
+//                 <span className="text-xl flex-shrink-0">
+//                   {moduleMeta.icon}
+//                 </span>
+//                 {!isSidebarCollapsed && (
+//                   <span className="font-medium truncate">{moduleMeta.label || mod.name}</span>
+//                 )}
+//               </Link>
+//             );
+//           })
+//         )}
+//       </nav>
+
+//       {/* FOOTER / USER PROFILE */}
+//       <div className="p-4 border-t border-slate-800">
+//         <div className={clsx("flex items-center gap-3", isSidebarCollapsed ? "justify-center" : "px-2")}>
+//           <div className="w-8 h-8 rounded-full bg-slate-700 flex-shrink-0 border border-slate-600" />
+//           {!isSidebarCollapsed && (
+//             <div className="flex-1 min-w-0">
+//               <p className="text-sm font-medium text-white truncate">{user?.name || "Admin"}</p>
+//               <p className="text-xs text-slate-500 truncate">Premium Plan</p>
+//             </div>
 //           )}
-//         </a>
+//         </div>
 //       </div>
-//     </div>
+//     </aside>
 //   );
 // };
 
 // export default Sidebar;
-
-
 
 
 import React from "react";
@@ -137,14 +100,15 @@ import { useSelector, useDispatch } from "react-redux";
 import clsx from "clsx";
 import { MODULE_MAP } from "../App/moduleMap.jsx";
 import { setSidebarCollapsed } from "../redux/slices/authSlice";
-
+import { Menu, ChevronLeft, LogOut, Settings } from "lucide-react";
+ 
 const Sidebar = () => {
   const dispatch = useDispatch();
   const location = useLocation();
   const { user, isSidebarCollapsed } = useSelector((state) => state.auth);
-
+ 
   const modules = user?.modules || [];
-
+ 
   return (
     <aside
       className={clsx(
@@ -169,45 +133,39 @@ const Sidebar = () => {
           {isSidebarCollapsed ? <Menu size={20} /> : <ChevronLeft size={20} />}
         </button>
       </div>
-
-      <nav className="flex-1 mt-4 px-1 overflow-y-auto">
-        {modules.length === 0 ? (
-          <div className="flex items-center justify-center h-32 text-gray-500 text-sm">
-            Loading modules...
-          </div>
-        ) : (
-          modules.map((mod, idx) => {
-            const moduleMeta = MODULE_MAP[mod.name];
-            if (!moduleMeta) {
-              return null;
-            }
-
-            const isActive = location.pathname === mod.path;
-
-            return (
-              <Link
-                key={idx}
-                to={mod.path}
-                className={clsx(
-                  "flex items-center gap-3 px-4 py-3 rounded-lg mx-2 mb-1 transition-all group",
-                  isActive
-                    ? "bg-blue-500 text-white shadow-lg"
-                    : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                )}
-                title={moduleMeta.label || mod.name}
-              >
-                <span className="text-xl flex-shrink-0">
-                  {moduleMeta.icon}
-                </span>
-                {!isSidebarCollapsed && (
-                  <span className="font-medium truncate">{moduleMeta.label || mod.name}</span>
-                )}
-              </Link>
-            );
-          })
-        )}
+ 
+      {/* NAVIGATION */}
+      <nav className="flex-1 mt-6 px-3 space-y-1">
+        {modules.map((mod, idx) => {
+          const meta = MODULE_MAP[mod.name];
+          if (!meta) return null;
+          const isActive = location.pathname.startsWith(mod.path);
+ 
+          return (
+            <Link
+              key={idx}
+              to={mod.path}
+              className={clsx(
+                "group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 relative",
+                isActive
+                  ? "bg-indigo-600 text-white shadow-lg shadow-indigo-900/20"
+                  : "hover:bg-slate-800 hover:text-white"
+              )}
+            >
+              <span className={clsx("transition-transform duration-200 group-hover:scale-110")}>
+                {meta.icon}
+              </span>
+              {!isSidebarCollapsed && (
+                <span className="font-medium text-[14px]">{meta.label || mod.name}</span>
+              )}
+              {isActive && !isSidebarCollapsed && (
+                <div className="absolute right-2 w-1.5 h-1.5 bg-white rounded-full" />
+              )}
+            </Link>
+          );
+        })}
       </nav>
-
+ 
       {/* FOOTER / USER PROFILE */}
       <div className="p-4 border-t border-slate-800">
         <div className={clsx("flex items-center gap-3", isSidebarCollapsed ? "justify-center" : "px-2")}>
@@ -223,5 +181,6 @@ const Sidebar = () => {
     </aside>
   );
 };
-
+ 
 export default Sidebar;
+ 
