@@ -76,7 +76,7 @@ export default function Tasks() {
     const projectId = e.target.value;
     console.log('handleProjectChange called with projectId:', projectId);
     setSelectedProjectId(projectId);
-    
+
     if (projectId === 'all') {
       console.log('Clearing tasks for "All Projects"');
       dispatch(clearTasks());
@@ -84,10 +84,10 @@ export default function Tasks() {
     }
 
     // Validate project exists
-    const selectedProject = projects.find(p => 
+    const selectedProject = projects.find(p =>
       p.id === projectId || p._id === projectId || p.public_id === projectId
     );
-    
+
     if (!selectedProject) {
       console.error('Selected project not found in projects list');
       toast.error('Selected project not found');
@@ -95,17 +95,17 @@ export default function Tasks() {
     }
 
     console.log('Selected project found:', selectedProject.name);
-    
+
     // Fetch tasks for the selected project
     setIsFetching(true);
     try {
       console.log('Dispatching fetchTasks with project_id:', projectId);
-      
+
       // IMPORTANT: Make sure we're passing the correct parameter name
       // The fetchTasks thunk expects { project_id: value }
       const result = await dispatch(fetchTasks({ project_id: projectId }));
       console.log('fetchTasks result:', result);
-      
+
       if (fetchTasks.fulfilled.match(result)) {
         console.log('Tasks fetched successfully:', result.payload?.length || 0, 'tasks');
         toast.success(`Loaded ${result.payload?.length || 0} tasks for ${selectedProject.name}`);
@@ -211,7 +211,7 @@ export default function Tasks() {
       const selectedProject = projects.find(
         (p) => (p.id || p._id || p.public_id) === formData.project_id
       );
-      
+
       if (!formData.name || !formData.project_id) {
         toast.error('Please provide a task name and select a project');
         return;
@@ -264,7 +264,7 @@ export default function Tasks() {
       }
 
       closeModal();
-      
+
       // Refresh tasks for the current project
       handleRefreshTasks();
     } catch (err) {
@@ -275,12 +275,12 @@ export default function Tasks() {
 
   const handleDelete = async (task) => {
     if (!window.confirm('Are you sure you want to delete this task?')) return;
-    
+
     try {
       const taskId = task.id || task._id || task.public_id;
       await dispatch(deleteTask(taskId)).unwrap();
       toast.success('Task deleted successfully');
-      
+
       // Refresh tasks for the current project
       handleRefreshTasks();
     } catch (err) {
@@ -308,12 +308,12 @@ export default function Tasks() {
 
   const updateStatusInline = async (task, newStatus) => {
     if (!newStatus) return;
-    
+
     try {
       const taskId = task.id || task._id || task.public_id;
-      await dispatch(updateTask({ 
-        taskId, 
-        data: { 
+      await dispatch(updateTask({
+        taskId,
+        data: {
           stage: newStatus.toUpperCase(),
           // Keep other fields unchanged
           title: task.title || task.name,
@@ -321,12 +321,12 @@ export default function Tasks() {
           priority: task.priority,
           estimatedHours: task.estimatedHours,
           timeAlloted: task.timeAlloted
-        } 
+        }
       })).unwrap();
-      
+
       setActiveStatusEdit(null);
       toast.success('Status updated');
-      
+
       // Refresh tasks for the current project
       handleRefreshTasks();
     } catch (err) {
@@ -344,7 +344,7 @@ export default function Tasks() {
   // Filter tasks based on selected status
   const filteredTasks = tasks.filter((task) => {
     if (filterStatus === 'all') return true;
-    
+
     // Map backend stage to local status
     const taskStatus = task.stage ? task.stage.toLowerCase() : 'pending';
     return taskStatus === filterStatus;
@@ -352,7 +352,7 @@ export default function Tasks() {
 
   // Get project name by ID
   const getProjectName = (projectId) => {
-    const project = projects.find((p) => 
+    const project = projects.find((p) =>
       p.id === projectId || p._id === projectId || p.public_id === projectId
     );
     return project?.name || project?.title || 'Unknown Project';
@@ -460,11 +460,10 @@ export default function Tasks() {
           <button
             onClick={handleRefreshTasks}
             disabled={selectedProjectId === 'all' || isFetching}
-            className={`p-2 rounded-lg border ${
-              selectedProjectId === 'all' || isFetching
+            className={`p-2 rounded-lg border ${selectedProjectId === 'all' || isFetching
                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                 : 'bg-white text-blue-600 hover:bg-blue-50 border-blue-200'
-            }`}
+              }`}
             title="Refresh tasks"
           >
             <RefreshCw className={`w-5 h-5 ${isFetching ? 'animate-spin' : ''}`} />
@@ -475,18 +474,16 @@ export default function Tasks() {
             <button
               onClick={() => setView('list')}
               disabled={isFetching}
-              className={`px-3 py-2 ${view === 'list' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'} ${
-                isFetching ? 'opacity-50' : ''
-              }`}
+              className={`px-3 py-2 ${view === 'list' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'} ${isFetching ? 'opacity-50' : ''
+                }`}
             >
               <List className="w-5 h-5" />
             </button>
             <button
               onClick={() => setView('card')}
               disabled={isFetching}
-              className={`px-3 py-2 ${view === 'card' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'} ${
-                isFetching ? 'opacity-50' : ''
-              }`}
+              className={`px-3 py-2 ${view === 'card' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'} ${isFetching ? 'opacity-50' : ''
+                }`}
             >
               <Grid className="w-5 h-5" />
             </button>
@@ -496,11 +493,10 @@ export default function Tasks() {
           <button
             onClick={() => openModal()}
             disabled={selectedProjectId === 'all' || isFetching}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-              selectedProjectId === 'all' || isFetching
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${selectedProjectId === 'all' || isFetching
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 : 'bg-blue-600 text-white hover:bg-blue-700'
-            }`}
+              }`}
           >
             <Plus className="w-5 h-5" />
             Add Task
@@ -601,7 +597,7 @@ export default function Tasks() {
           <AlertCircle className="w-16 h-16 mx-auto mb-4 text-gray-400" />
           <h3 className="text-xl font-semibold text-gray-900 mb-2">No Tasks Found</h3>
           <p className="text-gray-600 mb-6">
-            No tasks found for project "{getProjectName(selectedProjectId)}". 
+            No tasks found for project "{getProjectName(selectedProjectId)}".
             Create your first task or try refreshing.
           </p>
           <div className="flex gap-3 justify-center">
@@ -628,7 +624,7 @@ export default function Tasks() {
             <div className="flex-1">
               <div className="flex items-start gap-4">
                 <div className="flex-shrink-0">
-                  <div className="w-14 h-14 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-lg">{(selectedTaskDetails.title || selectedTaskDetails.name || '').slice(0,2).toUpperCase()}</div>
+                  <div className="w-14 h-14 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-lg">{(selectedTaskDetails.title || selectedTaskDetails.name || '').slice(0, 2).toUpperCase()}</div>
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-2xl font-bold truncate">{selectedTaskDetails.title || selectedTaskDetails.name}</h3>
@@ -653,54 +649,137 @@ export default function Tasks() {
                 <div className="flex -space-x-2">
                   {(selectedTaskDetails.assignedUsers || selectedTaskDetails.assigned_users || []).map((u) => (
                     <div key={u.id || u.internalId || u._id} className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-semibold border-2 border-white shadow" title={u.name}>
-                      {String(u.name || u.fullName || u.username || u.id).split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}
+                      {String(u.name || u.fullName || u.username || u.id).split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                     </div>
                   ))}
                 </div>
               </div>
             </div>
           </div>
-
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-semibold mb-3">Checklist</h4>
-              {((selectedTaskDetails.checklist || selectedTaskDetails.check_lists || selectedTaskDetails.check_items) || []).length ? (
-                <ul className="space-y-2 text-sm text-gray-700">
-                  {(selectedTaskDetails.checklist || selectedTaskDetails.check_lists || selectedTaskDetails.check_items).map((item, idx) => (
-                    <li key={item.id || item._id || idx} className="flex items-center gap-3">
-                      <input type="checkbox" checked={!!item.completed} readOnly className="w-4 h-4" />
-                      <span>{item.title || item.name || item.text}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-gray-500">No checklist items</p>
-              )}
+            {/* Left column */}
+            <div className="lg:col-span-2 space-y-4">
+              {/* Checklist card */}
+              <div className="bg-white border rounded-xl p-4">
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 rounded border-gray-300 text-blue-600"
+                    checked={
+                      !!(selectedTaskDetails.checklist ||
+                        selectedTaskDetails.check_lists ||
+                        selectedTaskDetails.check_items)?.length &&
+                      (selectedTaskDetails.checklist ||
+                        selectedTaskDetails.check_lists ||
+                        selectedTaskDetails.check_items).every(c => c.completed)
+                    }
+                    readOnly
+                  />
+                  Checklist
+                </h4>
 
-              <div className="mt-6">
-                <h4 className="font-semibold mb-3">Activities</h4>
-                {((selectedTaskDetails.activities || selectedTaskDetails.activity_log) || []).length ? (
-                  <div className="space-y-3 max-h-56 overflow-auto text-sm text-gray-700">
-                    {(selectedTaskDetails.activities || selectedTaskDetails.activity_log).map((a, i) => (
-                      <div key={a.id || a._id || i} className="border-b border-gray-100 pb-2 last:pb-0">
-                        <div className="text-xs text-gray-500">{a.by || a.user || a.actor} • {a.when || a.createdAt || a.timestamp ? new Date(a.createdAt || a.when || a.timestamp).toLocaleString() : ''}</div>
-                        <div className="text-sm">{a.text || a.message || a.summary}</div>
-                      </div>
-                    ))}
-                  </div>
+                {((selectedTaskDetails.checklist ||
+                  selectedTaskDetails.check_lists ||
+                  selectedTaskDetails.check_items) || []).length ? (
+                  <ul className="space-y-2 text-sm text-gray-700">
+                    {(selectedTaskDetails.checklist ||
+                      selectedTaskDetails.check_lists ||
+                      selectedTaskDetails.check_items).map((item, idx) => (
+                        <li
+                          key={item.id || item._id || idx}
+                          className="flex items-center gap-3"
+                        >
+                          <span className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-emerald-50 border border-emerald-100 text-emerald-700">
+                            <span className="inline-flex items-center justify-center w-4 h-4 rounded bg-emerald-500">
+                              <svg
+                                viewBox="0 0 20 20"
+                                className="w-3 h-3 text-white"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                              >
+                                <path d="M5 10l3 3 7-7" />
+                              </svg>
+                            </span>
+                            <span>{item.title || item.name || item.text}</span>
+                          </span>
+                        </li>
+                      ))}
+                  </ul>
                 ) : (
-                  <p className="text-sm text-gray-500">No activities</p>
+                  <p className="text-sm text-gray-500">No checklist items</p>
                 )}
+
+                {/* Activities */}
+                <div className="mt-6">
+                  <h4 className="font-semibold mb-3">Activities</h4>
+                  {((selectedTaskDetails.activities ||
+                    selectedTaskDetails.activity_log) || []).length ? (
+                    <div className="space-y-3 max-h-56 overflow-auto text-sm text-gray-700">
+                      {(selectedTaskDetails.activities ||
+                        selectedTaskDetails.activity_log).map((a, i) => (
+                          <div
+                            key={a.id || a._id || i}
+                            className="border-b border-gray-100 pb-2 last:border-0 last:pb-0"
+                          >
+                            <div className="text-xs text-gray-500">
+                              {a.by || a.user || a.actor} •{" "}
+                              {a.when || a.createdAt || a.timestamp
+                                ? new Date(
+                                  a.createdAt || a.when || a.timestamp
+                                ).toLocaleString()
+                                : ""}
+                            </div>
+                            <div className="text-sm">
+                              {a.text || a.message || a.summary}
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">No activities</p>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-lg border">
+            {/* Summary card */}
+            <div className="bg-white p-4 rounded-xl border">
               <h4 className="font-semibold mb-3">Summary</h4>
-              <div className="text-sm text-gray-700 mb-2"><strong>Client:</strong> {selectedTaskDetails.client?.name || '-'}</div>
-              <div className="text-sm text-gray-700 mb-2"><strong>Estimated:</strong> {selectedTaskDetails.estimatedHours ?? selectedTaskDetails.timeAlloted ?? 0} hrs</div>
-              <div className="text-sm text-gray-700 mb-2"><strong>Total Hours:</strong> {selectedTaskDetails.totalHours ?? selectedTaskDetails.total_hours ?? 0} hrs</div>
-              <div className="text-sm text-gray-700 mb-2"><strong>Created:</strong> {selectedTaskDetails.createdAt ? new Date(selectedTaskDetails.createdAt).toLocaleString() : '-'}</div>
-              <div className="text-sm text-gray-700"><strong>Updated:</strong> {selectedTaskDetails.updatedAt ? new Date(selectedTaskDetails.updatedAt).toLocaleString() : '-'}</div>
+              <div className="text-sm text-gray-700 mb-2">
+                <strong>Client:</strong>{" "}
+                {selectedTaskDetails.client?.name || "-"}
+              </div>
+              <div className="text-sm text-gray-700 mb-2">
+                <strong>Estimated:</strong>{" "}
+                {selectedTaskDetails.estimatedHours ??
+                  selectedTaskDetails.timeAlloted ??
+                  0}{" "}
+                hrs
+              </div>
+              <div className="text-sm text-gray-700 mb-2">
+                <strong>Total Hours:</strong>{" "}
+                {selectedTaskDetails.totalHours ??
+                  selectedTaskDetails.total_hours ??
+                  0}{" "}
+                hrs
+              </div>
+              <div className="text-sm text-gray-700 mb-2">
+                <strong>Created:</strong>{" "}
+                {selectedTaskDetails.createdAt
+                  ? new Date(
+                    selectedTaskDetails.createdAt
+                  ).toLocaleString()
+                  : "-"}
+              </div>
+              <div className="text-sm text-gray-700">
+                <strong>Updated:</strong>{" "}
+                {selectedTaskDetails.updatedAt
+                  ? new Date(
+                    selectedTaskDetails.updatedAt
+                  ).toLocaleString()
+                  : "-"}
+              </div>
             </div>
           </div>
         </div>
@@ -732,8 +811,8 @@ export default function Tasks() {
                 </tr>
               ) : (
                 filteredTasks.map((task) => (
-                  <tr 
-                    key={task.id || task._id || task.public_id} 
+                  <tr
+                    key={task.id || task._id || task.public_id}
                     onClick={() => handleOpenTaskDetails(task)}
                     role="button"
                     className="border-b hover:bg-gray-50 transition-colors cursor-pointer"
@@ -833,8 +912,8 @@ export default function Tasks() {
             </div>
           ) : (
             filteredTasks.map((task) => (
-              <div 
-                key={task.id || task._id || task.public_id} 
+              <div
+                key={task.id || task._id || task.public_id}
                 onClick={() => handleOpenTaskDetails(task)}
                 role="button"
                 className="bg-white border rounded-xl p-6 hover:shadow-lg transition-shadow cursor-pointer"
@@ -847,14 +926,14 @@ export default function Tasks() {
                     )}
                   </div>
                   <div className="flex gap-1">
-                    <button 
+                    <button
                       onClick={(e) => { e.stopPropagation(); openModal(task); }}
                       className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                       title="Edit task"
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
-                    <button 
+                    <button
                       onClick={(e) => { e.stopPropagation(); handleDelete(task); }}
                       className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       title="Delete task"
@@ -969,8 +1048,8 @@ export default function Tasks() {
                         <>
                           <option value="">Select a project</option>
                           {projects.map((project) => (
-                            <option 
-                              key={project.id || project._id || project.public_id} 
+                            <option
+                              key={project.id || project._id || project.public_id}
                               value={project.id || project._id || project.public_id}
                             >
                               {project.name || project.title}
@@ -980,8 +1059,8 @@ export default function Tasks() {
                       ) : (
                         // If a project is selected from the list, lock the modal project to that project only
                         projects.filter(p => (p.id || p._id || p.public_id) === selectedProjectId).map((project) => (
-                          <option 
-                            key={project.id || project._id || project.public_id} 
+                          <option
+                            key={project.id || project._id || project.public_id}
                             value={project.id || project._id || project.public_id}
                           >
                             {project.name || project.title}
@@ -1043,8 +1122,8 @@ export default function Tasks() {
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-36"
                       >
                         {employeeUsers.map((user) => (
-                          <option 
-                            key={user.id || user._id || user.public_id} 
+                          <option
+                            key={user.id || user._id || user.public_id}
                             value={user.id || user._id || user.public_id}
                           >
                             {user.name}
@@ -1059,8 +1138,8 @@ export default function Tasks() {
                       >
                         <option value="">Select a user (optional)</option>
                         {employeeUsers.map((user) => (
-                          <option 
-                            key={user.id || user._id || user.public_id} 
+                          <option
+                            key={user.id || user._id || user.public_id}
                             value={user.id || user._id || user.public_id}
                           >
                             {user.name}
