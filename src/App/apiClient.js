@@ -153,8 +153,13 @@ api.interceptors.response.use(
         const tenantId = localStorage.getItem("tenantId") || defaultTenantId;
         const resp = await axios.post(
           `${baseURL}/api/auth/refresh`,
-          { refreshToken },
-          { headers: { "x-tenant-id": tenantId } }
+          {}, // no body
+          { 
+            headers: { 
+              "x-tenant-id": tenantId,
+              "Authorization": `Bearer ${refreshToken}`
+            } 
+          }
         );
         // Support backend returning either { accessToken, refreshToken } or { token, refreshToken }
         const newAccess = resp.data?.accessToken || resp.data?.token || null;
@@ -171,6 +176,10 @@ api.interceptors.response.use(
       } catch (err) {
         processQueue(err, null);
         clearTokens();
+        // Dispatch logout event when refresh fails
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('auth:logout', { detail: { reason: 'refresh_failed' } }));
+        }
         return Promise.reject(err);
       } finally {
         isRefreshing = false;

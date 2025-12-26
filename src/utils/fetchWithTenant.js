@@ -44,9 +44,10 @@ export default async function fetchWithTenant(pathOrUrl, options = {}) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${storedRefresh}`,
           ...(tenantId ? { 'x-tenant-id': tenantId } : {}),
         },
-        body: JSON.stringify({ refreshToken: storedRefresh }),
+        body: JSON.stringify({}), // empty body
       });
 
       if (!refreshResp.ok) {
