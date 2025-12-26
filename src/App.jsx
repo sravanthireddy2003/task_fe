@@ -6,7 +6,12 @@ import { IoClose } from "react-icons/io5";
 import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
 
-import { getProfile, selectUser, setCredentials } from "./redux/slices/authSlice";
+import { 
+  getProfile, 
+  selectUser, 
+  setCredentials,
+  ensureValidToken  // ✅ ADD THIS IMPORT
+} from "./redux/slices/authSlice";
 
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
@@ -183,19 +188,12 @@ function App() {
     const fallbackModules = needsModuleFallback ? getFallbackModules(user.role) : [];
     const fallbackSidebar = needsSidebarFallback ? getFallbackSidebar(user.role) : [];
 
-    const shouldApplyFallback =
-      (needsModuleFallback && fallbackModules.length > 0) ||
-      (needsSidebarFallback && fallbackSidebar.length > 0);
-
-    if (shouldApplyFallback) {
-      const updatedUser = { ...user };
-
-      if (needsModuleFallback && fallbackModules.length > 0) {
-        updatedUser.modules = fallbackModules;
-      }
-      if (needsSidebarFallback && fallbackSidebar.length > 0) {
-        updatedUser.sidebar = fallbackSidebar;
-      }
+    if (needsModuleFallback || needsSidebarFallback) {
+      const updatedUser = {
+        ...user,
+        ...(needsModuleFallback && { modules: fallbackModules }),
+        ...(needsSidebarFallback && { sidebar: fallbackSidebar }),
+      };
 
       dispatch(setCredentials(updatedUser));
     }

@@ -47,60 +47,35 @@ async function boot() {
     }
 
     // Initialize axios default Authorization header
-    const access = getAccessToken();
-    const refresh = getRefreshToken();
-    
-    console.log('🚀 App booting...');
-    console.log('📝 Access token exists:', !!access);
-    console.log('📝 Refresh token exists:', !!refresh);
-    
-    if (refresh) {
-      setAuthToken(access || null, refresh, "local");
+    try {
+      const access = getAccessToken();
+      const refresh = getRefreshToken();
+      if (refresh) {
+        setAuthToken(access || null, refresh, "local");
 
-      // Try to refresh token on app start if we have a refresh token
-      try {
-        console.log('🔄 Attempting token refresh on startup...');
-        const refreshResult = await store.dispatch(refreshToken()).unwrap();
-        console.log('✅ Token refresh successful on startup');
-        
-        // User is updated from refresh response, no need for separate profile fetch
-      } catch (refreshErr) {
-        // Handle refresh token failures
-        const errorMsg = refreshErr?.message || String(refreshErr);
-        console.warn('⚠️ Token refresh failed:', errorMsg);
-        
-        // Only clear tokens and logout for actual authentication errors
-        const isAuthError = errorMsg.includes('401') || 
-                          errorMsg.includes('Session expired') || 
-                          errorMsg.includes('Invalid refresh token') ||
-                          errorMsg.includes('Refresh token expired');
-        
-        if (isAuthError) {
-          console.log('🔒 Authentication error detected, logging out...');
+        // Send refresh token on every page refresh
+        try {
+          await store.dispatch(refreshToken()).unwrap();
+          // After successful refresh, load profile
+          await store.dispatch(getProfile()).unwrap();
+        } catch (refreshErr) {
+          console.warn("Token refresh on startup failed", refreshErr);
+          // Clear invalid tokens and logout user
           clearTokens();
           localStorage.removeItem("userInfo");
           store.dispatch(logout());
           setTimeout(() => {
             toast.error("Your session has expired. Please login again.");
           }, 100);
-        } else {
-          // For network errors, server down, etc., keep tokens and continue
-          console.log('🌐 Non-auth error, keeping tokens:', errorMsg);
-          // Set auth token with existing tokens
-          setAuthToken(access || null, refresh, "local");
         }
       }
-    } else {
-      // No refresh token available
-      console.log('📝 No refresh token found, proceeding without auto-refresh');
-      if (access) {
-        setAuthToken(access, null, "local");
-      }
+    } catch (e) {
+      // ignore errors in token initialization
+      console.warn("Token initialization error:", e);
     }
   } catch (error) {
-    console.error("💥 Boot error:", error);
+    console.error("Boot error:", error);
   } finally {
-    console.log('🎬 Rendering app...');
     ReactDOM.createRoot(document.getElementById("root")).render(
       <Provider store={store}>
         <BrowserRouter>
