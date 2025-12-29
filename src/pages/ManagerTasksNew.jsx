@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
-import { RefreshCw, List, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { RefreshCw, Kanban, FolderKanban } from 'lucide-react';
 import fetchWithTenant from '../utils/fetchWithTenant';
 import { selectUser } from '../redux/slices/authSlice';
+import KanbanBoard from '../components/KanbanBoard';
 
 const ManagerTasks = () => {
   const user = useSelector(selectUser);
@@ -11,6 +12,7 @@ const ManagerTasks = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [view, setView] = useState('kanban');
   const [selectedProjectId, setSelectedProjectId] = useState('all');
 
   const loadProjects = useCallback(async () => {
@@ -97,7 +99,7 @@ const ManagerTasks = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Manager Tasks</h1>
           <p className="mt-2 text-gray-600">
-            Manage tasks across your projects
+            Manage tasks across your projects with Kanban board
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -108,6 +110,12 @@ const ManagerTasks = () => {
             title="Refresh tasks"
           >
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+          <button
+            onClick={() => setView('kanban')}
+            className={`px-3 py-2 rounded-lg border ${view === 'kanban' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'}`}
+          >
+            <Kanban className="w-5 h-5" />
           </button>
         </div>
       </div>
@@ -157,91 +165,30 @@ const ManagerTasks = () => {
         </div>
       </div>
 
-      {/* Task List View */}
-      <div className="bg-white rounded-xl border shadow-sm">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-            <List className="w-5 h-5" />
-            Tasks ({filteredTasks.length})
-          </h2>
+      {/* Kanban Board */}
+      <KanbanBoard
+        tasks={filteredTasks}
+        onUpdateTask={handleUpdateTask}
+        onLoadTasks={loadTasks}
+        userRole="manager"
+        projectId={selectedProjectId}
+        showProjectSelector={selectedProjectId === 'all'}
+        onProjectChange={setSelectedProjectId}
+        projects={projects}
+      />
+
+      {filteredTasks.length === 0 && (
+        <div className="bg-white border rounded-xl p-12 text-center">
+          <FolderKanban className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">No Tasks Found</h3>
+          <p className="text-gray-600">
+            {selectedProjectId === 'all'
+              ? 'No tasks found across your projects.'
+              : 'No tasks found for the selected project.'
+            }
+          </p>
         </div>
-
-        {filteredTasks.length === 0 ? (
-          <div className="p-12 text-center">
-            <List className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No Tasks Found</h3>
-            <p className="text-gray-600">
-              {selectedProjectId === 'all'
-                ? 'No tasks found across your projects.'
-                : 'No tasks found for the selected project.'
-              }
-            </p>
-          </div>
-        ) : (
-          <div className="divide-y divide-gray-200">
-            {filteredTasks.map((task) => {
-              const status = task.status || task.stage || 'pending';
-              const getStatusIcon = (status) => {
-                switch (status.toLowerCase()) {
-                  case 'completed':
-                    return <CheckCircle className="w-5 h-5 text-green-600" />;
-                  case 'in_progress':
-                  case 'in progress':
-                    return <Clock className="w-5 h-5 text-blue-600" />;
-                  default:
-                    return <AlertCircle className="w-5 h-5 text-yellow-600" />;
-                }
-              };
-
-              const getStatusColor = (status) => {
-                switch (status.toLowerCase()) {
-                  case 'completed':
-                    return 'bg-green-100 text-green-800';
-                  case 'in_progress':
-                  case 'in progress':
-                    return 'bg-blue-100 text-blue-800';
-                  default:
-                    return 'bg-yellow-100 text-yellow-800';
-                }
-              };
-
-              return (
-                <div key={task.id || task._id} className="p-6 hover:bg-gray-50">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        {getStatusIcon(status)}
-                        <h3 className="text-lg font-medium text-gray-900">
-                          {task.title || task.name || 'Untitled Task'}
-                        </h3>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
-                          {status.replace('_', ' ').toUpperCase()}
-                        </span>
-                      </div>
-
-                      {task.description && (
-                        <p className="text-gray-600 mb-3 ml-8">{task.description}</p>
-                      )}
-
-                      <div className="flex items-center gap-6 text-sm text-gray-500 ml-8">
-                        {task.project && (
-                          <span>Project: {task.project.name || task.project.title}</span>
-                        )}
-                        {task.assignedTo && (
-                          <span>Assigned to: {task.assignedTo.name || task.assignedTo.email}</span>
-                        )}
-                        {task.dueDate && (
-                          <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 };

@@ -134,7 +134,52 @@ const ManagerProjects = () => {
         </p>
       </div>
 
-      {/* STATS */}
+      {/* PROJECT STATS DASHBOARD */}
+      {projectStats && (
+        <div className="bg-white rounded-xl border p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Project Statistics</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">{projectStats.projects?.total || 0}</div>
+              <div className="text-sm text-gray-600">Total Projects</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">{projectStats.tasks?.total || 0}</div>
+              <div className="text-sm text-gray-600">Total Tasks</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-600">{projectStats.tasks?.totalHours || 0}h</div>
+              <div className="text-sm text-gray-600">Total Hours</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-indigo-600">{projectStats.subtasks?.total || 0}</div>
+              <div className="text-sm text-gray-600">Total Subtasks</div>
+            </div>
+            <div className="text-center">
+              <div className="text-xl font-bold text-orange-600">{projectStats.projects?.byStatus?.Planning || 0}</div>
+              <div className="text-sm text-gray-600">Planning</div>
+            </div>
+            <div className="text-center">
+              <div className="text-xl font-bold text-red-600">{projectStats.projects?.byStatus?.Active || 0}</div>
+              <div className="text-sm text-gray-600">Active</div>
+            </div>
+          </div>
+
+          {/* Tasks by Stage Breakdown */}
+          <div className="mt-6">
+            <h3 className="text-md font-semibold text-gray-900 mb-3">Tasks by Stage</h3>
+            <div className="flex flex-wrap gap-3">
+              {Object.entries(projectStats.tasks?.byStage || {}).map(([stage, count]) => (
+                <div key={stage} className="px-3 py-2 bg-gray-100 rounded-lg">
+                  <div className="text-sm font-medium text-gray-900">{stage}: {count}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Status Summary */}
       <div className="flex flex-wrap gap-3 mb-6">
         <div className="px-4 py-2 rounded-lg bg-yellow-100 text-yellow-700 font-semibold shadow-sm">
           Planning: {projects.filter(p => p.status === "Planning").length}

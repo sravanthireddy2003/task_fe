@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Edit2, Trash2, AlertCircle, Filter, List, Grid, Calendar, Clock, User, RefreshCw } from 'lucide-react';
+import { Plus, Edit2, Trash2, AlertCircle, Filter, List, Grid, Calendar, Clock, User, RefreshCw, Kanban } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'sonner';
 
@@ -21,6 +21,7 @@ import {
 } from '../redux/slices/taskSlice';
 import { fetchProjects, selectProjects } from '../redux/slices/projectSlice';
 import { fetchUsers, selectUsers, selectCurrentUser } from '../redux/slices/userSlice';
+import KanbanBoard from '../components/KanbanBoard';
 
 export default function Tasks() {
   const dispatch = useDispatch();
@@ -176,6 +177,16 @@ export default function Tasks() {
       setIsFetching(false);
     }
   }, [selectedProjectId, dispatch]);
+
+  const handleUpdateTask = async (taskId, updates) => {
+    try {
+      await dispatch(updateTask({ taskId, data: updates })).unwrap();
+      toast.success('Task updated successfully');
+    } catch (error) {
+      toast.error('Failed to update task');
+      throw error;
+    }
+  };
 
   const openModal = (task = null) => {
     if (task) {
@@ -526,7 +537,7 @@ export default function Tasks() {
             <RefreshCw className={`w-5 h-5 ${isFetching ? 'animate-spin' : ''}`} />
           </button>
 
-          {/* View Toggle */}
+          {/* View Toggle - Hide Kanban for admins */}
           <div className="flex border border-gray-300 rounded-lg overflow-hidden">
             <button
               onClick={() => setView('list')}
@@ -544,6 +555,16 @@ export default function Tasks() {
             >
               <Grid className="w-5 h-5" />
             </button>
+            {!isAdminCurrentUser && (
+              <button
+                onClick={() => setView('kanban')}
+                disabled={isFetching}
+                className={`px-3 py-2 ${view === 'kanban' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'} ${isFetching ? 'opacity-50' : ''
+                  }`}
+              >
+                <Kanban className="w-5 h-5" />
+              </button>
+            )}
           </div>
 
           {/* Add Task Button */}
@@ -1111,6 +1132,17 @@ export default function Tasks() {
             ))
           )}
         </div>
+      )}
+
+      {/* KANBAN VIEW - Only for non-admin users */}
+      {!selectedTaskDetails && selectedProjectId !== 'all' && !isFetching && tasks.length > 0 && view === 'kanban' && !isAdminCurrentUser && (
+        <KanbanBoard
+          tasks={filteredTasks}
+          onUpdateTask={handleUpdateTask}
+          onLoadTasks={handleRefreshTasks}
+          userRole="admin"
+          projectId={selectedProjectId}
+        />
       )}
 
       {/* MODAL */}
