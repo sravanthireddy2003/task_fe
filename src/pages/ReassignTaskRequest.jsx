@@ -4,10 +4,6 @@ import { toast } from 'sonner';
 import fetchWithTenant from '../utils/fetchWithTenant';
 
 const ReassignTaskRequestModal = ({ selectedTask, onClose }) => {
-  const [assigneeEmail, setAssigneeEmail] = useState('');
-  const [assigneeName, setAssigneeName] = useState('');
-  const [priority, setPriority] = useState('Medium');
-  const [dueDate, setDueDate] = useState('');
   const [reason, setReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -15,36 +11,26 @@ const ReassignTaskRequestModal = ({ selectedTask, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!assigneeEmail.trim()) {
-      toast.error('Please enter assignee email');
+    if (!reason.trim()) {
+      toast.error('Please provide a reason for the reassignment request');
       return;
     }
 
     setSubmitting(true);
     try {
-      const payload = {
-        taskId: selectedTask.id || selectedTask._id || selectedTask.public_id,
-        assigneeEmail: assigneeEmail.trim(),
-        assigneeName: assigneeName.trim(),
-        priority,
-        dueDate: dueDate || null,
-        reason: reason.trim() || null,
-      };
-
-      const resp = await fetchWithTenant('/api/employee/reassign-task', {
-        method: 'POST',
-        body: JSON.stringify(payload),
+      const taskId = selectedTask.id || selectedTask._id || selectedTask.public_id;
+const resp = await fetchWithTenant(`/api/tasks/${taskId}/request-reassignment`, {
+  method: 'POST',
+  body: JSON.stringify({
+    reason: reason.trim(),
+  }),
       });
 
-      toast.success(resp?.message || 'Task reassignment requested');
-      setAssigneeEmail('');
-      setAssigneeName('');
-      setPriority('Medium');
-      setDueDate('');
+      toast.success(resp?.message || 'Task reassignment request submitted to manager');
       setReason('');
       onClose();
     } catch (err) {
-      toast.error(err?.message || 'Failed to request reassignment');
+      toast.error(err?.message || 'Failed to submit reassignment request');
     } finally {
       setSubmitting(false);
     }
@@ -52,7 +38,7 @@ const ReassignTaskRequestModal = ({ selectedTask, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl w-full max-w-lg p-6 relative shadow-lg animate-fadeIn">
+      <div className="bg-white rounded-2xl w-full max-w-md p-6 relative shadow-lg animate-fadeIn">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -61,92 +47,53 @@ const ReassignTaskRequestModal = ({ selectedTask, onClose }) => {
           <X className="h-5 w-5" />
         </button>
 
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Request Task Reassignment</h3>
-        <p className="text-sm text-gray-500 mb-6">
-          Task: <span className="font-medium">{selectedTask.title}</span>
-        </p>
+        <div className="text-center mb-6">
+          <h3 className="text-xl font-bold text-gray-900 mb-2">Request Task Reassignment</h3>
+          <p className="text-sm text-gray-500">
+            Submit a request to your manager to reassign this task
+          </p>
+        </div>
+
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+          <h4 className="font-semibold text-gray-900 mb-2 flex items-center">
+            📋 Task Details
+          </h4>
+          <p className="text-sm text-gray-700">
+            <span className="font-medium">"{selectedTask.title}"</span>
+          </p>
+          {selectedTask.currentAssignee && (
+            <p className="text-xs text-gray-500 mt-1">
+              Currently assigned to: {selectedTask.currentAssignee}
+            </p>
+          )}
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Assignee Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Assignee Email
-            </label>
-            <input
-              type="email"
-              value={assigneeEmail}
-              onChange={(e) => setAssigneeEmail(e.target.value)}
-              className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500"
-              placeholder="example@company.com"
-              required
-            />
-          </div>
-
-          {/* Assignee Name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Assignee Name
-            </label>
-            <input
-              type="text"
-              value={assigneeName}
-              onChange={(e) => setAssigneeName(e.target.value)}
-              className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500"
-              placeholder="Full name of the assignee"
-              required
-            />
-          </div>
-
-          {/* Priority */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Priority
-            </label>
-            <select
-              value={priority}
-              onChange={(e) => setPriority(e.target.value)}
-              className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500"
-            >
-              <option>Low</option>
-              <option>Medium</option>
-              <option>High</option>
-            </select>
-          </div>
-
-          {/* Due Date */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Due Date
-            </label>
-            <input
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-
-          {/* Reason */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Reason (optional)
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Reason for Reassignment <span className="text-red-500">*</span>
             </label>
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500"
-              rows={3}
-              placeholder="Reason for reassignment"
+              className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 resize-vertical min-h-[100px]"
+              placeholder="Please explain why you need this task reassigned (e.g., workload, expertise, priority shift, etc.)"
+              required
             />
+            <p className="text-xs text-gray-500 mt-1">
+              Your manager will review this request and decide on reassignment
+            </p>
           </div>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 disabled:opacity-50"
-          >
-            {submitting ? 'Requesting...' : 'Request Reassignment'}
-          </button>
+          <div className="pt-4 border-t border-gray-200">
+            <button
+              type="submit"
+              disabled={submitting || !reason.trim()}
+              className="w-full py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {submitting ? 'Submitting request to manager...' : 'Send Reassignment Request'}
+            </button>
+          </div>
         </form>
       </div>
     </div>

@@ -60,6 +60,7 @@ import RoleRoute from "./components/RoleRoute";
 import EmployeeHome from "./pages/EmployeeHome";
 import ClientViewerHome from "./pages/ClientViewerHome";
 import ReassignTaskRequest from "./pages/ReassignTaskRequest"; 
+import TaskDetailsWithRequests from "./pages/TaskDetailsWithRequests.jsx";
 
 const ROLE_PREFIXES = ["admin", "manager", "employee", "client", "client-viewer"];
 
@@ -275,6 +276,8 @@ function App() {
                       />
                     );
                   })}
+                        <Route path="/employee/tasks/:taskId" element={<TaskDetailsWithRequests />} />
+
                 </Route>
               );
             }
@@ -375,6 +378,8 @@ function App() {
           </Route>
           <Route element={<ModuleRouteGuard moduleName="Tasks" />}>
             <Route path="/task/:id" element={<TaskDetails />} />
+              <Route path="/employee/tasks/:taskId" element={<TaskDetailsWithRequests />} />
+            
           </Route>
 
           {/* Trash */}
