@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
+import { FolderKanban, List, Grid } from 'lucide-react';
 import fetchWithTenant from '../utils/fetchWithTenant';
 import { selectUser } from '../redux/slices/authSlice';
 
@@ -10,23 +11,28 @@ const ManagerProjects = () => {
   const [projects, setProjects] = useState([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
   const [projectsError, setProjectsError] = useState(null);
+  const [projectStats, setProjectStats] = useState({});
+  const [projectSummary, setProjectSummary] = useState({});
   const [clientOptions, setClientOptions] = useState([]);
   const [clientsLoading, setClientsLoading] = useState(true);
   const [clientsError, setClientsError] = useState(null);
-  const [projectForm, setProjectForm] = useState({
-    name: '',
-    description: '',
-    client_id: '',
-    priority: 'Medium',
-    start_date: '',
-    end_date: '',
-    budget: '',
-  });
-  const [showCreateForm, setShowCreateForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
-  const [filterPriority, setFilterPriority] = useState('');
-  const [actionLoading, setActionLoading] = useState(false);
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterPriority, setFilterPriority] = useState('all');
+  const [view, setView] = useState('card');
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [selectedSummaryProject, setSelectedSummaryProject] = useState(null);
+
+  const statusOptions = ["Planning", "Active", "On Hold", "Completed", "Cancelled"];
+  const statusColors = {
+    "Planning": "bg-yellow-100 text-yellow-700",
+    "Active": "bg-blue-100 text-blue-700",
+    "Completed": "bg-green-100 text-green-700",
+    "On Hold": "bg-red-100 text-red-700",
+    "Cancelled": "bg-gray-100 text-gray-700",
+  };
+
+  const priorityOptions = ["Low", "Medium", "High"];
 
   const loadProjects = useCallback(async () => {
     setProjectsLoading(true);
@@ -39,6 +45,24 @@ const ManagerProjects = () => {
       setProjectsError(err.message || 'Unable to load manager projects');
     } finally {
       setProjectsLoading(false);
+    }
+  }, []);
+
+  const loadProjectStats = useCallback(async () => {
+    try {
+      const resp = await fetchWithTenant('api/projects/stats');
+      setProjectStats(resp?.data || resp || {});
+    } catch (err) {
+      console.error('Failed to load project stats:', err);
+    }
+  }, []);
+
+  const loadProjectSummary = useCallback(async (projectId) => {
+    try {
+      const resp = await fetchWithTenant(`api/projects/${projectId}/summary`);
+      setProjectSummary(resp?.data || resp || {});
+    } catch (err) {
+      console.error('Failed to load project summary:', err);
     }
   }, []);
 
@@ -59,103 +83,106 @@ const ManagerProjects = () => {
   useEffect(() => {
     loadProjects();
     loadClients();
-  }, [loadProjects, loadClients]);
+    loadProjectStats();
+  }, [loadProjects, loadClients, loadProjectStats]);
 
-  const handleCreateProject = async (event) => {
-    event.preventDefault();
-    if (!projectForm.name || !projectForm.client_id) {
-      toast.error('Project name and client are required');
-      return;
-    }
-    setActionLoading(true);
+  // Helper function to format date from ISO string
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "-";
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  // Helper function to get client name by ID
+  const getClientName = (clientId) => {
+    if (!clientId) return "-";
+    // clientId may be a public_id or a client object
+    if (typeof clientId === 'object') return clientId.name || '-';
+    const client = clientOptions.find((c) => (c.public_id || c.id || c._id) === clientId) ||
+      clientOptions.find((c) => c.name === clientId);
+    return client?.name || "-";
+  };
+
+  const handleViewSummary = async (project) => {
     try {
-      const payload = {
-        name: projectForm.name,
-        description: projectForm.description,
-        client_id: projectForm.client_id,
-        priority: projectForm.priority,
-        startDate: projectForm.start_date ? new Date(projectForm.start_date).toISOString() : undefined,
-        endDate: projectForm.end_date ? new Date(projectForm.end_date).toISOString() : undefined,
-        budget: projectForm.budget ? Number(projectForm.budget) : undefined,
-      };
-      const resp = await fetchWithTenant('/api/manager/projects', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
-      toast.success(resp?.message || 'Project created');
-      setProjectForm({ name: '', description: '', client_id: '', priority: 'Medium', start_date: '', end_date: '', budget: '' });
-      setShowCreateForm(false);
-      loadProjects();
+      const projectId = project.public_id || project.id || project._id;
+      await loadProjectSummary(projectId);
+      setSelectedSummaryProject(project);
+      setShowSummaryModal(true);
     } catch (err) {
-      toast.error(err.message || 'Unable to create project');
-    } finally {
-      setActionLoading(false);
+      console.error('Summary error:', err);
+      toast.error(err?.message || 'Failed to load project summary');
     }
   };
 
-  const statusOptions = useMemo(() => {
-    const map = new Map();
-    projects.forEach((project) => {
-      if (project.status) {
-        map.set(project.status, true);
-      }
-    });
-    const base = ['Planning', 'Active', 'Completed'];
-    const extras = Array.from(map.keys()).filter((item) => !base.includes(item));
-    return [...base, ...extras];
-  }, [projects]);
-
-  const priorityOptions = useMemo(() => {
-    const map = new Map();
-    projects.forEach((project) => {
-      if (project.priority) {
-        map.set(project.priority, true);
-      }
-    });
-    const base = ['High', 'Medium', 'Low'];
-    const extras = Array.from(map.keys()).filter((item) => !base.includes(item));
-    return [...base, ...extras];
-  }, [projects]);
-
-  const filteredProjects = useMemo(() => {
-    return projects.filter((project) => {
-      if (filterStatus && project.status?.toLowerCase() !== filterStatus.toLowerCase()) {
-        return false;
-      }
-      if (filterPriority && project.priority?.toLowerCase() !== filterPriority.toLowerCase()) {
-        return false;
-      }
-      if (searchTerm) {
-        const needle = searchTerm.toLowerCase();
-        return (
-          project.name?.toLowerCase().includes(needle) ||
-          project.client?.name?.toLowerCase().includes(needle) ||
-          project.project_manager?.name?.toLowerCase().includes(needle)
-        );
-      }
-      return true;
-    });
-  }, [projects, filterStatus, filterPriority, searchTerm]);
-
-  const canCreate = resources.canCreateClients || resources.canCreateProjects;
+  // Filters
+  const filteredProjects = projects.filter((project) => {
+    const statusMatch = filterStatus === "all" || project.status === filterStatus;
+    const priorityMatch = filterPriority === "all" || project.priority === filterPriority;
+    const searchMatch = !searchTerm ||
+      project.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      getClientName(project.client || project.client_id)?.toLowerCase().includes(searchTerm.toLowerCase());
+    return statusMatch && priorityMatch && searchMatch;
+  });
 
   return (
-    <div className="w-full p-4 space-y-6">
+    <div className="w-full p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Assigned Client Projects</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Only projects for your assigned clients are listed here.
+        <h1 className="text-3xl font-bold text-gray-900">Manager Projects</h1>
+        <p className="mt-2 text-gray-600">
+          Overview of projects assigned to your clients.
         </p>
       </div>
 
+      {/* STATS */}
+      <div className="flex flex-wrap gap-3 mb-6">
+        <div className="px-4 py-2 rounded-lg bg-yellow-100 text-yellow-700 font-semibold shadow-sm">
+          Planning: {projects.filter(p => p.status === "Planning").length}
+        </div>
+
+        <div className="px-4 py-2 rounded-lg bg-blue-100 text-blue-700 font-semibold shadow-sm">
+          Active: {projects.filter(p => p.status === "Active").length}
+        </div>
+
+        <div className="px-4 py-2 rounded-lg bg-green-100 text-green-700 font-semibold shadow-sm">
+          Completed: {projects.filter(p => p.status === "Completed").length}
+        </div>
+
+        <div className="px-4 py-2 rounded-lg bg-red-100 text-red-700 font-semibold shadow-sm">
+          On Hold: {projects.filter(p => p.status === "On Hold").length}
+        </div>
+
+        <div className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold shadow-sm">
+          Cancelled: {projects.filter(p => p.status === "Cancelled").length}
+        </div>
+      </div>
+
+      {/* VIEW TOGGLE AND FILTERS */}
       <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 bg-white rounded-lg border p-1">
+            <button
+              onClick={() => setView('card')}
+              className={`p-2 rounded ${view === 'card' ? 'bg-blue-100 text-blue-600' : 'text-gray-600'}`}
+            >
+              <Grid className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setView('list')}
+              className={`p-2 rounded ${view === 'list' ? 'bg-blue-100 text-blue-600' : 'text-gray-600'}`}
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
         <div className="flex flex-wrap gap-3 text-sm">
           <label className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-600 shadow-sm">
             Search
             <input
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Project, client, or manager"
+              placeholder="Project or client"
               className="w-40 bg-transparent px-1 text-xs text-gray-600 outline-none"
             />
           </label>
@@ -166,11 +193,9 @@ const ManagerProjects = () => {
               onChange={(e) => setFilterStatus(e.target.value)}
               className="bg-transparent text-xs text-gray-600 outline-none"
             >
-              <option value="">All</option>
+              <option value="all">All Status</option>
               {statusOptions.map((status) => (
-                <option key={status} value={status}>
-                  {status}
-                </option>
+                <option key={status} value={status}>{status}</option>
               ))}
             </select>
           </label>
@@ -181,160 +206,226 @@ const ManagerProjects = () => {
               onChange={(e) => setFilterPriority(e.target.value)}
               className="bg-transparent text-xs text-gray-600 outline-none"
             >
-              <option value="">All</option>
+              <option value="all">All Priority</option>
               {priorityOptions.map((priority) => (
-                <option key={priority} value={priority}>
-                  {priority}
-                </option>
+                <option key={priority} value={priority}>{priority}</option>
               ))}
             </select>
           </label>
         </div>
-        {canCreate && (
-          <button
-            onClick={() => setShowCreateForm((visible) => !visible)}
-            className="rounded-full border border-blue-600 bg-white px-4 py-2 text-sm font-semibold text-blue-600 shadow-sm hover:bg-blue-50"
-          >
-            {showCreateForm ? 'Hide create form' : 'Create project'}
-          </button>
-        )}
       </div>
 
-      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
-        {projectsLoading ? (
-          <div className="p-6 text-center text-sm text-gray-500">Loading projects...</div>
-        ) : projectsError ? (
-          <div className="p-6 text-center text-sm text-red-500">{projectsError}</div>
-        ) : filteredProjects.length === 0 ? (
-          <div className="p-6 text-center text-sm text-gray-500">No projects match the current filters.</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  <th className="px-4 py-3">Project</th>
-                  <th className="px-4 py-3">Client</th>
-                  <th className="px-4 py-3">Manager</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Priority</th>
-                  <th className="px-4 py-3">Start</th>
-                  <th className="px-4 py-3">End</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredProjects.map((project) => (
-                  <tr key={project.id || project.public_id || project._id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium text-gray-900">{project.name}</td>
-                    <td className="px-4 py-3 text-gray-700">{project.client?.name || '-'}</td>
-                    <td className="px-4 py-3 text-gray-700">{project.project_manager?.name || '-'}</td>
-                    <td className="px-4 py-3 text-xs text-gray-700 uppercase tracking-wide">{project.status || 'planning'}</td>
-                    <td className="px-4 py-3 text-xs text-gray-700 uppercase tracking-wide">{project.priority || 'medium'}</td>
-                    <td className="px-4 py-3 text-xs text-gray-600">{project.startDate ? new Date(project.startDate).toLocaleDateString() : '-'}</td>
-                    <td className="px-4 py-3 text-xs text-gray-600">{project.endDate ? new Date(project.endDate).toLocaleDateString() : '-'}</td>
+      {/* LOADING STATE */}
+      {projectsLoading ? (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin h-12 w-12 border-4 border-blue-200 border-t-blue-600 rounded-full" />
+        </div>
+      ) : projectsError ? (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+          <div className="text-red-600 font-semibold">Error Loading Projects</div>
+          <div className="text-red-500 mt-2">{projectsError}</div>
+        </div>
+      ) : (
+        <>
+          {/* LIST VIEW */}
+          {view === "list" && (
+            <div className="bg-white border rounded-xl overflow-hidden">
+              <table className="w-full table-auto">
+                <thead className="bg-gray-100 text-gray-700">
+                  <tr>
+                    <th className="p-3 text-left">Project</th>
+                    <th className="p-3 text-left">Client</th>
+                    <th className="p-3 text-left">Status</th>
+                    <th className="p-3 text-left">Priority</th>
+                    <th className="p-3 text-left">Duration</th>
+                    <th className="p-3 text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                </thead>
+                <tbody>
+                  {filteredProjects.map((project) => (
+                    <tr key={project.id || project._id} className="border-b hover:bg-gray-50">
+                      <td className="p-3 font-medium">{project.name}</td>
+                      <td className="p-3 text-sm">{getClientName(project.client || project.client_id)}</td>
+                      <td className="p-3">
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[project.status] || 'bg-gray-100 text-gray-700'}`}>
+                          {project.status || 'Planning'}
+                        </span>
+                      </td>
+                      <td className="p-3 text-sm text-gray-600 uppercase tracking-wide">{project.priority || 'Medium'}</td>
+                      <td className="p-3 text-sm text-gray-600">{formatDate(project.start_date)} → {formatDate(project.end_date)}</td>
+                      <td className="p-3 text-right">
+                        <button
+                          onClick={() => handleViewSummary(project)}
+                          className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg"
+                          title="View Summary"
+                        >
+                          📊
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
-      {canCreate && showCreateForm && (
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900">Create Project</h2>
-          <p className="text-sm text-gray-500">Use this form to launch a new project for an assigned client.</p>
-          <form className="mt-4 grid gap-4 md:grid-cols-2" onSubmit={handleCreateProject}>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Project Name</label>
-              <input
-                value={projectForm.name}
-                onChange={(e) => setProjectForm({ ...projectForm, name: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100"
-              />
+          {/* CARD VIEW */}
+          {view === "card" && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredProjects.map((project) => (
+                <div key={project.id || project._id} className="bg-white border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <FolderKanban className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900">{project.name}</h3>
+                        <p className="text-sm text-gray-600">{getClientName(project.client || project.client_id)}</p>
+                      </div>
+                    </div>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[project.status] || 'bg-gray-100 text-gray-700'}`}>
+                      {project.status || 'Planning'}
+                    </span>
+                  </div>
+
+                  {project.description && (
+                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">{project.description}</p>
+                  )}
+
+                  <div className="space-y-2 mb-4">
+                    <div className="flex justify-between text-xs text-gray-600">
+                      <span>Priority: <span className="font-semibold">{project.priority || 'Medium'}</span></span>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-600">
+                      <span>Budget: <span className="font-semibold">{project.budget ? `$${project.budget}` : 'N/A'}</span></span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-gray-500 mt-3 pt-3 border-t">
+                    <span>📅 {formatDate(project.start_date)}</span>
+                    <span>→</span>
+                    <span>{formatDate(project.end_date)}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between mt-4">
+                    <button
+                      onClick={() => handleViewSummary(project)}
+                      className="text-purple-600 hover:text-purple-800 text-sm font-medium"
+                    >
+                      View Summary
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Client</label>
-              <select
-                value={projectForm.client_id}
-                onChange={(e) => setProjectForm({ ...projectForm, client_id: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100"
-                disabled={clientsLoading}
-              >
-                <option value="">Select client</option>
-                {(clientOptions || []).map((client) => (
-                  <option
-                    key={client.public_id || client.id || client._id}
-                    value={client.public_id || client.id || client._id}
-                  >
-                    {client.name}
-                  </option>
-                ))}
-              </select>
-              {clientsLoading && (
-                <p className="mt-1 text-xs text-gray-500">Loading clients...</p>
-              )}
-              {clientsError && (
-                <p className="mt-1 text-xs text-red-500">{clientsError}</p>
-              )}
+          )}
+
+          {filteredProjects.length === 0 && (
+            <div className="bg-white border rounded-xl p-12 text-center">
+              <FolderKanban className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No Projects Found</h3>
+              <p className="text-gray-600">No projects match your current filters.</p>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Priority</label>
-              <select
-                value={projectForm.priority}
-                onChange={(e) => setProjectForm({ ...projectForm, priority: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100"
-              >
-                <option value="High">High</option>
-                <option value="Medium">Medium</option>
-                <option value="Low">Low</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Start Date</label>
-              <input
-                type="date"
-                value={projectForm.start_date}
-                onChange={(e) => setProjectForm({ ...projectForm, start_date: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">End Date</label>
-              <input
-                type="date"
-                value={projectForm.end_date}
-                onChange={(e) => setProjectForm({ ...projectForm, end_date: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Budget</label>
-              <input
-                type="number"
-                value={projectForm.budget}
-                onChange={(e) => setProjectForm({ ...projectForm, budget: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100"
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700">Description</label>
-              <textarea
-                value={projectForm.description}
-                onChange={(e) => setProjectForm({ ...projectForm, description: e.target.value })}
-                rows={3}
-                className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-blue-500 focus:ring focus:ring-blue-100"
-              />
-            </div>
-            <div className="md:col-span-2">
+          )}
+        </>
+      )}
+
+      {/* SUMMARY MODAL */}
+      {showSummaryModal && selectedSummaryProject && projectSummary && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-4xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Project Summary - {selectedSummaryProject.name}
+              </h2>
               <button
-                type="submit"
-                disabled={actionLoading}
-                className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
+                onClick={() => { setShowSummaryModal(false); setSelectedSummaryProject(null); }}
+                className="text-gray-400 hover:text-gray-600"
               >
-                {actionLoading ? 'Creating...' : 'Create project'}
+                ✕
               </button>
             </div>
-          </form>
+
+            {/* Project Info */}
+            <div className="bg-gray-50 rounded-lg p-4 mb-6">
+              <h3 className="font-semibold text-gray-900 mb-2">Project Details</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-600">Name:</span>
+                  <span className="font-medium ml-2">{projectSummary.project?.name || selectedSummaryProject.name}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Status:</span>
+                  <span className={`font-medium ml-2 px-2 py-1 rounded-full text-xs ${
+                    projectSummary.project?.status === 'Completed' ? 'bg-green-100 text-green-700' :
+                    projectSummary.project?.status === 'Active' ? 'bg-blue-100 text-blue-700' :
+                    'bg-yellow-100 text-yellow-700'
+                  }`}>
+                    {projectSummary.project?.status || selectedSummaryProject.status}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Description:</span>
+                  <span className="font-medium ml-2">{projectSummary.project?.description || selectedSummaryProject.description}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Project Stats */}
+            <div className="bg-blue-50 rounded-lg p-4 mb-6">
+              <h3 className="font-semibold text-gray-900 mb-4">Statistics</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600">{projectSummary.tasks?.total || 0}</div>
+                  <div className="text-sm text-gray-600">Total Tasks</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">{projectSummary.tasks?.completed || 0}</div>
+                  <div className="text-sm text-gray-600">Completed Tasks</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-orange-600">{projectSummary.tasks?.inProgress || 0}</div>
+                  <div className="text-sm text-gray-600">In Progress</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-red-600">{(projectSummary.tasks?.total || 0) - (projectSummary.tasks?.completed || 0) - (projectSummary.tasks?.inProgress || 0)}</div>
+                  <div className="text-sm text-gray-600">Pending Tasks</div>
+                </div>
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-4">
+                <div className="text-center">
+                  <div className="text-xl font-bold text-purple-600">{projectSummary.totalHours || 0}h</div>
+                  <div className="text-sm text-gray-600">Total Hours</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xl font-bold text-red-600">{projectSummary.progressPercentage || 0}%</div>
+                  <div className="text-sm text-gray-600">Progress</div>
+                </div>
+              </div>
+
+              {/* Tasks by Stage */}
+              <div className="mt-6">
+                <h4 className="font-semibold text-gray-900 mb-3">Tasks by Stage</h4>
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(projectSummary.tasks?.byStage || {}).map(([stage, count]) => (
+                    <div key={stage} className="px-3 py-2 bg-white rounded-lg border">
+                      <div className="text-sm font-medium text-gray-900">{stage}: {count}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Activity */}
+            <div className="bg-green-50 rounded-lg p-4">
+              <h3 className="font-semibold text-gray-900 mb-4">Project Overview</h3>
+              <div className="text-center py-4 text-gray-500">
+                <p>Project summary loaded successfully</p>
+                <p className="text-sm mt-2">Activity timeline and detailed logs can be added in future updates</p>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
