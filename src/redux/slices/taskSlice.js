@@ -21,6 +21,7 @@ const formatRejectValue = (err) => {
 const initialState = {
   tasks: [],
   currentTask: null,
+  timeline: null,
   status: null,
   error: null,
 };
@@ -66,9 +67,9 @@ export const fetchSelectedTaskDetails = createAsyncThunk(
       else if (typeof taskIdsOrPayload === 'object' && taskIdsOrPayload.taskIds) body = { taskIds: taskIdsOrPayload.taskIds };
       else return thunkAPI.rejectWithValue('Missing taskIds');
 
-      const res = await httpPostService('api/projects/tasks/selected-details', body);
-      // Normalize response: expect { success:true, data: [...] }
-      const payload = res?.data ?? res;
+      const res = await httpPostService('api/tasks/selected-details', body);
+      // API returns { success: true, data: [...] }
+      const payload = res?.success ? res.data : res?.data || res;
       if (!payload) return [];
       if (Array.isArray(payload)) return payload;
       if (Array.isArray(payload.data)) return payload.data;
@@ -83,7 +84,7 @@ export const getTask = createAsyncThunk(
   'tasks/getTask',
   async (taskId, thunkAPI) => {
     try {
-      const res = await httpGetService(`api/projects/tasks/${taskId}`);
+      const res = await httpGetService(`api/tasks/${taskId}`);
       return res?.data || res || {};
     } catch (err) {
       return thunkAPI.rejectWithValue(formatRejectValue(err));
@@ -128,8 +129,9 @@ export const createTask = createAsyncThunk(
       if (payload.estimated_hours && !body.estimatedHours) body.estimatedHours = payload.estimated_hours;
       if (payload.time_alloted && !body.timeAlloted) body.timeAlloted = payload.time_alloted;
 
-      const res = await httpPostService('api/projects/tasks', body);
-      return res?.data || res || {};
+      const res = await httpPostService('api/tasks', body);
+      // API returns { success: true, message: "...", data: {...} }
+      return res?.success ? res.data : res?.data || res || {};
     } catch (err) {
       return thunkAPI.rejectWithValue(formatRejectValue(err));
     }
@@ -140,8 +142,9 @@ export const updateTask = createAsyncThunk(
   'tasks/updateTask',
   async ({ taskId, data }, thunkAPI) => {
     try {
-      const res = await httpPutService(`api/projects/tasks/${taskId}`, data);
-      return res?.data || res || {};
+      const res = await httpPutService(`api/tasks/${taskId}`, data);
+      // API returns { success: true, message: "...", data: {...} }
+      return res?.success ? res.data : res?.data || res || {};
     } catch (err) {
       return thunkAPI.rejectWithValue(formatRejectValue(err));
     }
@@ -152,8 +155,62 @@ export const deleteTask = createAsyncThunk(
   'tasks/deleteTask',
   async (taskId, thunkAPI) => {
     try {
-      const res = await httpDeleteService(`api/projects/tasks/${taskId}`);
-      return { id: taskId, ...((res && typeof res === 'object') ? res : {}) };
+      const res = await httpDeleteService(`api/tasks/${taskId}`);
+      // API returns { success: true, message: "..." }
+      return { id: taskId, success: res?.success, message: res?.message };
+    } catch (err) {
+      return thunkAPI.rejectWithValue(formatRejectValue(err));
+    }
+  }
+);
+
+// Task time tracking operations
+export const startTask = createAsyncThunk(
+  'tasks/startTask',
+  async (taskId, thunkAPI) => {
+    try {
+      const res = await httpPostService(`api/tasks/${taskId}/start`);
+      // API returns { success: true, message: "...", data: {...} }
+      return res?.success ? res.data : res?.data || res || {};
+    } catch (err) {
+      return thunkAPI.rejectWithValue(formatRejectValue(err));
+    }
+  }
+);
+
+export const pauseTask = createAsyncThunk(
+  'tasks/pauseTask',
+  async (taskId, thunkAPI) => {
+    try {
+      const res = await httpPostService(`api/tasks/${taskId}/pause`);
+      // API returns { success: true, message: "...", data: {...} }
+      return res?.success ? res.data : res?.data || res || {};
+    } catch (err) {
+      return thunkAPI.rejectWithValue(formatRejectValue(err));
+    }
+  }
+);
+
+export const completeTask = createAsyncThunk(
+  'tasks/completeTask',
+  async (taskId, thunkAPI) => {
+    try {
+      const res = await httpPostService(`api/tasks/${taskId}/complete`);
+      // API returns { success: true, message: "...", data: {...} }
+      return res?.success ? res.data : res?.data || res || {};
+    } catch (err) {
+      return thunkAPI.rejectWithValue(formatRejectValue(err));
+    }
+  }
+);
+
+export const getTaskTimeline = createAsyncThunk(
+  'tasks/getTaskTimeline',
+  async (taskId, thunkAPI) => {
+    try {
+      const res = await httpGetService(`api/tasks/${taskId}/timeline`);
+      // API returns { success: true, data: {...} }
+      return res?.success ? res.data : res?.data || res || [];
     } catch (err) {
       return thunkAPI.rejectWithValue(formatRejectValue(err));
     }
@@ -320,6 +377,85 @@ const taskSlice = createSlice({
       .addCase(deleteTask.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.payload || action.error?.message;
+      })
+
+      // Start Task
+      .addCase(startTask.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(startTask.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        // Update task status if needed
+        const taskId = action.meta.arg;
+        const taskIndex = state.tasks.findIndex(t => (t.id || t._id) === taskId);
+        if (taskIndex >= 0) {
+          state.tasks[taskIndex] = { ...state.tasks[taskIndex], ...action.payload };
+        }
+        if (state.currentTask && (state.currentTask.id || state.currentTask._id) === taskId) {
+          state.currentTask = { ...state.currentTask, ...action.payload };
+        }
+      })
+      .addCase(startTask.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload || action.error?.message;
+      })
+
+      // Pause Task
+      .addCase(pauseTask.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(pauseTask.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        const taskId = action.meta.arg;
+        const taskIndex = state.tasks.findIndex(t => (t.id || t._id) === taskId);
+        if (taskIndex >= 0) {
+          state.tasks[taskIndex] = { ...state.tasks[taskIndex], ...action.payload };
+        }
+        if (state.currentTask && (state.currentTask.id || state.currentTask._id) === taskId) {
+          state.currentTask = { ...state.currentTask, ...action.payload };
+        }
+      })
+      .addCase(pauseTask.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload || action.error?.message;
+      })
+
+      // Complete Task
+      .addCase(completeTask.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(completeTask.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        const taskId = action.meta.arg;
+        const taskIndex = state.tasks.findIndex(t => (t.id || t._id) === taskId);
+        if (taskIndex >= 0) {
+          state.tasks[taskIndex] = { ...state.tasks[taskIndex], ...action.payload };
+        }
+        if (state.currentTask && (state.currentTask.id || state.currentTask._id) === taskId) {
+          state.currentTask = { ...state.currentTask, ...action.payload };
+        }
+      })
+      .addCase(completeTask.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload || action.error?.message;
+      })
+
+      // Get Task Timeline
+      .addCase(getTaskTimeline.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(getTaskTimeline.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        // Store timeline data if needed
+        state.timeline = action.payload;
+      })
+      .addCase(getTaskTimeline.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload || action.error?.message;
       });
   },
 });
@@ -335,5 +471,6 @@ export const selectCurrentTask = (state) => state.tasks.currentTask;
 export const selectTaskById = (state, taskId) =>
   state.tasks.tasks.find((task) => (task.id || task._id) === taskId);
 export const selectSubTasks = (state) => state.tasks.subs || [];
+export const selectTaskTimeline = (state) => state.tasks.timeline;
 
 export default taskSlice.reducer;

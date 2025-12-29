@@ -9,10 +9,15 @@ import {
   createTask,
   updateTask,
   deleteTask,
+  startTask,
+  pauseTask,
+  completeTask,
+  getTaskTimeline,
   clearTasks,
   selectTasks,
   selectTaskStatus,
   selectTaskError,
+  selectTaskTimeline,
 } from '../redux/slices/taskSlice';
 import { fetchProjects, selectProjects } from '../redux/slices/projectSlice';
 import { fetchUsers, selectUsers, selectCurrentUser } from '../redux/slices/userSlice';
@@ -24,6 +29,7 @@ export default function Tasks() {
   const tasks = useSelector(selectTasks) || [];
   const status = useSelector(selectTaskStatus);
   const error = useSelector(selectTaskError);
+  const timeline = useSelector(selectTaskTimeline);
   const projects = useSelector(selectProjects) || [];
   const users = useSelector(selectUsers) || [];
 
@@ -47,6 +53,8 @@ export default function Tasks() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [activeStatusEdit, setActiveStatusEdit] = useState(null);
   const [isFetching, setIsFetching] = useState(false);
+  const [showTimeline, setShowTimeline] = useState(false);
+  const [selectedTimelineTask, setSelectedTimelineTask] = useState(null);
 
   const statusOptions = ['pending', 'in_progress', 'completed', 'on_hold'];
   const priorityOptions = ['low', 'medium', 'high'];
@@ -286,6 +294,55 @@ export default function Tasks() {
     } catch (err) {
       console.error('Delete error:', err);
       toast.error(err?.message || 'Delete failed');
+    }
+  };
+
+  // Time tracking handlers
+  const handleStartTask = async (task) => {
+    try {
+      const taskId = task.id || task._id || task.public_id;
+      await dispatch(startTask(taskId)).unwrap();
+      toast.success('Task timer started');
+      handleRefreshTasks();
+    } catch (err) {
+      console.error('Start task error:', err);
+      toast.error(err?.message || 'Failed to start task');
+    }
+  };
+
+  const handlePauseTask = async (task) => {
+    try {
+      const taskId = task.id || task._id || task.public_id;
+      await dispatch(pauseTask(taskId)).unwrap();
+      toast.success('Task timer paused');
+      handleRefreshTasks();
+    } catch (err) {
+      console.error('Pause task error:', err);
+      toast.error(err?.message || 'Failed to pause task');
+    }
+  };
+
+  const handleCompleteTask = async (task) => {
+    try {
+      const taskId = task.id || task._id || task.public_id;
+      await dispatch(completeTask(taskId)).unwrap();
+      toast.success('Task completed successfully');
+      handleRefreshTasks();
+    } catch (err) {
+      console.error('Complete task error:', err);
+      toast.error(err?.message || 'Failed to complete task');
+    }
+  };
+
+  const handleViewTimeline = async (task) => {
+    try {
+      const taskId = task.id || task._id || task.public_id;
+      await dispatch(getTaskTimeline(taskId)).unwrap();
+      setSelectedTimelineTask(task);
+      setShowTimeline(true);
+    } catch (err) {
+      console.error('Timeline error:', err);
+      toast.error(err?.message || 'Failed to load timeline');
     }
   };
 
@@ -892,6 +949,42 @@ export default function Tasks() {
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
+                        {/* Time Tracking Buttons */}
+                        {task.stage !== 'COMPLETED' && (
+                          <>
+                            {task.stage === 'IN_PROGRESS' ? (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handlePauseTask(task); }}
+                                className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                                title="Pause task timer"
+                              >
+                                ⏸️
+                              </button>
+                            ) : (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleStartTask(task); }}
+                                className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                title="Start task timer"
+                              >
+                                ▶️
+                              </button>
+                            )}
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleCompleteTask(task); }}
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              title="Complete task"
+                            >
+                              ✅
+                            </button>
+                          </>
+                        )}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleViewTimeline(task); }}
+                          className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                          title="View timeline"
+                        >
+                          📊
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -939,6 +1032,42 @@ export default function Tasks() {
                       title="Delete task"
                     >
                       <Trash2 className="w-4 h-4" />
+                    </button>
+                    {/* Time Tracking Buttons */}
+                    {task.stage !== 'COMPLETED' && (
+                      <>
+                        {task.stage === 'IN_PROGRESS' ? (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handlePauseTask(task); }}
+                            className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                            title="Pause task timer"
+                          >
+                            ⏸️
+                          </button>
+                        ) : (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleStartTask(task); }}
+                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                            title="Start task timer"
+                          >
+                            ▶️
+                          </button>
+                        )}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleCompleteTask(task); }}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Complete task"
+                        >
+                          ✅
+                        </button>
+                      </>
+                    )}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleViewTimeline(task); }}
+                      className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                      title="View timeline"
+                    >
+                      📊
                     </button>
                   </div>
                 </div>
@@ -1198,6 +1327,91 @@ export default function Tasks() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* TIMELINE MODAL */}
+      {showTimeline && selectedTimelineTask && timeline && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-4xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Task Timeline - {selectedTimelineTask.title || selectedTimelineTask.name}
+              </h2>
+              <button
+                onClick={() => { setShowTimeline(false); setSelectedTimelineTask(null); }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Timeline Summary */}
+            <div className="bg-gray-50 rounded-lg p-4 mb-6">
+              <h3 className="font-semibold text-gray-900 mb-2">Summary</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-600">Total Sessions:</span>
+                  <span className="font-medium ml-2">{timeline.summary?.total_sessions || 0}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Total Duration:</span>
+                  <span className="font-medium ml-2">{timeline.summary?.total_duration || 0} minutes</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Status:</span>
+                  <span className={`font-medium ml-2 px-2 py-1 rounded-full text-xs ${
+                    timeline.summary?.status === 'Completed' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                  }`}>
+                    {timeline.summary?.status || 'Unknown'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Timeline Events */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-gray-900">Timeline Events</h3>
+              {timeline.timeline && timeline.timeline.length > 0 ? (
+                <div className="space-y-3">
+                  {timeline.timeline.map((event, index) => (
+                    <div key={event.id || index} className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg">
+                      <div className="flex-shrink-0">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
+                          event.action === 'start' ? 'bg-green-100 text-green-700' :
+                          event.action === 'pause' ? 'bg-orange-100 text-orange-700' :
+                          event.action === 'complete' ? 'bg-blue-100 text-blue-700' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          {event.action === 'start' ? '▶️' :
+                           event.action === 'pause' ? '⏸️' :
+                           event.action === 'complete' ? '✅' : '📝'}
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium text-gray-900 capitalize">{event.action}</span>
+                          {event.duration && (
+                            <span className="text-sm text-gray-600">({event.duration} minutes)</span>
+                          )}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          {new Date(event.timestamp).toLocaleString()}
+                        </div>
+                        {event.user && (
+                          <div className="text-sm text-gray-500">by {event.user}</div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No timeline events found for this task.</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

@@ -26,6 +26,7 @@ const ManagerDashboard = () => {
   const [clients, setClients] = useState([]);
   const [projects, setProjects] = useState([]);
   const [employees, setEmployees] = useState([]);
+  const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -34,17 +35,19 @@ const ManagerDashboard = () => {
       setLoading(true);
       setError(null);
       try {
-        const [dashboardResponse, clientsResponse, projectsResponse, employeesResponse] = await Promise.all([
+        const [dashboardResponse, clientsResponse, projectsResponse, employeesResponse, tasksResponse] = await Promise.all([
           httpGetService('api/manager/dashboard'),
           httpGetService('api/manager/clients'),
           httpGetService('api/manager/projects'),
           httpGetService('api/manager/employees/all'),
+          httpGetService('api/manager/my-tasks'),
         ]);
 
         setMetrics(dashboardResponse?.data || dashboardResponse || {});
         setClients(normalizeList(clientsResponse));
         setProjects(normalizeList(projectsResponse));
         setEmployees(normalizeList(employeesResponse));
+        setTasks(normalizeList(tasksResponse));
       } catch (err) {
         const message = err?.message || err?.data?.message || 'Unable to load manager dashboard';
         setError(message);

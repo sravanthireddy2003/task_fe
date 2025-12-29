@@ -3,7 +3,7 @@
 // import { toast } from 'sonner';
 // import fetchWithTenant from '../utils/fetchWithTenant';
 // import { selectUser } from '../redux/slices/authSlice';
-// import { RefreshCw, AlertCircle, Calendar, Clock, User, Plus, CheckSquare, Check } from 'lucide-react';
+// import { RefreshCw, AlertCircle, Calendar, Clock, User, Plus, CheckSquare, Check, Eye, Filter, Trash2 } from 'lucide-react';
 // const ManagerTasks = () => {
 //   const user = useSelector(selectUser);
 //   const resources = user?.resources || {};
@@ -896,7 +896,7 @@ import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
 import fetchWithTenant from '../utils/fetchWithTenant';
 import { selectUser } from '../redux/slices/authSlice';
-import { RefreshCw, AlertCircle, Calendar, Clock, User, Plus, CheckSquare, Check, Eye, Filter } from 'lucide-react';
+import { RefreshCw, AlertCircle, Calendar, Clock, User, Plus, CheckSquare, Check, Eye, Filter, Trash2 } from 'lucide-react';
 
 const ManagerTasks = () => {
   const user = useSelector(selectUser);
@@ -1185,7 +1185,7 @@ const ManagerTasks = () => {
         client_id: selectedProject?.client?.public_id || selectedProject?.client?.id || selectedProject?.client_id,
         assigned_to: formData.assignedUsers,
       };
-      const resp = await fetchWithTenant('api/projects/tasks', {
+      const resp = await fetchWithTenant('api/tasks', {
         method: 'POST',
         body: JSON.stringify(payload),
       });
@@ -1222,12 +1222,12 @@ const ManagerTasks = () => {
     setReassigning(true);
     try {
       const projectId = selectedTask.project_id || selectedTask.projectId || detailProject?.id || detailProject?.public_id || detailProject?._id;
-      const taskId = selectedTask.id || selectedTask.public_id || selectedTask._id || selectedTask.internalId;
+      const taskId = selectedTask.id;
       const payload = {
         assigned_to: [selectedAssignee],
         projectId,
       };
-      const resp = await fetchWithTenant(`/api/projects/tasks/${encodeURIComponent(taskId)}`, {
+      const resp = await fetchWithTenant(`/api/tasks/${encodeURIComponent(taskId)}`, {
         method: 'PUT',
         body: JSON.stringify(payload),
       });
@@ -1252,6 +1252,39 @@ const ManagerTasks = () => {
       toast.error(err?.message || 'Unable to reassign task');
     } finally {
       setReassigning(false);
+    }
+  };
+
+  // Handle task deletion
+  const handleDeleteTask = async (task) => {
+    if (!window.confirm('Are you sure you want to delete this task? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const taskId = task.id;
+      console.log('Deleting task with ID:', taskId);
+      
+      const resp = await fetchWithTenant(`/api/tasks/${encodeURIComponent(taskId)}`, {
+        method: 'DELETE',
+      });
+
+      if (resp?.success) {
+        toast.success(resp?.message || 'Task deleted successfully');
+        
+        // Remove the task from local state
+        setTasks(prevTasks => prevTasks.filter(t => t.id !== taskId));
+        
+        // Clear selected task if it was the deleted one
+        if (selectedTask?.id === taskId) {
+          setSelectedTask(null);
+        }
+      } else {
+        toast.error(resp?.message || 'Failed to delete task');
+      }
+    } catch (err) {
+      console.error('Delete task error:', err);
+      toast.error(err?.message || 'Unable to delete task');
     }
   };
 
@@ -1489,10 +1522,10 @@ const ManagerTasks = () => {
                     </tr>
                   ) : (
                     filteredTasks.map((task) => {
-                      const isActive = selectedTask?.id === task.id || selectedTask?.public_id === task.public_id;
+                      const isActive = selectedTask?.id === task.id;
                       return (
                         <tr 
-                          key={task.id || task.public_id || task._id || task.internalId}
+                          key={task.id}
                           className={`border-b transition-colors ${isActive ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
                         >
                           <td className="p-4">
@@ -1559,6 +1592,13 @@ const ManagerTasks = () => {
                                 title="View details"
                               >
                                 <Eye className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteTask(task)}
+                                className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                                title="Delete task"
+                              >
+                                <Trash2 className="w-4 h-4" />
                               </button>
                             </div>
                           </td>
@@ -1817,9 +1857,9 @@ const ManagerTasks = () => {
                   }}
                   className="w-full h-48 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  {employees.filter(emp => (emp.role === 'Employee' || emp.role === 'employee')).map(emp => (
-                    <option key={emp.public_id || emp.id || emp._id} value={emp.public_id || emp.id || emp._id}>
-                      {emp.name || emp.email || 'Unnamed Employee'}
+                  {employees.map(emp => (
+                    <option key={emp.internalId || emp.id || emp._id} value={emp.internalId || emp.id || emp._id}>
+                      {emp.name || 'Unnamed'} ({emp.email})
                     </option>
                   ))}
                 </select>

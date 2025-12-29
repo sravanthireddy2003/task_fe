@@ -12,36 +12,67 @@ const EmployeeDashboard = () => {
   const resources = user?.resources || {};
 
   const [tasks, setTasks] = useState([]);
+  const [dashboardMetrics, setDashboardMetrics] = useState({});
+  const [clients, setClients] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const load = async () => {
+    const loadDashboard = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        const resp = await fetchWithTenant('/api/employee/my-tasks');
-        if (!resp.ok) throw new Error('Failed to load tasks');
-        const data = await resp.json();
-        setTasks(data.data || []);
+        const [dashboardResponse, clientsResponse, projectsResponse, tasksResponse] = await Promise.all([
+          fetchWithTenant('/api/employee/dashboard'),
+          fetchWithTenant('/api/employee/clients'),
+          fetchWithTenant('/api/employee/projects'),
+          fetchWithTenant('/api/employee/my-tasks'),
+        ]);
+
+        setDashboardMetrics(dashboardResponse?.data || dashboardResponse || {});
+        setClients(normalizeList(clientsResponse));
+        setProjects(normalizeList(projectsResponse));
+        setTasks(normalizeList(tasksResponse));
       } catch (err) {
-        setError(err.message || 'Error');
+        const message = err?.message || err?.data?.message || 'Unable to load employee dashboard';
+        setError(message);
       } finally {
         setLoading(false);
       }
     };
-    load();
+
+    loadDashboard();
   }, []);
+
+  const normalizeList = (payload) => {
+    if (!payload) return [];
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload.data)) return payload.data;
+    return [];
+  };
 
   const kpis = useMemo(
     () => [
       {
         key: 'assigned',
         label: 'Assigned to me',
-        value: metrics.myTasks ?? 0,
+        value: dashboardMetrics.taskCount ?? metrics.myTasks ?? 0,
       },
       {
         key: 'completed',
         label: 'Completed',
-        value: metrics.completedTasks ?? 0,
+        value: dashboardMetrics.completedTasks ?? metrics.completedTasks ?? 0,
+      },
+      {
+        key: 'projects',
+        label: 'My Projects',
+        value: dashboardMetrics.projectCount ?? projects.length ?? 0,
+      },
+      {
+        key: 'clients',
+        label: 'My Clients',
+        value: dashboardMetrics.clientCount ?? clients.length ?? 0,
       },
       {
         key: 'access',
@@ -54,8 +85,11 @@ const EmployeeDashboard = () => {
         value: modules.length,
       },
     ],
-    [metrics, resources, modules.length]
+    [dashboardMetrics, metrics, projects.length, clients.length, resources, modules.length]
   );
+
+  const latestClients = useMemo(() => clients.slice(0, 5), [clients]);
+  const latestProjects = useMemo(() => projects.slice(0, 5), [projects]);
 
   return (
     <div className="space-y-6">
@@ -67,7 +101,7 @@ const EmployeeDashboard = () => {
       </div>
 
       {/* KPI row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {kpis.map((item) => (
           <div
             key={item.key}
@@ -79,6 +113,71 @@ const EmployeeDashboard = () => {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Clients and Projects Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Latest Clients */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">My Clients</h2>
+            <Link to="/employee/clients" className="text-sm text-blue-600 hover:text-blue-800">
+              View all
+            </Link>
+          </div>
+          {latestClients.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <p>No clients assigned yet</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {latestClients.map((client) => (
+                <div key={client.id || client._id || client.public_id} className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50">
+                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                    <span className="text-sm font-medium text-blue-600">
+                      {(client.name || client.company_name || 'C').charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-sm font-medium text-gray-900">{client.name || client.company_name}</h3>
+                    <p className="text-xs text-gray-500">{client.email || 'No email'}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Latest Projects */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">My Projects</h2>
+            <Link to="/employee/projects" className="text-sm text-blue-600 hover:text-blue-800">
+              View all
+            </Link>
+          </div>
+          {latestProjects.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <p>No projects assigned yet</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {latestProjects.map((project) => (
+                <div key={project.id || project._id || project.public_id} className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50">
+                  <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                    <span className="text-sm font-medium text-green-600">
+                      {(project.name || 'P').charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-sm font-medium text-gray-900">{project.name}</h3>
+                    <p className="text-xs text-gray-500">Status: {project.status || 'Planning'}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Module shortcuts */}
