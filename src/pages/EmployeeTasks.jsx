@@ -1139,14 +1139,17 @@ const EmployeeTasks = () => {
                   const taskId = normalizeId(task);
                   const isActive = taskId === normalizeId(selectedTask);
                   const hasPendingReassignment = reassignmentRequests[taskId]?.status === 'PENDING';
+                  const isCompleted = (task.status || '').toLowerCase() === 'completed';
                   return (
                     <button
                       key={taskId || task.title}
                       type="button"
-                      disabled={hasPendingReassignment}
+                      disabled={hasPendingReassignment || isCompleted}
                       onClick={() => setSelectedTask(task)}
                       className={`w-full rounded-2xl border px-4 py-3 text-left shadow-sm transition ${
-                        hasPendingReassignment 
+                        isCompleted 
+                          ? 'border-green-300 bg-green-50 opacity-75 cursor-not-allowed' 
+                          : hasPendingReassignment 
                           ? 'border-orange-300 bg-orange-50 opacity-75 cursor-not-allowed' 
                           : `hover:border-blue-300 hover:bg-blue-50 ${
                               isActive ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'
@@ -1176,6 +1179,11 @@ const EmployeeTasks = () => {
                           <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-0.5 text-blue-600 flex items-center gap-1">
                             <CheckSquare className="w-3 h-3" />
                             {task.checklist.filter(i => i.status === 'Completed').length}/{task.checklist.length}
+                          </span>
+                        )}
+                        {isCompleted && task.total_time_hours && (
+                          <span className="rounded-full border border-green-200 bg-green-50 px-3 py-0.5 text-green-600 font-medium">
+                            ✓ {task.total_time_hours.toFixed(2)}h
                           </span>
                         )}
                         {hasPendingReassignment && (
@@ -1218,13 +1226,24 @@ const EmployeeTasks = () => {
                   </div>
                 )}
 
+                {/* Completed Task Alert */}
+                {(selectedTask.status || '').toLowerCase() === 'completed' && (
+                  <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+                    <p className="font-semibold">✓ Task Completed</p>
+                    <p className="text-xs">This task has been completed. No further actions are allowed.</p>
+                    {selectedTask.total_time_hours && (
+                      <p className="text-xs font-medium mt-2">Total Working Hours: <span className="font-bold">{selectedTask.total_time_hours.toFixed(2)}h</span></p>
+                    )}
+                  </div>
+                )}
+
                 {/* Employee Actions */}
                 {userRole === 'employee' && (
                   <div className="flex flex-wrap gap-2">
                     {selectedTask.status === 'Pending' || selectedTask.status === 'To Do' ? (
                       <button
                         onClick={() => handleStartTask(normalizeId(selectedTask))}
-                        disabled={reassignmentRequests[normalizeId(selectedTask)]?.status === 'PENDING'}
+                        disabled={reassignmentRequests[normalizeId(selectedTask)]?.status === 'PENDING' || (selectedTask.status || '').toLowerCase() === 'completed'}
                         className="rounded-full border border-green-200 px-3 py-1 text-green-600 hover:bg-green-50 flex items-center gap-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Play className="w-3 h-3" />
@@ -1236,7 +1255,7 @@ const EmployeeTasks = () => {
                       <>
                         <button
                           onClick={() => handlePauseTask(normalizeId(selectedTask))}
-                          disabled={reassignmentRequests[normalizeId(selectedTask)]?.status === 'PENDING'}
+                          disabled={reassignmentRequests[normalizeId(selectedTask)]?.status === 'PENDING' || (selectedTask.status || '').toLowerCase() === 'completed'}
                           className="rounded-full border border-orange-200 px-3 py-1 text-orange-600 hover:bg-orange-50 flex items-center gap-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Pause className="w-3 h-3" />
@@ -1244,7 +1263,8 @@ const EmployeeTasks = () => {
                         </button>
                         <button
                           onClick={() => handleMoveToReview(normalizeId(selectedTask))}
-                          className="rounded-full border border-purple-200 px-3 py-1 text-purple-600 hover:bg-purple-50 flex items-center gap-1 text-sm"
+                          disabled={(selectedTask.status || '').toLowerCase() === 'completed'}
+                          className="rounded-full border border-purple-200 px-3 py-1 text-purple-600 hover:bg-purple-50 flex items-center gap-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Check className="w-3 h-3" />
                           Move to Review
@@ -1255,7 +1275,7 @@ const EmployeeTasks = () => {
                     {selectedTask.status === 'On Hold' ? (
                       <button
                         onClick={() => handleResumeTask(normalizeId(selectedTask))}
-                        disabled={reassignmentRequests[normalizeId(selectedTask)]?.status === 'PENDING'}
+                        disabled={reassignmentRequests[normalizeId(selectedTask)]?.status === 'PENDING' || (selectedTask.status || '').toLowerCase() === 'completed'}
                         className="rounded-full border border-blue-200 px-3 py-1 text-blue-600 hover:bg-blue-50 flex items-center gap-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <RotateCcw className="w-3 h-3" />
@@ -1265,7 +1285,7 @@ const EmployeeTasks = () => {
 
                     <button
                       onClick={() => handleOpenTimeline(selectedTask)}
-                      disabled={reassignmentRequests[normalizeId(selectedTask)]?.status === 'PENDING'}
+                      disabled={reassignmentRequests[normalizeId(selectedTask)]?.status === 'PENDING' || (selectedTask.status || '').toLowerCase() === 'completed'}
                       className="rounded-full border border-indigo-200 px-3 py-1 text-indigo-600 hover:bg-indigo-50 flex items-center gap-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Clock className="w-3 h-3" />

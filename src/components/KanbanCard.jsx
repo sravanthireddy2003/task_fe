@@ -70,6 +70,7 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentR
   const taskId = task.id || task._id || task.public_id;
   const reassignmentRequest = reassignmentRequests[taskId];
   const hasPendingReassignment = reassignmentRequest?.status === 'PENDING';
+  const isCompleted = (task.status || '').toLowerCase() === 'completed';
 
   const formatDuration = (seconds) => {
     const h = Math.floor(seconds / 3600);
@@ -84,13 +85,13 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentR
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...(hasPendingReassignment ? {} : { ...listeners })}
+      {...(hasPendingReassignment || isCompleted ? {} : { ...listeners })}
       className={`bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow ${
         isDragging || isSortableDragging ? 'opacity-50' : ''
       } ${
-        hasPendingReassignment ? 'border-orange-300 bg-orange-50 opacity-75 cursor-not-allowed' : 'cursor-pointer'
+        isCompleted ? 'border-green-300 bg-green-50 opacity-75 cursor-not-allowed' : (hasPendingReassignment ? 'border-orange-300 bg-orange-50 opacity-75 cursor-not-allowed' : 'cursor-pointer')
       }`}
-      onClick={hasPendingReassignment ? undefined : onClick}
+      onClick={hasPendingReassignment || isCompleted ? undefined : onClick}
     >
       {/* Task Title */}
       <h4 className="font-medium text-gray-900 mb-2 line-clamp-2">
@@ -174,10 +175,24 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentR
         </div>
       )}
 
+      {/* Total Working Hours for Completed Tasks */}
+      {isCompleted && task.total_time_hours && (
+        <div className="mt-2 text-xs text-green-700 bg-green-100 px-2 py-1 rounded font-medium">
+          ✓ Total Hours: {task.total_time_hours.toFixed(2)}h
+        </div>
+      )}
+
       {/* Reassignment Status */}
       {hasPendingReassignment && (
         <div className="mt-2 text-xs text-orange-700 bg-orange-100 px-2 py-1 rounded">
           Reassignment Pending
+        </div>
+      )}
+
+      {/* Completed Status Badge */}
+      {isCompleted && (
+        <div className="mt-2 text-xs text-green-700 bg-green-100 px-2 py-1 rounded font-medium">
+          ✓ Completed
         </div>
       )}
     </div>
