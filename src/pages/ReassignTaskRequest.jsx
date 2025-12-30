@@ -3,7 +3,7 @@ import { X } from 'lucide-react';
 import { toast } from 'sonner';
 import fetchWithTenant from '../utils/fetchWithTenant';
 
-const ReassignTaskRequestModal = ({ selectedTask, onClose }) => {
+const ReassignTaskRequestModal = ({ selectedTask, onClose, onSuccess }) => {
   const [reason, setReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -18,15 +18,22 @@ const ReassignTaskRequestModal = ({ selectedTask, onClose }) => {
 
     setSubmitting(true);
     try {
-      const taskId = selectedTask.id || selectedTask._id || selectedTask.public_id;
-const resp = await fetchWithTenant(`/api/tasks/${taskId}/request-reassignment`, {
-  method: 'POST',
-  body: JSON.stringify({
-    reason: reason.trim(),
-  }),
+      const publicId = selectedTask.public_id || selectedTask.id || selectedTask._id;
+      
+      const resp = await fetchWithTenant(`/api/tasks/${publicId}/request-reassignment`, {
+        method: 'POST',
+        body: JSON.stringify({
+          reason: reason.trim(),
+        }),
       });
 
       toast.success(resp?.message || 'Task reassignment request submitted to manager');
+      
+      // Call onSuccess with response data to update parent component
+      if (onSuccess && typeof onSuccess === 'function') {
+        onSuccess(resp);
+      }
+      
       setReason('');
       onClose();
     } catch (err) {

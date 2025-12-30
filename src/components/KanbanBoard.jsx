@@ -22,7 +22,12 @@ import { toast } from 'sonner';
 
 const KanbanBoard = ({
   tasks = [],
+  kanbanData,
   onUpdateTask,
+  onStartTask,
+  onPauseTask,
+  onResumeTask,
+  onCompleteTask,
   onLoadTasks,
   userRole = 'employee',
   projectId = null,
@@ -40,18 +45,76 @@ const KanbanBoard = ({
   );
 
   // Organize tasks into columns based on status
-  const columns = useMemo(() => ({
-    'PENDING': tasks.filter(task => task.status === 'PENDING'),
-    'To Do': tasks.filter(task => task.status === 'To Do'),
-    'In Progress': tasks.filter(task => task.status === 'In Progress'),
-    'On Hold': tasks.filter(task => task.status === 'On Hold'),
-    'Review': tasks.filter(task => task.status === 'Review'),
-    'Completed': tasks.filter(task => task.status === 'Completed')
-  }), [tasks]);
+  const columns = useMemo(() => {
+    console.log('KanbanBoard columns useMemo:', { kanbanData, tasks });
+    
+    // Define the standard columns from the guide
+    const standardColumns = {
+      'To Do': [],
+      'In Progress': [],
+      'On Hold': [],
+      'Completed': []
+    };
+
+    if (kanbanData && Array.isArray(kanbanData) && kanbanData.length > 0) {
+      return kanbanData.reduce((acc, group) => {
+        // Map uppercase status values to display names
+        let displayStatus = 'To Do';
+        const normalizedStatus = (group.status || '').toUpperCase();
+        
+        if (normalizedStatus === 'PENDING' || normalizedStatus === 'TO_DO') {
+          displayStatus = 'To Do';
+        } else if (normalizedStatus === 'IN_PROGRESS') {
+          displayStatus = 'In Progress';
+        } else if (normalizedStatus === 'ON_HOLD') {
+          displayStatus = 'On Hold';
+        } else if (normalizedStatus === 'COMPLETED') {
+          displayStatus = 'Completed';
+        }
+        
+        if (acc[displayStatus]) {
+          acc[displayStatus] = [...acc[displayStatus], ...(group.tasks || [])];
+        } else {
+          acc[displayStatus] = group.tasks || [];
+        }
+        return acc;
+      }, standardColumns);
+    } else {
+      return ({
+        'To Do': tasks.filter(task => {
+          const s = (task.status || task.stage || '').toUpperCase();
+          return s === 'PENDING' || s === 'TO_DO';
+        }),
+        'In Progress': tasks.filter(task => {
+          const s = (task.status || task.stage || '').toUpperCase();
+          return s === 'IN_PROGRESS';
+        }),
+        'On Hold': tasks.filter(task => {
+          const s = (task.status || task.stage || '').toUpperCase();
+          return s === 'ON_HOLD';
+        }),
+        'Completed': tasks.filter(task => {
+          const s = (task.status || task.stage || '').toUpperCase();
+          return s === 'COMPLETED';
+        })
+      });
+    }
+  }, [tasks, kanbanData]);
 
   const handleDragStart = (event) => {
     const { active } = event;
     const task = tasks.find(t => t.id === active.id || t._id === active.id || t.public_id === active.id);
+    
+    // Check if task has pending reassignment request
+    if (task) {
+      const taskId = task.id || task._id || task.public_id;
+      const reassignmentRequest = reassignmentRequests[taskId];
+      if (reassignmentRequest?.status === 'PENDING') {
+        toast.error('You have submitted a reassignment request. Task is locked until manager responds.');
+        return;
+      }
+    }
+    
     setActiveTask(task);
   };
 
@@ -67,6 +130,14 @@ const KanbanBoard = ({
     // Find the task
     const task = tasks.find(t => t.id === activeId || t._id === activeId || t.public_id === activeId);
     if (!task) return;
+
+    // Check if task has pending reassignment request
+    const taskId = task.id || task._id || task.public_id;
+    const reassignmentRequest = reassignmentRequests[taskId];
+    if (reassignmentRequest?.status === 'PENDING') {
+      toast.error('You have submitted a reassignment request. Task is locked until manager responds.');
+      return;
+    }
 
     // Determine target column
     let targetColumn = null;
@@ -89,26 +160,33 @@ const KanbanBoard = ({
 
     if (!targetColumn) return;
 
-    // Map column names to status values
-    const statusMap = {
-      'PENDING': 'PENDING',
-      'To Do': 'To Do',
-      'In Progress': 'In Progress',
-      'On Hold': 'On Hold',
-      'Review': 'Review',
-      'Completed': 'Completed'
-    };
+    const currentStatus = task.status || task.stage;
 
-    const newStatus = statusMap[targetColumn];
-    if (!newStatus) return;
-
-    // Update task status
+    // Strict Kanban Workflow Transitions
     try {
-      const taskId = task.id || task._id || task.public_id;
-      await onUpdateTask(taskId, { status: newStatus });
-      // Reload tasks
-      if (onLoadTasks) {
-        onLoadTasks();
+      if (targetColumn === 'In Progress') {
+        if (currentStatus === 'PENDING' || currentStatus === 'Pending' || currentStatus === 'To Do' || 
+            currentStatus === 'PENDING' || currentStatus === 'TO_DO' || currentStatus === 'TO DO') {
+          await onStartTask(taskId);
+        } else if (currentStatus === 'On Hold' || currentStatus === 'ON_HOLD') {
+          await onResumeTask(taskId);
+        } else {
+          toast.error(`Cannot move from ${currentStatus} to In Progress`);
+        }
+      } else if (targetColumn === 'On Hold') {
+        if (currentStatus === 'In Progress' || currentStatus === 'IN_PROGRESS') {
+          await onPauseTask(taskId);
+        } else {
+          toast.error(`Cannot move from ${currentStatus} to On Hold`);
+        }
+      } else if (targetColumn === 'Completed') {
+        if (currentStatus === 'In Progress' || currentStatus === 'IN_PROGRESS') {
+          await onCompleteTask(taskId);
+        } else {
+          toast.error(`Cannot move from ${currentStatus} to Completed`);
+        }
+      } else if (targetColumn === 'To Do') {
+        toast.error(`Cannot move back to To Do`);
       }
     } catch (error) {
       console.error('Failed to update task status:', error);
@@ -125,7 +203,7 @@ const KanbanBoard = ({
     setSelectedTask(null);
   };
 
-  const columnOrder = ['PENDING', 'To Do', 'In Progress', 'On Hold', 'Review', 'Completed'];
+  const columnOrder = ['To Do', 'In Progress', 'On Hold', 'Completed'];
 
   return (
     <div className="w-full">

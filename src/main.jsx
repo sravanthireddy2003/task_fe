@@ -4,103 +4,42 @@ import { Provider } from "react-redux";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App.jsx";
 import "./index.css";
-import { toast } from "sonner";
-
+ 
 import store from "./redux/store";
-import { setTokens, getAccessToken, getRefreshToken, clearTokens } from "./utils/tokenService";
+import { setTokens, getAccessToken, getRefreshToken } from "./utils/tokenService";
 import { setAuthToken } from "./App/httpHandler";
-import { logout, getProfile, refreshToken } from "./redux/slices/authSlice";
-
+import { refreshToken } from "./redux/slices/authSlice";
+ 
 // Ensure tenantId default from environment is persisted for API calls
 try {
   const defaultTenant = import.meta.env.VITE_TENANT_ID || null;
   if (defaultTenant && !localStorage.getItem("tenantId")) {
     localStorage.setItem("tenantId", defaultTenant);
   }
-} catch (e) {
-  // Ignore errors
-}
-
-// Bootstrapping sequence: initialize tokens/axios, try silent refresh, then render
+} catch (e) {}
+ 
+// ✅ FIXED: Bootstrapping sequence - NO DEV TOKEN AUTO-LOGIN
 async function boot() {
   try {
-    // Load dev seed if exists (optional)
-    try {
-      const mod = await import("./dev/dev_token");
-      const seed = mod?.DEV_SEED;
-      if (seed?.token) {
-        setTokens(seed.token, seed.refreshToken || null, "local");
-        localStorage.setItem("userInfo", JSON.stringify(seed.user));
-        localStorage.setItem("user", JSON.stringify(seed.user));
-        localStorage.setItem("tm_access_token", seed.token);
-        localStorage.setItem("accessToken", seed.token);
-      }
-    } catch (e) {
-      // no dev seed — ignore
-    }
-
-    // Listen for logout events from interceptor
-    if (typeof window !== 'undefined') {
-      window.addEventListener('auth:logout', () => {
-        store.dispatch(logout());
-      });
-    }
-
-    // Initialize axios default Authorization header
+    // ✅ STEP 1: ONLY load existing tokens from localStorage (NO dev seed)
     const access = getAccessToken();
     const refresh = getRefreshToken();
-    
-    console.log('🚀 App booting...');
-    console.log('📝 Access token exists:', !!access);
-    console.log('📝 Refresh token exists:', !!refresh);
-    
-    if (refresh) {
-      setAuthToken(access || null, refresh, "local");
-
-      // Try to refresh token on app start if we have a refresh token
+   
+    if (access) {
+      setAuthToken(access, refresh || null, "local");
+ 
+      // ✅ STEP 2: Try silent refresh ONLY if valid token exists
       try {
-        console.log('🔄 Attempting token refresh on startup...');
-        const refreshResult = await store.dispatch(refreshToken()).unwrap();
-        console.log('✅ Token refresh successful on startup');
-        
-        // User is updated from refresh response, no need for separate profile fetch
-      } catch (refreshErr) {
-        // Handle refresh token failures
-        const errorMsg = refreshErr?.message || String(refreshErr);
-        console.warn('⚠️ Token refresh failed:', errorMsg);
-        
-        // Only clear tokens and logout for actual authentication errors
-        const isAuthError = errorMsg.includes('401') || 
-                          errorMsg.includes('Session expired') || 
-                          errorMsg.includes('Invalid refresh token') ||
-                          errorMsg.includes('Refresh token expired');
-        
-        if (isAuthError) {
-          console.log('🔒 Authentication error detected, logging out...');
-          clearTokens();
-          localStorage.removeItem("userInfo");
-          store.dispatch(logout());
-          setTimeout(() => {
-            toast.error("Your session has expired. Please login again.");
-          }, 100);
-        } else {
-          // For network errors, server down, etc., keep tokens and continue
-          console.log('🌐 Non-auth error, keeping tokens:', errorMsg);
-          // Set auth token with existing tokens
-          setAuthToken(access || null, refresh, "local");
-        }
-      }
-    } else {
-      // No refresh token available
-      console.log('📝 No refresh token found, proceeding without auto-refresh');
-      if (access) {
-        setAuthToken(access, null, "local");
+        await store.dispatch(refreshToken()).unwrap();
+      } catch (err) {
+        console.warn("Token refresh on startup failed", err);
+        // ✅ Clear invalid tokens on refresh fail
+        localStorage.removeItem("tm_access_token");
+        localStorage.removeItem("accessToken");
       }
     }
-  } catch (error) {
-    console.error("💥 Boot error:", error);
+    // ✅ NO DEV SEED - Let user login normally
   } finally {
-    console.log('🎬 Rendering app...');
     ReactDOM.createRoot(document.getElementById("root")).render(
       <Provider store={store}>
         <BrowserRouter>
@@ -110,5 +49,6 @@ async function boot() {
     );
   }
 }
-
+ 
 boot();
+ 

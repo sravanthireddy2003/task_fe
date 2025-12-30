@@ -1,9 +1,31 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Clock, User, Flag, Calendar } from 'lucide-react';
+import { Clock, User, Flag, Calendar, CheckSquare } from 'lucide-react';
 
 const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentRequests = {} }) => {
+  const [liveTime, setLiveTime] = useState(task.total_duration || 0);
+
+  useEffect(() => {
+    let interval;
+    const status = task.status || task.stage;
+    
+    if (status === 'In Progress' && task.started_at) {
+      const startTime = new Date(task.started_at).getTime();
+      const baseDuration = task.total_duration || 0;
+
+      interval = setInterval(() => {
+        const now = new Date().getTime();
+        const elapsed = Math.floor((now - startTime) / 1000);
+        setLiveTime(baseDuration + elapsed);
+      }, 1000);
+    } else {
+      setLiveTime(task.total_duration || 0);
+    }
+
+    return () => clearInterval(interval);
+  }, [task.status, task.stage, task.total_duration, task.started_at]);
+
   const {
     attributes,
     listeners,
@@ -48,6 +70,14 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentR
   const taskId = task.id || task._id || task.public_id;
   const reassignmentRequest = reassignmentRequests[taskId];
   const hasPendingReassignment = reassignmentRequest?.status === 'PENDING';
+
+  const formatDuration = (seconds) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    if (h > 0) return `${h}h ${m}m ${s}s`;
+    return `${m}m ${s}s`;
+  };
 
   return (
     <div
@@ -125,11 +155,21 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentR
       )}
 
       {/* Timer/Time Tracking */}
-      {task.total_duration && (
+      {(liveTime > 0 || (task.status || task.stage) === 'In Progress') && (
         <div className="flex items-center gap-1">
-          <Clock className="w-3 h-3 text-gray-400" />
+          <Clock className={`w-3 h-3 ${(task.status || task.stage) === 'In Progress' ? 'text-blue-500 animate-pulse' : 'text-gray-400'}`} />
+          <span className={`text-xs font-medium ${(task.status || task.stage) === 'In Progress' ? 'text-blue-600' : 'text-gray-600'}`}>
+            {formatDuration(liveTime)}
+          </span>
+        </div>
+      )}
+
+      {/* Checklist Progress */}
+      {task.checklist && task.checklist.length > 0 && (
+        <div className="flex items-center gap-1 mt-2">
+          <CheckSquare className="w-3 h-3 text-gray-400" />
           <span className="text-xs text-gray-600">
-            {Math.floor(task.total_duration / 3600)}h {Math.floor((task.total_duration % 3600) / 60)}m
+            {task.checklist.filter(i => i.status === 'Completed').length}/{task.checklist.length} items
           </span>
         </div>
       )}

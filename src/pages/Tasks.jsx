@@ -1,39 +1,32 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Edit2, Trash2, AlertCircle, Filter, List, Grid, Calendar, Clock, User, RefreshCw, Kanban } from 'lucide-react';
+import { Plus, Edit2, Trash2, AlertCircle, Filter, List, Grid, Calendar, Clock, User, RefreshCw } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'sonner';
-
+ 
 import {
   fetchTasks,
   fetchSelectedTaskDetails,
   createTask,
   updateTask,
   deleteTask,
-  startTask,
-  pauseTask,
-  completeTask,
-  getTaskTimeline,
   clearTasks,
   selectTasks,
   selectTaskStatus,
   selectTaskError,
-  selectTaskTimeline,
 } from '../redux/slices/taskSlice';
 import { fetchProjects, selectProjects } from '../redux/slices/projectSlice';
 import { fetchUsers, selectUsers, selectCurrentUser } from '../redux/slices/userSlice';
-import KanbanBoard from '../components/KanbanBoard';
-
+ 
 export default function Tasks() {
   const dispatch = useDispatch();
-
+ 
   // Redux state
   const tasks = useSelector(selectTasks) || [];
   const status = useSelector(selectTaskStatus);
   const error = useSelector(selectTaskError);
-  const timeline = useSelector(selectTaskTimeline);
   const projects = useSelector(selectProjects) || [];
   const users = useSelector(selectUsers) || [];
-
+ 
   // Local UI state
   const [view, setView] = useState('list');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -50,71 +43,69 @@ export default function Tasks() {
     priority: 'medium',
     status: 'pending',
   });
-
+ 
   const [filterStatus, setFilterStatus] = useState('all');
   const [activeStatusEdit, setActiveStatusEdit] = useState(null);
   const [isFetching, setIsFetching] = useState(false);
-  const [showTimeline, setShowTimeline] = useState(false);
-  const [selectedTimelineTask, setSelectedTimelineTask] = useState(null);
-
+ 
   const statusOptions = ['pending', 'in_progress', 'completed', 'on_hold'];
   const priorityOptions = ['low', 'medium', 'high'];
-
+ 
   const isLoading = status === 'loading';
-
+ 
   // Fetch projects and users on initial load
   useEffect(() => {
     console.log('Initial useEffect - fetching projects and users');
     dispatch(fetchProjects());
     dispatch(fetchUsers());
   }, [dispatch]);
-
+ 
   // Debug: Log when selectedProjectId changes
   useEffect(() => {
     console.log('selectedProjectId changed to:', selectedProjectId);
   }, [selectedProjectId]);
-
+ 
   // Debug: Log tasks and projects
   useEffect(() => {
     console.log('Tasks updated:', tasks.length);
     console.log('Projects available:', projects.length);
   }, [tasks, projects]);
-
+ 
   // Handle project selection change - FIXED VERSION
   const handleProjectChange = async (e) => {
     const projectId = e.target.value;
     console.log('handleProjectChange called with projectId:', projectId);
     setSelectedProjectId(projectId);
-
+ 
     if (projectId === 'all') {
       console.log('Clearing tasks for "All Projects"');
       dispatch(clearTasks());
       return;
     }
-
+ 
     // Validate project exists
     const selectedProject = projects.find(p =>
       p.id === projectId || p._id === projectId || p.public_id === projectId
     );
-
+ 
     if (!selectedProject) {
       console.error('Selected project not found in projects list');
       toast.error('Selected project not found');
       return;
     }
-
+ 
     console.log('Selected project found:', selectedProject.name);
-
+ 
     // Fetch tasks for the selected project
     setIsFetching(true);
     try {
       console.log('Dispatching fetchTasks with project_id:', projectId);
-
+ 
       // IMPORTANT: Make sure we're passing the correct parameter name
       // The fetchTasks thunk expects { project_id: value }
       const result = await dispatch(fetchTasks({ project_id: projectId }));
       console.log('fetchTasks result:', result);
-
+ 
       if (fetchTasks.fulfilled.match(result)) {
         console.log('Tasks fetched successfully:', result.payload?.length || 0, 'tasks');
         toast.success(`Loaded ${result.payload?.length || 0} tasks for ${selectedProject.name}`);
@@ -129,7 +120,7 @@ export default function Tasks() {
       setIsFetching(false);
     }
   };
-
+ 
   // Alternative: Fetch tasks when selectedProjectId changes (useEffect approach)
   useEffect(() => {
     const fetchTasksForProject = async () => {
@@ -145,10 +136,10 @@ export default function Tasks() {
         }
       }
     };
-
+ 
     fetchTasksForProject();
   }, [selectedProjectId, dispatch]);
-
+ 
   // Show error toast when error occurs
   useEffect(() => {
     if (error) {
@@ -156,14 +147,14 @@ export default function Tasks() {
       toast.error(error?.message || String(error));
     }
   }, [error]);
-
+ 
   // Manual refresh function
   const handleRefreshTasks = useCallback(async () => {
     if (selectedProjectId === 'all') {
       toast.info('Please select a project to refresh tasks');
       return;
     }
-
+ 
     console.log('Manual refresh for project:', selectedProjectId);
     setIsFetching(true);
     try {
@@ -177,17 +168,7 @@ export default function Tasks() {
       setIsFetching(false);
     }
   }, [selectedProjectId, dispatch]);
-
-  const handleUpdateTask = async (taskId, updates) => {
-    try {
-      await dispatch(updateTask({ taskId, data: updates })).unwrap();
-      toast.success('Task updated successfully');
-    } catch (error) {
-      toast.error('Failed to update task');
-      throw error;
-    }
-  };
-
+ 
   const openModal = (task = null) => {
     if (task) {
       setEditingTask(task);
@@ -217,12 +198,12 @@ export default function Tasks() {
     }
     setIsModalOpen(true);
   };
-
+ 
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingTask(null);
   };
-
+ 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -230,17 +211,17 @@ export default function Tasks() {
       const selectedProject = projects.find(
         (p) => (p.id || p._id || p.public_id) === formData.project_id
       );
-
+ 
       if (!formData.name || !formData.project_id) {
         toast.error('Please provide a task name and select a project');
         return;
       }
-
+ 
       // Prepare payload according to backend API
       const projectId = selectedProject?.id ?? selectedProject?._id ?? null;
       const projectPublicId = selectedProject?.public_id ?? selectedProject?.project_public_id ?? null;
       const client_id = selectedProject?.client_id ?? selectedProject?.clientId ?? selectedProject?.client?.id ?? selectedProject?.client?._id ?? null;
-
+ 
       const payload = {
         project_id: projectId || formData.project_id,
         projectId: projectId || undefined,
@@ -254,7 +235,7 @@ export default function Tasks() {
         estimatedHours: formData.estimated_hours ? Number(formData.estimated_hours) : 0,
         timeAlloted: formData.estimated_hours ? Number(formData.estimated_hours) : 0,
       };
-
+ 
       // Handle assigned users: support single or multiple selections
       if (formData.assigned_to && (Array.isArray(formData.assigned_to) ? formData.assigned_to.length > 0 : !!formData.assigned_to)) {
         const ids = Array.isArray(formData.assigned_to) ? formData.assigned_to : [formData.assigned_to];
@@ -272,7 +253,7 @@ export default function Tasks() {
         }).filter(Boolean);
         payload.assigned_to = ids;
       }
-
+ 
       if (editingTask) {
         const taskId = editingTask.id || editingTask._id || editingTask.public_id;
         await dispatch(updateTask({ taskId, data: payload })).unwrap();
@@ -281,9 +262,9 @@ export default function Tasks() {
         await dispatch(createTask(payload)).unwrap();
         toast.success('Task created successfully');
       }
-
+ 
       closeModal();
-
+ 
       // Refresh tasks for the current project
       handleRefreshTasks();
     } catch (err) {
@@ -291,15 +272,15 @@ export default function Tasks() {
       toast.error(err?.message || 'Operation failed');
     }
   };
-
+ 
   const handleDelete = async (task) => {
     if (!window.confirm('Are you sure you want to delete this task?')) return;
-
+ 
     try {
       const taskId = task.id || task._id || task.public_id;
       await dispatch(deleteTask(taskId)).unwrap();
       toast.success('Task deleted successfully');
-
+ 
       // Refresh tasks for the current project
       handleRefreshTasks();
     } catch (err) {
@@ -307,56 +288,7 @@ export default function Tasks() {
       toast.error(err?.message || 'Delete failed');
     }
   };
-
-  // Time tracking handlers
-  const handleStartTask = async (task) => {
-    try {
-      const taskId = task.id || task._id || task.public_id;
-      await dispatch(startTask(taskId)).unwrap();
-      toast.success('Task timer started');
-      handleRefreshTasks();
-    } catch (err) {
-      console.error('Start task error:', err);
-      toast.error(err?.message || 'Failed to start task');
-    }
-  };
-
-  const handlePauseTask = async (task) => {
-    try {
-      const taskId = task.id || task._id || task.public_id;
-      await dispatch(pauseTask(taskId)).unwrap();
-      toast.success('Task timer paused');
-      handleRefreshTasks();
-    } catch (err) {
-      console.error('Pause task error:', err);
-      toast.error(err?.message || 'Failed to pause task');
-    }
-  };
-
-  const handleCompleteTask = async (task) => {
-    try {
-      const taskId = task.id || task._id || task.public_id;
-      await dispatch(completeTask(taskId)).unwrap();
-      toast.success('Task completed successfully');
-      handleRefreshTasks();
-    } catch (err) {
-      console.error('Complete task error:', err);
-      toast.error(err?.message || 'Failed to complete task');
-    }
-  };
-
-  const handleViewTimeline = async (task) => {
-    try {
-      const taskId = task.id || task._id || task.public_id;
-      await dispatch(getTaskTimeline(taskId)).unwrap();
-      setSelectedTimelineTask(task);
-      setShowTimeline(true);
-    } catch (err) {
-      console.error('Timeline error:', err);
-      toast.error(err?.message || 'Failed to load timeline');
-    }
-  };
-
+ 
   const handleOpenTaskDetails = async (task) => {
     const taskId = task.id || task._id || task.public_id || task.task_id;
     if (!taskId) return;
@@ -369,14 +301,14 @@ export default function Tasks() {
       toast.error(err?.message || 'Failed to load task details');
     }
   };
-
+ 
   const closeDetails = () => {
     setSelectedTaskDetails(null);
   };
-
+ 
   const updateStatusInline = async (task, newStatus) => {
     if (!newStatus) return;
-
+ 
     try {
       const taskId = task.id || task._id || task.public_id;
       await dispatch(updateTask({
@@ -391,10 +323,10 @@ export default function Tasks() {
           timeAlloted: task.timeAlloted
         }
       })).unwrap();
-
+ 
       setActiveStatusEdit(null);
       toast.success('Status updated');
-
+ 
       // Refresh tasks for the current project
       handleRefreshTasks();
     } catch (err) {
@@ -402,22 +334,22 @@ export default function Tasks() {
       toast.error(err?.message || 'Status update failed');
     }
   };
-
+ 
   // Get status text for display
   const getStatusText = (status) => {
     if (!status) return 'Pending';
     return status.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
   };
-
+ 
   // Filter tasks based on selected status
   const filteredTasks = tasks.filter((task) => {
     if (filterStatus === 'all') return true;
-
+ 
     // Map backend stage to local status
     const taskStatus = task.stage ? task.stage.toLowerCase() : 'pending';
     return taskStatus === filterStatus;
   });
-
+ 
   // Get project name by ID
   const getProjectName = (projectId) => {
     const project = projects.find((p) =>
@@ -425,13 +357,13 @@ export default function Tasks() {
     );
     return project?.name || project?.title || 'Unknown Project';
   };
-
+ 
   // Get assigned user names
   const getAssignedUsers = (task) => {
     if (!task.assignedUsers || !task.assignedUsers.length) return 'Unassigned';
     return task.assignedUsers.map(u => u.name).join(', ');
   };
-
+ 
   // Status colors
   const statusColors = {
     pending: 'bg-yellow-100 text-yellow-800 border border-yellow-200',
@@ -439,14 +371,14 @@ export default function Tasks() {
     completed: 'bg-green-100 text-green-800 border border-green-200',
     on_hold: 'bg-red-100 text-red-800 border border-red-200',
   };
-
+ 
   // Priority colors
   const priorityColors = {
     low: 'bg-gray-100 text-gray-800 border border-gray-200',
     medium: 'bg-amber-100 text-amber-800 border border-amber-200',
     high: 'bg-red-100 text-red-800 border border-red-200',
   };
-
+ 
   // Format date for display
   const formatDate = (dateString) => {
     if (!dateString) return '-';
@@ -457,7 +389,7 @@ export default function Tasks() {
       day: 'numeric'
     });
   };
-
+ 
   // Helper: filter only employee-role users for assignee dropdown
   const isEmployeeUser = (u) => {
     if (!u) return false;
@@ -466,9 +398,9 @@ export default function Tasks() {
     if (Array.isArray(u.roles) && u.roles.some(r => String(r).toLowerCase().includes('employee'))) return true;
     return false;
   };
-
+ 
   const employeeUsers = Array.isArray(users) ? users.filter(isEmployeeUser) : [];
-
+ 
   // Current user and admin check
   const currentUser = useSelector(selectCurrentUser);
   const isAdminCurrentUser = (() => {
@@ -479,8 +411,7 @@ export default function Tasks() {
     if (Array.isArray(u.roles) && u.roles.some(r => String(r).toLowerCase().includes('admin'))) return true;
     return false;
   })();
-
-  return (
+   return (
     <div className="p-8">
       {/* DEBUG INFO - Remove in production */}
       <div className="mb-4 p-2 bg-gray-100 rounded text-xs">
@@ -490,14 +421,14 @@ export default function Tasks() {
         <div>Status: {status}</div>
         <div>Fetching: {isFetching ? 'Yes' : 'No'}</div>
       </div>
-
+ 
       {/* HEADER */}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Tasks</h1>
           <p className="text-gray-600">Manage and track all your tasks</p>
         </div>
-
+ 
         <div className="flex items-center gap-3">
           {/* Project Selector */}
           <div className="relative">
@@ -523,7 +454,7 @@ export default function Tasks() {
               </svg>
             </div>
           </div>
-
+ 
           {/* Refresh Button */}
           <button
             onClick={handleRefreshTasks}
@@ -536,8 +467,8 @@ export default function Tasks() {
           >
             <RefreshCw className={`w-5 h-5 ${isFetching ? 'animate-spin' : ''}`} />
           </button>
-
-          {/* View Toggle - Hide Kanban for admins */}
+ 
+          {/* View Toggle */}
           <div className="flex border border-gray-300 rounded-lg overflow-hidden">
             <button
               onClick={() => setView('list')}
@@ -555,18 +486,8 @@ export default function Tasks() {
             >
               <Grid className="w-5 h-5" />
             </button>
-            {!isAdminCurrentUser && (
-              <button
-                onClick={() => setView('kanban')}
-                disabled={isFetching}
-                className={`px-3 py-2 ${view === 'kanban' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'} ${isFetching ? 'opacity-50' : ''
-                  }`}
-              >
-                <Kanban className="w-5 h-5" />
-              </button>
-            )}
           </div>
-
+ 
           {/* Add Task Button */}
           <button
             onClick={() => openModal()}
@@ -581,7 +502,7 @@ export default function Tasks() {
           </button>
         </div>
       </div>
-
+ 
       {/* Loading Indicator */}
       {isFetching && (
         <div className="flex items-center justify-center p-4 mb-6 bg-blue-50 rounded-lg">
@@ -589,7 +510,7 @@ export default function Tasks() {
           <span className="text-blue-600 font-medium">Loading tasks...</span>
         </div>
       )}
-
+ 
       {/* STATUS SUMMARY - Only show when a project is selected */}
       {selectedProjectId !== 'all' && tasks.length > 0 && (
         <div className="flex flex-wrap gap-3 mb-6">
@@ -607,7 +528,7 @@ export default function Tasks() {
           </div>
         </div>
       )}
-
+ 
       {/* PROJECT INFO - Show selected project info */}
       {selectedProjectId !== 'all' && tasks.length > 0 && (
         <div className="bg-white rounded-xl border p-4 mb-6">
@@ -619,7 +540,7 @@ export default function Tasks() {
           </p>
         </div>
       )}
-
+ 
       {/* FILTERS - Only show when a project is selected */}
       {selectedProjectId !== 'all' && tasks.length > 0 && (
         <div className="bg-white rounded-xl border p-4 mb-6 flex items-center gap-4 flex-wrap">
@@ -627,7 +548,7 @@ export default function Tasks() {
             <Filter className="w-5 h-5 text-gray-600" />
             <span className="text-gray-700 font-medium">Filters:</span>
           </div>
-
+ 
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
@@ -643,7 +564,7 @@ export default function Tasks() {
           </select>
         </div>
       )}
-
+ 
       {/* NO PROJECT SELECTED STATE */}
       {selectedProjectId === 'all' && (
         <div className="bg-white rounded-xl border p-12 text-center">
@@ -668,7 +589,7 @@ export default function Tasks() {
           </div>
         </div>
       )}
-
+ 
       {/* NO TASKS STATE - When project selected but no tasks */}
       {selectedProjectId !== 'all' && !isFetching && tasks.length === 0 && (
         <div className="bg-white rounded-xl border p-12 text-center">
@@ -694,7 +615,7 @@ export default function Tasks() {
           </div>
         </div>
       )}
-
+ 
       {/* DETAILS PANEL */}
       {selectedTaskDetails && (
         <div className="bg-white border rounded-xl p-6 mb-6">
@@ -717,7 +638,7 @@ export default function Tasks() {
                 </div>
               </div>
             </div>
-
+ 
             <div className="flex-shrink-0">
               <div className="flex items-center gap-2">
                 <div className="text-sm text-gray-600">{getProjectName(selectedProjectId)}</div>
@@ -755,7 +676,7 @@ export default function Tasks() {
                   />
                   Checklist
                 </h4>
-
+ 
                 {((selectedTaskDetails.checklist ||
                   selectedTaskDetails.check_lists ||
                   selectedTaskDetails.check_items) || []).length ? (
@@ -787,7 +708,7 @@ export default function Tasks() {
                 ) : (
                   <p className="text-sm text-gray-500">No checklist items</p>
                 )}
-
+ 
                 {/* Activities */}
                 <div className="mt-6">
                   <h4 className="font-semibold mb-3">Activities</h4>
@@ -820,7 +741,7 @@ export default function Tasks() {
                 </div>
               </div>
             </div>
-
+ 
             {/* Summary card */}
             <div className="bg-white p-4 rounded-xl border">
               <h4 className="font-semibold mb-3">Summary</h4>
@@ -862,7 +783,7 @@ export default function Tasks() {
           </div>
         </div>
       )}
-
+ 
       {/* LIST VIEW */}
       {!selectedTaskDetails && selectedProjectId !== 'all' && !isFetching && tasks.length > 0 && view === 'list' && (
         <div className="bg-white border rounded-xl overflow-hidden">
@@ -878,7 +799,7 @@ export default function Tasks() {
                 <th className="p-4 text-right">Actions</th>
               </tr>
             </thead>
-
+ 
             <tbody>
               {filteredTasks.length === 0 ? (
                 <tr>
@@ -901,14 +822,14 @@ export default function Tasks() {
                         <div className="text-sm text-gray-500 mt-1 line-clamp-2">{task.description}</div>
                       )}
                     </td>
-
+ 
                     <td className="p-4">
                       <div className="flex items-center gap-2">
                         <User className="w-4 h-4 text-gray-400" />
                         <span className="text-sm text-gray-700">{getAssignedUsers(task)}</span>
                       </div>
                     </td>
-
+ 
                     <td className="p-4">
                       {activeStatusEdit === (task.id || task._id || task.public_id) ? (
                         <select
@@ -933,27 +854,27 @@ export default function Tasks() {
                         </span>
                       )}
                     </td>
-
+ 
                     <td className="p-4">
                       <span className={`px-3 py-1 rounded-full text-sm font-medium ${priorityColors[(task.priority || 'MEDIUM').toLowerCase()]}`}>
                         {(task.priority || 'MEDIUM').toUpperCase()}
                       </span>
                     </td>
-
+ 
                     <td className="p-4">
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-gray-400" />
                         <span className="text-sm text-gray-700">{formatDate(task.taskDate || task.dueDate)}</span>
                       </div>
                     </td>
-
+ 
                     <td className="p-4">
                       <div className="flex items-center gap-2">
                         <Clock className="w-4 h-4 text-gray-400" />
                         <span className="text-sm text-gray-700">{task.estimatedHours || task.timeAlloted || 0}h</span>
                       </div>
                     </td>
-
+ 
                     <td className="p-4 text-right">
                       <div className="flex justify-end gap-2">
                         <button
@@ -970,42 +891,6 @@ export default function Tasks() {
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
-                        {/* Time Tracking Buttons */}
-                        {task.stage !== 'COMPLETED' && (
-                          <>
-                            {task.stage === 'IN_PROGRESS' ? (
-                              <button
-                                onClick={(e) => { e.stopPropagation(); handlePauseTask(task); }}
-                                className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
-                                title="Pause task timer"
-                              >
-                                ⏸️
-                              </button>
-                            ) : (
-                              <button
-                                onClick={(e) => { e.stopPropagation(); handleStartTask(task); }}
-                                className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                                title="Start task timer"
-                              >
-                                ▶️
-                              </button>
-                            )}
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleCompleteTask(task); }}
-                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                              title="Complete task"
-                            >
-                              ✅
-                            </button>
-                          </>
-                        )}
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleViewTimeline(task); }}
-                          className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-                          title="View timeline"
-                        >
-                          📊
-                        </button>
                       </div>
                     </td>
                   </tr>
@@ -1015,7 +900,7 @@ export default function Tasks() {
           </table>
         </div>
       )}
-
+ 
       {/* CARD VIEW */}
       {!selectedTaskDetails && selectedProjectId !== 'all' && !isFetching && tasks.length > 0 && view === 'card' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1054,45 +939,9 @@ export default function Tasks() {
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
-                    {/* Time Tracking Buttons */}
-                    {task.stage !== 'COMPLETED' && (
-                      <>
-                        {task.stage === 'IN_PROGRESS' ? (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handlePauseTask(task); }}
-                            className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
-                            title="Pause task timer"
-                          >
-                            ⏸️
-                          </button>
-                        ) : (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleStartTask(task); }}
-                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                            title="Start task timer"
-                          >
-                            ▶️
-                          </button>
-                        )}
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleCompleteTask(task); }}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Complete task"
-                        >
-                          ✅
-                        </button>
-                      </>
-                    )}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleViewTimeline(task); }}
-                      className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-                      title="View timeline"
-                    >
-                      📊
-                    </button>
                   </div>
                 </div>
-
+ 
                 {/* Status and Priority */}
                 <div className="flex items-center gap-2 mb-4">
                   <span
@@ -1105,7 +954,7 @@ export default function Tasks() {
                     {(task.priority || 'MEDIUM').toUpperCase()}
                   </span>
                 </div>
-
+ 
                 {/* Task Details */}
                 <div className="space-y-3 mb-4">
                   <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -1121,7 +970,7 @@ export default function Tasks() {
                     <span>{task.estimatedHours || task.timeAlloted || 0} hours estimated</span>
                   </div>
                 </div>
-
+ 
                 {/* Project Info */}
                 <div className="pt-4 border-t">
                   <div className="text-xs text-gray-500">
@@ -1133,18 +982,7 @@ export default function Tasks() {
           )}
         </div>
       )}
-
-      {/* KANBAN VIEW - Only for non-admin users */}
-      {!selectedTaskDetails && selectedProjectId !== 'all' && !isFetching && tasks.length > 0 && view === 'kanban' && !isAdminCurrentUser && (
-        <KanbanBoard
-          tasks={filteredTasks}
-          onUpdateTask={handleUpdateTask}
-          onLoadTasks={handleRefreshTasks}
-          userRole="admin"
-          projectId={selectedProjectId}
-        />
-      )}
-
+ 
       {/* MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -1160,7 +998,7 @@ export default function Tasks() {
                 ✕
               </button>
             </div>
-
+ 
             <form onSubmit={handleSubmit}>
               <div className="space-y-4">
                 {/* Task Name */}
@@ -1177,7 +1015,7 @@ export default function Tasks() {
                     placeholder="Enter task name"
                   />
                 </div>
-
+ 
                 {/* Description */}
                 <div>
                   <label className="block text-gray-700 font-medium mb-2">
@@ -1191,7 +1029,7 @@ export default function Tasks() {
                     placeholder="Enter task description"
                   />
                 </div>
-
+ 
                 {/* Project and Status */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -1230,7 +1068,7 @@ export default function Tasks() {
                       )}
                     </select>
                   </div>
-
+ 
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">
                       Status
@@ -1248,7 +1086,7 @@ export default function Tasks() {
                     </select>
                   </div>
                 </div>
-
+ 
                 {/* Priority and Assignee */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -1267,7 +1105,7 @@ export default function Tasks() {
                       ))}
                     </select>
                   </div>
-
+ 
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">
                       Assign To
@@ -1310,7 +1148,7 @@ export default function Tasks() {
                     )}
                   </div>
                 </div>
-
+ 
                 {/* Estimated Hours and Due Date */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -1327,7 +1165,7 @@ export default function Tasks() {
                       placeholder="e.g., 8"
                     />
                   </div>
-
+ 
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">
                       Due Date
@@ -1341,7 +1179,7 @@ export default function Tasks() {
                   </div>
                 </div>
               </div>
-
+ 
               {/* Form Actions */}
               <div className="flex gap-3 mt-8">
                 <button
@@ -1362,91 +1200,7 @@ export default function Tasks() {
           </div>
         </div>
       )}
-
-      {/* TIMELINE MODAL */}
-      {showTimeline && selectedTimelineTask && timeline && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-4xl w-full p-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Task Timeline - {selectedTimelineTask.title || selectedTimelineTask.name}
-              </h2>
-              <button
-                onClick={() => { setShowTimeline(false); setSelectedTimelineTask(null); }}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Timeline Summary */}
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <h3 className="font-semibold text-gray-900 mb-2">Summary</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-600">Total Sessions:</span>
-                  <span className="font-medium ml-2">{timeline.summary?.total_sessions || 0}</span>
-                </div>
-                <div>
-                  <span className="text-gray-600">Total Duration:</span>
-                  <span className="font-medium ml-2">{timeline.summary?.total_duration || 0} minutes</span>
-                </div>
-                <div>
-                  <span className="text-gray-600">Status:</span>
-                  <span className={`font-medium ml-2 px-2 py-1 rounded-full text-xs ${
-                    timeline.summary?.status === 'Completed' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-                  }`}>
-                    {timeline.summary?.status || 'Unknown'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Timeline Events */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-gray-900">Timeline Events</h3>
-              {timeline.timeline && timeline.timeline.length > 0 ? (
-                <div className="space-y-3">
-                  {timeline.timeline.map((event, index) => (
-                    <div key={event.id || index} className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg">
-                      <div className="flex-shrink-0">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
-                          event.action === 'start' ? 'bg-green-100 text-green-700' :
-                          event.action === 'pause' ? 'bg-orange-100 text-orange-700' :
-                          event.action === 'complete' ? 'bg-blue-100 text-blue-700' :
-                          'bg-gray-100 text-gray-700'
-                        }`}>
-                          {event.action === 'start' ? '▶️' :
-                           event.action === 'pause' ? '⏸️' :
-                           event.action === 'complete' ? '✅' : '📝'}
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-gray-900 capitalize">{event.action}</span>
-                          {event.duration && (
-                            <span className="text-sm text-gray-600">({event.duration} minutes)</span>
-                          )}
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          {new Date(event.timestamp).toLocaleString()}
-                        </div>
-                        {event.user && (
-                          <div className="text-sm text-gray-500">by {event.user}</div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <p>No timeline events found for this task.</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
+ 
