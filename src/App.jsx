@@ -1,16 +1,16 @@
+// App.jsx - COMPLETE FIXED (NO PAGE RELOADS, MANAGER UI PRESERVED)
 import { Transition } from "@headlessui/react";
 import clsx from "clsx";
-import { Fragment, useRef, useEffect } from "react";
+import { Fragment, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { IoClose } from "react-icons/io5";
-import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { Toaster } from "sonner";
 
 import { 
   getProfile, 
   selectUser, 
-  setCredentials,
-  ensureValidToken  // ✅ ADD THIS IMPORT
+  setCredentials
 } from "./redux/slices/authSlice";
 
 import Navbar from "./components/Navbar";
@@ -34,7 +34,6 @@ import Profile from "./pages/Profile";
 import ChangePassword from "./pages/ChangePassword";
 import Forgot from "./pages/Forgot";
 import Reset from "./pages/Reset";
-import ProtectedRoute from "./components/ProtectedRoute";
 import ModuleRouteGuard from "./components/ModuleRouteGuard";
 
 import PageNotFound from "./pages/PageNotFound";
@@ -78,7 +77,7 @@ const MODULE_ROUTE_CONFIG = [
   { moduleName: "Notifications", Component: Notifications },           
   { moduleName: "Approval Workflows", Component: Approvals },          
   { moduleName: "Settings & Master Configuration", Component: Settings },
-   { moduleName: "Task Reassignment Requests", Component: ReassignTaskRequest }
+  { moduleName: "Task Reassignment Requests", Component: ReassignTaskRequest }
 ];
 
 const slugifyModuleName = (name = "") =>
@@ -103,38 +102,38 @@ function Layout() {
 
   return user ? (
     <div className="w-full h-screen flex flex-row bg-gray-50">
-      {/* Sidebar */}
       <div
         className={clsx(
-          "h-screen bg-white border-r border-gray-200 hidden md:block sticky top-0 z-40 transition-all duration-200 group",
+          "h-screen bg-white border-r border-gray-200 hidden md:flex sticky top-0 z-40 transition-all duration-200 group",
           isSidebarCollapsed ? "w-16 group-hover:w-64" : "w-64"
         )}
       >
         <Sidebar />
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <Navbar />
-        <div className="flex-1 overflow-y-auto p-4 2xl:px-10">
+        <div className="flex-1 bg-white overflow-y-auto p-4 2xl:px-10">
           <Outlet />
         </div>
       </div>
-
-      <MobileSidebar />
     </div>
   ) : (
     <Navigate to="/log-in" state={{ from: location }} replace />
   );
 }
 
-// -------- Mobile Sidebar --------
 const MobileSidebar = () => {
   const { isSidebarOpen } = useSelector((state) => state.auth);
-  const mobileMenuRef = useRef(null);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const closeSidebar = () => dispatch({ type: "auth/setOpenSidebar", payload: false });
+
+  const handleNavigation = (path) => {
+    closeSidebar();
+    navigate(path);
+  };
 
   return (
     <Transition
@@ -147,31 +146,94 @@ const MobileSidebar = () => {
       leaveFrom="translate-x-0 opacity-100"
       leaveTo="translate-x-full opacity-0"
     >
-      <div
-        ref={(node) => (mobileMenuRef.current = node)}
+      <div 
         className="md:hidden fixed inset-0 bg-black/50 z-50 flex"
         onClick={closeSidebar}
       >
         <div
-          className="bg-white w-80 h-full shadow-2xl"
+          className="bg-slate-900 w-80 h-full shadow-2xl flex flex-col text-slate-300"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between px-6 py-5 border-b border-slate-800 flex-shrink-0">
             <div className="flex items-center gap-3">
-              <img src="/nmit.png" alt="Logo" className="h-10 w-12 rounded-lg" />
-              <span className="text-xl font-semibold">Task Manager</span>
+              <div className="w-10 h-10 bg-indigo-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                <span className="text-white font-bold text-lg">T</span>
+              </div>
+              <span className="font-bold text-white tracking-tight text-xl">Task Manager</span>
             </div>
-            <button onClick={closeSidebar} className="p-2 rounded-xl hover:bg-gray-100">
+            <button 
+              onClick={closeSidebar} 
+              className="p-2 rounded-xl hover:bg-slate-800 transition-colors text-slate-400"
+            >
               <IoClose size={24} />
             </button>
           </div>
 
-          <div className="p-4 overflow-y-auto h-[calc(100%-80px)]">
-            <Sidebar />
-          </div>
+          <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-2 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-slate-900">
+            <MobileNav onNavigate={handleNavigation} />
+          </nav>
         </div>
       </div>
     </Transition>
+  );
+};
+
+const MobileNav = ({ onNavigate }) => {
+  const location = useLocation();
+  const { user } = useSelector((state) => state.auth);
+  const modules = user?.modules || [];
+
+  return (
+    <>
+      {modules.map((mod, idx) => {
+        const meta = MODULE_MAP[mod.name];
+        if (!meta) return null;
+        const pathSegment = meta.link.replace(/^\//, "");
+        const fullPath = `/${user.role.toLowerCase()}/${pathSegment}`;
+        const isActive = location.pathname.startsWith(fullPath);
+
+        return (
+          <button
+            key={idx}
+            onClick={() => onNavigate(fullPath)}
+            className={clsx(
+              "group w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 relative text-left text-slate-300",
+              isActive
+                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-900/20"
+                : "hover:bg-slate-800 hover:text-white"
+            )}
+          >
+            <span className="text-lg transition-transform duration-200 group-hover:scale-110 flex-shrink-0">
+              {meta.icon}
+            </span>
+            <span className="font-medium text-[14px] flex-1">{meta.label || mod.name}</span>
+            {isActive && (
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-white rounded-full" />
+            )}
+          </button>
+        );
+      })}
+      
+      <div className="p-4 border-t border-slate-800 mt-8">
+        <button 
+          onClick={() => onNavigate('/profile')}
+          className={clsx(
+            "w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200 group",
+            "hover:bg-slate-800 text-slate-300"
+          )}
+        >
+          <div className="w-8 h-8 rounded-full bg-slate-700 flex-shrink-0 border-2 border-slate-600 flex items-center justify-center">
+            <span className="text-xs font-bold text-white">
+              {user?.name?.charAt(0)?.toUpperCase() || 'A'}
+            </span>
+          </div>
+          <div className="flex-1 min-w-0 text-left">
+            <p className="text-sm font-medium text-white truncate">{user?.name || "Admin"}</p>
+            <p className="text-xs text-slate-400 truncate capitalize">{user?.role || "Admin"}</p>
+          </div>
+        </button>
+      </div>
+    </>
   );
 };
 
@@ -180,32 +242,46 @@ function App() {
   const dispatch = useDispatch();
   const user = useSelector(selectUser);
 
+  // ✅ FIXED: Manager UI Preservation After Refresh
   useEffect(() => {
-    if (!user) return;
+    if (!user || !user.role || !user.id) return;
 
+    const roleLower = user.role.toLowerCase();
+    const isManager = roleLower === 'manager';
+
+    // Only apply fallback if modules/sidebar are missing AND role needs fallback
     const needsModuleFallback = !Array.isArray(user.modules) || user.modules.length === 0;
     const needsSidebarFallback = !Array.isArray(user.sidebar) || user.sidebar.length === 0;
+    
+    const shouldApplyFallback = (role) => {
+      if (!role) return false;
+      const fallbackRoles = ["manager", "employee", "client", "client-viewer"];
+      return fallbackRoles.includes(role.toLowerCase());
+    };
 
-    const fallbackModules = needsModuleFallback ? getFallbackModules(user.role) : [];
-    const fallbackSidebar = needsSidebarFallback ? getFallbackSidebar(user.role) : [];
-
-    if (needsModuleFallback || needsSidebarFallback) {
+    if ((needsModuleFallback || needsSidebarFallback) && shouldApplyFallback(user.role)) {
+      console.log(`[Fallback] Applying for role: ${user.role}`);
+      
+      const fallbackModules = needsModuleFallback ? getFallbackModules(user.role) : user.modules;
+      const fallbackSidebar = needsSidebarFallback ? getFallbackSidebar(user.role) : user.sidebar;
+      
       const updatedUser = {
-        ...user,
-        ...(needsModuleFallback && { modules: fallbackModules }),
-        ...(needsSidebarFallback && { sidebar: fallbackSidebar }),
+        ...user, // ✅ PRESERVE original role: "Manager"
+        modules: fallbackModules,
+        sidebar: fallbackSidebar,
       };
-
+      
       dispatch(setCredentials(updatedUser));
     }
 
-    if (needsModuleFallback) {
+    // ✅ Only fetch profile if needed (not for Manager to avoid admin override)
+    if (needsModuleFallback && shouldApplyFallback(user.role) && !isManager) {
       dispatch(getProfile());
     }
-  }, [dispatch, user]);
+  }, [dispatch, user?.id]); // ✅ Safe dependency: user.id only
 
   return (
-    <main className="w-full min-h-screen bg-gray-50">
+    <main className="w-full min-h-screen bg-gray-50 relative">
       <Routes>
         <Route path="/" element={<LandingPage />} />
 
@@ -276,13 +352,11 @@ function App() {
                       />
                     );
                   })}
-                        <Route path="/employee/tasks/:taskId" element={<TaskDetailsWithRequests />} />
-
+                  <Route path="/employee/tasks/:taskId" element={<TaskDetailsWithRequests />} />
                 </Route>
               );
             }
 
-            // Special handling for Clients: manager sees manager-specific clients page
             if (moduleName === "User Management") {
               return (
                 <Route
@@ -305,14 +379,13 @@ function App() {
             }
 
             if (moduleName === "Clients") {
-              const pathPrefix = basePath;
               return (
                 <Route
                   element={<ModuleRouteGuard moduleName={moduleName} />}
                   key={`guard-${moduleName}`}
                 >
                   {ROLE_PREFIXES.map((prefix) => {
-                    const path = `/${prefix}/${pathPrefix}`;
+                    const path = `/${prefix}/${basePath}`;
                     const ComponentForRole = prefix === "manager" ? ManagerClients : Client;
                     return (
                       <Route
@@ -326,16 +399,14 @@ function App() {
               );
             }
 
-            // Special handling for Projects: manager sees manager-specific projects page
             if (moduleName === "Projects") {
-              const pathPrefix = basePath;
               return (
                 <Route
                   element={<ModuleRouteGuard moduleName={moduleName} />}
                   key={`guard-${moduleName}`}
                 >
                   {ROLE_PREFIXES.map((prefix) => {
-                    const path = `/${prefix}/${pathPrefix}`;
+                    const path = `/${prefix}/${basePath}`;
                     const ComponentForRole = prefix === "manager" ? ManagerProjects : Projects;
                     return (
                       <Route
@@ -349,7 +420,6 @@ function App() {
               );
             }
 
-            // Default handling for all other modules
             return (
               <Route
                 element={<ModuleRouteGuard moduleName={moduleName} />}
@@ -362,7 +432,6 @@ function App() {
             );
           })}
 
-          {/* Alias routes for Analytics paths (e.g. /admin/analytics) mapped to Reports module */}
           {ROLE_PREFIXES.map((prefix) => (
             <Route
               element={<ModuleRouteGuard moduleName="Reports & Analytics" />}
@@ -376,41 +445,33 @@ function App() {
             <Route path="/add-client" element={<AddClient />} />
             <Route path="/client-dashboard/:id" element={<ClientDashboard />} />
           </Route>
+          
           <Route element={<ModuleRouteGuard moduleName="Tasks" />}>
             <Route path="/task/:id" element={<TaskDetails />} />
-              <Route path="/employee/tasks/:taskId" element={<TaskDetailsWithRequests />} />
-            
+            <Route path="/employee/tasks/:taskId" element={<TaskDetailsWithRequests />} />
           </Route>
 
-          {/* Trash */}
           <Route path="/trash" element={<Trash />} />
-
-          {/* Module detail by moduleId */}
           <Route path="/module/:moduleId" element={<ModuleDetail />} />
 
-          {/* Role home pages */}
           <Route path="/home/admin" element={<RoleRoute role="Admin" Component={AdminDashboard} />} />
           <Route path="/home/manager" element={<RoleRoute role="Manager" Component={ManagerDashboard} />} />
           <Route path="/home/employee" element={<RoleRoute role="Employee" Component={EmployeeHome} />} />
           <Route path="/home/client-viewer" element={<RoleRoute role="Client-Viewer" Component={ClientViewerHome} />} />
 
-          {/* Profile */}
           <Route path="/profile" element={<Profile />} />
           <Route path="/change-password" element={<ChangePassword />} />
         </Route>
 
-        {/* Auth Routes */}
         <Route path="/log-in" element={<Login />} />
-        {/* legacy route redirect */}
         <Route path="/login" element={<Navigate to="/log-in" replace />} />
         <Route path="/verify-otp" element={<VerifyOTP />} />
         <Route path="/forgot" element={<Forgot />} />
         <Route path="/reset" element={<Reset />} />
-
-        {/* Catch All */}
         <Route path="*" element={<PageNotFound />} />
       </Routes>
 
+      <MobileSidebar />
       <Toaster richColors />
     </main>
   );
