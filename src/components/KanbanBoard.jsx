@@ -25,7 +25,8 @@ const KanbanBoard = ({
   onUpdateTask,
   onLoadTasks,
   userRole = 'employee',
-  projectId = null
+  projectId = null,
+  reassignmentRequests = {}
 }) => {
   const [activeTask, setActiveTask] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -143,6 +144,7 @@ const KanbanBoard = ({
               tasks={columns[columnName] || []}
               onTaskClick={handleTaskClick}
               userRole={userRole}
+              reassignmentRequests={reassignmentRequests}
             />
           ))}
         </div>

@@ -6,7 +6,7 @@ import {
 } from '@dnd-kit/sortable';
 import KanbanCard from './KanbanCard';
 
-const KanbanColumn = ({ id, title, tasks, onTaskClick, userRole }) => {
+const KanbanColumn = ({ id, title, tasks, onTaskClick, userRole, reassignmentRequests = {} }) => {
   const { setNodeRef, isOver } = useDroppable({
     id,
   });
@@ -79,6 +79,7 @@ const KanbanColumn = ({ id, title, tasks, onTaskClick, userRole }) => {
                 task={task}
                 onClick={() => onTaskClick(task)}
                 userRole={userRole}
+                reassignmentRequests={reassignmentRequests}
               />
             ))}
           </div>

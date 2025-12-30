@@ -3,7 +3,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Clock, User, Flag, Calendar } from 'lucide-react';
 
-const KanbanCard = ({ task, onClick, isDragging = false, userRole }) => {
+const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentRequests = {} }) => {
   const {
     attributes,
     listeners,
@@ -40,22 +40,27 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole }) => {
   };
 
   const getAssignedUsers = (task) => {
-    if (!task.assignedUsers && !task.assigned_users) return [];
-    return task.assignedUsers || task.assigned_users || [];
+    const users = task.assignedUsers || task.assigned_users || [];
+    return Array.isArray(users) ? users : [];
   };
 
   const assignedUsers = getAssignedUsers(task);
+  const taskId = task.id || task._id || task.public_id;
+  const reassignmentRequest = reassignmentRequests[taskId];
+  const hasPendingReassignment = reassignmentRequest?.status === 'PENDING';
 
   return (
     <div
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
-      className={`bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer ${
+      {...(hasPendingReassignment ? {} : { ...listeners })}
+      className={`bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow ${
         isDragging || isSortableDragging ? 'opacity-50' : ''
+      } ${
+        hasPendingReassignment ? 'border-orange-300 bg-orange-50 opacity-75 cursor-not-allowed' : 'cursor-pointer'
       }`}
-      onClick={onClick}
+      onClick={hasPendingReassignment ? undefined : onClick}
     >
       {/* Task Title */}
       <h4 className="font-medium text-gray-900 mb-2 line-clamp-2">
@@ -126,6 +131,13 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole }) => {
           <span className="text-xs text-gray-600">
             {Math.floor(task.total_duration / 3600)}h {Math.floor((task.total_duration % 3600) / 60)}m
           </span>
+        </div>
+      )}
+
+      {/* Reassignment Status */}
+      {hasPendingReassignment && (
+        <div className="mt-2 text-xs text-orange-700 bg-orange-100 px-2 py-1 rounded">
+          Reassignment Pending
         </div>
       )}
     </div>
