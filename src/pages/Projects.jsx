@@ -18,10 +18,11 @@ import { fetchDepartments, selectDepartments } from "../redux/slices/departmentS
 import { fetchClients, selectClients } from "../redux/slices/clientSlice";
 import { fetchUsers, selectUsers } from "../redux/slices/userSlice";
 import { toast } from "sonner";
- 
+
+import { X, ClipboardList, CheckCircle2, Clock, AlertCircle, PauseCircle, Clock as ClockIcon, BarChart3, Activity, User, Calendar, FileText } from 'lucide-react';
 export default function Projects() {
   const dispatch = useDispatch();
- 
+
   // Redux state
   const projects = useSelector(selectProjects) || [];
   const status = useSelector(selectProjectStatus);
@@ -31,10 +32,10 @@ export default function Projects() {
   const departments = useSelector(selectDepartments) || [];
   const clients = useSelector(selectClients) || [];
   const users = useSelector(selectUsers) || [];
- 
+
   // Local state
   const isLoading = status === 'loading';
- 
+
   const statusOptions = ["Planning", "Active", "On Hold", "Completed", "Cancelled"];
   const statusColors = {
     "Planning": "bg-yellow-100 text-yellow-700",
@@ -43,9 +44,9 @@ export default function Projects() {
     "On Hold": "bg-red-100 text-red-700",
     "Cancelled": "bg-gray-100 text-gray-700",
   };
- 
+
   const priorityOptions = ["Low", "Medium", "High"];
- 
+
   // View and modal state
   const [view, setView] = useState("card");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -55,7 +56,7 @@ export default function Projects() {
   const [activeStatusEdit, setActiveStatusEdit] = useState(null);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [selectedSummaryProject, setSelectedSummaryProject] = useState(null);
- 
+
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -68,16 +69,16 @@ export default function Projects() {
     budget: "",
     project_manager_id: "",
   });
- 
+
   // Helper function to calculate total duration in hours (8 hours per working day, excluding weekends)
   const calculateDuration = (startDate, endDate) => {
     if (!startDate || !endDate) return 0;
     const start = new Date(startDate);
     const end = new Date(endDate);
- 
+
     let workingDays = 0;
     const current = new Date(start);
- 
+
     // Iterate through each day and count working days (Mon-Fri)
     while (current <= end) {
       const dayOfWeek = current.getDay();
@@ -87,19 +88,19 @@ export default function Projects() {
       }
       current.setDate(current.getDate() + 1);
     }
- 
+
     return workingDays * 8; // 8 hours per working day
   };
- 
+
   const totalDuration = calculateDuration(formData.start_date, formData.end_date);
- 
+
   // Helper function to format date from ISO string
   const formatDate = (dateStr) => {
     if (!dateStr) return "-";
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
- 
+
   // Helper function to get client name by ID
   const getClientName = (clientId) => {
     if (!clientId) return "-";
@@ -110,8 +111,8 @@ export default function Projects() {
       clients.find((c) => c.name === clientId);
     return client?.name || "-";
   };
- 
- 
+
+
   // Helper function to get manager name by ID or from project_manager object
   const getManagerName = (managerId, projectManager) => {
     // Check if project_manager object exists with name
@@ -123,10 +124,10 @@ export default function Projects() {
     const manager = users.find((u) => (u.public_id || u.id || u._id) === managerId);
     return manager?.name || "-";
   };
- 
+
   // Get managers array (filter users with Manager role)
   const managers = users.filter((u) => u.role === "Manager");
- 
+
   // Fetch projects, departments, clients, and users on mount
   useEffect(() => {
     dispatch(fetchProjects());
@@ -135,7 +136,7 @@ export default function Projects() {
     dispatch(fetchUsers());
     dispatch(getProjectsStats());
   }, [dispatch]);
- 
+
   // Modal handlers
   const openModal = (project = null) => {
     if (project) {
@@ -171,13 +172,13 @@ export default function Projects() {
     }
     setIsModalOpen(true);
   };
- 
+
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingProject(null);
     setActiveStatusEdit(null);
   };
- 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -194,7 +195,7 @@ export default function Projects() {
         toast.error("Please select both start and end dates");
         return;
       }
- 
+
       // Map local form fields to API payload (Postman collection format)
       const payload = {
         projectName: formData.name,
@@ -208,13 +209,13 @@ export default function Projects() {
         description: formData.description,
         budget: formData.budget || null,
       };
- 
+
       // include manager name if we can resolve it (optional)
       if (formData.project_manager_id) {
         const selectedManager = managers.find((m) => (m.public_id || m.id) === formData.project_manager_id);
         if (selectedManager) payload.projectManagerName = selectedManager.name;
       }
- 
+
       if (editingProject) {
         const projectId = editingProject.public_id || editingProject.id || editingProject._id;
         await dispatch(updateProject({ projectId, data: payload })).unwrap();
@@ -229,7 +230,7 @@ export default function Projects() {
       toast.error(err?.message || "Operation failed");
     }
   };
- 
+
   const handleDelete = async (project) => {
     if (!window.confirm("Delete this project?")) return;
     try {
@@ -265,7 +266,7 @@ export default function Projects() {
       toast.error(err?.message || "Status update failed");
     }
   };
- 
+
   // Filters
   const filteredProjects = projects.filter((project) => {
     // Get department IDs from either departments array or departmentIds field
@@ -275,18 +276,18 @@ export default function Projects() {
     } else if (project.departmentIds) {
       projectDepts = project.departmentIds;
     }
- 
+
     const deptMatch = filterDept === "all" || projectDepts.includes(filterDept);
     const statusMatch = filterStatus === "all" || project.status === filterStatus;
     return deptMatch && statusMatch;
   });
- 
+
   // Helper to get department name from departments array
   const getDepartmentName = (departmentsArray) => {
     if (!departmentsArray || !Array.isArray(departmentsArray) || departmentsArray.length === 0) return "-";
     return departmentsArray.map((d) => d.name).join(", ");
   };
- 
+
   // Loading and error states
   if (isLoading) {
     return (
@@ -295,7 +296,7 @@ export default function Projects() {
       </div>
     );
   }
- 
+
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-2xl p-8 text-center">
@@ -391,31 +392,31 @@ export default function Projects() {
         <div className="px-4 py-2 rounded-lg bg-yellow-100 text-yellow-700 font-semibold shadow-sm">
           Planning: {projects.filter(p => p.status === "Planning").length}
         </div>
- 
+
         <div className="px-4 py-2 rounded-lg bg-blue-100 text-blue-700 font-semibold shadow-sm">
           Active: {projects.filter(p => p.status === "Active").length}
         </div>
- 
+
         <div className="px-4 py-2 rounded-lg bg-green-100 text-green-700 font-semibold shadow-sm">
           Completed: {projects.filter(p => p.status === "Completed").length}
         </div>
- 
+
         <div className="px-4 py-2 rounded-lg bg-red-100 text-red-700 font-semibold shadow-sm">
           On Hold: {projects.filter(p => p.status === "On Hold").length}
         </div>
- 
+
         <div className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold shadow-sm">
           Cancelled: {projects.filter(p => p.status === "Cancelled").length}
         </div>
       </div>
- 
+
       {/* FILTERS */}
       <div className="bg-white rounded-xl border p-4 mb-6 flex items-center gap-4 flex-wrap">
         <div className="flex items-center gap-2">
           <Filter className="w-5 h-5 text-gray-600" />
           <span className="text-gray-700">Filters:</span>
         </div>
- 
+
         <select
           value={filterDept}
           onChange={(e) => setFilterDept(e.target.value)}
@@ -426,7 +427,7 @@ export default function Projects() {
             <option key={d.id} value={d.id}>{d.name}</option>
           ))}
         </select>
- 
+
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
@@ -438,7 +439,7 @@ export default function Projects() {
           ))}
         </select>
       </div>
- 
+
       {/* --------------------------- LIST VIEW --------------------------- */}
       {view === "list" && (
         <div className="bg-white border rounded-xl overflow-hidden">
@@ -453,7 +454,7 @@ export default function Projects() {
                 <th className="p-3 text-right">Actions</th>
               </tr>
             </thead>
- 
+
             <tbody>
               {filteredProjects.map((project) => (
                 <tr key={project.id || project._id} className="border-b hover:bg-gray-50">
@@ -510,7 +511,7 @@ export default function Projects() {
           </table>
         </div>
       )}
- 
+
       {/* CARD VIEW */}
       {view === "card" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -551,18 +552,18 @@ export default function Projects() {
                     </button>
                   </div>
                 </div>
- 
+
                 <div className="space-y-3 mb-4">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded">Client</span>
                     <span className="text-sm font-medium text-gray-900">{getClientName(project.client || project.client_id)}</span>
                   </div>
- 
+
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded">Manager</span>
                     <span className="text-sm font-medium text-gray-900">{getManagerName(project.project_manager_id, project.project_manager)}</span>
                   </div>
- 
+
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded">Departments</span>
                     <div className="flex flex-wrap gap-1">
@@ -580,8 +581,8 @@ export default function Projects() {
                       )}
                     </div>
                   </div>
- 
- 
+
+
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded">Budget</span>
                     <span className="text-sm font-medium text-gray-900">
@@ -589,7 +590,7 @@ export default function Projects() {
                     </span>
                   </div>
                 </div>
- 
+
                 <div className="border-t pt-4">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-gray-600 text-sm font-medium">Status</span>
@@ -612,13 +613,13 @@ export default function Projects() {
                       </span>
                     )}
                   </div>
- 
+
                   <div className="flex items-center justify-between text-xs text-gray-500 mt-3">
                     <span>📅 {formatDate(project.start_date)}</span>
                     <span>→</span>
                     <span>{formatDate(project.end_date)}</span>
                   </div>
- 
+
                   <div className="flex items-center justify-between text-xs text-gray-700 mt-2 pt-2 border-t">
                     <span className="font-semibold">Priority: <span className="font-bold text-sm">{project.priority || "-"}</span></span>
                   </div>
@@ -628,7 +629,7 @@ export default function Projects() {
           )}
         </div>
       )}
- 
+
       {/* MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
@@ -636,7 +637,7 @@ export default function Projects() {
             <h2 className="text-xl font-semibold text-gray-900 mb-6">
               {editingProject ? "Edit Project" : "Add Project"}
             </h2>
- 
+
             <form onSubmit={handleSubmit}>
               <div className="space-y-4">
                 <div>
@@ -649,7 +650,7 @@ export default function Projects() {
                     className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
- 
+
                 <div>
                   <label className="block text-gray-700 font-medium mb-2">Description</label>
                   <textarea
@@ -659,7 +660,7 @@ export default function Projects() {
                     className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"
                   />
                 </div>
- 
+
                 <div>
                   <label className="block text-gray-700 font-medium mb-2">
                     Client <span className="text-red-500">*</span>
@@ -678,7 +679,7 @@ export default function Projects() {
                     ))}
                   </select>
                 </div>
- 
+
                 <div>
                   <label className="block text-gray-700 font-medium mb-2">
                     Project Manager
@@ -697,7 +698,7 @@ export default function Projects() {
                   </select>
                   <p className="text-xs text-gray-500 mt-1">Optional field</p>
                 </div>
- 
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">
@@ -722,7 +723,7 @@ export default function Projects() {
                     </select>
                     <p className="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple departments</p>
                   </div>
- 
+
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">Status</label>
                     <select
@@ -736,7 +737,7 @@ export default function Projects() {
                     </select>
                   </div>
                 </div>
- 
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">Start Date</label>
@@ -747,7 +748,7 @@ export default function Projects() {
                       className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
- 
+
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">End Date</label>
                     <input
@@ -758,7 +759,7 @@ export default function Projects() {
                     />
                   </div>
                 </div>
- 
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">Budget(optional)</label>
@@ -771,7 +772,7 @@ export default function Projects() {
                       placeholder="Project budget"
                     />
                   </div>
- 
+
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">Total Duration</label>
                     <div className="w-full px-4 py-2 border rounded-lg bg-gray-50 flex items-center">
@@ -780,7 +781,7 @@ export default function Projects() {
                     <p className="text-xs text-gray-500 mt-1">Auto-calculated from dates</p>
                   </div>
                 </div>
- 
+
                 <div>
                   <label className="block text-gray-700 font-medium mb-2">Priority</label>
                   <select
@@ -794,7 +795,7 @@ export default function Projects() {
                   </select>
                 </div>
               </div>
- 
+
               <div className="flex gap-3 mt-6">
                 <button
                   type="button"
@@ -815,105 +816,167 @@ export default function Projects() {
         </div>
       )}
 
-      {/* PROJECT SUMMARY MODAL */}
+      {/* FULLY RESPONSIVE COMPACT PROJECT SUMMARY MODAL */}
       {showSummaryModal && selectedSummaryProject && projectSummary && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-4xl w-full p-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Project Summary - {selectedSummaryProject.name}
-              </h2>
-              <button
-                onClick={() => { setShowSummaryModal(false); setSelectedSummaryProject(null); }}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Project Info */}
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <h3 className="font-semibold text-gray-900 mb-2">Project Details</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-600">Name:</span>
-                  <span className="font-medium ml-2">{projectSummary.project?.name || selectedSummaryProject.name}</span>
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white shadow-xl rounded-lg max-w-sm sm:max-w-md md:max-w-2xl lg:max-w-4xl w-full max-h-[90vh] overflow-hidden border border-gray-100">
+            {/* RESPONSIVE HEADER */}
+            <div className="bg-gray-800 px-3 sm:px-4 py-2.5 sm:py-3 text-white border-b border-gray-300">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-base sm:text-lg font-bold truncate">{selectedSummaryProject.name}</h2>
+                    <p className="text-blue-50 text-xs hidden sm:block">{selectedSummaryProject.name}</p>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-gray-600">Status:</span>
-                  <span className={`font-medium ml-2 px-2 py-1 rounded-full text-xs ${
-                    projectSummary.project?.status === 'Completed' ? 'bg-green-100 text-green-700' :
-                    projectSummary.project?.status === 'Active' ? 'bg-blue-100 text-blue-700' :
-                    'bg-yellow-100 text-yellow-700'
-                  }`}>
-                    {projectSummary.project?.status || selectedSummaryProject.status}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-600">Description:</span>
-                  <span className="font-medium ml-2">{projectSummary.project?.description || selectedSummaryProject.description}</span>
-                </div>
+                <button
+                  onClick={() => { setShowSummaryModal(false); setSelectedSummaryProject(null); }}
+                  className="p-1 sm:p-1.5 hover:bg-white/20 rounded-md transition-all ml-2 flex-shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
             </div>
 
-            {/* Project Stats */}
-            <div className="bg-blue-50 rounded-lg p-4 mb-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Statistics</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{projectSummary.tasks?.total || 0}</div>
-                  <div className="text-sm text-gray-600">Total Tasks</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">{projectSummary.tasks?.completed || 0}</div>
-                  <div className="text-sm text-gray-600">Completed Tasks</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-orange-600">{projectSummary.tasks?.inProgress || 0}</div>
-                  <div className="text-sm text-gray-600">In Progress</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-red-600">{(projectSummary.tasks?.total || 0) - (projectSummary.tasks?.completed || 0) - (projectSummary.tasks?.inProgress || 0)}</div>
-                  <div className="text-sm text-gray-600">Pending Tasks</div>
-                </div>
-              </div>
-              <div className="mt-4 grid grid-cols-2 gap-4">
-                <div className="text-center">
-                  <div className="text-xl font-bold text-purple-600">{projectSummary.totalHours || 0}h</div>
-                  <div className="text-sm text-gray-600">Total Hours</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-bold text-red-600">{projectSummary.progressPercentage || 0}%</div>
-                  <div className="text-sm text-gray-600">Progress</div>
-                </div>
-              </div>
-
-              {/* Tasks by Stage */}
-              <div className="mt-6">
-                <h4 className="font-semibold text-gray-900 mb-3">Tasks by Stage</h4>
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(projectSummary.tasks?.byStage || {}).map(([stage, count]) => (
-                    <div key={stage} className="px-3 py-2 bg-white rounded-lg border">
-                      <div className="text-sm font-medium text-gray-900">{stage}: {count}</div>
+            <div className="overflow-y-auto max-h-[calc(90vh-90px)] p-3 sm:p-4">
+              {/* RESPONSIVE PROJECT INFO */}
+              <div className="bg-gray-25 border border-gray-100 rounded-md p-3 sm:p-4 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-3">
+                  <div className="flex items-center gap-2 text-xs sm:text-sm">
+                    <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-gray-500 font-medium text-xs sm:text-sm">ASSIGNED</div>
+                      <div className="font-semibold text-gray-800 truncate">John C.</div>
                     </div>
-                  ))}
+                  </div>
+                  <div className="flex items-center gap-2 text-xs sm:text-sm">
+                    <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0" />
+                    <div>
+                      <div className="text-gray-500 font-medium text-xs sm:text-sm">STATUS</div>
+                      <span className={`px-2 py-0.5 rounded text-xs font-semibold inline-flex items-center gap-1 ${projectSummary.project?.status === 'Completed' ? 'bg-green-50 text-green-700 border border-green-100' :
+                          projectSummary.project?.status === 'Active' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
+                            'bg-yellow-50 text-yellow-700 border border-yellow-100'
+                        }`}>
+                        {projectSummary.project?.status || selectedSummaryProject.status}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2 text-xs sm:text-sm lg:col-span-1">
+                    <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-600 line-clamp-2 text-xs sm:text-sm">{projectSummary.project?.description || selectedSummaryProject.description}</span>
+                  </div>
+                </div>
+
+                {/* RESPONSIVE PROGRESS BAR */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-2 sm:pt-3 border-t border-gray-100">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-col sm:flex-row sm:justify-between text-xs sm:text-sm text-gray-500 mb-1.5 sm:mb-2">
+                      <span>Progress</span>
+                      <span className="font-semibold text-gray-800">{projectSummary.progressPercentage || 0}%</span>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded h-1.5 sm:h-2">
+                      <div className="bg-gradient-to-r from-blue-400 to-indigo-500 h-1.5 sm:h-2 rounded transition-all"
+                        style={{ width: `${projectSummary.progressPercentage || 0}%` }} />
+                    </div>
+                  </div>
+                  <div className="text-lg sm:text-xl font-bold text-indigo-500 whitespace-nowrap flex-shrink-0">
+                    {projectSummary.totalHours || 0}h
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Recent Activity */}
-            <div className="bg-green-50 rounded-lg p-4">
-              <h3 className="font-semibold text-gray-900 mb-4">Project Overview</h3>
-              <div className="text-center py-4 text-gray-500">
-                <p>Project summary loaded successfully</p>
-                <p className="text-sm mt-2">Activity timeline and detailed logs can be added in future updates</p>
+              {/* RESPONSIVE KEY STATS */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-6">
+                <div className="bg-white border border-gray-100 rounded-md p-2 sm:p-3 text-center">
+                  <div className="text-lg sm:text-xl font-bold text-gray-900">{projectSummary.tasks?.total || 0}</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wide">Total</div>
+                </div>
+                <div className="bg-white border border-gray-100 rounded-md p-2 sm:p-3 text-center">
+                  <div className="text-lg sm:text-xl font-bold text-green-500">{projectSummary.tasks?.completed || 0}</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wide">Done</div>
+                </div>
+                <div className="bg-white border border-gray-100 rounded-md p-2 sm:p-3 text-center">
+                  <div className="text-lg sm:text-xl font-bold text-orange-500">{projectSummary.tasks?.inProgress || 0}</div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wide">Active</div>
+                </div>
+                <div className="bg-white border border-gray-100 rounded-md p-2 sm:p-3 text-center">
+                  <div className="text-lg sm:text-xl font-bold text-red-500">
+                    {(projectSummary.tasks?.total || 0) - (projectSummary.tasks?.completed || 0) - (projectSummary.tasks?.inProgress || 0)}
+                  </div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wide">Pending</div>
+                </div>
+              </div>
+
+              {/* RESPONSIVE TASKS TABLE */}
+              <div className="bg-white border border-gray-100 rounded-md overflow-hidden mb-4">
+                <div className="bg-gray-50 px-3 sm:px-4 py-2 border-b border-gray-100">
+                  <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5">
+                    <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                    Tasks by Stage
+                  </h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs sm:text-sm min-w-[280px]">
+                    <thead>
+                      <tr className="bg-gray-50 border-b border-gray-100">
+                        <th className="px-3 sm:px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Stage</th>
+                        <th className="px-3 sm:px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider hidden sm:table-cell">Count</th>
+                        <th className="px-3 sm:px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider hidden sm:table-cell">%</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {Object.entries(projectSummary.tasks?.byStage || {}).map(([stage, count], index) => {
+                        const total = projectSummary.tasks?.total || 0;
+                        const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
+                        return (
+                          <tr key={stage} className="hover:bg-gray-25 transition-colors">
+                            <td className="px-3 sm:px-4 py-2.5">
+                              <div className="flex items-center gap-2">
+                                <div className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full ${stage.toLowerCase().includes('complete') ? 'bg-green-400' :
+                                    stage.toLowerCase().includes('progress') ? 'bg-orange-400' :
+                                      'bg-red-400'
+                                  }`} />
+                                <span className="font-medium text-gray-800 capitalize truncate max-w-[120px] sm:max-w-none">{stage}</span>
+                              </div>
+                            </td>
+                            <td className="px-3 sm:px-4 py-2.5 text-right hidden sm:table-cell">
+                              <div className="text-sm font-bold text-gray-900">{count}</div>
+                            </td>
+                            <td className="px-3 sm:px-4 py-2.5 text-right hidden sm:table-cell">
+                              <span className="px-1.5 py-0.5 bg-blue-50 text-blue-600 text-xs rounded font-medium">{percentage}%</span>
+                            </td>
+                            {/* MOBILE COUNT DISPLAY */}
+                            <td className="px-3 sm:px-4 py-2.5 text-right sm:hidden">
+                              <div className="text-sm font-bold text-gray-900">{count}</div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* RESPONSIVE ACTIVITY */}
+              <div className="bg-gradient-to-r from-emerald-25 to-green-25 border border-emerald-100 rounded-md p-3 sm:p-4">
+                <h4 className="text-xs sm:text-sm font-bold text-gray-800 mb-2 flex items-center gap-1.5">
+                  <Activity className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500 flex-shrink-0" />
+                  Recent Activity
+                </h4>
+                <div className="bg-white border border-gray-100 rounded p-2 sm:p-2.5 text-xs">
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse flex-shrink-0" />
+                    <span className="truncate">Summary loaded successfully</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }
- 
- 
+

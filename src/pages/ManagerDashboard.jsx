@@ -40,7 +40,7 @@ const ManagerDashboard = () => {
           httpGetService('api/manager/clients'),
           httpGetService('api/manager/projects'),
           httpGetService('api/manager/employees/all'),
-          httpGetService('api/manager/my-tasks'),
+          httpGetService('api/manager/tasks'),
         ]);
 
         setMetrics(dashboardResponse?.data || dashboardResponse || {});
