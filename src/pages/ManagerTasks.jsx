@@ -924,14 +924,14 @@ const ManagerTasks = () => {
                   }}
                   className="w-full h-48 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  {employees.filter(emp => (emp.role === 'Employee' || emp.role === 'employee')).map(emp => (
+                  {employees.map(emp => (
                     <option key={emp.public_id || emp.id || emp._id} value={emp.public_id || emp.id || emp._id}>
                       {emp.name || emp.email || 'Unnamed Employee'}
                     </option>
                   ))}
                 </select>
                 <div className="text-sm text-gray-500 mt-1">
-                  Hold Ctrl (Windows) or Cmd (Mac) to select multiple employees.
+                  Hold Ctrl (Windows) or Cmd (Mac) to select multiple employees. ({employees.length} available)
                 </div>
               </div>
  

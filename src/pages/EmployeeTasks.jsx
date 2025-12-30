@@ -1138,13 +1138,19 @@ const EmployeeTasks = () => {
                 {filteredTasks.map((task) => {
                   const taskId = normalizeId(task);
                   const isActive = taskId === normalizeId(selectedTask);
+                  const hasPendingReassignment = reassignmentRequests[taskId]?.status === 'PENDING';
                   return (
                     <button
                       key={taskId || task.title}
                       type="button"
+                      disabled={hasPendingReassignment}
                       onClick={() => setSelectedTask(task)}
-                      className={`w-full rounded-2xl border px-4 py-3 text-left shadow-sm transition hover:border-blue-300 hover:bg-blue-50 ${
-                        isActive ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'
+                      className={`w-full rounded-2xl border px-4 py-3 text-left shadow-sm transition ${
+                        hasPendingReassignment 
+                          ? 'border-orange-300 bg-orange-50 opacity-75 cursor-not-allowed' 
+                          : `hover:border-blue-300 hover:bg-blue-50 ${
+                              isActive ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'
+                            }`
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -1170,6 +1176,11 @@ const EmployeeTasks = () => {
                           <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-0.5 text-blue-600 flex items-center gap-1">
                             <CheckSquare className="w-3 h-3" />
                             {task.checklist.filter(i => i.status === 'Completed').length}/{task.checklist.length}
+                          </span>
+                        )}
+                        {hasPendingReassignment && (
+                          <span className="rounded-full border border-orange-200 bg-orange-50 px-3 py-0.5 text-orange-600 font-medium">
+                            🔒 Reassignment Pending
                           </span>
                         )}
                       </div>
@@ -1199,13 +1210,22 @@ const EmployeeTasks = () => {
                 <p className="text-sm text-gray-500">{selectedTask.project?.name && `Project: ${selectedTask.project.name}`}</p>
                 <p className="text-xs text-gray-400">Due {formatDateString(selectedTask.taskDate || selectedTask.dueDate || selectedTask.due_date)}</p>
 
+                {/* Reassignment Pending Alert */}
+                {reassignmentRequests[normalizeId(selectedTask)]?.status === 'PENDING' && (
+                  <div className="rounded-lg border border-orange-200 bg-orange-50 p-3 text-sm text-orange-700">
+                    <p className="font-semibold">🔒 Reassignment Request Pending</p>
+                    <p className="text-xs">Your manager is reviewing your reassignment request. Task is locked until they respond.</p>
+                  </div>
+                )}
+
                 {/* Employee Actions */}
                 {userRole === 'employee' && (
                   <div className="flex flex-wrap gap-2">
                     {selectedTask.status === 'Pending' || selectedTask.status === 'To Do' ? (
                       <button
                         onClick={() => handleStartTask(normalizeId(selectedTask))}
-                        className="rounded-full border border-green-200 px-3 py-1 text-green-600 hover:bg-green-50 flex items-center gap-1 text-sm"
+                        disabled={reassignmentRequests[normalizeId(selectedTask)]?.status === 'PENDING'}
+                        className="rounded-full border border-green-200 px-3 py-1 text-green-600 hover:bg-green-50 flex items-center gap-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Play className="w-3 h-3" />
                         Start Task
@@ -1216,7 +1236,8 @@ const EmployeeTasks = () => {
                       <>
                         <button
                           onClick={() => handlePauseTask(normalizeId(selectedTask))}
-                          className="rounded-full border border-orange-200 px-3 py-1 text-orange-600 hover:bg-orange-50 flex items-center gap-1 text-sm"
+                          disabled={reassignmentRequests[normalizeId(selectedTask)]?.status === 'PENDING'}
+                          className="rounded-full border border-orange-200 px-3 py-1 text-orange-600 hover:bg-orange-50 flex items-center gap-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Pause className="w-3 h-3" />
                           Pause
@@ -1234,7 +1255,8 @@ const EmployeeTasks = () => {
                     {selectedTask.status === 'On Hold' ? (
                       <button
                         onClick={() => handleResumeTask(normalizeId(selectedTask))}
-                        className="rounded-full border border-blue-200 px-3 py-1 text-blue-600 hover:bg-blue-50 flex items-center gap-1 text-sm"
+                        disabled={reassignmentRequests[normalizeId(selectedTask)]?.status === 'PENDING'}
+                        className="rounded-full border border-blue-200 px-3 py-1 text-blue-600 hover:bg-blue-50 flex items-center gap-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <RotateCcw className="w-3 h-3" />
                         Resume
@@ -1243,7 +1265,8 @@ const EmployeeTasks = () => {
 
                     <button
                       onClick={() => handleOpenTimeline(selectedTask)}
-                      className="rounded-full border border-indigo-200 px-3 py-1 text-indigo-600 hover:bg-indigo-50 flex items-center gap-1 text-sm"
+                      disabled={reassignmentRequests[normalizeId(selectedTask)]?.status === 'PENDING'}
+                      className="rounded-full border border-indigo-200 px-3 py-1 text-indigo-600 hover:bg-indigo-50 flex items-center gap-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Clock className="w-3 h-3" />
                       Timeline
@@ -1465,11 +1488,13 @@ const EmployeeTasks = () => {
         onClose={() => setSelectedTaskForReassignment(null)}
         onSuccess={(resp) => {
           if (resp?.request && resp?.task) {
+            // Extract task ID (could be id or task_id from request)
+            const taskIntId = resp.task.id || resp.request.task_id;
+            
             // Update reassignment requests state with the new request
-            const taskId = resp.task.id;
             setReassignmentRequests(prev => ({
               ...prev,
-              [taskId]: {
+              [taskIntId]: {
                 id: resp.request.id,
                 taskId: resp.request.task_id,
                 status: resp.request.status,
@@ -1478,13 +1503,16 @@ const EmployeeTasks = () => {
               }
             }));
             
-            // Update task status to On Hold
-            updateLocalTaskState(taskId, {
+            // Update task status to On Hold and lock it
+            updateLocalTaskState(taskIntId, {
               status: resp.task.status || 'On Hold',
               total_duration: resp.task.total_duration || 0
             });
+            
+            // Show success message from API
+            toast.success(resp?.message || 'Reassignment request submitted successfully');
           }
-          // Reload tasks and reassignment requests
+          // Reload tasks and reassignment requests to refresh UI
           loadTasks(userRole === 'employee' ? undefined : selectedProjectId);
           loadReassignmentRequests(selectedProjectId);
         }}
