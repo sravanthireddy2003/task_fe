@@ -3,11 +3,16 @@ import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
 import fetchWithTenant from '../utils/fetchWithTenant';
 import { selectUser } from '../redux/slices/authSlice';
-import { RefreshCw, AlertCircle, Calendar, Clock, User, Plus, CheckSquare, Check, Eye, Filter } from 'lucide-react';
- 
+import { 
+  RefreshCw, AlertCircle, Calendar, Clock, User, Plus, CheckSquare, Check, Eye, Filter,
+  Lock, UserCheck, Clock as ClockIcon
+} from 'lucide-react';
+
 const ManagerTasks = () => {
   const user = useSelector(selectUser);
   const resources = user?.resources || {};
+  
+  // States
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -32,11 +37,11 @@ const ManagerTasks = () => {
   const [reassigning, setReassigning] = useState(false);
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState('all');
- 
+
   // Status options
   const statusOptions = ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'ON_HOLD'];
- 
-  // Get status text
+
+  // Utility functions
   const getStatusText = (status) => {
     const statusMap = {
       'PENDING': 'Pending',
@@ -50,8 +55,7 @@ const ManagerTasks = () => {
     };
     return statusMap[status] || status || 'Pending';
   };
- 
-  // Format date
+
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
@@ -61,8 +65,7 @@ const ManagerTasks = () => {
       day: 'numeric'
     });
   };
- 
-  // Get assigned users string
+
   const getAssignedUsers = (task) => {
     if (Array.isArray(task.assignedUsers) && task.assignedUsers.length) {
       return task.assignedUsers.map(u => u.name).join(', ');
@@ -72,8 +75,7 @@ const ManagerTasks = () => {
     }
     return 'Unassigned';
   };
- 
-  // Get project name
+
   const getProjectName = (projectId) => {
     const project = projects.find(p =>
       p.id === projectId ||
@@ -83,7 +85,7 @@ const ManagerTasks = () => {
     );
     return project?.name || project?.title || 'Unknown Project';
   };
- 
+
   // Filter tasks
   const filteredTasks = useMemo(() => {
     if (filterStatus === 'all') return tasks;
@@ -93,7 +95,7 @@ const ManagerTasks = () => {
       return taskStatus === filterStatusUpper;
     });
   }, [tasks, filterStatus]);
- 
+
   // Get status counts
   const getStatusCounts = () => {
     const counts = {
@@ -102,18 +104,18 @@ const ManagerTasks = () => {
       'completed': 0,
       'on_hold': 0
     };
-   
+    
     tasks.forEach(task => {
       const status = (task.status || task.stage || 'pending').toLowerCase();
       if (counts.hasOwnProperty(status)) {
         counts[status]++;
       }
     });
-   
+    
     return counts;
   };
- 
-  // Original functions from your code
+
+  // API Functions
   const loadTasks = useCallback(async (projectId = '') => {
     if (!projectId) {
       setTasks([]);
@@ -121,7 +123,7 @@ const ManagerTasks = () => {
       setLoading(false);
       return;
     }
- 
+
     setLoading(true);
     try {
       const resp = await fetchWithTenant(`/api/manager/tasks?projectId=${encodeURIComponent(projectId)}`);
@@ -134,7 +136,7 @@ const ManagerTasks = () => {
       setLoading(false);
     }
   }, []);
- 
+
   const loadEmployees = useCallback(async () => {
     setEmployeesLoading(true);
     try {
@@ -147,7 +149,7 @@ const ManagerTasks = () => {
       setEmployeesLoading(false);
     }
   }, []);
- 
+
   const loadProjects = useCallback(async () => {
     setProjectsLoading(true);
     try {
@@ -160,8 +162,8 @@ const ManagerTasks = () => {
       setProjectsLoading(false);
     }
   }, []);
- 
-  // Auto-select first project when projects load
+
+  // Effects
   useEffect(() => {
     if (projects.length > 0 && !selectedProjectId) {
       const firstProject = projects[0];
@@ -171,24 +173,24 @@ const ManagerTasks = () => {
       }
     }
   }, [projects]);
- 
+
   useEffect(() => {
     loadProjects();
   }, [loadProjects]);
- 
+
   useEffect(() => {
     loadTasks(selectedProjectId);
   }, [loadTasks, selectedProjectId]);
- 
+
   useEffect(() => {
     setSelectedTask(null);
   }, [selectedProjectId]);
- 
+
   useEffect(() => {
     loadEmployees();
   }, [loadEmployees]);
- 
-  // Original computed values
+
+  // Computed values
   const detailProject = selectedTask?.project || selectedTask?.meta?.project;
   const selectedProject = useMemo(() => {
     if (!selectedProjectId) return null;
@@ -197,76 +199,8 @@ const ManagerTasks = () => {
       return projectId === selectedProjectId;
     }) || null;
   }, [projects, selectedProjectId]);
- 
-  const stages = useMemo(() => ['PENDING', 'IN_PROGRESS', 'COMPLETED'], []);
-  const stageCounts = useMemo(() => {
-    const counts = { PENDING: 0, IN_PROGRESS: 0, COMPLETED: 0 };
-    tasks.forEach((task) => {
-      const stage = (task.stage || task.status || '').toString().toUpperCase();
-      if (stage && counts.hasOwnProperty(stage)) {
-        counts[stage] += 1;
-      }
-    });
-    return counts;
-  }, [tasks]);
- 
-  const overdueTasksCount = useMemo(() => {
-    const now = Date.now();
-    return tasks.filter((task) => {
-      const rawDate = task.taskDate || task.due_date;
-      if (!rawDate) return false;
-      const parsed = new Date(rawDate);
-      if (Number.isNaN(parsed.getTime())) return false;
-      return parsed.getTime() < now && (task.stage || task.status || '').toString().toUpperCase() !== 'COMPLETED';
-    }).length;
-  }, [tasks]);
- 
-  const assignedUsers = useMemo(() => {
-    if (!selectedTask) return [];
-    if (Array.isArray(selectedTask.assignedUsers) && selectedTask.assignedUsers.length) {
-      return selectedTask.assignedUsers.map((user) => user.name);
-    }
-    if (Array.isArray(selectedTask.assigned_to) && selectedTask.assigned_to.length) {
-      return selectedTask.assigned_to;
-    }
-    return [];
-  }, [selectedTask]);
- 
-  useEffect(() => {
-    if (!selectedTask || !employees.length) return;
-    const primaryAssignee = selectedTask.assignedUsers?.[0] || selectedTask.assigned_to?.[0];
-    if (primaryAssignee) {
-      const match = employees.find((emp) =>
-        String(emp.internalId || emp.id || emp._id || emp.public_id) === String(primaryAssignee.internalId || primaryAssignee.id || primaryAssignee._id || primaryAssignee)
-      );
-      setSelectedAssignee(match?.internalId || match?.id || match?._id || match?.public_id || primaryAssignee.internalId || primaryAssignee.id || primaryAssignee);
-    }
-  }, [selectedTask, employees]);
- 
-  const documents = useMemo(() => {
-    if (!selectedTask) return [];
-    return selectedTask.documents || selectedTask.files || [];
-  }, [selectedTask]);
- 
-  const timeline = useMemo(() => {
-    if (!selectedTask) return [];
-    return selectedTask.activityTimeline || selectedTask.activities || [];
-  }, [selectedTask]);
- 
-  const checklist = useMemo(() => {
-    if (!selectedTask) return [];
-    return selectedTask.checklist || [];
-  }, [selectedTask]);
- 
-  const formattedDue = useMemo(() => {
-    if (!selectedTask) return '—';
-    const raw = selectedTask.taskDate || selectedTask.due_date;
-    if (!raw) return '—';
-    const date = new Date(raw);
-    return Number.isNaN(date.getTime()) ? raw : date.toLocaleDateString();
-  }, [selectedTask]);
- 
-  // ORIGINAL handleCreateTask function
+
+  // Task Actions
   const handleCreateTask = async (event) => {
     event.preventDefault();
     if (!formData.title || !selectedProjectId) {
@@ -297,8 +231,7 @@ const ManagerTasks = () => {
         body: JSON.stringify(payload),
       });
       toast.success(resp?.message || 'Task created successfully');
-     
-      // Reset form and close modal
+      
       setFormData({
         title: '',
         description: '',
@@ -310,8 +243,6 @@ const ManagerTasks = () => {
         projectId: selectedProjectId
       });
       setShowCreateTaskModal(false);
-     
-      // Refresh tasks for current project
       loadTasks(selectedProjectId);
     } catch (err) {
       toast.error(err?.message || 'Unable to create task');
@@ -319,8 +250,7 @@ const ManagerTasks = () => {
       setActionLoading(false);
     }
   };
- 
-  // ORIGINAL handleReassignTask function
+
   const handleReassignTask = async () => {
     if (!selectedTask || !selectedAssignee) {
       toast.error('Select an employee to reassign the task.');
@@ -339,8 +269,7 @@ const ManagerTasks = () => {
         body: JSON.stringify(payload),
       });
       toast.success(resp?.message || 'Task reassigned successfully');
-     
-      // Update local task state
+      
       const targetEmployee = employees.find((emp) =>
         String(emp.internalId || emp.id || emp._id || emp.public_id) === String(selectedAssignee)
       );
@@ -353,7 +282,7 @@ const ManagerTasks = () => {
         }] : prev.assignedUsers,
         assigned_to: targetEmployee ? [targetEmployee.internalId || targetEmployee.public_id || targetEmployee.id || targetEmployee._id] : prev.assigned_to,
       }));
-     
+      
       loadTasks(selectedProjectId);
     } catch (err) {
       toast.error(err?.message || 'Unable to reassign task');
@@ -361,8 +290,49 @@ const ManagerTasks = () => {
       setReassigning(false);
     }
   };
- 
-  // Open create task modal
+
+  // 🔥 NEW LOCK HANDLERS
+  const handleApproveRequest = async (requestId) => {
+    if (!requestId || actionLoading) return;
+    
+    setActionLoading(true);
+    try {
+      const taskId = selectedTask.id || selectedTask.public_id;
+const resp = await fetchWithTenant(`/api/tasks/${taskId}/reassign-requests/${requestId}/approve`, {
+  method: 'POST',
+});
+      
+      toast.success('✅ Task unlocked for reassignment!');
+      loadTasks(selectedProjectId);
+      setSelectedTask(null);
+    } catch (err) {
+      toast.error(err?.message || 'Failed to approve request');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRejectRequest = async (requestId) => {
+    if (!requestId || actionLoading) return;
+    
+    setActionLoading(true);
+    try {
+      const taskId = selectedTask.id || selectedTask.public_id;
+const resp = await fetchWithTenant(`/api/tasks/${taskId}/reassign-requests/${requestId}/reject`, {
+  method: 'POST',
+});
+      
+      toast.success('✅ Request rejected. Task unlocked.');
+      loadTasks(selectedProjectId);
+      setSelectedTask(null);
+    } catch (err) {
+      toast.error(err?.message || 'Failed to reject request');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // UI Modals & Actions
   const openCreateTaskModal = () => {
     if (!selectedProjectId) {
       toast.error('Please select a project first');
@@ -370,25 +340,25 @@ const ManagerTasks = () => {
     }
     setShowCreateTaskModal(true);
   };
- 
+
   return (
-    <div className="p-8">
-      {/* DEBUG INFO - Remove in production - EXACTLY AS IN IMAGE */}
+    <div className="p-8 max-w-7xl mx-auto">
+      {/* DEBUG INFO - Remove in production */}
       <div className="mb-4 p-2 bg-gray-100 rounded text-xs">
         <div>Selected Project: {selectedProjectId}</div>
         <div>Tasks Count: {tasks.length}</div>
         <div>Projects Count: {projects.length}</div>
         <div>Status: {loading ? 'loading' : error ? 'error' : 'succeeded'}</div>
-        <div>Fetching: {loading ? 'Yes' : 'No'}</div>
+        <div>Locked Tasks: {tasks.filter(t => t.is_locked).length}</div>
       </div>
- 
-      {/* HEADER - EXACTLY AS IN IMAGE */}
+
+      {/* HEADER */}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Tasks</h1>
           <p className="text-gray-600">Manage and track all your tasks</p>
         </div>
- 
+
         <div className="flex items-center gap-3">
           {/* Project Selector */}
           <div className="relative">
@@ -414,7 +384,7 @@ const ManagerTasks = () => {
               </svg>
             </div>
           </div>
- 
+
           {/* Refresh Button */}
           <button
             onClick={() => selectedProjectId && loadTasks(selectedProjectId)}
@@ -428,7 +398,7 @@ const ManagerTasks = () => {
           >
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </button>
- 
+
           {/* Add Task Button */}
           <button
             onClick={openCreateTaskModal}
@@ -444,7 +414,7 @@ const ManagerTasks = () => {
           </button>
         </div>
       </div>
- 
+
       {/* Loading Indicator */}
       {loading && (
         <div className="flex items-center justify-center p-4 mb-6 bg-blue-50 rounded-lg">
@@ -452,8 +422,8 @@ const ManagerTasks = () => {
           <span className="text-blue-600 font-medium">Loading tasks...</span>
         </div>
       )}
- 
-      {/* STATUS SUMMARY - EXACTLY AS IN IMAGE */}
+
+      {/* STATUS SUMMARY */}
       {selectedProjectId && tasks.length > 0 && (
         <div className="flex flex-wrap gap-3 mb-6">
           <div className="px-4 py-2 rounded-lg bg-yellow-100 text-yellow-800 font-semibold shadow-sm border border-yellow-200">
@@ -470,8 +440,8 @@ const ManagerTasks = () => {
           </div>
         </div>
       )}
- 
-      {/* PROJECT INFO - EXACTLY AS IN IMAGE */}
+
+      {/* PROJECT INFO */}
       {selectedProjectId && tasks.length > 0 && selectedProject && (
         <div className="bg-white rounded-xl border p-4 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-2">
@@ -482,15 +452,15 @@ const ManagerTasks = () => {
           </p>
         </div>
       )}
- 
-      {/* FILTERS - EXACTLY AS IN IMAGE */}
+
+      {/* FILTERS */}
       {selectedProjectId && tasks.length > 0 && (
         <div className="bg-white rounded-xl border p-4 mb-6 flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-2">
             <Filter className="w-5 h-5 text-gray-600" />
             <span className="text-gray-700 font-medium">Filters:</span>
           </div>
- 
+
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
@@ -506,7 +476,7 @@ const ManagerTasks = () => {
           </select>
         </div>
       )}
- 
+
       {/* NO PROJECT SELECTED STATE */}
       {!selectedProjectId && !projectsLoading && (
         <div className="bg-white rounded-xl border p-12 text-center">
@@ -531,18 +501,10 @@ const ManagerTasks = () => {
           </div>
         </div>
       )}
- 
-      {/* Projects Loading */}
-      {projectsLoading && (
-        <div className="bg-white rounded-xl border p-12 text-center">
-          <div className="w-8 h-8 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading projects...</p>
-        </div>
-      )}
- 
+
       {/* MAIN CONTENT */}
       <div className="flex flex-col lg:flex-row gap-6">
-        {/* TASKS LIST - Left Column */}
+        {/* TASKS LIST */}
         <div className={`${selectedTask ? 'lg:w-3/5' : 'flex-1'}`}>
           {/* NO TASKS STATE */}
           {selectedProjectId && !loading && tasks.length === 0 && (
@@ -558,7 +520,7 @@ const ManagerTasks = () => {
                   onClick={openCreateTaskModal}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
-                  Create First Task
+                  ➕ Create First Task
                 </button>
                 <button
                   onClick={() => loadTasks(selectedProjectId)}
@@ -569,8 +531,8 @@ const ManagerTasks = () => {
               </div>
             </div>
           )}
- 
-          {/* TASKS TABLE - EXACTLY AS IN IMAGE */}
+
+          {/* TASKS TABLE */}
           {selectedProjectId && !loading && tasks.length > 0 && (
             <div className="bg-white border rounded-xl overflow-hidden">
               <table className="w-full table-auto">
@@ -585,7 +547,7 @@ const ManagerTasks = () => {
                     <th className="p-4 text-right">Actions</th>
                   </tr>
                 </thead>
- 
+
                 <tbody>
                   {filteredTasks.length === 0 ? (
                     <tr>
@@ -597,49 +559,60 @@ const ManagerTasks = () => {
                   ) : (
                     filteredTasks.map((task) => {
                       const isActive = selectedTask?.id === task.id || selectedTask?.public_id === task.public_id;
+                      const isLocked = task.is_locked;
                       return (
                         <tr
                           key={task.id || task.public_id || task._id || task.internalId}
-                          className={`border-b transition-colors ${isActive ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+                          className={`border-b transition-colors ${
+                            isActive ? 'bg-blue-50' : 'hover:bg-gray-50'
+                          } ${isLocked ? 'bg-orange-50' : ''}`}
                         >
                           <td className="p-4">
                             <div className="font-medium text-gray-900">{task.title || task.name}</div>
                             {task.description && (
                               <div className="text-sm text-gray-500 mt-1 line-clamp-2">{task.description}</div>
                             )}
+                            {isLocked && (
+                              <div className="flex items-center gap-1 mt-1">
+                                <Lock className="w-3 h-3 text-orange-500" />
+                                <span className="text-xs text-orange-700 font-medium">Reassignment Requested</span>
+                              </div>
+                            )}
                           </td>
- 
+
                           <td className="p-4">
                             <div className="flex items-center gap-2">
                               <User className="w-4 h-4 text-gray-400" />
                               <span className="text-sm text-gray-700">{getAssignedUsers(task)}</span>
                             </div>
                           </td>
- 
+
                           <td className="p-4">
                             <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                               (task.status || task.stage || 'PENDING').toUpperCase() === 'COMPLETED'
-                                ? 'bg-green-100 text-green-800' :
-                              (task.status || task.stage || 'PENDING').toUpperCase() === 'IN_PROGRESS'
-                                ? 'bg-blue-100 text-blue-800' :
-                              (task.status || task.stage || 'PENDING').toUpperCase() === 'ON_HOLD'
-                                ? 'bg-red-100 text-red-800' :
-                                'bg-yellow-100 text-yellow-800'
+                                ? 'bg-green-100 text-green-800'
+                              : (task.status || task.stage || 'PENDING').toUpperCase() === 'IN_PROGRESS'
+                              ? 'bg-blue-100 text-blue-800'
+                              : (task.status || task.stage || 'PENDING').toUpperCase() === 'ON_HOLD'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-yellow-100 text-yellow-800'
                             }`}>
                               {getStatusText(task.status || task.stage || 'PENDING')}
                             </span>
                           </td>
- 
+
                           <td className="p-4">
                             <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                              (task.priority || 'MEDIUM').toUpperCase() === 'HIGH' ? 'bg-red-100 text-red-800' :
-                              (task.priority || 'MEDIUM').toUpperCase() === 'MEDIUM' ? 'bg-amber-100 text-amber-800' :
-                              'bg-gray-100 text-gray-800'
+                              (task.priority || 'MEDIUM').toUpperCase() === 'HIGH' 
+                                ? 'bg-red-100 text-red-800'
+                                : (task.priority || 'MEDIUM').toUpperCase() === 'MEDIUM' 
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-gray-100 text-gray-800'
                             }`}>
                               {(task.priority || 'MEDIUM').toUpperCase()}
                             </span>
                           </td>
- 
+
                           <td className="p-4">
                             <div className="flex items-center gap-2">
                               <Calendar className="w-4 h-4 text-gray-400" />
@@ -648,16 +621,16 @@ const ManagerTasks = () => {
                               </span>
                             </div>
                           </td>
- 
+
                           <td className="p-4">
                             <div className="flex items-center gap-2">
-                              <Clock className="w-4 h-4 text-gray-400" />
+                              <ClockIcon className="w-4 h-4 text-gray-400" />
                               <span className="text-sm text-gray-700">
                                 {task.estimatedHours || task.timeAlloted || 0}h
                               </span>
                             </div>
                           </td>
- 
+
                           <td className="p-4 text-right">
                             <div className="flex justify-end gap-2">
                               <button
@@ -678,8 +651,8 @@ const ManagerTasks = () => {
             </div>
           )}
         </div>
- 
-        {/* TASK DETAILS & REASSIGN - Right Column (ORIGINAL FUNCTIONALITY) */}
+
+        {/* TASK DETAILS & ACTIONS */}
         {selectedTask && (
           <div className="lg:w-2/5">
             <div className="bg-white border rounded-xl p-6">
@@ -699,7 +672,7 @@ const ManagerTasks = () => {
                     ✕
                   </button>
                 </div>
- 
+
                 {/* Quick Info */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-gray-50 p-3 rounded-lg">
@@ -712,61 +685,127 @@ const ManagerTasks = () => {
                   </div>
                   <div className="bg-gray-50 p-3 rounded-lg">
                     <div className="text-xs uppercase text-gray-500 font-medium mb-1">Due Date</div>
-                    <div className="font-semibold text-gray-900">{formattedDue}</div>
+                    <div className="font-semibold text-gray-900">{formatDate(selectedTask.taskDate)}</div>
                   </div>
                   <div className="bg-gray-50 p-3 rounded-lg">
                     <div className="text-xs uppercase text-gray-500 font-medium mb-1">Estimated Hours</div>
-                    <div className="font-semibold text-gray-900">{selectedTask.timeAlloted ?? selectedTask.time_alloted ?? '—'}h</div>
+                    <div className="font-semibold text-gray-900">{selectedTask.timeAlloted ?? '—'}h</div>
                   </div>
-                  <div className={`p-3 rounded-lg ${(selectedTask.status || '').toLowerCase() === 'completed' ? 'bg-green-50' : selectedTask.summary?.dueStatus === 'Overdue' ? 'bg-red-50' : 'bg-gray-50'}`}>
+                  <div className={`p-3 rounded-lg ${
+                    (selectedTask.status || '').toLowerCase() === 'completed' 
+                      ? 'bg-green-50' 
+                      : selectedTask.summary?.dueStatus === 'Overdue' 
+                      ? 'bg-red-50' 
+                      : 'bg-gray-50'
+                  }`}>
                     <div className="text-xs uppercase text-gray-500 font-medium mb-1">Total Hours Worked</div>
-                    <div className={`font-semibold ${(selectedTask.status || '').toLowerCase() === 'completed' ? 'text-green-800' : selectedTask.summary?.dueStatus === 'Overdue' ? 'text-red-800' : 'text-gray-900'}`}>
+                    <div className={`font-semibold ${
+                      (selectedTask.status || '').toLowerCase() === 'completed' 
+                        ? 'text-green-800' 
+                        : selectedTask.summary?.dueStatus === 'Overdue' 
+                        ? 'text-red-800' 
+                        : 'text-gray-900'
+                    }`}>
                       {selectedTask.total_time_hhmmss || '0h 0m'}
                     </div>
                   </div>
-                  <div className={`p-3 rounded-lg ${selectedTask.summary?.dueStatus === 'Overdue' ? 'bg-red-50' : 'bg-green-50'}`}>
-                    <div className="text-xs uppercase text-gray-500 font-medium mb-1">Status (from Summary)</div>
+                  <div className={`p-3 rounded-lg ${
+                    selectedTask.summary?.dueStatus === 'Overdue' 
+                      ? 'bg-red-50' 
+                      : 'bg-green-50'
+                  }`}>
+                    <div className="text-xs uppercase text-gray-500 font-medium mb-1">Due Status</div>
                     <div className="flex items-center gap-2">
-                      {selectedTask.summary?.dueStatus === 'Overdue' && (
+                      {selectedTask.summary?.dueStatus === 'Overdue' ? (
                         <>
                           <span className="w-2 h-2 bg-red-600 rounded-full"></span>
                           <span className="font-semibold text-red-800">{selectedTask.summary.dueStatus}</span>
                         </>
-                      )}
-                      {selectedTask.summary?.dueStatus === 'On Time' && (
+                      ) : (
                         <>
                           <span className="w-2 h-2 bg-green-600 rounded-full"></span>
-                          <span className="font-semibold text-green-800">{selectedTask.summary.dueStatus}</span>
-                        </>
-                      )}
-                      {!selectedTask.summary?.dueStatus && (
-                        <>
-                          <span className="w-2 h-2 bg-gray-600 rounded-full"></span>
-                          <span className="font-semibold text-gray-800">Unknown</span>
+                          <span className="font-semibold text-green-800">{selectedTask.summary?.dueStatus || 'On Time'}</span>
                         </>
                       )}
                     </div>
                   </div>
                 </div>
- 
-                {/* Description */}
-                {selectedTask.description && (
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="text-sm font-medium text-gray-700 mb-2">Description</div>
-                    <p className="text-gray-700">{selectedTask.description}</p>
+
+                {/* 🔥 LOCKED TASK - APPROVE/REJECT SECTION */}
+                {selectedTask?.is_locked && (
+                  <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-6 mb-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-12 h-12 bg-orange-500 text-white rounded-xl flex items-center justify-center">
+                        🔒
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-orange-900">Task Locked - Reassignment Requested</h3>
+                        <p className="text-orange-800">Employee requested reassignment. Approve or Reject:</p>
+                      </div>
+                    </div>
+
+                    {/* Request Details */}
+                    <div className="bg-white border rounded-lg p-4 mb-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-500">Request ID:</span>
+                          <div className="font-semibold text-gray-900">#{selectedTask.lock_info.request_id}</div>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Status:</span>
+                          <div className="font-semibold text-orange-600">{selectedTask.lock_info.request_status}</div>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Task Status:</span>
+                          <div className="font-semibold">{selectedTask.task_status.current_status}</div>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Assigned To:</span>
+                          <div className="font-semibold">{getAssignedUsers(selectedTask)}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* APPROVE / REJECT BUTTONS */}
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => handleApproveRequest(selectedTask.lock_info.request_id)}
+                        disabled={actionLoading}
+                        className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {actionLoading ? (
+                          <>
+                            <RefreshCw className="w-5 h-5 animate-spin" />
+                            Approving...
+                          </>
+                        ) : (
+                          <>
+                            ✅ Approve Reassignment
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleRejectRequest(selectedTask.lock_info.request_id)}
+                        disabled={actionLoading}
+                        className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {actionLoading ? (
+                          <>
+                            <RefreshCw className="w-5 h-5 animate-spin" />
+                            Rejecting...
+                          </>
+                        ) : (
+                          <>
+                            ❌ Reject Request
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 )}
- 
-                {/* REASSIGN SECTION - ORIGINAL FUNCTIONALITY */}
-                {(selectedTask.status || selectedTask.stage || '').toUpperCase() === 'COMPLETED' ? (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Check className="w-5 h-5 text-green-600" />
-                      <span className="font-medium text-green-800">Task Completed</span>
-                    </div>
-                    <p className="text-sm text-green-700">This task is completed and cannot be reassigned.</p>
-                  </div>
-                ) : (
+
+                {/* REASSIGN SECTION (for non-locked tasks) */}
+                {!(selectedTask.status || '').toUpperCase() === 'COMPLETED' && !selectedTask?.is_locked && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <RefreshCw className="w-5 h-5 text-blue-600" />
@@ -789,36 +828,24 @@ const ManagerTasks = () => {
                           );
                         })}
                       </select>
-                      <div
-                        title={selectedTask.summary?.dueStatus === 'Overdue' ? `⚠️ Warning: This task is ${selectedTask.summary?.dueStatus}` : ''}
-                        className={selectedTask.summary?.dueStatus === 'Overdue' ? 'relative' : ''}
+                      <button
+                        onClick={handleReassignTask}
+                        disabled={reassigning || !selectedAssignee || employeesLoading}
+                        className={`w-full px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${
+                          reassigning || !selectedAssignee || employeesLoading
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                        }`}
                       >
-                        <button
-                          onClick={handleReassignTask}
-                          disabled={reassigning || !selectedAssignee || employeesLoading}
-                          className={`w-full px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${
-                            reassigning || !selectedAssignee || employeesLoading
-                              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                              : selectedTask.summary?.dueStatus === 'Overdue'
-                              ? 'bg-red-600 text-white hover:bg-red-700'
-                              : 'bg-blue-600 text-white hover:bg-blue-700'
-                          }`}
-                        >
-                          {reassigning ? (
-                            <>
-                              <RefreshCw className="w-4 h-4 animate-spin" />
-                              Reassigning...
-                            </>
-                          ) : (
-                            'Reassign Task'
-                          )}
-                        </button>
-                        {selectedTask.summary?.dueStatus === 'Overdue' && (
-                          <div className="absolute -top-10 left-0 right-0 bg-red-600 text-white text-xs px-2 py-1 rounded whitespace-nowrap pointer-events-none">
-                            ⚠️ Overdue - {selectedTask.summary?.dueDate ? formatDate(selectedTask.summary.dueDate) : 'No date'}
-                          </div>
+                        {reassigning ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            Reassigning...
+                          </>
+                        ) : (
+                          'Reassign Task'
                         )}
-                      </div>
+                      </button>
                     </div>
                     {employeesLoading && (
                       <div className="flex items-center gap-2 mt-2 text-sm text-gray-600">
@@ -828,16 +855,16 @@ const ManagerTasks = () => {
                     )}
                   </div>
                 )}
- 
+
                 {/* Checklist */}
-                {checklist.length > 0 && (
+                {selectedTask.checklist?.length > 0 && (
                   <div className="border border-gray-200 rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <CheckSquare className="w-5 h-5 text-gray-600" />
                       <span className="font-medium text-gray-700">Checklist</span>
                     </div>
                     <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {checklist.map((item, index) => (
+                      {selectedTask.checklist.map((item, index) => (
                         <div key={item.id || index} className="flex items-center gap-3 p-2 bg-white border rounded">
                           <div className="w-5 h-5 bg-emerald-100 rounded flex items-center justify-center flex-shrink-0">
                             <Check className="w-3 h-3 text-emerald-600" />
@@ -853,8 +880,8 @@ const ManagerTasks = () => {
           </div>
         )}
       </div>
- 
-      {/* CREATE TASK MODAL - ORIGINAL FUNCTIONALITY */}
+
+      {/* CREATE TASK MODAL */}
       {showCreateTaskModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-4xl w-full p-6 max-h-[90vh] overflow-y-auto">
@@ -872,10 +899,9 @@ const ManagerTasks = () => {
                 ✕
               </button>
             </div>
- 
+
             <form onSubmit={handleCreateTask} className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Task Title */}
                 <div>
                   <label className="block text-gray-700 font-medium mb-2">
                     Task Title <span className="text-red-500">*</span>
@@ -888,140 +914,73 @@ const ManagerTasks = () => {
                     placeholder="Enter task title"
                   />
                 </div>
- 
-                {/* Project */}
+
                 <div>
-                  <label className="block text-gray-700 font-medium mb-2">
-                    Project
-                  </label>
+                  <label className="block text-gray-700 font-medium mb-2">Project</label>
                   <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 font-medium">
                     {selectedProject?.name || 'Selected Project'} ✓
                   </div>
                 </div>
- 
-                {/* Priority */}
+
                 <div>
-                  <label className="block text-gray-700 font-medium mb-2">
-                    Priority
-                  </label>
+                  <label className="block text-gray-700 font-medium mb-2">Priority</label>
                   <select
                     value={formData.priority}
                     onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="LOW">Low Priority</option>
-                    <option value="MEDIUM">Medium Priority</option>
-                    <option value="HIGH">High Priority</option>
+                    <option value="LOW">Low</option>
+                    <option value="MEDIUM">Medium</option>
+                    <option value="HIGH">High</option>
                   </select>
                 </div>
- 
-                {/* Stage */}
+
                 <div>
-                  <label className="block text-gray-700 font-medium mb-2">
-                    Stage
-                  </label>
-                  <select
-                    value={formData.stage}
-                    onChange={(e) => setFormData({ ...formData, stage: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="PENDING">Pending</option>
-                    <option value="IN_PROGRESS">In Progress</option>
-                    <option value="COMPLETED">Completed</option>
-                  </select>
-                </div>
- 
-                {/* Due Date */}
-                <div>
-                  <label className="block text-gray-700 font-medium mb-2">
-                    Due Date
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.taskDate}
-                    onChange={(e) => setFormData({ ...formData, taskDate: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
- 
-                {/* Hours */}
-                <div>
-                  <label className="block text-gray-700 font-medium mb-2">
-                    Estimated Hours
-                  </label>
+                  <label className="block text-gray-700 font-medium mb-2">Estimated Hours</label>
                   <input
                     type="number"
                     min="0"
-                    step="0.5"
                     value={formData.timeAlloted}
                     onChange={(e) => setFormData({ ...formData, timeAlloted: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="8"
                   />
                 </div>
-              </div>
- 
-              {/* Assigned Users */}
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">
-                  Assigned Users
-                </label>
-                <select
-                  multiple
-                  value={formData.assignedUsers}
-                  onChange={e => {
-                    const selected = Array.from(e.target.selectedOptions).map(opt => opt.value);
-                    setFormData({ ...formData, assignedUsers: selected });
-                  }}
-                  className="w-full h-48 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {employees.map(emp => (
-                    <option key={emp.public_id || emp.id || emp._id} value={emp.public_id || emp.id || emp._id}>
-                      {emp.name || emp.email || 'Unnamed Employee'}
-                    </option>
-                  ))}
-                </select>
-                <div className="text-sm text-gray-500 mt-1">
-                  Hold Ctrl (Windows) or Cmd (Mac) to select multiple employees. ({employees.length} available)
+
+                <div className="lg:col-span-2">
+                  <label className="block text-gray-700 font-medium mb-2">Description</label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    rows="3"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Task description (optional)"
+                  />
                 </div>
               </div>
- 
-              {/* Description */}
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">
-                  Description
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={4}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-vertical"
-                  placeholder="Task description..."
-                />
-              </div>
- 
-              {/* Form Actions */}
-              <div className="flex gap-3 mt-8">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateTaskModal(false)}
-                  className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
-                >
-                  Cancel
-                </button>
+
+              <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  disabled={actionLoading || !formData.title}
-                  className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  disabled={actionLoading}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:opacity-50"
                 >
                   {actionLoading ? (
                     <>
                       <RefreshCw className="w-5 h-5 animate-spin" />
-                      Creating Task...
+                      Creating...
                     </>
                   ) : (
                     'Create Task'
                   )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCreateTaskModal(false)}
+                  disabled={actionLoading}
+                  className="px-6 py-3 border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  Cancel
                 </button>
               </div>
             </form>
@@ -1031,6 +990,5 @@ const ManagerTasks = () => {
     </div>
   );
 };
- 
+
 export default ManagerTasks;
- 

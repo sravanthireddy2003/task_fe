@@ -104,23 +104,28 @@ const KanbanBoard = ({
   const handleDragStart = (event) => {
     const { active } = event;
     const task = tasks.find(t => t.id === active.id || t._id === active.id || t.public_id === active.id);
-    
-    // Check if task is completed
-    if (task && task.status === 'Completed') {
+    if (!task) return;
+
+    // Block if task is locked
+    if (task.is_locked === true) {
+      toast.error('This task is locked and cannot be moved until your manager responds.');
+      return;
+    }
+
+    // Block if completed
+    if (task.status === 'Completed') {
       toast.error('Completed tasks cannot be moved. Task is locked.');
       return;
     }
 
-    // Check if task has pending reassignment request
-    if (task) {
-      const taskId = task.id || task._id || task.public_id;
-      const reassignmentRequest = reassignmentRequests[taskId];
-      if (reassignmentRequest?.status === 'PENDING') {
-        toast.error('You have submitted a reassignment request. Task is locked until manager responds.');
-        return;
-      }
+    // Block if pending reassignment request
+    const taskId = task.id || task._id || task.public_id;
+    const reassignmentRequest = reassignmentRequests[taskId];
+    if (reassignmentRequest?.status === 'PENDING') {
+      toast.error('You have submitted a reassignment request. Task is locked until manager responds.');
+      return;
     }
-    
+
     setActiveTask(task);
   };
 
@@ -137,13 +142,19 @@ const KanbanBoard = ({
     const task = tasks.find(t => t.id === activeId || t._id === activeId || t.public_id === activeId);
     if (!task) return;
 
-    // Check if task is completed
+    // Block if task is locked
+    if (task.is_locked === true) {
+      toast.error('This task is locked and cannot be moved until your manager responds.');
+      return;
+    }
+
+    // Block if completed
     if (task.status === 'Completed') {
       toast.error('Completed tasks cannot be moved. Task is locked.');
       return;
     }
 
-    // Check if task has pending reassignment request
+    // Block if pending reassignment request
     const taskId = task.id || task._id || task.public_id;
     const reassignmentRequest = reassignmentRequests[taskId];
     if (reassignmentRequest?.status === 'PENDING') {
