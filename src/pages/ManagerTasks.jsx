@@ -88,7 +88,7 @@ const ManagerTasks = () => {
   const filteredTasks = useMemo(() => {
     if (filterStatus === 'all') return tasks;
     return tasks.filter(task => {
-      const taskStatus = (task.stage || task.status || '').toUpperCase();
+      const taskStatus = (task.status || task.stage || '').toUpperCase();
       const filterStatusUpper = filterStatus.toUpperCase();
       return taskStatus === filterStatusUpper;
     });
@@ -104,7 +104,7 @@ const ManagerTasks = () => {
     };
    
     tasks.forEach(task => {
-      const status = (task.stage || task.status || 'pending').toLowerCase();
+      const status = (task.status || task.stage || 'pending').toLowerCase();
       if (counts.hasOwnProperty(status)) {
         counts[status]++;
       }
@@ -618,15 +618,15 @@ const ManagerTasks = () => {
  
                           <td className="p-4">
                             <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                              (task.stage || task.status || 'PENDING').toUpperCase() === 'COMPLETED'
+                              (task.status || task.stage || 'PENDING').toUpperCase() === 'COMPLETED'
                                 ? 'bg-green-100 text-green-800' :
-                              (task.stage || task.status || 'PENDING').toUpperCase() === 'IN_PROGRESS'
+                              (task.status || task.stage || 'PENDING').toUpperCase() === 'IN_PROGRESS'
                                 ? 'bg-blue-100 text-blue-800' :
-                              (task.stage || task.status || 'PENDING').toUpperCase() === 'ON_HOLD'
+                              (task.status || task.stage || 'PENDING').toUpperCase() === 'ON_HOLD'
                                 ? 'bg-red-100 text-red-800' :
                                 'bg-yellow-100 text-yellow-800'
                             }`}>
-                              {getStatusText(task.stage || task.status || 'PENDING')}
+                              {getStatusText(task.status || task.stage || 'PENDING')}
                             </span>
                           </td>
  
@@ -718,6 +718,35 @@ const ManagerTasks = () => {
                     <div className="text-xs uppercase text-gray-500 font-medium mb-1">Estimated Hours</div>
                     <div className="font-semibold text-gray-900">{selectedTask.timeAlloted ?? selectedTask.time_alloted ?? '—'}h</div>
                   </div>
+                  <div className={`p-3 rounded-lg ${(selectedTask.status || '').toLowerCase() === 'completed' ? 'bg-green-50' : selectedTask.summary?.dueStatus === 'Overdue' ? 'bg-red-50' : 'bg-gray-50'}`}>
+                    <div className="text-xs uppercase text-gray-500 font-medium mb-1">Total Hours Worked</div>
+                    <div className={`font-semibold ${(selectedTask.status || '').toLowerCase() === 'completed' ? 'text-green-800' : selectedTask.summary?.dueStatus === 'Overdue' ? 'text-red-800' : 'text-gray-900'}`}>
+                      {selectedTask.total_time_hhmmss || '0h 0m'}
+                    </div>
+                  </div>
+                  <div className={`p-3 rounded-lg ${selectedTask.summary?.dueStatus === 'Overdue' ? 'bg-red-50' : 'bg-green-50'}`}>
+                    <div className="text-xs uppercase text-gray-500 font-medium mb-1">Status (from Summary)</div>
+                    <div className="flex items-center gap-2">
+                      {selectedTask.summary?.dueStatus === 'Overdue' && (
+                        <>
+                          <span className="w-2 h-2 bg-red-600 rounded-full"></span>
+                          <span className="font-semibold text-red-800">{selectedTask.summary.dueStatus}</span>
+                        </>
+                      )}
+                      {selectedTask.summary?.dueStatus === 'On Time' && (
+                        <>
+                          <span className="w-2 h-2 bg-green-600 rounded-full"></span>
+                          <span className="font-semibold text-green-800">{selectedTask.summary.dueStatus}</span>
+                        </>
+                      )}
+                      {!selectedTask.summary?.dueStatus && (
+                        <>
+                          <span className="w-2 h-2 bg-gray-600 rounded-full"></span>
+                          <span className="font-semibold text-gray-800">Unknown</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </div>
  
                 {/* Description */}
@@ -729,54 +758,76 @@ const ManagerTasks = () => {
                 )}
  
                 {/* REASSIGN SECTION - ORIGINAL FUNCTIONALITY */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <RefreshCw className="w-5 h-5 text-blue-600" />
-                    <span className="font-medium text-blue-800">Reassign Task</span>
-                  </div>
-                  <div className="flex flex-col gap-3">
-                    <select
-                      value={selectedAssignee}
-                      onChange={(e) => setSelectedAssignee(e.target.value)}
-                      disabled={employeesLoading}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                    >
-                      <option value="">Select employee</option>
-                      {employees.map((employee) => {
-                        const key = employee.internalId || employee.id || employee.public_id || employee._id;
-                        return (
-                          <option key={key} value={key}>
-                            {employee.name || employee.email || 'Unnamed'}
-                          </option>
-                        );
-                      })}
-                    </select>
-                    <button
-                      onClick={handleReassignTask}
-                      disabled={reassigning || !selectedAssignee || employeesLoading}
-                      className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${
-                        reassigning || !selectedAssignee || employeesLoading
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : 'bg-blue-600 text-white hover:bg-blue-700'
-                      }`}
-                    >
-                      {reassigning ? (
-                        <>
-                          <RefreshCw className="w-4 h-4 animate-spin" />
-                          Reassigning...
-                        </>
-                      ) : (
-                        'Reassign Task'
-                      )}
-                    </button>
-                  </div>
-                  {employeesLoading && (
-                    <div className="flex items-center gap-2 mt-2 text-sm text-gray-600">
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      Loading employees...
+                {(selectedTask.status || selectedTask.stage || '').toUpperCase() === 'COMPLETED' ? (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Check className="w-5 h-5 text-green-600" />
+                      <span className="font-medium text-green-800">Task Completed</span>
                     </div>
-                  )}
-                </div>
+                    <p className="text-sm text-green-700">This task is completed and cannot be reassigned.</p>
+                  </div>
+                ) : (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <RefreshCw className="w-5 h-5 text-blue-600" />
+                      <span className="font-medium text-blue-800">Reassign Task</span>
+                    </div>
+                    <div className="flex flex-col gap-3">
+                      <select
+                        value={selectedAssignee}
+                        onChange={(e) => setSelectedAssignee(e.target.value)}
+                        disabled={employeesLoading}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                      >
+                        <option value="">Select employee</option>
+                        {employees.map((employee) => {
+                          const key = employee.internalId || employee.id || employee.public_id || employee._id;
+                          return (
+                            <option key={key} value={key}>
+                              {employee.name || employee.email || 'Unnamed'}
+                            </option>
+                          );
+                        })}
+                      </select>
+                      <div
+                        title={selectedTask.summary?.dueStatus === 'Overdue' ? `⚠️ Warning: This task is ${selectedTask.summary?.dueStatus}` : ''}
+                        className={selectedTask.summary?.dueStatus === 'Overdue' ? 'relative' : ''}
+                      >
+                        <button
+                          onClick={handleReassignTask}
+                          disabled={reassigning || !selectedAssignee || employeesLoading}
+                          className={`w-full px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${
+                            reassigning || !selectedAssignee || employeesLoading
+                              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                              : selectedTask.summary?.dueStatus === 'Overdue'
+                              ? 'bg-red-600 text-white hover:bg-red-700'
+                              : 'bg-blue-600 text-white hover:bg-blue-700'
+                          }`}
+                        >
+                          {reassigning ? (
+                            <>
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                              Reassigning...
+                            </>
+                          ) : (
+                            'Reassign Task'
+                          )}
+                        </button>
+                        {selectedTask.summary?.dueStatus === 'Overdue' && (
+                          <div className="absolute -top-10 left-0 right-0 bg-red-600 text-white text-xs px-2 py-1 rounded whitespace-nowrap pointer-events-none">
+                            ⚠️ Overdue - {selectedTask.summary?.dueDate ? formatDate(selectedTask.summary.dueDate) : 'No date'}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {employeesLoading && (
+                      <div className="flex items-center gap-2 mt-2 text-sm text-gray-600">
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        Loading employees...
+                      </div>
+                    )}
+                  </div>
+                )}
  
                 {/* Checklist */}
                 {checklist.length > 0 && (

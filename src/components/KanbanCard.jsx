@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Clock, User, Flag, Calendar, CheckSquare } from 'lucide-react';
+import { Clock, User, Flag, Calendar, CheckSquare, CheckCircle2 } from 'lucide-react';
 
 const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentRequests = {} }) => {
   const [liveTime, setLiveTime] = useState(task.total_duration || 0);
@@ -70,7 +70,7 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentR
   const taskId = task.id || task._id || task.public_id;
   const reassignmentRequest = reassignmentRequests[taskId];
   const hasPendingReassignment = reassignmentRequest?.status === 'PENDING';
-  const isCompleted = (task.status || '').toLowerCase() === 'completed';
+  const isCompleted = task.status === 'Completed';
 
   const formatDuration = (seconds) => {
     const h = Math.floor(seconds / 3600);
@@ -89,7 +89,9 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentR
       className={`bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow ${
         isDragging || isSortableDragging ? 'opacity-50' : ''
       } ${
-        isCompleted ? 'border-green-300 bg-green-50 opacity-75 cursor-not-allowed' : (hasPendingReassignment ? 'border-orange-300 bg-orange-50 opacity-75 cursor-not-allowed' : 'cursor-pointer')
+        isCompleted ? 'border-green-300 bg-green-50 opacity-75 cursor-not-allowed' : ''
+      } ${
+        hasPendingReassignment ? 'border-orange-300 bg-orange-50 opacity-75 cursor-not-allowed' : 'cursor-pointer'
       }`}
       onClick={hasPendingReassignment || isCompleted ? undefined : onClick}
     >
@@ -155,8 +157,18 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentR
         </div>
       )}
 
-      {/* Timer/Time Tracking */}
-      {(liveTime > 0 || (task.status || task.stage) === 'In Progress') && (
+      {/* Timer/Time Tracking or Total Hours for Completed */}
+      {isCompleted ? (
+        <div className="flex items-center gap-2 mt-3 p-2 bg-green-100 rounded-lg">
+          <CheckCircle2 className="w-4 h-4 text-green-600" />
+          <div>
+            <p className="text-xs font-semibold text-green-700">✓ Task Completed</p>
+            <p className="text-xs text-green-600">
+              Total: {task.total_time_hhmmss || formatDuration(task.total_time_seconds || 0)}
+            </p>
+          </div>
+        </div>
+      ) : (liveTime > 0 || (task.status || task.stage) === 'In Progress') && (
         <div className="flex items-center gap-1">
           <Clock className={`w-3 h-3 ${(task.status || task.stage) === 'In Progress' ? 'text-blue-500 animate-pulse' : 'text-gray-400'}`} />
           <span className={`text-xs font-medium ${(task.status || task.stage) === 'In Progress' ? 'text-blue-600' : 'text-gray-600'}`}>
@@ -175,13 +187,6 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentR
         </div>
       )}
 
-      {/* Total Working Hours for Completed Tasks */}
-      {isCompleted && task.total_time_hours && (
-        <div className="mt-2 text-xs text-green-700 bg-green-100 px-2 py-1 rounded font-medium">
-          ✓ Total Hours: {task.total_time_hours.toFixed(2)}h
-        </div>
-      )}
-
       {/* Reassignment Status */}
       {hasPendingReassignment && (
         <div className="mt-2 text-xs text-orange-700 bg-orange-100 px-2 py-1 rounded">
@@ -191,8 +196,8 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentR
 
       {/* Completed Status Badge */}
       {isCompleted && (
-        <div className="mt-2 text-xs text-green-700 bg-green-100 px-2 py-1 rounded font-medium">
-          ✓ Completed
+        <div className="mt-2 text-xs text-green-700 bg-green-100 px-2 py-1 rounded font-semibold">
+          ✓ Completed - No Further Changes
         </div>
       )}
     </div>

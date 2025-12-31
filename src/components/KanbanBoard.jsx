@@ -105,6 +105,12 @@ const KanbanBoard = ({
     const { active } = event;
     const task = tasks.find(t => t.id === active.id || t._id === active.id || t.public_id === active.id);
     
+    // Check if task is completed
+    if (task && task.status === 'Completed') {
+      toast.error('Completed tasks cannot be moved. Task is locked.');
+      return;
+    }
+
     // Check if task has pending reassignment request
     if (task) {
       const taskId = task.id || task._id || task.public_id;
@@ -130,6 +136,12 @@ const KanbanBoard = ({
     // Find the task
     const task = tasks.find(t => t.id === activeId || t._id === activeId || t.public_id === activeId);
     if (!task) return;
+
+    // Check if task is completed
+    if (task.status === 'Completed') {
+      toast.error('Completed tasks cannot be moved. Task is locked.');
+      return;
+    }
 
     // Check if task has pending reassignment request
     const taskId = task.id || task._id || task.public_id;

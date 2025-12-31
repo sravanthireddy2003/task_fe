@@ -1139,7 +1139,8 @@ const EmployeeTasks = () => {
                   const taskId = normalizeId(task);
                   const isActive = taskId === normalizeId(selectedTask);
                   const hasPendingReassignment = reassignmentRequests[taskId]?.status === 'PENDING';
-                  const isCompleted = (task.status || '').toLowerCase() === 'completed';
+                  const normalizedStatus = (task.status || task.stage || '').toLowerCase();
+                  const isCompleted = normalizedStatus === 'completed';
                   return (
                     <button
                       key={taskId || task.title}
@@ -1147,8 +1148,8 @@ const EmployeeTasks = () => {
                       disabled={hasPendingReassignment || isCompleted}
                       onClick={() => setSelectedTask(task)}
                       className={`w-full rounded-2xl border px-4 py-3 text-left shadow-sm transition ${
-                        isCompleted 
-                          ? 'border-green-300 bg-green-50 opacity-75 cursor-not-allowed' 
+                        isCompleted
+                          ? 'border-green-300 bg-green-50 opacity-75 cursor-not-allowed'
                           : hasPendingReassignment 
                           ? 'border-orange-300 bg-orange-50 opacity-75 cursor-not-allowed' 
                           : `hover:border-blue-300 hover:bg-blue-50 ${
@@ -1164,8 +1165,17 @@ const EmployeeTasks = () => {
                           )}
                         </div>
                         <div className="text-right text-xs text-gray-500">
-                          <p>Due {formatDateString(task.taskDate || task.dueDate || task.due_date)}</p>
-                          <p>Priority: {task.priority || 'Medium'}</p>
+                          {isCompleted ? (
+                            <div className="text-green-600 font-semibold">
+                              <p>✓ Completed</p>
+                              <p>Total: {task.total_time_hhmmss || '0h 0m'}</p>
+                            </div>
+                          ) : (
+                            <>
+                              <p>Due {formatDateString(task.taskDate || task.dueDate || task.due_date)}</p>
+                              <p>Priority: {task.priority || 'Medium'}</p>
+                            </>
+                          )}
                         </div>
                       </div>
                       <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold">
@@ -1181,9 +1191,9 @@ const EmployeeTasks = () => {
                             {task.checklist.filter(i => i.status === 'Completed').length}/{task.checklist.length}
                           </span>
                         )}
-                        {isCompleted && task.total_time_hours && (
+                        {isCompleted && (
                           <span className="rounded-full border border-green-200 bg-green-50 px-3 py-0.5 text-green-600 font-medium">
-                            ✓ {task.total_time_hours.toFixed(2)}h
+                            ✓ No Further Changes
                           </span>
                         )}
                         {hasPendingReassignment && (
@@ -1216,6 +1226,16 @@ const EmployeeTasks = () => {
                   </span>
                 </div>
                 <p className="text-sm text-gray-500">{selectedTask.project?.name && `Project: ${selectedTask.project.name}`}</p>
+                
+                {/* Completion Alert */}
+                {(selectedTask.status || '').toLowerCase() === 'completed' && (
+                  <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+                    <p className="font-semibold">✓ Task Completed</p>
+                    <p className="text-xs mt-1">Total working hours: <span className="font-bold">{selectedTask.total_time_hhmmss || '0h 0m'}</span></p>
+                    <p className="text-xs mt-1">This task is locked and cannot be modified further.</p>
+                  </div>
+                )}
+                
                 <p className="text-xs text-gray-400">Due {formatDateString(selectedTask.taskDate || selectedTask.dueDate || selectedTask.due_date)}</p>
 
                 {/* Reassignment Pending Alert */}
@@ -1223,17 +1243,6 @@ const EmployeeTasks = () => {
                   <div className="rounded-lg border border-orange-200 bg-orange-50 p-3 text-sm text-orange-700">
                     <p className="font-semibold">🔒 Reassignment Request Pending</p>
                     <p className="text-xs">Your manager is reviewing your reassignment request. Task is locked until they respond.</p>
-                  </div>
-                )}
-
-                {/* Completed Task Alert */}
-                {(selectedTask.status || '').toLowerCase() === 'completed' && (
-                  <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-                    <p className="font-semibold">✓ Task Completed</p>
-                    <p className="text-xs">This task has been completed. No further actions are allowed.</p>
-                    {selectedTask.total_time_hours && (
-                      <p className="text-xs font-medium mt-2">Total Working Hours: <span className="font-bold">{selectedTask.total_time_hours.toFixed(2)}h</span></p>
-                    )}
                   </div>
                 )}
 
@@ -1251,7 +1260,7 @@ const EmployeeTasks = () => {
                       </button>
                     ) : null}
                     
-                    {selectedTask.status === 'In Progress' ? (
+                    {(selectedTask.status || '').toLowerCase() === 'in progress' ? (
                       <>
                         <button
                           onClick={() => handlePauseTask(normalizeId(selectedTask))}
@@ -1272,7 +1281,7 @@ const EmployeeTasks = () => {
                       </>
                     ) : null}
 
-                    {selectedTask.status === 'On Hold' ? (
+                    {(selectedTask.status || '').toLowerCase() === 'on hold' ? (
                       <button
                         onClick={() => handleResumeTask(normalizeId(selectedTask))}
                         disabled={reassignmentRequests[normalizeId(selectedTask)]?.status === 'PENDING' || (selectedTask.status || '').toLowerCase() === 'completed'}
@@ -1362,6 +1371,12 @@ const EmployeeTasks = () => {
                 {/* CHECKLIST SECTION - NEW FUNCTIONALITY */}
                 <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4 text-sm">
                   <p className="text-xs uppercase text-gray-500 mb-3">Checklist</p>
+                  {(selectedTask.status || '').toLowerCase() === 'completed' && (
+                    <div className="rounded-lg border border-green-200 bg-green-50 p-3 mb-3 text-sm text-green-700">
+                      <p className="font-semibold">✓ Task Completed</p>
+                      <p className="text-xs mt-1">Checklist is locked. No new items can be added to a completed task.</p>
+                    </div>
+                  )}
                   {selectedTaskChecklist.length === 0 ? (
                     <p className="mt-2 text-sm text-gray-500">No checklist items yet.</p>
                   ) : (
@@ -1383,6 +1398,7 @@ const EmployeeTasks = () => {
                                     setEditingChecklistValues((prev) => ({ ...prev, title: e.target.value }))
                                   }
                                   className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm"
+                                  disabled={(selectedTask.status || '').toLowerCase() === 'completed'}
                                 />
                                 <input
                                   type="date"
@@ -1391,6 +1407,7 @@ const EmployeeTasks = () => {
                                     setEditingChecklistValues((prev) => ({ ...prev, dueDate: e.target.value }))
                                   }
                                   className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm"
+                                  disabled={(selectedTask.status || '').toLowerCase() === 'completed'}
                                 />
                                 <div className="flex items-center gap-2 text-xs">
                                   <button
@@ -1479,20 +1496,22 @@ const EmployeeTasks = () => {
                       value={checklistForm.title}
                       onChange={(e) => setChecklistForm((prev) => ({ ...prev, title: e.target.value }))}
                       placeholder="New checklist item"
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                      disabled={(selectedTask.status || '').toLowerCase() === 'completed'}
+                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
                     />
                     <input
                       type="date"
                       value={checklistForm.dueDate}
                       onChange={(e) => setChecklistForm((prev) => ({ ...prev, dueDate: e.target.value }))}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                      disabled={(selectedTask.status || '').toLowerCase() === 'completed'}
+                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
                     />
                     <button
                       type="submit"
-                      disabled={actionRunning}
-                      className="rounded-full bg-indigo-600 px-4 py-2 text-white disabled:opacity-60 text-sm"
+                      disabled={actionRunning || (selectedTask.status || '').toLowerCase() === 'completed'}
+                      className="rounded-full bg-indigo-600 px-4 py-2 text-white disabled:opacity-60 disabled:cursor-not-allowed text-sm"
                     >
-                      {actionRunning ? 'Adding…' : 'Add checklist'}
+                      {actionRunning ? 'Adding…' : (selectedTask.status || '').toLowerCase() === 'completed' ? 'Task Completed - Cannot Add Items' : 'Add checklist'}
                     </button>
                   </form>
                 </div>
