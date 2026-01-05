@@ -1,11 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
 import fetchWithTenant from '../utils/fetchWithTenant';
 import { selectUser } from '../redux/slices/authSlice';
 import { 
   RefreshCw, AlertCircle, Calendar, Clock, User, Plus, CheckSquare, Check, Eye, Filter,
-  Lock, UserCheck, Clock as ClockIcon
+  Lock, UserCheck, Clock as ClockIcon, AlertTriangle
 } from 'lucide-react';
 
 const ManagerTasks = () => {
@@ -37,6 +37,9 @@ const ManagerTasks = () => {
   const [reassigning, setReassigning] = useState(false);
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState('all');
+  const [showReassignForm, setShowReassignForm] = useState(false);
+  
+  const reassignFormRef = useRef(null);
 
   // Status options
   const statusOptions = ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'ON_HOLD'];
@@ -51,9 +54,26 @@ const ManagerTasks = () => {
       'pending': 'Pending',
       'in_progress': 'In Progress',
       'completed': 'Completed',
-      'on_hold': 'On Hold'
+      'on_hold': 'On Hold',
+      'TO DO': 'To Do',
+      'Request Approved': 'Request Approved'
     };
     return statusMap[status] || status || 'Pending';
+  };
+
+  // Check if task has pending reassignment request
+  const hasReassignmentRequest = (task) => {
+    // Check if task has lock_info with request_status
+    return task.lock_info && 
+           task.lock_info.request_status && 
+           task.lock_info.request_status === 'APPROVE' &&
+           !task.is_locked;
+  };
+
+  // Get task display status
+  const getTaskStatus = (task) => {
+    // Use task_status.current_status if available, otherwise fallback
+    return task.task_status?.current_status || task.status || task.stage || 'PENDING';
   };
 
   const formatDate = (dateString) => {
@@ -90,7 +110,7 @@ const ManagerTasks = () => {
   const filteredTasks = useMemo(() => {
     if (filterStatus === 'all') return tasks;
     return tasks.filter(task => {
-      const taskStatus = (task.status || task.stage || '').toUpperCase();
+      const taskStatus = getTaskStatus(task).toUpperCase();
       const filterStatusUpper = filterStatus.toUpperCase();
       return taskStatus === filterStatusUpper;
     });
@@ -102,12 +122,15 @@ const ManagerTasks = () => {
       'pending': 0,
       'in_progress': 0,
       'completed': 0,
-      'on_hold': 0
+      'on_hold': 0,
+      'request_approved': 0
     };
     
     tasks.forEach(task => {
-      const status = (task.status || task.stage || 'pending').toLowerCase();
-      if (counts.hasOwnProperty(status)) {
+      const status = getTaskStatus(task).toLowerCase();
+      if (status === 'request approved') {
+        counts['request_approved']++;
+      } else if (counts.hasOwnProperty(status)) {
         counts[status]++;
       }
     });
@@ -184,11 +207,32 @@ const ManagerTasks = () => {
 
   useEffect(() => {
     setSelectedTask(null);
+    setShowReassignForm(false);
   }, [selectedProjectId]);
 
   useEffect(() => {
     loadEmployees();
   }, [loadEmployees]);
+
+  // Effect to reset reassign form when task changes
+  useEffect(() => {
+    if (selectedTask) {
+      setShowReassignForm(false);
+      setSelectedAssignee('');
+    }
+  }, [selectedTask]);
+
+  // Effect to focus on reassign form when it becomes visible
+  useEffect(() => {
+    if (showReassignForm && reassignFormRef.current) {
+      setTimeout(() => {
+        const select = reassignFormRef.current?.querySelector('select');
+        if (select) {
+          select.focus();
+        }
+      }, 150);
+    }
+  }, [showReassignForm]);
 
   // Computed values
   const detailProject = selectedTask?.project || selectedTask?.meta?.project;
@@ -281,8 +325,11 @@ const ManagerTasks = () => {
           internalId: targetEmployee.internalId || targetEmployee.id || targetEmployee._id,
         }] : prev.assignedUsers,
         assigned_to: targetEmployee ? [targetEmployee.internalId || targetEmployee.public_id || targetEmployee.id || targetEmployee._id] : prev.assigned_to,
+        is_locked: false,
       }));
       
+      setShowReassignForm(false);
+      setSelectedAssignee('');
       loadTasks(selectedProjectId);
     } catch (err) {
       toast.error(err?.message || 'Unable to reassign task');
@@ -291,20 +338,34 @@ const ManagerTasks = () => {
     }
   };
 
-  // 🔥 NEW LOCK HANDLERS
+  // Lock Handlers - Updated for new API structure
   const handleApproveRequest = async (requestId) => {
     if (!requestId || actionLoading) return;
     
     setActionLoading(true);
     try {
       const taskId = selectedTask.id || selectedTask.public_id;
-const resp = await fetchWithTenant(`/api/tasks/${taskId}/reassign-requests/${requestId}/approve`, {
-  method: 'POST',
-});
+      const resp = await fetchWithTenant(`/api/tasks/${taskId}/reassign-requests/${requestId}/approve`, {
+        method: 'POST',
+      });
       
-      toast.success('✅ Task unlocked for reassignment!');
+      toast.success(resp?.message || '✅ Task unlocked for reassignment!');
+      
+      // Update selected task to remove lock info
+      setSelectedTask(prev => ({
+        ...prev,
+        lock_info: null,
+        task_status: {
+          ...prev.task_status,
+          current_status: 'Request Approved',
+          is_locked: false
+        }
+      }));
+      
+      // Show reassign form
+      setShowReassignForm(true);
+      
       loadTasks(selectedProjectId);
-      setSelectedTask(null);
     } catch (err) {
       toast.error(err?.message || 'Failed to approve request');
     } finally {
@@ -318,13 +379,27 @@ const resp = await fetchWithTenant(`/api/tasks/${taskId}/reassign-requests/${req
     setActionLoading(true);
     try {
       const taskId = selectedTask.id || selectedTask.public_id;
-const resp = await fetchWithTenant(`/api/tasks/${taskId}/reassign-requests/${requestId}/reject`, {
-  method: 'POST',
-});
+      const resp = await fetchWithTenant(`/api/tasks/${taskId}/reassign-requests/${requestId}/reject`, {
+        method: 'POST',
+      });
       
-      toast.success('✅ Request rejected. Task unlocked.');
+      toast.success(resp?.message || '✅ Request rejected. Task unlocked.');
+      
+      // Update selected task to remove lock info
+      setSelectedTask(prev => ({
+        ...prev,
+        lock_info: null,
+        task_status: {
+          ...prev.task_status,
+          current_status: getTaskStatus(prev),
+          is_locked: false
+        }
+      }));
+      
+      // Show reassign form
+      setShowReassignForm(true);
+      
       loadTasks(selectedProjectId);
-      setSelectedTask(null);
     } catch (err) {
       toast.error(err?.message || 'Failed to reject request');
     } finally {
@@ -349,7 +424,7 @@ const resp = await fetchWithTenant(`/api/tasks/${taskId}/reassign-requests/${req
         <div>Tasks Count: {tasks.length}</div>
         <div>Projects Count: {projects.length}</div>
         <div>Status: {loading ? 'loading' : error ? 'error' : 'succeeded'}</div>
-        <div>Locked Tasks: {tasks.filter(t => t.is_locked).length}</div>
+        <div>Tasks with Lock Info: {tasks.filter(t => t.lock_info && t.lock_info.request_status).length}</div>
       </div>
 
       {/* HEADER */}
@@ -423,7 +498,7 @@ const resp = await fetchWithTenant(`/api/tasks/${taskId}/reassign-requests/${req
         </div>
       )}
 
-      {/* STATUS SUMMARY */}
+      {/* STATUS SUMMARY - Updated to include Request Approved */}
       {selectedProjectId && tasks.length > 0 && (
         <div className="flex flex-wrap gap-3 mb-6">
           <div className="px-4 py-2 rounded-lg bg-yellow-100 text-yellow-800 font-semibold shadow-sm border border-yellow-200">
@@ -437,6 +512,9 @@ const resp = await fetchWithTenant(`/api/tasks/${taskId}/reassign-requests/${req
           </div>
           <div className="px-4 py-2 rounded-lg bg-red-100 text-red-800 font-semibold shadow-sm border border-red-200">
             On Hold: {getStatusCounts().on_hold}
+          </div>
+          <div className="px-4 py-2 rounded-lg bg-purple-100 text-purple-800 font-semibold shadow-sm border border-purple-200">
+            Request Approved: {getStatusCounts().request_approved}
           </div>
         </div>
       )}
@@ -473,6 +551,7 @@ const resp = await fetchWithTenant(`/api/tasks/${taskId}/reassign-requests/${req
                 {getStatusText(s)}
               </option>
             ))}
+            <option value="Request Approved">Request Approved</option>
           </select>
         </div>
       )}
@@ -559,22 +638,24 @@ const resp = await fetchWithTenant(`/api/tasks/${taskId}/reassign-requests/${req
                   ) : (
                     filteredTasks.map((task) => {
                       const isActive = selectedTask?.id === task.id || selectedTask?.public_id === task.public_id;
-                      const isLocked = task.is_locked;
+                      const hasRequest = hasReassignmentRequest(task);
+                      const taskStatus = getTaskStatus(task);
+                      
                       return (
                         <tr
                           key={task.id || task.public_id || task._id || task.internalId}
                           className={`border-b transition-colors ${
                             isActive ? 'bg-blue-50' : 'hover:bg-gray-50'
-                          } ${isLocked ? 'bg-orange-50' : ''}`}
+                          } ${hasRequest ? 'bg-orange-50' : ''}`}
                         >
                           <td className="p-4">
                             <div className="font-medium text-gray-900">{task.title || task.name}</div>
                             {task.description && (
                               <div className="text-sm text-gray-500 mt-1 line-clamp-2">{task.description}</div>
                             )}
-                            {isLocked && (
+                            {hasRequest && (
                               <div className="flex items-center gap-1 mt-1">
-                                <Lock className="w-3 h-3 text-orange-500" />
+                                <AlertTriangle className="w-3 h-3 text-orange-500" />
                                 <span className="text-xs text-orange-700 font-medium">Reassignment Requested</span>
                               </div>
                             )}
@@ -589,15 +670,17 @@ const resp = await fetchWithTenant(`/api/tasks/${taskId}/reassign-requests/${req
 
                           <td className="p-4">
                             <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                              (task.status || task.stage || 'PENDING').toUpperCase() === 'COMPLETED'
+                              taskStatus === 'COMPLETED' || taskStatus === 'Completed'
                                 ? 'bg-green-100 text-green-800'
-                              : (task.status || task.stage || 'PENDING').toUpperCase() === 'IN_PROGRESS'
+                              : taskStatus === 'IN_PROGRESS' || taskStatus === 'In Progress'
                               ? 'bg-blue-100 text-blue-800'
-                              : (task.status || task.stage || 'PENDING').toUpperCase() === 'ON_HOLD'
+                              : taskStatus === 'ON_HOLD' || taskStatus === 'On Hold'
                               ? 'bg-red-100 text-red-800'
+                              : taskStatus === 'Request Approved'
+                              ? 'bg-purple-100 text-purple-800'
                               : 'bg-yellow-100 text-yellow-800'
                             }`}>
-                              {getStatusText(task.status || task.stage || 'PENDING')}
+                              {getStatusText(taskStatus)}
                             </span>
                           </td>
 
@@ -666,7 +749,10 @@ const resp = await fetchWithTenant(`/api/tasks/${taskId}/reassign-requests/${req
                     </p>
                   </div>
                   <button
-                    onClick={() => setSelectedTask(null)}
+                    onClick={() => {
+                      setSelectedTask(null);
+                      setShowReassignForm(false);
+                    }}
                     className="text-gray-400 hover:text-gray-600"
                   >
                     ✕
@@ -692,7 +778,7 @@ const resp = await fetchWithTenant(`/api/tasks/${taskId}/reassign-requests/${req
                     <div className="font-semibold text-gray-900">{selectedTask.timeAlloted ?? '—'}h</div>
                   </div>
                   <div className={`p-3 rounded-lg ${
-                    (selectedTask.status || '').toLowerCase() === 'completed' 
+                    getTaskStatus(selectedTask) === 'COMPLETED' || getTaskStatus(selectedTask) === 'Completed'
                       ? 'bg-green-50' 
                       : selectedTask.summary?.dueStatus === 'Overdue' 
                       ? 'bg-red-50' 
@@ -700,7 +786,7 @@ const resp = await fetchWithTenant(`/api/tasks/${taskId}/reassign-requests/${req
                   }`}>
                     <div className="text-xs uppercase text-gray-500 font-medium mb-1">Total Hours Worked</div>
                     <div className={`font-semibold ${
-                      (selectedTask.status || '').toLowerCase() === 'completed' 
+                      getTaskStatus(selectedTask) === 'COMPLETED' || getTaskStatus(selectedTask) === 'Completed'
                         ? 'text-green-800' 
                         : selectedTask.summary?.dueStatus === 'Overdue' 
                         ? 'text-red-800' 
@@ -731,15 +817,15 @@ const resp = await fetchWithTenant(`/api/tasks/${taskId}/reassign-requests/${req
                   </div>
                 </div>
 
-                {/* 🔥 LOCKED TASK - APPROVE/REJECT SECTION */}
-                {selectedTask?.is_locked && (
+                {/* REASSIGNMENT REQUEST SECTION - Updated logic */}
+                {hasReassignmentRequest(selectedTask) && (
                   <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-6 mb-6">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-12 h-12 bg-orange-500 text-white rounded-xl flex items-center justify-center">
-                        🔒
+                        <AlertTriangle className="w-6 h-6" />
                       </div>
                       <div>
-                        <h3 className="text-xl font-bold text-orange-900">Task Locked - Reassignment Requested</h3>
+                        <h3 className="text-xl font-bold text-orange-900">Reassignment Request</h3>
                         <p className="text-orange-800">Employee requested reassignment. Approve or Reject:</p>
                       </div>
                     </div>
@@ -753,15 +839,31 @@ const resp = await fetchWithTenant(`/api/tasks/${taskId}/reassign-requests/${req
                         </div>
                         <div>
                           <span className="text-gray-500">Status:</span>
-                          <div className="font-semibold text-orange-600">{selectedTask.lock_info.request_status}</div>
+                          <div className="font-semibold text-orange-600">
+                            {selectedTask.lock_info.request_status || 'Pending'}
+                          </div>
                         </div>
                         <div>
                           <span className="text-gray-500">Task Status:</span>
-                          <div className="font-semibold">{selectedTask.task_status.current_status}</div>
+                          <div className="font-semibold">{getTaskStatus(selectedTask)}</div>
                         </div>
                         <div>
-                          <span className="text-gray-500">Assigned To:</span>
-                          <div className="font-semibold">{getAssignedUsers(selectedTask)}</div>
+                          <span className="text-gray-500">Requested By:</span>
+                          <div className="font-semibold">
+                            {selectedTask.lock_info.requester_name || selectedTask.task_status?.requester_name || 'Unknown'}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Requested At:</span>
+                          <div className="font-semibold">
+                            {formatDate(selectedTask.lock_info.requested_at)}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Responded At:</span>
+                          <div className="font-semibold">
+                            {selectedTask.lock_info.responded_at ? formatDate(selectedTask.lock_info.responded_at) : 'Pending'}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -804,13 +906,34 @@ const resp = await fetchWithTenant(`/api/tasks/${taskId}/reassign-requests/${req
                   </div>
                 )}
 
-                {/* REASSIGN SECTION (for non-locked tasks) */}
-                {!(selectedTask.status || '').toUpperCase() === 'COMPLETED' && !selectedTask?.is_locked && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                {/* REASSIGN SECTION - Show for non-completed tasks or when showReassignForm is true */}
+                {(!(getTaskStatus(selectedTask) === 'COMPLETED' || getTaskStatus(selectedTask) === 'Completed') || showReassignForm) && (
+                  <div 
+                    ref={reassignFormRef}
+                    className={`bg-blue-50 border border-blue-200 rounded-lg p-4 transition-all duration-300 ${
+                      showReassignForm ? 'ring-2 ring-blue-500 shadow-lg' : ''
+                    }`}
+                  >
+                    {/* Auto-open notification */}
+                    {showReassignForm && (
+                      <div className="mb-3 p-3 bg-blue-100 border border-blue-300 rounded-lg">
+                        <div className="flex items-center gap-2 text-blue-800 font-medium">
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                          </svg>
+                          <span>Ready to reassign task</span>
+                        </div>
+                        <p className="text-sm text-blue-700 mt-1">
+                          Select an employee to reassign this task
+                        </p>
+                      </div>
+                    )}
+                    
                     <div className="flex items-center gap-2 mb-3">
                       <RefreshCw className="w-5 h-5 text-blue-600" />
                       <span className="font-medium text-blue-800">Reassign Task</span>
                     </div>
+                    
                     <div className="flex flex-col gap-3">
                       <select
                         value={selectedAssignee}
@@ -828,6 +951,7 @@ const resp = await fetchWithTenant(`/api/tasks/${taskId}/reassign-requests/${req
                           );
                         })}
                       </select>
+                      
                       <button
                         onClick={handleReassignTask}
                         disabled={reassigning || !selectedAssignee || employeesLoading}
@@ -847,6 +971,7 @@ const resp = await fetchWithTenant(`/api/tasks/${taskId}/reassign-requests/${req
                         )}
                       </button>
                     </div>
+                    
                     {employeesLoading && (
                       <div className="flex items-center gap-2 mt-2 text-sm text-gray-600">
                         <RefreshCw className="w-4 h-4 animate-spin" />
@@ -881,10 +1006,10 @@ const resp = await fetchWithTenant(`/api/tasks/${taskId}/reassign-requests/${req
         )}
       </div>
 
-      {/* CREATE TASK MODAL */}
+      {/* CREATE TASK MODAL - Updated to match isModalOpen structure */}
       {showCreateTaskModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-4xl w-full p-6 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-600 text-white rounded-lg flex items-center justify-center font-semibold">
@@ -900,87 +1025,161 @@ const resp = await fetchWithTenant(`/api/tasks/${taskId}/reassign-requests/${req
               </button>
             </div>
 
-            <form onSubmit={handleCreateTask} className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <form onSubmit={handleCreateTask} className="space-y-4">
+              {/* Task Title */}
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">
+                  Task Title <span className="text-red-500">*</span>
+                </label>
+                <input
+                  required
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter task title"
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  placeholder="Task description (optional)"
+                />
+              </div>
+
+              {/* Project and Priority */}
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-gray-700 font-medium mb-2">
-                    Task Title <span className="text-red-500">*</span>
+                    Project
                   </label>
-                  <input
-                    required
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
-                    placeholder="Enter task title"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 font-medium mb-2">Project</label>
-                  <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 font-medium">
+                  <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 font-medium">
                     {selectedProject?.name || 'Selected Project'} ✓
                   </div>
+                  <p className="text-xs text-gray-500 mt-1">Project selected from dropdown</p>
                 </div>
 
                 <div>
-                  <label className="block text-gray-700 font-medium mb-2">Priority</label>
+                  <label className="block text-gray-700 font-medium mb-2">
+                    Priority
+                  </label>
                   <select
                     value={formData.priority}
                     onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="LOW">Low</option>
                     <option value="MEDIUM">Medium</option>
                     <option value="HIGH">High</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Status and Estimated Hours */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gray-700 font-medium mb-2">
+                    Status
+                  </label>
+                  <select
+                    value={formData.stage}
+                    onChange={(e) => setFormData({ ...formData, stage: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {statusOptions.map((s) => (
+                      <option key={s} value={s}>
+                        {getStatusText(s)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
                 <div>
-                  <label className="block text-gray-700 font-medium mb-2">Estimated Hours</label>
+                  <label className="block text-gray-700 font-medium mb-2">
+                    Estimated Hours
+                  </label>
                   <input
                     type="number"
                     min="0"
+                    step="0.5"
                     value={formData.timeAlloted}
                     onChange={(e) => setFormData({ ...formData, timeAlloted: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="8"
-                  />
-                </div>
-
-                <div className="lg:col-span-2">
-                  <label className="block text-gray-700 font-medium mb-2">Description</label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    rows="3"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Task description (optional)"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g., 8"
                   />
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-4">
+              {/* Due Date and Assignees */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gray-700 font-medium mb-2">
+                    Due Date
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.taskDate}
+                    onChange={(e) => setFormData({ ...formData, taskDate: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-700 font-medium mb-2">
+                    Assign To
+                  </label>
+                  <select
+                    multiple
+                    value={formData.assignedUsers}
+                    onChange={(e) => {
+                      const values = Array.from(e.target.selectedOptions).map(o => o.value);
+                      setFormData({ ...formData, assignedUsers: values });
+                    }}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-32"
+                  >
+                    {employees.map((employee) => {
+                      const key = employee.internalId || employee.id || employee.public_id || employee._id;
+                      return (
+                        <option key={key} value={key}>
+                          {employee.name || employee.email || 'Unnamed'}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple</p>
+                </div>
+              </div>
+
+              {/* Form Actions */}
+              <div className="flex gap-3 pt-6 border-t">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateTaskModal(false)}
+                  disabled={actionLoading}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
                 <button
                   type="submit"
                   disabled={actionLoading}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:opacity-50"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {actionLoading ? (
                     <>
-                      <RefreshCw className="w-5 h-5 animate-spin" />
+                      <RefreshCw className="w-4 h-4 animate-spin" />
                       Creating...
                     </>
                   ) : (
                     'Create Task'
                   )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowCreateTaskModal(false)}
-                  disabled={actionLoading}
-                  className="px-6 py-3 border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50"
-                >
-                  Cancel
                 </button>
               </div>
             </form>
