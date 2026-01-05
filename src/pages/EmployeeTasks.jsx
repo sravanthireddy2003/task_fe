@@ -36,16 +36,35 @@ const formatDuration = (seconds) => {
   return `${minutes}m`;
 };
 
-const normalizeId = (entity) =>
-  entity?.id || entity?._id || entity?.public_id || entity?.task_id || '';
+// Updated normalizeId to handle your API response
+const normalizeId = (entity) => {
+  if (!entity) return '';
+  if (typeof entity === 'string' || typeof entity === 'number') {
+    return String(entity);
+  }
+  // Try multiple ID fields in order of preference
+  const id = entity.id || entity.public_id || entity.internal_id || entity.internalId || entity._id;
+  if (id !== undefined && id !== null) {
+    return String(id);
+  }
+  return '';
+};
 
-// Status text mapping
+// Updated getTaskId for API calls
+const getTaskIdForApi = (task) => {
+  return task?.id || task?.public_id || task?.internal_id;
+};
+
+// Status text mapping - updated with your API status values
 const getStatusText = (status) => {
+  if (!status) return 'Pending';
+  
   const statusMap = {
     'PENDING': 'Pending',
     'IN_PROGRESS': 'In Progress',
     'COMPLETED': 'Completed',
     'ON_HOLD': 'On Hold',
+    'On Hold': 'On Hold',
     'pending': 'Pending',
     'in_progress': 'In Progress',
     'completed': 'Completed',
@@ -54,23 +73,31 @@ const getStatusText = (status) => {
     'In Progress': 'In Progress',
     'Review': 'Review',
     'Completed': 'Completed',
-    'On Hold': 'On Hold'
+    'TO DO': 'To Do',
+    'IN PROGRESS': 'In Progress'
   };
+  
   return statusMap[status] || status || 'Pending';
 };
 
-// Get status color classes
+// Get status color classes - updated to match your API
 const getStatusClasses = (status) => {
-  const normalizedStatus = (status || '').toUpperCase();
+  if (!status) return 'bg-gray-100 text-gray-800 border-gray-200';
+  
+  const normalizedStatus = status.toUpperCase();
+  
   switch (normalizedStatus) {
     case 'PENDING':
     case 'TO DO':
+    case 'TODO':
       return 'bg-yellow-100 text-yellow-800 border-yellow-200';
     case 'IN_PROGRESS':
+    case 'IN PROGRESS':
       return 'bg-blue-100 text-blue-800 border-blue-200';
     case 'COMPLETED':
       return 'bg-green-100 text-green-800 border-green-200';
     case 'ON_HOLD':
+    case 'ON HOLD':
       return 'bg-red-100 text-red-800 border-red-200';
     case 'REVIEW':
       return 'bg-purple-100 text-purple-800 border-purple-200';
@@ -92,6 +119,11 @@ const getPriorityClasses = (priority) => {
     default:
       return 'bg-amber-100 text-amber-800 border-amber-200';
   }
+};
+
+// Check if task is locked
+const isTaskLocked = (task) => {
+  return task?.is_locked || task?.lock_info?.is_locked || false;
 };
 
 const EmployeeTasks = () => {
@@ -125,9 +157,10 @@ const EmployeeTasks = () => {
   const [selectedAssignee, setSelectedAssignee] = useState('');
   const [reassigning, setReassigning] = useState(false);
   const [filterStatus, setFilterStatus] = useState('all');
+  const [forceRefresh, setForceRefresh] = useState(0);
 
-  // Status options for filter
-  const statusOptions = ['all', 'PENDING', 'IN_PROGRESS', 'COMPLETED', 'ON_HOLD', 'TO DO'];
+  // Status options for filter - updated based on API
+  const statusOptions = ['all', 'PENDING', 'IN_PROGRESS', 'COMPLETED', 'ON_HOLD', 'TO DO', 'REVIEW'];
 
   const loadProjects = async () => {
     try {
@@ -156,33 +189,42 @@ const EmployeeTasks = () => {
         response = await fetchWithTenant('/api/projects/' + projectId + '/tasks');
       }
       
-      const data = response?.data || response || [];
-      const taskList = Array.isArray(data) ? data : (data.tasks || []);
+      console.log('API Response:', response);
       
-      // Process kanban data and normalize uppercase status values
-      let kanbanList = response?.kanban || data?.kanban || [];
-      if (Array.isArray(kanbanList)) {
-        kanbanList = kanbanList.map(group => ({
-          ...group,
-          status: group.status.toLowerCase().replace(/\s+/g, '_').toUpperCase()
-        }));
-      }
+      // Handle the response structure from your API
+      const data = response?.data || [];
+      const kanbanList = response?.kanban || [];
       
-      if (Array.isArray(taskList)) {
-        setTasks(taskList);
+      if (Array.isArray(data)) {
+        setTasks(data);
         setKanbanData(kanbanList);
-        console.log('Kanban Data Set:', kanbanList);
-        if (userRole !== 'employee') {
-          taskList.forEach(task => {
-            const taskId = normalizeId(task);
-            if (taskId && task.checklist && task.checklist.length > 0) {
-              setChecklists(prev => ({
-                ...prev,
-                [taskId]: task.checklist
-              }));
-            }
-          });
-        }
+        
+        // Initialize checklists
+        const checklistsMap = {};
+        data.forEach(task => {
+          const taskId = normalizeId(task);
+          if (taskId && task.checklist && task.checklist.length > 0) {
+            checklistsMap[taskId] = task.checklist;
+          }
+        });
+        setChecklists(checklistsMap);
+        
+        // Initialize reassignment requests
+        const requestsMap = {};
+        data.forEach(task => {
+          const taskId = normalizeId(task);
+          if (taskId && task.lock_info && task.lock_info.is_locked) {
+            requestsMap[taskId] = {
+              id: task.lock_info.request_id,
+              taskId: task.id || task.internal_id,
+              status: task.lock_info.request_status || 'PENDING',
+              requested_at: task.lock_info.requested_at,
+              responded_at: task.lock_info.responded_at,
+              requester_name: task.lock_info.requester_name,
+            };
+          }
+        });
+        setReassignmentRequests(requestsMap);
       } else {
         setTasks([]);
         setKanbanData([]);
@@ -204,7 +246,7 @@ const EmployeeTasks = () => {
       // Fetch reassignment requests for each task
       for (const task of tasks) {
         try {
-          const taskId = task.id || task._id || task.public_id;
+          const taskId = getTaskIdForApi(task);
           if (!taskId) continue;
           
           const response = await fetchWithTenant(`/api/tasks/${taskId}/reassign-requests`);
@@ -218,7 +260,6 @@ const EmployeeTasks = () => {
             };
           }
         } catch (error) {
-          // Continue if individual task request fails
           continue;
         }
       }
@@ -229,19 +270,20 @@ const EmployeeTasks = () => {
     }
   };
 
-  const loadTaskTimeline = async (taskId) => {
+  const loadTaskTimeline = async (task) => {
     try {
-      // Ensure taskId is an integer, no public_id fallback
-      const taskIdInt = parseInt(taskId, 10);
-      if (isNaN(taskIdInt)) {
-        console.warn('Invalid task ID for timeline:', taskId);
+      const taskId = getTaskIdForApi(task);
+      if (!taskId) {
+        console.warn('Invalid task ID for timeline:', task);
         return;
       }
-      const response = await fetchWithTenant(`/api/tasks/${taskIdInt}/timeline`);
+      
+      const response = await fetchWithTenant(`/api/tasks/${taskId}/timeline`);
       if (response?.success && response.data) {
+        const normalizedId = normalizeId(task);
         setTaskTimelines(prev => ({
           ...prev,
-          [taskIdInt]: response.data
+          [normalizedId]: response.data
         }));
       }
     } catch (error) {
@@ -271,282 +313,358 @@ const EmployeeTasks = () => {
       loadTasks();
     } else if (selectedProjectId) {
       loadTasks(selectedProjectId);
-      loadReassignmentRequests(selectedProjectId);
     }
-  }, [selectedProjectId, userRole]);
+  }, [selectedProjectId, userRole, forceRefresh]);
 
-  // Filter tasks based on status
+  // Filter tasks based on status - updated to handle both status and stage fields
   const filteredTasks = useMemo(() => {
     if (filterStatus === 'all') return tasks;
+    
     return tasks.filter(task => {
+      // Use status field first, fall back to stage
       const taskStatus = (task.status || task.stage || '').toUpperCase();
       const filterStatusUpper = filterStatus.toUpperCase();
+      
       if (filterStatusUpper === 'TO DO') {
-        return taskStatus === 'TO DO' || taskStatus === 'PENDING';
+        return taskStatus === 'TO DO' || taskStatus === 'PENDING' || taskStatus === 'TODO';
       }
+      
+      if (filterStatusUpper === 'IN_PROGRESS' || filterStatusUpper === 'IN PROGRESS') {
+        return taskStatus === 'IN_PROGRESS' || taskStatus === 'IN PROGRESS';
+      }
+      
+      if (filterStatusUpper === 'ON_HOLD' || filterStatusUpper === 'ON HOLD') {
+        return taskStatus === 'ON_HOLD' || taskStatus === 'ON HOLD' || taskStatus === 'On Hold';
+      }
+      
       return taskStatus === filterStatusUpper;
     });
   }, [tasks, filterStatus]);
 
-  // Get status counts
+  // Get status counts - updated based on API
   const getStatusCounts = () => {
     const counts = {
-      'pending': 0,
-      'in_progress': 0,
-      'completed': 0,
-      'on_hold': 0,
-      'review': 0,
-      'to_do': 0
+      pending: 0,
+      in_progress: 0,
+      completed: 0,
+      on_hold: 0,
+      review: 0,
+      to_do: 0
     };
-   
+    
     tasks.forEach(task => {
-      const status = (task.status || task.stage || 'pending').toLowerCase();
-      if (status === 'to do') {
-        counts['to_do']++;
-      } else if (counts.hasOwnProperty(status)) {
-        counts[status]++;
-      } else if (status === 'pending') {
-        counts['pending']++;
+      const status = (task.status || '').toLowerCase();
+      
+      // Map statuses from your API
+      if (status === 'pending' || status === 'to do') {
+        counts.pending++;
+      } else if (status === 'in progress' || status === 'in_progress') {
+        counts.in_progress++;
+      } else if (status === 'completed') {
+        counts.completed++;
+      } else if (status === 'on hold' || status === 'on_hold') {
+        counts.on_hold++;
+      } else if (status === 'review') {
+        counts.review++;
+      } else {
+        // Default based on stage if status is not set
+        const stage = (task.stage || '').toLowerCase();
+        if (stage === 'pending') {
+          counts.pending++;
+        } else {
+          counts.pending++; // Default to pending
+        }
       }
     });
-   
+    
     return counts;
   };
 
+  // Stats for dashboard
+  const stats = useMemo(() => {
+    const counts = getStatusCounts();
+    const overdue = [];
+    const now = Date.now();
+    
+    tasks.forEach((task) => {
+      const dueDate = new Date(task.taskDate || task.dueDate || task.due_date || null);
+      const status = (task.status || '').toLowerCase();
+      const isCompleted = status === 'completed';
+      const isOverdue = !Number.isNaN(dueDate.getTime()) && dueDate.getTime() < now && !isCompleted;
+      
+      if (isOverdue) {
+        overdue.push(task);
+      }
+    });
+    
+    return {
+      total: tasks.length,
+      overdue: overdue.length,
+      stageCounters: counts,
+    };
+  }, [tasks]);
+
   // Helper to update task state locally after an action
   const updateLocalTaskState = (taskId, updates) => {
+    console.log('Updating task state:', { taskId, updates });
+    
+    // Update main tasks array
     setTasks(prev => {
-      const taskIndex = prev.findIndex(t => normalizeId(t) === taskId);
-      if (taskIndex === -1) return prev;
+      const taskIndex = prev.findIndex(t => {
+        const id = normalizeId(t);
+        return id === taskId;
+      });
+      
+      if (taskIndex === -1) {
+        console.log('Task not found for ID:', taskId);
+        return prev;
+      }
       
       const oldTask = prev[taskIndex];
-      const updatedTask = { ...oldTask, ...updates };
+      const updatedTask = { 
+        ...oldTask, 
+        ...updates,
+        status: updates.status || oldTask.status || oldTask.stage,
+        stage: updates.stage || oldTask.stage || oldTask.status
+      };
+      
       const newTasks = [...prev];
       newTasks[taskIndex] = updatedTask;
-
-      // Update kanbanData
-      setKanbanData(prevKanban => {
-        if (!prevKanban || !Array.isArray(prevKanban)) return prevKanban;
-        const oldStatus = oldTask.status || oldTask.stage;
-        const newStatus = updates.status || updates.stage || oldStatus;
-        
-        return prevKanban.map(group => {
-          // Remove from old group if status changed
-          if (group.status === oldStatus && oldStatus !== newStatus) {
-            return {
-              ...group,
-              tasks: group.tasks.filter(t => normalizeId(t) !== taskId),
-              count: Math.max(0, (group.count || 0) - 1)
-            };
-          }
-          // Add to new group if status changed
-          if (group.status === newStatus && oldStatus !== newStatus) {
-            return {
-              ...group,
-              tasks: [...(group.tasks || []), updatedTask],
-              count: (group.count || 0) + 1
-            };
-          }
-          // Update within same group if status didn't change
-          if (group.status === oldStatus && oldStatus === newStatus) {
-            return {
-              ...group,
-              tasks: group.tasks.map(t => normalizeId(t) === taskId ? updatedTask : t)
-            };
-          }
-          return group;
-        });
-      });
-
-      // Update selectedTask if it's the one being updated
-      if (selectedTask && normalizeId(selectedTask) === taskId) {
-        setSelectedTask(updatedTask);
-      }
-
+      
       return newTasks;
     });
+
+    // Update selectedTask if it matches
+    if (selectedTask && normalizeId(selectedTask) === taskId) {
+      setSelectedTask(prev => ({ ...prev, ...updates }));
+    }
   };
 
-  // Task action functions
-  const handleStartTask = async (taskId) => {
+  // Refresh all tasks
+  const refreshAllTasks = () => {
+    setForceRefresh(prev => prev + 1);
+  };
+
+  // Task action functions - updated for your API
+  const handleStartTask = async (task) => {
     try {
-      const task = tasks.find(t => t.id === taskId || t._id === taskId || t.public_id === taskId);
-      const publicId = task?.public_id || taskId;
-      const resp = await fetchWithTenant(`/api/tasks/${publicId}/start`, {
+      const taskId = getTaskIdForApi(task);
+      if (!taskId) {
+        toast.error('Task not found');
+        return;
+      }
+      
+      const resp = await fetchWithTenant(`/api/tasks/${taskId}/start`, {
         method: 'POST'
       });
-      toast.success(resp?.message || 'Task started');
-      if (resp?.data) {
+      
+      if (resp?.success) {
+        toast.success(resp?.message || 'Task started');
+        
         const updateData = {
-          status: resp.data.status || 'In Progress',
-          started_at: resp.data.started_at
+          status: 'IN_PROGRESS',
+          started_at: resp.data?.started_at || new Date().toISOString(),
+          is_locked: false
         };
-        updateLocalTaskState(taskId, updateData);
+        
+        // Update local state immediately
+        updateLocalTaskState(normalizeId(task), updateData);
+        
+        // Load timeline
+        loadTaskTimeline(task);
+        
+        // Refresh to get latest data
+        setTimeout(() => refreshAllTasks(), 500);
       } else {
-        updateLocalTaskState(taskId, { status: 'In Progress' });
+        toast.error(resp?.message || 'Failed to start task');
       }
-      if (task?.id) {
-        loadTaskTimeline(task.id);
-      }
-      // Reload tasks and kanban board
-      await loadTasks(selectedProjectId);
     } catch (error) {
       toast.error(error?.message || 'Failed to start task');
+      console.error('Start task error:', error);
     }
   };
 
-  const handlePauseTask = async (taskId) => {
+  const handlePauseTask = async (task) => {
     try {
-      const task = tasks.find(t => t.id === taskId || t._id === taskId || t.public_id === taskId);
-      const publicId = task?.public_id || taskId;
-      const resp = await fetchWithTenant(`/api/tasks/${publicId}/pause`, {
+      const taskId = getTaskIdForApi(task);
+      if (!taskId) {
+        toast.error('Task not found');
+        return;
+      }
+      
+      const resp = await fetchWithTenant(`/api/tasks/${taskId}/pause`, {
         method: 'POST'
       });
-      toast.success(resp?.message || 'Task paused');
-      if (resp?.data) {
+      
+      if (resp?.success) {
+        toast.success(resp?.message || 'Task paused');
+        
         const updateData = {
-          status: resp.data.status || 'On Hold',
-          total_duration: resp.data.total_time_seconds || resp.data.total_duration
+          status: 'ON_HOLD',
+          is_locked: false
         };
-        updateLocalTaskState(taskId, updateData);
+        
+        // Update local state immediately
+        updateLocalTaskState(normalizeId(task), updateData);
+        
+        // Load timeline
+        loadTaskTimeline(task);
+        
+        // Refresh to get latest data
+        setTimeout(() => refreshAllTasks(), 500);
       } else {
-        updateLocalTaskState(taskId, { status: 'On Hold' });
+        toast.error(resp?.message || 'Failed to pause task');
       }
-      if (task?.id) {
-        loadTaskTimeline(task.id);
-      }
-      // Reload tasks and kanban board
-      await loadTasks(selectedProjectId);
     } catch (error) {
       toast.error('Failed to pause task');
+      console.error('Pause task error:', error);
     }
   };
 
-  const handleResumeTask = async (taskId) => {
+  const handleResumeTask = async (task) => {
     try {
-      const task = tasks.find(t => t.id === taskId || t._id === taskId || t.public_id === taskId);
-      const publicId = task?.public_id || taskId;
-      const resp = await fetchWithTenant(`/api/tasks/${publicId}/resume`, {
+      const taskId = getTaskIdForApi(task);
+      if (!taskId) {
+        toast.error('Task not found');
+        return;
+      }
+      
+      const resp = await fetchWithTenant(`/api/tasks/${taskId}/resume`, {
         method: 'POST'
       });
-      toast.success(resp?.message || 'Task resumed');
-      if (resp?.data) {
+      
+      if (resp?.success) {
+        toast.success(resp?.message || 'Task resumed');
+        
         const updateData = {
-          status: resp.data.status || 'In Progress',
-          started_at: resp.data.started_at
+          status: 'IN_PROGRESS',
+          is_locked: false
         };
-        updateLocalTaskState(taskId, updateData);
+        
+        // Update local state immediately
+        updateLocalTaskState(normalizeId(task), updateData);
+        
+        // Load timeline
+        loadTaskTimeline(task);
+        
+        // Refresh to get latest data
+        setTimeout(() => refreshAllTasks(), 500);
       } else {
-        updateLocalTaskState(taskId, { status: 'In Progress' });
+        toast.error(resp?.message || 'Failed to resume task');
       }
-      if (task?.id) {
-        loadTaskTimeline(task.id);
-      }
-      // Reload tasks and kanban board
-      await loadTasks(selectedProjectId);
     } catch (error) {
       toast.error('Failed to resume task');
+      console.error('Resume task error:', error);
     }
   };
 
-  const handleCompleteTask = async (taskId) => {
+  const handleCompleteTask = async (task) => {
     try {
-      const task = tasks.find(t => t.id === taskId || t._id === taskId || t.public_id === taskId);
-      const publicId = task?.public_id || taskId;
-      const resp = await fetchWithTenant(`/api/tasks/${publicId}/complete`, {
+      const taskId = getTaskIdForApi(task);
+      if (!taskId) {
+        toast.error('Task not found');
+        return;
+      }
+      
+      const resp = await fetchWithTenant(`/api/tasks/${taskId}/complete`, {
         method: 'POST'
       });
-      toast.success(resp?.message || 'Task completed');
-      if (resp?.data) {
+      
+      if (resp?.success) {
+        toast.success(resp?.message || 'Task completed');
+        
         const updateData = {
-          status: resp.data.status || 'Completed',
-          total_duration: resp.data.total_time_seconds || resp.data.total_duration
+          status: 'COMPLETED',
+          total_duration: resp.data?.total_time_seconds || task.total_time_seconds,
+          total_time_hhmmss: resp.data?.total_time_hhmmss || task.total_time_hhmmss,
+          is_locked: false
         };
-        updateLocalTaskState(taskId, updateData);
+        
+        // Update local state immediately
+        updateLocalTaskState(normalizeId(task), updateData);
+        
+        // Also update selectedTask if it's the same task
+        if (selectedTask && normalizeId(selectedTask) === normalizeId(task)) {
+          setSelectedTask(prev => ({
+            ...prev,
+            ...updateData
+          }));
+        }
+        
+        // Load timeline
+        loadTaskTimeline(task);
+        
+        // Refresh to get latest data
+        setTimeout(() => refreshAllTasks(), 500);
       } else {
-        updateLocalTaskState(taskId, { status: 'Completed' });
+        toast.error(resp?.message || 'Failed to complete task');
       }
-      if (task?.id) {
-        loadTaskTimeline(task.id);
-      }
-      // Reload tasks and kanban board
-      await loadTasks(selectedProjectId);
     } catch (error) {
-      toast.error('Failed to complete task');
+      toast.error(error?.message || 'Failed to complete task');
+      console.error('Complete task error:', error);
     }
   };
 
-  const handleMoveToReview = async (taskId) => {
+  const handleMoveToReview = async (task) => {
     try {
-      await fetchWithTenant('/api/tasks/' + taskId + '/status', {
+      const taskId = getTaskIdForApi(task);
+      if (!taskId) {
+        toast.error('Task not found');
+        return;
+      }
+      
+      const resp = await fetchWithTenant(`/api/tasks/${taskId}/status`, {
         method: 'PATCH',
         body: JSON.stringify({
           status: 'Review',
-          projectId: selectedProjectId,
           taskId: taskId
         })
       });
-      toast.success('Task moved to review');
-      loadTasks(selectedProjectId);
+      
+      if (resp?.success) {
+        toast.success('Task moved to review');
+        updateLocalTaskState(normalizeId(task), { status: 'REVIEW' });
+        setTimeout(() => refreshAllTasks(), 500);
+      } else {
+        toast.error(resp?.message || 'Failed to move task to review');
+      }
     } catch (error) {
       toast.error('Failed to move task to review');
+      console.error('Move to review error:', error);
     }
   };
 
-  const handleUpdateTask = async (taskId, updates) => {
+  const handleUpdateTask = async (task, updates) => {
     try {
+      const taskId = getTaskIdForApi(task);
+      if (!taskId) {
+        toast.error('Task not found');
+        return;
+      }
+      
       const response = await fetchWithTenant(`/api/tasks/${taskId}/status`, {
         method: 'PATCH',
         body: JSON.stringify({
           ...updates,
-          projectId: selectedProjectId,
           taskId: taskId
         })
       });
 
       if (response?.success) {
-        const task = tasks.find(t => (t.id || t._id || t.public_id) === taskId);
-        if (task) {
-          const updatedTask = { ...task, ...updates };
-          setTasks(prev => prev.map(t => (t.id || t._id || t.public_id) === taskId ? updatedTask : t));
-          
-          // Update kanbanData
-          setKanbanData(prev => {
-            if (!prev || !Array.isArray(prev)) return prev;
-            const oldStatus = task.status || task.stage;
-            const newStatus = updates.status || updates.stage;
-            return prev.map(group => {
-              if (group.status === oldStatus) {
-                return {
-                  ...group,
-                  tasks: group.tasks.filter(t => (t.id || t._id || t.public_id) !== taskId),
-                  count: Math.max(0, (group.count || 0) - 1)
-                };
-              }
-              if (group.status === newStatus) {
-                return {
-                  ...group,
-                  tasks: [...(group.tasks || []), updatedTask],
-                  count: (group.count || 0) + 1
-                };
-              }
-              return group;
-            });
-          });
-        }
+        updateLocalTaskState(normalizeId(task), updates);
         toast.success(`Task status updated to ${updates.status}`);
-        loadTaskTimeline(taskId);
+        loadTaskTimeline(task);
+        setTimeout(() => refreshAllTasks(), 500);
       } else {
         toast.error(response?.message || 'Failed to update task status');
-        throw new Error(response?.message || 'Failed to update task');
       }
     } catch (error) {
       toast.error('Failed to update task status');
-      throw error;
+      console.error('Update task error:', error);
     }
   };
 
-  // NEW CHECKLIST FUNCTIONS
+  // NEW CHECKLIST FUNCTIONS - updated for your API
   const handleAddChecklist = async (event) => {
     event.preventDefault();
     if (!selectedTask) {
@@ -559,15 +677,18 @@ const EmployeeTasks = () => {
     }
     setActionRunning(true);
     try {
+      const taskId = getTaskIdForApi(selectedTask);
       const payload = {
-        taskId: normalizeId(selectedTask),
+        taskId: taskId,
         title: checklistForm.title.trim(),
         dueDate: checklistForm.dueDate || undefined,
       };
+      
       const resp = await fetchWithTenant('/api/employee/subtask', {
         method: 'POST',
         body: JSON.stringify(payload),
       });
+      
       const newChecklistItem = resp.data;
       toast.success(resp?.message || 'Checklist item added');
       setChecklistForm({ title: '', dueDate: '' });
@@ -580,26 +701,13 @@ const EmployeeTasks = () => {
           : task
       ));
 
-      // Update kanbanData
-      setKanbanData(prev => {
-        if (!prev || !Array.isArray(prev)) return prev;
-        return prev.map(group => {
-          const taskIndex = group.tasks.findIndex(t => normalizeId(t) === selectedTaskId);
-          if (taskIndex !== -1) {
-            const updatedTask = { ...group.tasks[taskIndex], checklist: [...(group.tasks[taskIndex].checklist || []), newChecklistItem] };
-            const newTasks = [...group.tasks];
-            newTasks[taskIndex] = updatedTask;
-            return { ...group, tasks: newTasks };
-          }
-          return group;
-        });
-      });
-
-      // Update checklists state
-      setChecklists(prev => ({
-        ...prev,
-        [selectedTaskId]: [...(prev[selectedTaskId] || []), newChecklistItem]
-      }));
+      // Update selectedTask
+      if (selectedTask) {
+        setSelectedTask(prev => ({
+          ...prev,
+          checklist: [...(prev.checklist || []), newChecklistItem]
+        }));
+      }
     } catch (err) {
       toast.error(err?.message || 'Unable to add checklist item');
     } finally {
@@ -608,12 +716,12 @@ const EmployeeTasks = () => {
   };
 
   const startEditingChecklist = (item) => {
-    const itemId = normalizeId(item);
+    const itemId = item?.id || item?.public_id;
     if (!itemId) return;
     setEditingChecklistId(itemId);
     setEditingChecklistValues({
-      title: item.title || item.name || '',
-      dueDate: formatForInput(item.dueDate || item.due_date || item.date),
+      title: item.title || '',
+      dueDate: formatForInput(item.dueDate),
     });
   };
 
@@ -630,15 +738,18 @@ const EmployeeTasks = () => {
     }
     setActionRunning(true);
     try {
+      const taskId = getTaskIdForApi(selectedTask);
       const payload = {
         title: editingChecklistValues.title.trim(),
         dueDate: editingChecklistValues.dueDate || undefined,
-        taskId: normalizeId(selectedTask),
+        taskId: taskId,
       };
-      const resp = await fetchWithTenant(`/api/employee/subtask/${encodeURIComponent(editingChecklistId)}`, {
+      
+      const resp = await fetchWithTenant(`/api/employee/subtask/${editingChecklistId}`, {
         method: 'PUT',
         body: JSON.stringify(payload),
       });
+      
       const updatedChecklistItem = resp.data;
       toast.success(resp?.message || 'Checklist item updated');
       cancelEditing();
@@ -650,34 +761,21 @@ const EmployeeTasks = () => {
           ? {
               ...task,
               checklist: (task.checklist || []).map(item =>
-                normalizeId(item) === editingChecklistId ? updatedChecklistItem : item
+                (item.id || item.public_id) === editingChecklistId ? updatedChecklistItem : item
               )
             }
           : task
       ));
-
-      // Update kanbanData
-      setKanbanData(prev => {
-        if (!prev || !Array.isArray(prev)) return prev;
-        return prev.map(group => {
-          const taskIndex = group.tasks.findIndex(t => normalizeId(t) === selectedTaskId);
-          if (taskIndex !== -1) {
-            const updatedTask = { ...group.tasks[taskIndex], checklist: (group.tasks[taskIndex].checklist || []).map(item => normalizeId(item) === editingChecklistId ? updatedChecklistItem : item) };
-            const newTasks = [...group.tasks];
-            newTasks[taskIndex] = updatedTask;
-            return { ...group, tasks: newTasks };
-          }
-          return group;
-        });
-      });
-
-      // Update checklists state
-      setChecklists(prev => ({
-        ...prev,
-        [selectedTaskId]: (prev[selectedTaskId] || []).map(item =>
-          normalizeId(item) === editingChecklistId ? updatedChecklistItem : item
-        )
-      }));
+      
+      // Update selectedTask
+      if (selectedTask) {
+        setSelectedTask(prev => ({
+          ...prev,
+          checklist: (prev.checklist || []).map(item =>
+            (item.id || item.public_id) === editingChecklistId ? updatedChecklistItem : item
+          )
+        }));
+      }
     } catch (err) {
       toast.error(err?.message || 'Unable to update checklist item');
     } finally {
@@ -686,12 +784,12 @@ const EmployeeTasks = () => {
   };
 
   const handleDeleteChecklist = async (item) => {
-    const itemId = normalizeId(item);
-    if (!itemId) return;
+    const itemId = item?.id || item?.public_id;
+    if (!itemId || !selectedTask) return;
     if (!window.confirm('Remove this checklist item?')) return;
     setActionRunning(true);
     try {
-      const resp = await fetchWithTenant(`/api/employee/subtask/${encodeURIComponent(itemId)}`, {
+      const resp = await fetchWithTenant(`/api/employee/subtask/${itemId}`, {
         method: 'DELETE',
       });
       toast.success(resp?.message || 'Checklist item removed');
@@ -702,31 +800,18 @@ const EmployeeTasks = () => {
         normalizeId(task) === selectedTaskId
           ? {
               ...task,
-              checklist: (task.checklist || []).filter(item => normalizeId(item) !== itemId)
+              checklist: (task.checklist || []).filter(item => (item.id || item.public_id) !== itemId)
             }
           : task
       ));
-
-      // Update kanbanData
-      setKanbanData(prev => {
-        if (!prev || !Array.isArray(prev)) return prev;
-        return prev.map(group => {
-          const taskIndex = group.tasks.findIndex(t => normalizeId(t) === selectedTaskId);
-          if (taskIndex !== -1) {
-            const updatedTask = { ...group.tasks[taskIndex], checklist: (group.tasks[taskIndex].checklist || []).filter(item => normalizeId(item) !== itemId) };
-            const newTasks = [...group.tasks];
-            newTasks[taskIndex] = updatedTask;
-            return { ...group, tasks: newTasks };
-          }
-          return group;
-        });
-      });
-
-      // Update checklists state
-      setChecklists(prev => ({
-        ...prev,
-        [selectedTaskId]: (prev[selectedTaskId] || []).filter(item => normalizeId(item) !== itemId)
-      }));
+      
+      // Update selectedTask
+      if (selectedTask) {
+        setSelectedTask(prev => ({
+          ...prev,
+          checklist: (prev.checklist || []).filter(item => (item.id || item.public_id) !== itemId)
+        }));
+      }
     } catch (err) {
       toast.error(err?.message || 'Unable to delete checklist item');
     } finally {
@@ -735,51 +820,48 @@ const EmployeeTasks = () => {
   };
 
   const handleCompleteChecklist = async (item) => {
-    const itemId = normalizeId(item);
-    if (!itemId) return;
+    const itemId = item?.id || item?.public_id;
+    if (!itemId || !selectedTask) return;
+    
     setActionRunning(true);
     try {
-      const resp = await fetchWithTenant(`/api/employee/subtask/${encodeURIComponent(itemId)}/complete`, {
+      const resp = await fetchWithTenant(`/api/employee/subtask/${itemId}/complete`, {
         method: 'POST',
       });
+      
       const updatedChecklistItem = resp.data;
       toast.success(resp?.message || 'Checklist marked complete');
 
-      // Update tasks state locally
+      // Get the current task ID
       const selectedTaskId = normalizeId(selectedTask);
-      setTasks(prevTasks => prevTasks.map(task =>
-        normalizeId(task) === selectedTaskId
-          ? {
+
+      // Update the main tasks array to reflect the checklist change
+      setTasks(prevTasks => 
+        prevTasks.map(task => {
+          if (normalizeId(task) === selectedTaskId) {
+            const updatedChecklist = (task.checklist || []).map(checkItem =>
+              (checkItem.id || checkItem.public_id) === itemId ? updatedChecklistItem : checkItem
+            );
+            
+            return {
               ...task,
-              checklist: (task.checklist || []).map(item =>
-                normalizeId(item) === itemId ? updatedChecklistItem : item
-              )
-            }
-          : task
-      ));
-
-      // Update kanbanData
-      setKanbanData(prev => {
-        if (!prev || !Array.isArray(prev)) return prev;
-        return prev.map(group => {
-          const taskIndex = group.tasks.findIndex(t => normalizeId(t) === selectedTaskId);
-          if (taskIndex !== -1) {
-            const updatedTask = { ...group.tasks[taskIndex], checklist: (group.tasks[taskIndex].checklist || []).map(item => normalizeId(item) === itemId ? updatedChecklistItem : item) };
-            const newTasks = [...group.tasks];
-            newTasks[taskIndex] = updatedTask;
-            return { ...group, tasks: newTasks };
+              checklist: updatedChecklist,
+            };
           }
-          return group;
-        });
-      });
+          return task;
+        })
+      );
+      
+      // Update selectedTask
+      if (selectedTask) {
+        setSelectedTask(prev => ({
+          ...prev,
+          checklist: (prev.checklist || []).map(checkItem =>
+            (checkItem.id || checkItem.public_id) === itemId ? updatedChecklistItem : checkItem
+          )
+        }));
+      }
 
-      // Update checklists state
-      setChecklists(prev => ({
-        ...prev,
-        [selectedTaskId]: (prev[selectedTaskId] || []).map(item =>
-          normalizeId(item) === itemId ? updatedChecklistItem : item
-        )
-      }));
     } catch (err) {
       toast.error(err?.message || 'Unable to update checklist status');
     } finally {
@@ -790,7 +872,7 @@ const EmployeeTasks = () => {
   // Existing functions
   const handleOpenTimeline = (task) => {
     setSelectedTaskForTimeline(task);
-    loadTaskTimeline(normalizeId(task));
+    loadTaskTimeline(task);
     setShowTimelineModal(true);
   };
 
@@ -801,32 +883,38 @@ const EmployeeTasks = () => {
     }
     setReassigning(true);
     try {
-      const taskId = normalizeId(selectedTask);
+      const taskId = getTaskIdForApi(selectedTask);
       const payload = {
         assigned_to: [selectedAssignee],
         projectId: selectedProjectId,
       };
-      const resp = await fetchWithTenant(`/api/projects/tasks/${encodeURIComponent(taskId)}`, {
+      
+      const resp = await fetchWithTenant(`/api/projects/tasks/${taskId}`, {
         method: 'PUT',
         body: JSON.stringify(payload),
       });
+      
       toast.success(resp?.message || 'Task reassigned successfully');
      
       // Update local task state
       const targetEmployee = employees.find((emp) =>
         String(emp.internalId || emp.id || emp._id || emp.public_id) === String(selectedAssignee)
       );
-      setSelectedTask((prev) => ({
-        ...prev,
+      
+      const updatedTask = {
+        ...selectedTask,
         assignedUsers: targetEmployee ? [{
           id: targetEmployee.public_id || targetEmployee.id || targetEmployee._id,
           name: targetEmployee.name || targetEmployee.title || 'Employee',
           internalId: targetEmployee.internalId || targetEmployee.id || targetEmployee._id,
-        }] : prev.assignedUsers,
-        assigned_to: targetEmployee ? [targetEmployee.internalId || targetEmployee.public_id || targetEmployee.id || targetEmployee._id] : prev.assigned_to,
-      }));
+        }] : selectedTask.assignedUsers,
+        assigned_to: targetEmployee ? [targetEmployee.internalId || targetEmployee.public_id || targetEmployee.id || targetEmployee._id] : selectedTask.assigned_to,
+      };
+      
+      setSelectedTask(updatedTask);
+      updateLocalTaskState(normalizeId(selectedTask), updatedTask);
      
-      loadTasks(selectedProjectId);
+      refreshAllTasks();
     } catch (err) {
       toast.error(err?.message || 'Unable to reassign task');
     } finally {
@@ -839,6 +927,7 @@ const EmployeeTasks = () => {
     if (Array.isArray(task.assignedUsers) && task.assignedUsers.length) {
       return task.assignedUsers.map(u => u.name).join(', ');
     }
+    
     if (Array.isArray(task.assigned_to) && task.assigned_to.length) {
       const assignedNames = task.assigned_to.map(id => {
         const employee = employees.find(emp => 
@@ -848,6 +937,7 @@ const EmployeeTasks = () => {
       });
       return assignedNames.join(', ');
     }
+    
     return 'Unassigned';
   };
 
@@ -858,49 +948,40 @@ const EmployeeTasks = () => {
   // Get selected task checklist
   const selectedTaskChecklist = useMemo(() => {
     if (!selectedTask) return [];
-    return (
-      selectedTask.checklist ||
-      selectedTask.checkList ||
-      selectedTask.items ||
-      selectedTask.subtasks ||
-      []
-    );
+    return selectedTask.checklist || [];
   }, [selectedTask]);
 
   // Get selected task details
   const detailProject = selectedTask?.project || selectedTask?.meta?.project;
   const formattedDue = useMemo(() => {
     if (!selectedTask) return '—';
-    const raw = selectedTask.taskDate || selectedTask.due_date || selectedTask.dueDate;
+    const raw = selectedTask.taskDate || selectedTask.dueDate;
     if (!raw) return '—';
     return formatDateString(raw);
   }, [selectedTask]);
 
-  // Stats for dashboard
-  const stats = useMemo(() => {
-    const stageCounters = { pending: 0, in_progress: 0, completed: 0, review: 0, on_hold: 0, to_do: 0 };
-    const overdue = [];
-    const now = Date.now();
-    tasks.forEach((task) => {
-      const stage = (task.stage || task.status || 'pending').toString().toLowerCase();
-      if (stageCounters[stage] !== undefined) {
-        stageCounters[stage] += 1;
-      } else if (stage === 'to do') {
-        stageCounters['to_do'] += 1;
-      } else if (stage === 'review') {
-        stageCounters['review'] += 1;
-      }
-      const dueDate = new Date(task.taskDate || task.dueDate || task.due_date || null);
-      if (!Number.isNaN(dueDate.getTime()) && dueDate.getTime() < now && stage !== 'completed') {
-        overdue.push(task);
-      }
-    });
-    return {
-      total: tasks.length,
-      overdue: overdue.length,
-      stageCounters,
-    };
-  }, [tasks]);
+  // Get counts for status summary
+  const statusCounts = useMemo(() => getStatusCounts(), [tasks]);
+
+  // Check if task has pending reassignment
+
+  // Show reassignment state (pending/approved/denied) for employee
+  const getReassignmentState = (task) => {
+    if (!task) return null;
+    const lockInfo = task.lock_info || {};
+    const taskStatus = task.task_status || {};
+    const status = lockInfo.request_status || taskStatus.request_status || reassignmentRequests[normalizeId(task)]?.status || null;
+    if (status === 'PENDING') return 'pending';
+    if (status === 'APPROVE' || status === 'APPROVED') return 'approved';
+    if (status === 'DENY' || status === 'DENIED' || status === 'REJECTED') return 'denied';
+    return null;
+  };
+
+  // Check if task is completed
+  const isTaskCompleted = (task) => {
+    const status = (task.status || '').toLowerCase();
+    return status === 'completed';
+  };
 
   return (
     <div className="p-8">
@@ -928,7 +1009,7 @@ const EmployeeTasks = () => {
               >
                 <option value="">Select a project</option>
                 {projects.map((project) => {
-                  const projectId = project.public_id || project.id || project._id || project.internalId;
+                  const projectId = project.public_id || project.id || project._id;
                   return (
                     <option key={projectId} value={projectId}>
                       {project.name}
@@ -972,7 +1053,7 @@ const EmployeeTasks = () => {
 
           {/* Refresh Button */}
           <button
-            onClick={() => userRole === 'employee' ? loadTasks() : loadTasks(selectedProjectId)}
+            onClick={refreshAllTasks}
             disabled={loading || (userRole !== 'employee' && !selectedProjectId)}
             className={`p-2 rounded-lg border ${
               loading || (userRole !== 'employee' && !selectedProjectId)
@@ -986,7 +1067,7 @@ const EmployeeTasks = () => {
         </div>
       </div>
 
-      {/* STATS SECTION - Updated with new stats */}
+      {/* STATS SECTION */}
       {((userRole === 'employee') || (selectedProjectId && tasks.length > 0)) && (
         <div className="grid gap-4 sm:grid-cols-3 mb-6">
           <div className="rounded-2xl border border-gray-100 bg-white p-4 text-sm shadow-sm">
@@ -1001,7 +1082,7 @@ const EmployeeTasks = () => {
           </div>
           <div className="rounded-2xl border border-gray-100 bg-white p-4 text-sm shadow-sm">
             <p className="text-[10px] uppercase tracking-[0.3em] text-blue-500">In progress</p>
-            <p className="text-2xl font-semibold text-blue-500">{stats.stageCounters.in_progress}</p>
+            <p className="text-2xl font-semibold text-blue-500">{statusCounts.in_progress}</p>
             <p className="text-xs text-gray-500">Work you are handling</p>
           </div>
         </div>
@@ -1011,17 +1092,22 @@ const EmployeeTasks = () => {
       {((userRole === 'employee' && tasks.length > 0) || (selectedProjectId && tasks.length > 0)) && (
         <div className="flex flex-wrap gap-3 mb-6">
           <div className="px-4 py-2 rounded-lg bg-yellow-100 text-yellow-800 font-semibold shadow-sm border border-yellow-200">
-            Pending: {stats.stageCounters.pending + stats.stageCounters.to_do}
+            Pending: {statusCounts.pending}
           </div>
           <div className="px-4 py-2 rounded-lg bg-blue-100 text-blue-800 font-semibold shadow-sm border border-blue-200">
-            In Progress: {stats.stageCounters.in_progress}
+            In Progress: {statusCounts.in_progress}
           </div>
           <div className="px-4 py-2 rounded-lg bg-green-100 text-green-800 font-semibold shadow-sm border border-green-200">
-            Completed: {stats.stageCounters.completed}
+            Completed: {statusCounts.completed}
           </div>
           <div className="px-4 py-2 rounded-lg bg-red-100 text-red-800 font-semibold shadow-sm border border-red-200">
-            On Hold: {stats.stageCounters.on_hold}
+            On Hold: {statusCounts.on_hold}
           </div>
+          {statusCounts.review > 0 && (
+            <div className="px-4 py-2 rounded-lg bg-purple-100 text-purple-800 font-semibold shadow-sm border border-purple-200">
+              Review: {statusCounts.review}
+            </div>
+          )}
         </div>
       )}
 
@@ -1096,7 +1182,7 @@ const EmployeeTasks = () => {
           onPauseTask={handlePauseTask}
           onResumeTask={handleResumeTask}
           onCompleteTask={handleCompleteTask}
-          onLoadTasks={() => userRole === 'employee' ? loadTasks() : loadTasks(selectedProjectId)}
+          onLoadTasks={refreshAllTasks}
           userRole={userRole}
           reassignmentRequests={reassignmentRequests}
           taskTimelines={taskTimelines}
@@ -1113,10 +1199,11 @@ const EmployeeTasks = () => {
               <div className="flex items-center gap-2 text-xs text-gray-500">
                 <button
                   type="button"
-                  onClick={() => userRole === 'employee' ? loadTasks() : loadTasks(selectedProjectId)}
+                  onClick={refreshAllTasks}
                   disabled={loading || (userRole !== 'employee' && !selectedProjectId)}
-                  className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 hover:bg-gray-100 disabled:opacity-50"
+                  className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 hover:bg-gray-100 disabled:opacity-50 flex items-center gap-1"
                 >
+                  <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
                   Refresh
                 </button>
                 {userRole === 'employee' && (
@@ -1138,19 +1225,24 @@ const EmployeeTasks = () => {
                 {filteredTasks.map((task) => {
                   const taskId = normalizeId(task);
                   const isActive = taskId === normalizeId(selectedTask);
-                  const hasPendingReassignment = reassignmentRequests[taskId]?.status === 'PENDING';
-                  const normalizedStatus = (task.status || task.stage || '').toLowerCase();
-                  const isCompleted = normalizedStatus === 'completed';
+                  const reassignmentState = getReassignmentState(task);
+                  const hasPending = reassignmentState === 'pending';
+                  const isApproved = reassignmentState === 'approved';
+                  const isDenied = reassignmentState === 'denied';
+                  const isCompleted = isTaskCompleted(task);
+                  const completedChecklistCount = task.checklist ? task.checklist.filter(item => item.status === 'Completed').length : 0;
+                  const totalChecklistCount = task.checklist ? task.checklist.length : 0;
+                  
                   return (
                     <button
                       key={taskId || task.title}
                       type="button"
-                      disabled={hasPendingReassignment || isCompleted}
+                      disabled={hasPending || isCompleted}
                       onClick={() => setSelectedTask(task)}
                       className={`w-full rounded-2xl border px-4 py-3 text-left shadow-sm transition ${
                         isCompleted
                           ? 'border-green-300 bg-green-50 opacity-75 cursor-not-allowed'
-                          : hasPendingReassignment 
+                          : hasPending 
                           ? 'border-orange-300 bg-orange-50 opacity-75 cursor-not-allowed' 
                           : `hover:border-blue-300 hover:bg-blue-50 ${
                               isActive ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'
@@ -1172,7 +1264,7 @@ const EmployeeTasks = () => {
                             </div>
                           ) : (
                             <>
-                              <p>Due {formatDateString(task.taskDate || task.dueDate || task.due_date)}</p>
+                              <p>Due {formatDateString(task.taskDate || task.dueDate)}</p>
                               <p>Priority: {task.priority || 'Medium'}</p>
                             </>
                           )}
@@ -1185,10 +1277,10 @@ const EmployeeTasks = () => {
                         <span className="rounded-full border border-gray-200 px-3 py-0.5 text-gray-600">
                           {task.client?.name || 'Client not available'}
                         </span>
-                        {task.checklist && task.checklist.length > 0 && (
+                        {totalChecklistCount > 0 && (
                           <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-0.5 text-blue-600 flex items-center gap-1">
                             <CheckSquare className="w-3 h-3" />
-                            {task.checklist.filter(i => i.status === 'Completed').length}/{task.checklist.length}
+                            {completedChecklistCount}/{totalChecklistCount}
                           </span>
                         )}
                         {isCompleted && (
@@ -1196,9 +1288,19 @@ const EmployeeTasks = () => {
                             ✓ No Further Changes
                           </span>
                         )}
-                        {hasPendingReassignment && (
+                        {hasPending && (
                           <span className="rounded-full border border-orange-200 bg-orange-50 px-3 py-0.5 text-orange-600 font-medium">
                             🔒 Reassignment Pending
+                          </span>
+                        )}
+                        {isApproved && (
+                          <span className="rounded-full border border-green-200 bg-green-50 px-3 py-0.5 text-green-600 font-medium">
+                            ✅ Reassignment Approved
+                          </span>
+                        )}
+                        {isDenied && (
+                          <span className="rounded-full border border-red-200 bg-red-50 px-3 py-0.5 text-red-600 font-medium">
+                            ❌ Reassignment Denied
                           </span>
                         )}
                       </div>
@@ -1228,7 +1330,7 @@ const EmployeeTasks = () => {
                 <p className="text-sm text-gray-500">{selectedTask.project?.name && `Project: ${selectedTask.project.name}`}</p>
                 
                 {/* Completion Alert */}
-                {(selectedTask.status || '').toLowerCase() === 'completed' && (
+                {isTaskCompleted(selectedTask) && (
                   <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
                     <p className="font-semibold">✓ Task Completed</p>
                     <p className="text-xs mt-1">Total working hours: <span className="font-bold">{selectedTask.total_time_hhmmss || '0h 0m'}</span></p>
@@ -1236,23 +1338,57 @@ const EmployeeTasks = () => {
                   </div>
                 )}
                 
-                <p className="text-xs text-gray-400">Due {formatDateString(selectedTask.taskDate || selectedTask.dueDate || selectedTask.due_date)}</p>
+                <p className="text-xs text-gray-400">Due {formatDateString(selectedTask.taskDate || selectedTask.dueDate)}</p>
 
-                {/* Reassignment Pending Alert */}
-                {reassignmentRequests[normalizeId(selectedTask)]?.status === 'PENDING' && (
-                  <div className="rounded-lg border border-orange-200 bg-orange-50 p-3 text-sm text-orange-700">
-                    <p className="font-semibold">🔒 Reassignment Request Pending</p>
-                    <p className="text-xs">Your manager is reviewing your reassignment request. Task is locked until they respond.</p>
-                  </div>
-                )}
+                {/* Reassignment State Alert */}
+                {(() => {
+                  const state = getReassignmentState(selectedTask);
+                  if (state === 'pending') {
+                    return (
+                      <div className="rounded-lg border border-orange-200 bg-orange-50 p-3 text-sm text-orange-700">
+                        <p className="font-semibold">🔒 Reassignment Request Pending</p>
+                        <p className="text-xs">Your manager is reviewing your reassignment request. Task is locked until they respond.</p>
+                      </div>
+                    );
+                  }
+                  if (state === 'approved') {
+                    return (
+                      <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+                        <p className="font-semibold">✅ Reassignment Approved</p>
+                        <p className="text-xs">Your manager has approved your reassignment request.</p>
+                      </div>
+                    );
+                  }
+                  if (state === 'denied') {
+                    return (
+                      <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                        <p className="font-semibold">❌ Reassignment Denied</p>
+                        <p className="text-xs">Your manager has denied your reassignment request.</p>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+
+                {/* Refresh task button */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={refreshAllTasks}
+                    disabled={loading}
+                    className="flex items-center gap-2 px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                    Refresh Tasks
+                  </button>
+                </div>
 
                 {/* Employee Actions */}
                 {userRole === 'employee' && (
                   <div className="flex flex-wrap gap-2">
-                    {selectedTask.status === 'Pending' || selectedTask.status === 'To Do' ? (
+                    {selectedTask.status === 'Pending' || selectedTask.status === 'To Do' || selectedTask.stage === 'PENDING' ? (
                       <button
-                        onClick={() => handleStartTask(normalizeId(selectedTask))}
-                        disabled={reassignmentRequests[normalizeId(selectedTask)]?.status === 'PENDING' || (selectedTask.status || '').toLowerCase() === 'completed'}
+                        onClick={() => handleStartTask(selectedTask)}
+                        disabled={getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask)}
                         className="rounded-full border border-green-200 px-3 py-1 text-green-600 hover:bg-green-50 flex items-center gap-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Play className="w-3 h-3" />
@@ -1260,19 +1396,19 @@ const EmployeeTasks = () => {
                       </button>
                     ) : null}
                     
-                    {(selectedTask.status || '').toLowerCase() === 'in progress' ? (
+                    {selectedTask.status === 'IN_PROGRESS' || selectedTask.status === 'In Progress' ? (
                       <>
                         <button
-                          onClick={() => handlePauseTask(normalizeId(selectedTask))}
-                          disabled={reassignmentRequests[normalizeId(selectedTask)]?.status === 'PENDING' || (selectedTask.status || '').toLowerCase() === 'completed'}
+                          onClick={() => handlePauseTask(selectedTask)}
+                          disabled={getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask)}
                           className="rounded-full border border-orange-200 px-3 py-1 text-orange-600 hover:bg-orange-50 flex items-center gap-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Pause className="w-3 h-3" />
                           Pause
                         </button>
                         <button
-                          onClick={() => handleMoveToReview(normalizeId(selectedTask))}
-                          disabled={(selectedTask.status || '').toLowerCase() === 'completed'}
+                          onClick={() => handleMoveToReview(selectedTask)}
+                          disabled={isTaskCompleted(selectedTask)}
                           className="rounded-full border border-purple-200 px-3 py-1 text-purple-600 hover:bg-purple-50 flex items-center gap-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Check className="w-3 h-3" />
@@ -1281,10 +1417,10 @@ const EmployeeTasks = () => {
                       </>
                     ) : null}
 
-                    {(selectedTask.status || '').toLowerCase() === 'on hold' ? (
+                    {selectedTask.status === 'ON_HOLD' || selectedTask.status === 'On Hold' ? (
                       <button
-                        onClick={() => handleResumeTask(normalizeId(selectedTask))}
-                        disabled={reassignmentRequests[normalizeId(selectedTask)]?.status === 'PENDING' || (selectedTask.status || '').toLowerCase() === 'completed'}
+                        onClick={() => handleResumeTask(selectedTask)}
+                        disabled={getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask)}
                         className="rounded-full border border-blue-200 px-3 py-1 text-blue-600 hover:bg-blue-50 flex items-center gap-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <RotateCcw className="w-3 h-3" />
@@ -1292,9 +1428,20 @@ const EmployeeTasks = () => {
                       </button>
                     ) : null}
 
+                    {(selectedTask.status === 'IN_PROGRESS' || selectedTask.status === 'In Progress') && (
+                      <button
+                        onClick={() => handleCompleteTask(selectedTask)}
+                        disabled={getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask)}
+                        className="rounded-full border border-green-200 px-3 py-1 text-green-600 hover:bg-green-50 flex items-center gap-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <CheckCircle className="w-3 h-3" />
+                        Complete Task
+                      </button>
+                    )}
+
                     <button
                       onClick={() => handleOpenTimeline(selectedTask)}
-                      disabled={reassignmentRequests[normalizeId(selectedTask)]?.status === 'PENDING' || (selectedTask.status || '').toLowerCase() === 'completed'}
+                        disabled={getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask)}
                       className="rounded-full border border-indigo-200 px-3 py-1 text-indigo-600 hover:bg-indigo-50 flex items-center gap-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Clock className="w-3 h-3" />
@@ -1362,16 +1509,22 @@ const EmployeeTasks = () => {
                   <button
                     type="button"
                     onClick={() => setSelectedTaskForReassignment(selectedTask)}
-                    className="mt-2 rounded-full border border-yellow-300 px-3 py-1 text-yellow-600 hover:bg-yellow-50 text-sm"
+                      disabled={getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask)}
+                    className="mt-2 rounded-full border border-yellow-300 px-3 py-1 text-yellow-600 hover:bg-yellow-50 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Request Reassignment
                   </button>
                 )}
 
-                {/* CHECKLIST SECTION - NEW FUNCTIONALITY */}
+                {/* CHECKLIST SECTION */}
                 <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4 text-sm">
-                  <p className="text-xs uppercase text-gray-500 mb-3">Checklist</p>
-                  {(selectedTask.status || '').toLowerCase() === 'completed' && (
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs uppercase text-gray-500">Checklist</p>
+                    <span className="text-xs text-gray-500">
+                      {selectedTaskChecklist.filter(item => item.status === 'Completed').length} / {selectedTaskChecklist.length} completed
+                    </span>
+                  </div>
+                  {isTaskCompleted(selectedTask) && (
                     <div className="rounded-lg border border-green-200 bg-green-50 p-3 mb-3 text-sm text-green-700">
                       <p className="font-semibold">✓ Task Completed</p>
                       <p className="text-xs mt-1">Checklist is locked. No new items can be added to a completed task.</p>
@@ -1382,9 +1535,10 @@ const EmployeeTasks = () => {
                   ) : (
                     <ul className="mt-3 space-y-3">
                       {selectedTaskChecklist.map((item, index) => {
-                        const itemId = normalizeId(item) || `${index}`;
+                        const itemId = item.id || item.public_id || `${index}`;
                         const isEditing = editingChecklistId === itemId;
-                        const dueLabel = formatDateString(item.dueDate || item.due_date || item.date);
+                        const dueLabel = formatDateString(item.dueDate);
+                        const isItemCompleted = item.status === 'Completed';
 
                         if (isEditing) {
                           return (
@@ -1398,7 +1552,7 @@ const EmployeeTasks = () => {
                                     setEditingChecklistValues((prev) => ({ ...prev, title: e.target.value }))
                                   }
                                   className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm"
-                                  disabled={(selectedTask.status || '').toLowerCase() === 'completed'}
+                                  disabled={isTaskCompleted(selectedTask)}
                                 />
                                 <input
                                   type="date"
@@ -1407,7 +1561,7 @@ const EmployeeTasks = () => {
                                     setEditingChecklistValues((prev) => ({ ...prev, dueDate: e.target.value }))
                                   }
                                   className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm"
-                                  disabled={(selectedTask.status || '').toLowerCase() === 'completed'}
+                                  disabled={isTaskCompleted(selectedTask)}
                                 />
                                 <div className="flex items-center gap-2 text-xs">
                                   <button
@@ -1435,18 +1589,20 @@ const EmployeeTasks = () => {
                           <li key={itemId} className="rounded-2xl border border-gray-200 bg-white p-3">
                             <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
                               <div className="flex items-center gap-2">
-                                {item.status?.toLowerCase?.() === 'completed' && (
+                                {isItemCompleted ? (
                                   <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                                ) : (
+                                  <div className="w-4 h-4 rounded-full border border-gray-300 flex-shrink-0" />
                                 )}
                                 <div>
                                   <p
                                     className={`font-medium ${
-                                      item.status?.toLowerCase?.() === 'completed'
+                                      isItemCompleted
                                         ? 'text-gray-400 line-through'
                                         : 'text-gray-900'
                                     }`}
                                   >
-                                    {item.title || item.name || 'Untitled item'}
+                                    {item.title || 'Untitled item'}
                                   </p>
                                   <p className="text-xs text-gray-500">Due {dueLabel}</p>
                                   {item.completedAt && (
@@ -1456,7 +1612,7 @@ const EmployeeTasks = () => {
                                   )}
                                 </div>
                               </div>
-                              {item.status?.toLowerCase?.() !== 'completed' && (
+                              {!isItemCompleted && !isTaskCompleted(selectedTask) && (
                                 <div className="flex items-center gap-2 text-xs uppercase text-gray-500">
                                   <button
                                     type="button"
@@ -1496,22 +1652,22 @@ const EmployeeTasks = () => {
                       value={checklistForm.title}
                       onChange={(e) => setChecklistForm((prev) => ({ ...prev, title: e.target.value }))}
                       placeholder="New checklist item"
-                      disabled={(selectedTask.status || '').toLowerCase() === 'completed'}
+                      disabled={isTaskCompleted(selectedTask)}
                       className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
                     />
                     <input
                       type="date"
                       value={checklistForm.dueDate}
                       onChange={(e) => setChecklistForm((prev) => ({ ...prev, dueDate: e.target.value }))}
-                      disabled={(selectedTask.status || '').toLowerCase() === 'completed'}
+                      disabled={isTaskCompleted(selectedTask)}
                       className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
                     />
                     <button
                       type="submit"
-                      disabled={actionRunning || (selectedTask.status || '').toLowerCase() === 'completed'}
+                      disabled={actionRunning || isTaskCompleted(selectedTask)}
                       className="rounded-full bg-indigo-600 px-4 py-2 text-white disabled:opacity-60 disabled:cursor-not-allowed text-sm"
                     >
-                      {actionRunning ? 'Adding…' : (selectedTask.status || '').toLowerCase() === 'completed' ? 'Task Completed - Cannot Add Items' : 'Add checklist'}
+                      {actionRunning ? 'Adding…' : isTaskCompleted(selectedTask) ? 'Task Completed - Cannot Add Items' : 'Add checklist'}
                     </button>
                   </form>
                 </div>
@@ -1527,13 +1683,13 @@ const EmployeeTasks = () => {
         onClose={() => setSelectedTaskForReassignment(null)}
         onSuccess={(resp) => {
           if (resp?.request && resp?.task) {
-            // Extract task ID (could be id or task_id from request)
-            const taskIntId = resp.task.id || resp.request.task_id;
+            // Extract task ID
+            const taskId = normalizeId(resp.task);
             
             // Update reassignment requests state with the new request
             setReassignmentRequests(prev => ({
               ...prev,
-              [taskIntId]: {
+              [taskId]: {
                 id: resp.request.id,
                 taskId: resp.request.task_id,
                 status: resp.request.status,
@@ -1543,17 +1699,21 @@ const EmployeeTasks = () => {
             }));
             
             // Update task status to On Hold and lock it
-            updateLocalTaskState(taskIntId, {
+            updateLocalTaskState(taskId, {
               status: resp.task.status || 'On Hold',
-              total_duration: resp.task.total_duration || 0
+              is_locked: true,
+              lock_info: {
+                is_locked: true,
+                request_status: 'PENDING',
+                request_id: resp.request.id
+              }
             });
             
             // Show success message from API
             toast.success(resp?.message || 'Reassignment request submitted successfully');
           }
           // Reload tasks and reassignment requests to refresh UI
-          loadTasks(userRole === 'employee' ? undefined : selectedProjectId);
-          loadReassignmentRequests(selectedProjectId);
+          refreshAllTasks();
         }}
       />
 

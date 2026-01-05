@@ -68,9 +68,16 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentR
 
   const assignedUsers = getAssignedUsers(task);
   const taskId = task.id || task._id || task.public_id;
-  const reassignmentRequest = reassignmentRequests[taskId];
-  const hasPendingReassignment = reassignmentRequest?.status === 'PENDING';
-  const isCompleted = task.status === 'Completed';
+
+  // Determine reassignment state from lock_info or task_status
+  const lockInfo = task.lock_info || {};
+  const taskStatus = task.task_status || {};
+  // Prefer lock_info.request_status, fallback to task_status.request_status
+  const reassignmentStatus = lockInfo.request_status || taskStatus.request_status || null;
+  const hasPendingReassignment = reassignmentStatus === 'PENDING';
+  const isReassignmentApproved = reassignmentStatus === 'APPROVE' || reassignmentStatus === 'APPROVED';
+  const isReassignmentDenied = reassignmentStatus === 'DENY' || reassignmentStatus === 'DENIED' || reassignmentStatus === 'REJECTED';
+  const isCompleted = (task.status || '').toLowerCase() === 'completed';
 
   const formatDuration = (seconds) => {
     const h = Math.floor(seconds / 3600);
@@ -187,10 +194,20 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentR
         </div>
       )}
 
-      {/* Reassignment Status */}
+      {/* Reassignment Status (Pending/Approved/Denied) */}
       {hasPendingReassignment && (
         <div className="mt-2 text-xs text-orange-700 bg-orange-100 px-2 py-1 rounded">
           Reassignment Pending
+        </div>
+      )}
+      {isReassignmentApproved && (
+        <div className="mt-2 text-xs text-green-700 bg-green-100 px-2 py-1 rounded">
+          Reassignment Approved
+        </div>
+      )}
+      {isReassignmentDenied && (
+        <div className="mt-2 text-xs text-red-700 bg-red-100 px-2 py-1 rounded">
+          Reassignment Denied
         </div>
       )}
 
