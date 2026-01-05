@@ -3,6 +3,7 @@ import { MdOutlineSearch } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
 import { setOpenSidebar } from "../redux/slices/authSlice";
 import UserAvatar from "./UserAvatar";
+import NotificationPanel from "./NotificationPanel";
 
 const Navbar = ({ searchQuery, setSearchQuery }) => {
   const { user } = useSelector((state) => state.auth);
@@ -13,7 +14,7 @@ const Navbar = ({ searchQuery, setSearchQuery }) => {
   };
 
   return (
-    <div className="flex justify-between items-center bg-white px-4 py-3 2xl:py-4 sticky z-10 top-0">
+    <div className="flex justify-between items-center bg-white px-4 py-3 2xl:py-4 sticky z-10 top-0 border-b border-gray-200">
       <div className="flex gap-4">
         <button
           onClick={() => dispatch(setOpenSidebar(true))}
@@ -23,7 +24,10 @@ const Navbar = ({ searchQuery, setSearchQuery }) => {
         </button>
       </div>
 
-      <div className="flex gap-2 items-center">
+      <div className="flex gap-4 items-center">
+        {/* Notification Panel */}
+        <NotificationPanel />
+        {/* User Avatar */}
         <UserAvatar />
       </div>
     </div>

@@ -338,18 +338,21 @@ export default function Tasks() {
   // Get status text for display
   const getStatusText = (status) => {
     if (!status) return 'Pending';
+    const normalized = String(status).toLowerCase();
+    if (normalized === 'completed') return 'Completed';
+    if (normalized === 'on_hold' || normalized === 'on hold') return 'On Hold';
+    if (normalized === 'in_progress') return 'In Progress';
+    if (normalized === 'pending') return 'Pending';
     return status.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
   };
- 
+
   // Filter tasks based on selected status
   const filteredTasks = tasks.filter((task) => {
     if (filterStatus === 'all') return true;
- 
-    // Map backend stage to local status
-    const taskStatus = task.stage ? task.stage.toLowerCase() : 'pending';
-    return taskStatus === filterStatus;
+    const taskStatus = (task.status || task.stage || 'pending').toLowerCase();
+    return taskStatus === filterStatus.toLowerCase();
   });
- 
+
   // Get project name by ID
   const getProjectName = (projectId) => {
     const project = projects.find((p) =>
@@ -357,7 +360,7 @@ export default function Tasks() {
     );
     return project?.name || project?.title || 'Unknown Project';
   };
- 
+
   // Get assigned user names
   const getAssignedUsers = (task) => {
     if (!task.assignedUsers || !task.assignedUsers.length) return 'Unassigned';
@@ -629,11 +632,20 @@ export default function Tasks() {
                   <h3 className="text-2xl font-bold truncate">{selectedTaskDetails.title || selectedTaskDetails.name}</h3>
                   <p className="text-sm text-gray-500 truncate mt-1">{selectedTaskDetails.description || 'No description'}</p>
                   <div className="mt-3 flex items-center gap-2 flex-wrap">
-                    <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">{(selectedTaskDetails.stage || selectedTaskDetails.status || '').toString()}</span>
+                    <span className={`text-xs px-2 py-1 rounded-full ${(selectedTaskDetails.status || '').toLowerCase() === 'completed' ? 'bg-green-100 text-green-800' : (selectedTaskDetails.status || '').toLowerCase() === 'on hold' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>
+                      {getStatusText(selectedTaskDetails.status || selectedTaskDetails.stage || '')}
+                    </span>
+                    {selectedTaskDetails.summary?.dueStatus && (
+                      <span className={`text-xs px-2 py-1 rounded-full ${selectedTaskDetails.summary.dueStatus === 'Overdue' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+                        {selectedTaskDetails.summary.dueStatus}
+                      </span>
+                    )}
                     <span className="text-xs px-2 py-1 rounded-full bg-yellow-50 text-yellow-800">Priority: {(selectedTaskDetails.priority || '').toString()}</span>
-                    <span className="text-xs px-2 py-1 rounded-full bg-green-50 text-emerald-800">Estimated: {selectedTaskDetails.estimatedHours ?? selectedTaskDetails.timeAlloted ?? 0}h</span>
-                    <span className="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-700">Total: {selectedTaskDetails.totalHours ?? selectedTaskDetails.total_hours ?? 0}h</span>
-                    <span className="text-xs px-2 py-1 rounded-full bg-white border text-gray-600">Due: {selectedTaskDetails.taskDate ? new Date(selectedTaskDetails.taskDate).toLocaleString() : (selectedTaskDetails.dueDate ? new Date(selectedTaskDetails.dueDate).toLocaleString() : '-')}</span>
+                    <span className="text-xs px-2 py-1 rounded-full bg-green-50 text-emerald-800">Est: {selectedTaskDetails.timeAlloted ?? selectedTaskDetails.estimatedHours ?? 0}h</span>
+                    {selectedTaskDetails.total_time_hhmmss && (
+                      <span className="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-700">Done: {selectedTaskDetails.total_time_hhmmss}</span>
+                    )}
+                    <span className="text-xs px-2 py-1 rounded-full bg-white border text-gray-600">Due: {formatDate(selectedTaskDetails.summary?.dueDate || selectedTaskDetails.taskDate || selectedTaskDetails.dueDate)}</span>
                   </div>
                 </div>
               </div>
@@ -833,7 +845,7 @@ export default function Tasks() {
                     <td className="p-4">
                       {activeStatusEdit === (task.id || task._id || task.public_id) ? (
                         <select
-                          value={task.stage ? task.stage.toLowerCase() : 'pending'}
+                          value={(task.status || task.stage || 'pending').toLowerCase()}
                           onChange={(e) => updateStatusInline(task, e.target.value)}
                           className="border border-gray-300 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
                           onBlur={() => setActiveStatusEdit(null)}
@@ -846,12 +858,19 @@ export default function Tasks() {
                           ))}
                         </select>
                       ) : (
-                        <span
-                          onClick={() => setActiveStatusEdit(task.id || task._id || task.public_id)}
-                          className={`px-3 py-1 rounded-full cursor-pointer text-sm font-medium ${statusColors[task.stage?.toLowerCase() || 'pending']}`}
-                        >
-                          {getStatusText(task.stage || 'pending')}
-                        </span>
+                        <div className="space-y-1">
+                          <span
+                            onClick={() => setActiveStatusEdit(task.id || task._id || task.public_id)}
+                            className={`px-3 py-1 rounded-full cursor-pointer text-sm font-medium block ${statusColors[(task.status || task.stage || 'pending').toLowerCase()]}`}
+                          >
+                            {getStatusText(task.status || task.stage || 'pending')}
+                          </span>
+                          {task.summary?.dueStatus && (
+                            <span className={`text-xs px-2 py-0.5 rounded ${task.summary.dueStatus === 'Overdue' ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+                              {task.summary.dueStatus}
+                            </span>
+                          )}
+                        </div>
                       )}
                     </td>
  
@@ -869,9 +888,14 @@ export default function Tasks() {
                     </td>
  
                     <td className="p-4">
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm text-gray-700">{task.estimatedHours || task.timeAlloted || 0}h</span>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-gray-400" />
+                          <span className="text-xs text-gray-600">Est: {task.timeAlloted || task.estimatedHours || 0}h</span>
+                        </div>
+                        {task.total_time_hhmmss && (
+                          <div className="text-xs text-blue-600 font-medium">Done: {task.total_time_hhmmss}</div>
+                        )}
                       </div>
                     </td>
  
@@ -946,9 +970,9 @@ export default function Tasks() {
                 <div className="flex items-center gap-2 mb-4">
                   <span
                     onClick={() => setActiveStatusEdit(task.id || task._id || task.public_id)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium cursor-pointer ${statusColors[task.stage?.toLowerCase() || 'pending']}`}
+                    className={`px-3 py-1 rounded-full text-xs font-medium cursor-pointer ${statusColors[(task.status || task.stage || 'pending').toLowerCase()]}`}
                   >
-                    {getStatusText(task.stage || 'pending')}
+                    {getStatusText(task.status || task.stage || 'pending')}
                   </span>
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${priorityColors[(task.priority || 'MEDIUM').toLowerCase()]}`}>
                     {(task.priority || 'MEDIUM').toUpperCase()}

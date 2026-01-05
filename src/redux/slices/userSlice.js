@@ -9,6 +9,7 @@ import {
 } from "../../App/httpHandler";
 import { getAccessToken } from "../../utils/tokenService";
 import { toast } from 'sonner';
+import { fetchNotifications } from "./notificationSlice";
 
 const initialState = {
   isSidebarOpen: false,
@@ -89,9 +90,12 @@ export const fetchUsers = createAsyncThunk(
 // ✅ FIXED: Create user
 export const createUser = createAsyncThunk(
   'api/users/create',
-  async (userData, { rejectWithValue }) => {
+  async (userData, { rejectWithValue, dispatch }) => {
     try {
       const resp = await httpPostService('api/users/create', userData);
+      // ✅ NEW: Refresh notifications after successful user creation
+      await new Promise(resolve => setTimeout(resolve, 500));
+      dispatch(fetchNotifications());
       if (!resp.success) {
         return rejectWithValue(resp);
       }
@@ -104,10 +108,14 @@ export const createUser = createAsyncThunk(
 
 export const updateUser = createAsyncThunk(
   'users/update',
-  async ({ id, ...userData }, { rejectWithValue }) => {
+  async ({ id, ...userData }, { rejectWithValue, dispatch }) => {
     try {
       console.log('🔍 UPDATE THUNK - ID:', id, 'Data:', userData);
       const response = await httpPutService(`api/users/update/${id}`, userData);
+      
+      // ✅ NEW: Refresh notifications after successful user update
+      await new Promise(resolve => setTimeout(resolve, 500));
+      dispatch(fetchNotifications());
       
       if (!response.success) {
         return rejectWithValue(response);

@@ -7,6 +7,7 @@ import {
   httpPostService,
   httpDeleteService,
 } from "../../App/httpHandler";
+import { fetchNotifications } from "./notificationSlice";
 
 const initialState = {
   isSidebarOpen: false,
@@ -144,7 +145,7 @@ export const updateTask = createAsyncThunk(
 // Create Sub Task
 export const createSubTask = createAsyncThunk(
   "tasks/createSubTask",
-  async ({ id, title, due_date, tag }) => {
+  async ({ id, title, due_date, tag }, { dispatch }) => {
     try {
       const response = await httpPostService(`api/projects/subtasks`, {
         task_id: id,
@@ -152,6 +153,9 @@ export const createSubTask = createAsyncThunk(
         due_date,
         priority: tag,
       });
+      // ✅ NEW: Refresh notifications after successful subtask creation
+      await new Promise(resolve => setTimeout(resolve, 500));
+      dispatch(fetchNotifications());
       return response?.data || response || {};
     } catch (error) {
       throw new Error(error.message);

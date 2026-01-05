@@ -7,6 +7,7 @@ import clientReducer from "./slices/clientSlice";
 import departmentReducer from "./slices/departmentSlice";
 import projectReducer from "./slices/projectSlice";
 import subtaskReducer from "./slices/subtaskSlice";
+import notificationReducer from "./slices/notificationSlice";
 
 const store = configureStore({
   reducer: {
@@ -18,6 +19,7 @@ const store = configureStore({
     tasks: taskReducer,
     projects: projectReducer,
     subtasks: subtaskReducer,
+    notifications: notificationReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(apiSlice.middleware),

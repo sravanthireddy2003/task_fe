@@ -13,6 +13,8 @@ import {
   setCredentials
 } from "./redux/slices/authSlice";
 
+import { fetchNotifications } from "./redux/slices/notificationSlice";
+
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 
@@ -242,7 +244,7 @@ function App() {
   const dispatch = useDispatch();
   const user = useSelector(selectUser);
 
-  // ✅ FIXED: Manager UI Preservation After Refresh
+  // ✅ FIXED: Manager UI Preservation After Refresh + Fetch Notifications
   useEffect(() => {
     if (!user || !user.role || !user.id) return;
 
@@ -278,6 +280,9 @@ function App() {
     if (needsModuleFallback && shouldApplyFallback(user.role) && !isManager) {
       dispatch(getProfile());
     }
+
+    // ✅ NEW: Fetch notifications after login
+    dispatch(fetchNotifications());
   }, [dispatch, user?.id]); // ✅ Safe dependency: user.id only
 
   return (

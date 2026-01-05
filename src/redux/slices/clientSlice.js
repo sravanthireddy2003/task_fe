@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { httpGetService, httpPutService, httpPostService, httpDeleteService } from "../../App/httpHandler";
+import { fetchNotifications } from "./notificationSlice";
 
 const initialState = {
   clients: [],
@@ -38,6 +39,11 @@ export const deleteClient = createAsyncThunk(
   async (clientId, thunkAPI) => {
     try {
       await httpDeleteService(`api/clients/${clientId}`);
+      
+      // ✅ NEW: Refresh notifications after successful client deletion
+      await new Promise(resolve => setTimeout(resolve, 500));
+      thunkAPI.dispatch(fetchNotifications());
+      
       return clientId;
     } catch (error) {
       return thunkAPI.rejectWithValue(error.message);
@@ -50,6 +56,11 @@ export const updateClient = createAsyncThunk(
   async ({ clientId, clientData }, thunkAPI) => {
     try {
       const response = await httpPutService(`api/clients/${clientId}`, clientData);
+      
+      // ✅ NEW: Refresh notifications after successful client update
+      await new Promise(resolve => setTimeout(resolve, 500));
+      thunkAPI.dispatch(fetchNotifications());
+      
       return response;
     } catch (error) {
       return thunkAPI.rejectWithValue(error.message);
@@ -93,6 +104,10 @@ export const createClient = createAsyncThunk(
         const msg = response.error || response.message || (response.data && response.data.error) || 'Failed to create client';
         return thunkAPI.rejectWithValue(msg);
       }
+
+      // ✅ NEW: Refresh notifications after successful client creation
+      await new Promise(resolve => setTimeout(resolve, 500));
+      thunkAPI.dispatch(fetchNotifications());
 
       return response;
     } catch (error) {

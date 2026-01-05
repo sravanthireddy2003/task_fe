@@ -5,6 +5,7 @@ import {
   httpPostService,
   httpDeleteService,
 } from "../../App/httpHandler";
+import { fetchNotifications } from "./notificationSlice";
 
 // Helper to normalize errors
 const formatRejectValue = (err) => {
@@ -130,6 +131,11 @@ export const createTask = createAsyncThunk(
       if (payload.time_alloted && !body.timeAlloted) body.timeAlloted = payload.time_alloted;
 
       const res = await httpPostService('api/tasks', body);
+      
+      // ✅ NEW: Refresh notifications after successful task creation
+      await new Promise(resolve => setTimeout(resolve, 500));
+      thunkAPI.dispatch(fetchNotifications());
+      
       // API returns { success: true, message: "...", data: {...} }
       return res?.success ? res.data : res?.data || res || {};
     } catch (err) {
@@ -143,6 +149,11 @@ export const updateTask = createAsyncThunk(
   async ({ taskId, data }, thunkAPI) => {
     try {
       const res = await httpPutService(`api/tasks/${taskId}`, data);
+      
+      // ✅ NEW: Refresh notifications after successful task update
+      await new Promise(resolve => setTimeout(resolve, 500));
+      thunkAPI.dispatch(fetchNotifications());
+      
       // API returns { success: true, message: "...", data: {...} }
       return res?.success ? res.data : res?.data || res || {};
     } catch (err) {
@@ -156,6 +167,11 @@ export const deleteTask = createAsyncThunk(
   async (taskId, thunkAPI) => {
     try {
       const res = await httpDeleteService(`api/tasks/${taskId}`);
+      
+      // ✅ NEW: Refresh notifications after successful task deletion
+      await new Promise(resolve => setTimeout(resolve, 500));
+      thunkAPI.dispatch(fetchNotifications());
+      
       // API returns { success: true, message: "..." }
       return { id: taskId, success: res?.success, message: res?.message };
     } catch (err) {
