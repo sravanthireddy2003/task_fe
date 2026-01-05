@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { httpGetService, httpPostService, httpPutService, httpDeleteService } from '../../App/httpHandler';
+import { fetchNotifications } from './notificationSlice';
 
 // Helper to normalize errors
 const formatRejectValue = (err) => {
@@ -45,6 +46,9 @@ export const createProject = createAsyncThunk(
   async (payload, thunkAPI) => {
     try {
       const res = await httpPostService('api/projects', payload);
+      // ✅ NEW: Refresh notifications after successful project creation
+      await new Promise(resolve => setTimeout(resolve, 500));
+      thunkAPI.dispatch(fetchNotifications());
       // API returns { success: true, message: "...", data: {...} }
       return res?.success ? res.data : res?.data || res || {};
     } catch (err) {
@@ -58,6 +62,9 @@ export const updateProject = createAsyncThunk(
   async ({ projectId, data }, thunkAPI) => {
     try {
       const res = await httpPutService(`api/projects/${projectId}`, data);
+      // ✅ NEW: Refresh notifications after successful project update
+      await new Promise(resolve => setTimeout(resolve, 500));
+      thunkAPI.dispatch(fetchNotifications());
       // API returns { success: true, message: "...", data: {...} }
       return res?.success ? res.data : res?.data || res || {};
     } catch (err) {
@@ -71,6 +78,9 @@ export const deleteProject = createAsyncThunk(
   async (projectId, thunkAPI) => {
     try {
       const res = await httpDeleteService(`api/projects/${projectId}`);
+      // ✅ NEW: Refresh notifications after successful project deletion
+      await new Promise(resolve => setTimeout(resolve, 500));
+      thunkAPI.dispatch(fetchNotifications());
       // API returns { success: true, message: "..." }
       return { id: projectId, success: res?.success, message: res?.message };
     } catch (err) {

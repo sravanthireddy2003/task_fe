@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { httpGetService, httpPostService, httpPutService, httpDeleteService } from '../../App/httpHandler';
+import { fetchNotifications } from './notificationSlice';
 
 // Helper to normalize errors into a string for thunk rejection payloads
 const formatRejectValue = (err) => {
@@ -33,6 +34,9 @@ export const createDepartment = createAsyncThunk(
   async (payload, thunkAPI) => {
     try {
       const res = await httpPostService('api/admin/departments', payload);
+      // ✅ NEW: Refresh notifications after successful department creation
+      await new Promise(resolve => setTimeout(resolve, 500));
+      thunkAPI.dispatch(fetchNotifications());
       // backend may return created object as data or department
       return res?.data || res || {};
     } catch (err) {
@@ -46,6 +50,9 @@ export const updateDepartment = createAsyncThunk(
   async ({ departmentId, data }, thunkAPI) => {
     try {
       const res = await httpPutService(`api/admin/departments/${departmentId}`, data);
+      // ✅ NEW: Refresh notifications after successful department update
+      await new Promise(resolve => setTimeout(resolve, 500));
+      thunkAPI.dispatch(fetchNotifications());
       return res?.data || res || {};
     } catch (err) {
       return thunkAPI.rejectWithValue(formatRejectValue(err));
