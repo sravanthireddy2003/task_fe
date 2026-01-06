@@ -1,47 +1,51 @@
 import React, { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { Loader } from 'lucide-react';
 import { toast } from 'sonner';
 import ChatInterface from '../components/ChatInterface';
 import { httpGetService } from '../App/httpHandler';
 
-const Chat = () => {
-  const dispatch = useDispatch();
+const ManagerChat = () => {
   const { user } = useSelector((state) => state.auth);
   const [projects, setProjects] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Fetch projects for admin
+  // ✅ Fetch projects managed by this manager
   useEffect(() => {
-    const fetchProjects = async () => {
+    const fetchManagedProjects = async () => {
       try {
         setLoading(true);
-        const res = await httpGetService('api/projects');
+        // Fetch projects managed by this manager
+        const res = await httpGetService('api/projects?manager_id=' + user?.id);
         if (res?.success) {
-          setProjects(res.data || []);
-          if (res.data?.length > 0) {
-            setSelectedProjectId(res.data[0]._id || res.data[0].id);
+          const managedProjects = res.data || [];
+          setProjects(managedProjects);
+          if (managedProjects.length > 0) {
+            setSelectedProjectId(managedProjects[0]._id || managedProjects[0].id);
           }
         } else {
           toast.error('Failed to load projects');
         }
       } catch (err) {
+        console.error('Error fetching projects:', err);
         toast.error(err?.message || 'Failed to load projects');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProjects();
-  }, [dispatch]);
+    if (user?.id) {
+      fetchManagedProjects();
+    }
+  }, [user?.id]);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
           <Loader className="animate-spin w-12 h-12 text-blue-600 mx-auto mb-3" />
-          <p className="text-gray-600">Loading projects...</p>
+          <p className="text-gray-600">Loading your projects...</p>
         </div>
       </div>
     );
@@ -51,7 +55,8 @@ const Chat = () => {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50">
         <div className="text-center">
-          <p className="text-gray-500 text-lg">No projects available</p>
+          <p className="text-gray-500 text-lg">No projects to chat about</p>
+          <p className="text-gray-400 text-sm">Create a project to start collaborating</p>
         </div>
       </div>
     );
@@ -66,7 +71,7 @@ const Chat = () => {
       {/* ===== PROJECT SELECTOR ===== */}
       <div className="flex items-center gap-4 bg-white p-4 rounded-lg shadow border border-gray-200">
         <label htmlFor="project-select" className="font-semibold text-gray-700">
-          Select Project:
+          Your Projects:
         </label>
         <select
           id="project-select"
@@ -80,6 +85,9 @@ const Chat = () => {
             </option>
           ))}
         </select>
+        <div className="text-sm text-gray-600 font-medium">
+          {projects.length} project{projects.length !== 1 ? 's' : ''}
+        </div>
       </div>
 
       {/* ===== CHAT INTERFACE ===== */}
@@ -96,4 +104,4 @@ const Chat = () => {
   );
 };
 
-export default Chat;
+export default ManagerChat;

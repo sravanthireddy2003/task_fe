@@ -46,6 +46,8 @@ import ClientDocuments from "./pages/client/ClientDocuments";
 import ClientAssignedTasks from "./pages/client/ClientAssignedTasks";
 import Settings from "./pages/Settings";
 import Chat from "./pages/Chat";
+import ManagerChat from "./pages/ManagerChat";
+import EmployeeChat from "./pages/EmployeeChat";
 import Workflow from "./pages/Workflow";
 import Notifications from "./pages/Notifications";
 import Trash from "./pages/Trash";
@@ -425,6 +427,29 @@ function App() {
               );
             }
 
+            if (moduleName === "Chat / Real-Time Collaboration") {
+              return (
+                <Route
+                  element={<ModuleRouteGuard moduleName={moduleName} />}
+                  key={`guard-${moduleName}`}
+                >
+                  {ROLE_PREFIXES.map((prefix) => {
+                    const path = `/${prefix}/${basePath}`;
+                    let ComponentForRole = Chat;
+                    if (prefix === "manager") ComponentForRole = ManagerChat;
+                    if (prefix === "employee") ComponentForRole = EmployeeChat;
+                    return (
+                      <Route
+                        key={`${moduleName}-${path}`}
+                        path={path}
+                        element={<ComponentForRole />}
+                      />
+                    );
+                  })}
+                </Route>
+              );
+            }
+
             return (
               <Route
                 element={<ModuleRouteGuard moduleName={moduleName} />}
@@ -445,6 +470,16 @@ function App() {
               <Route path={`/${prefix}/analytics`} element={<Report />} />
             </Route>
           ))}
+
+          {/* ✅ NEW: Notification routes for all roles (singular & plural) */}
+          <Route element={<ModuleRouteGuard moduleName="Notifications" />}>
+            <Route path="/admin/notifications" element={<Notifications />} />
+            <Route path="/admin/notification" element={<Notifications />} />
+            <Route path="/manager/notifications" element={<Notifications />} />
+            <Route path="/manager/notification" element={<Notifications />} />
+            <Route path="/employee/notifications" element={<Notifications />} />
+            <Route path="/employee/notification" element={<Notifications />} />
+          </Route>
 
           <Route element={<ModuleRouteGuard moduleName="Clients" />}>
             <Route path="/add-client" element={<AddClient />} />

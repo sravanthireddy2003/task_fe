@@ -19,6 +19,20 @@ const NotificationPanel = () => {
   // Redux selectors
   const notifications = useSelector(selectNotifications);
   const unreadCount = useSelector(selectUnreadCount);
+  const { user } = useSelector((state) => state.auth);
+
+  // ✅ NEW: Get user role to build proper navigation path
+  const getUserRole = () => {
+    if (!user) return "employee";
+    
+    const role = user.role?.toLowerCase() || "";
+    if (role.includes("admin")) return "admin";
+    if (role.includes("manager")) return "manager";
+    if (role.includes("client")) return "client";
+    return "employee";
+  };
+
+  const notificationPath = `/${getUserRole()}/notification`;
 
   // ✅ CHANGE: Use cached Redux state from App.jsx login flow
   // No need to fetch when opening notification panel
@@ -220,7 +234,7 @@ const NotificationPanel = () => {
               {/* Footer Actions */}
               <div className="flex items-center gap-2 p-3 bg-gray-50 border-t border-gray-100">
                 <Link
-                  to="/notifications"
+                  to={notificationPath}
                   onClick={() => close()}
                   className="flex-1 text-center text-sm font-semibold text-blue-600 hover:bg-blue-50 py-2 rounded transition-colors"
                 >
