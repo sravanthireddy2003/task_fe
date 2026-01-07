@@ -242,28 +242,29 @@ const EmployeeTasks = () => {
 
     try {
       const requestsMap = {};
-      
-      // Fetch reassignment requests for each task
+      // Fetch reassignment requests for each task using GET /api/tasks/:id/reassign-requests
       for (const task of tasks) {
         try {
           const taskId = getTaskIdForApi(task);
           if (!taskId) continue;
-          
-          const response = await fetchWithTenant(`/api/tasks/${taskId}/reassign-requests`);
-          if (response?.success && response.request) {
-            requestsMap[taskId] = {
-              id: response.request.id,
-              taskId: response.request.task_id,
-              status: response.request.status,
-              requested_at: response.request.requested_at,
-              responded_at: response.request.responded_at,
-            };
+          const response = await httpGetService(`/api/tasks/${taskId}/reassign-requests`);
+          if (response?.success && response.data) {
+            // If response.data is array, map first request; else use summary
+            const req = Array.isArray(response.data) ? response.data[0] : response.data;
+            if (req) {
+              requestsMap[taskId] = {
+                id: req.id,
+                taskId: req.task_id,
+                status: req.status,
+                requested_at: req.requested_at,
+                responded_at: req.responded_at,
+              };
+            }
           }
         } catch (error) {
           continue;
         }
       }
-      
       setReassignmentRequests(requestsMap);
     } catch (error) {
       console.error('Failed to load reassignment requests:', error);
@@ -877,46 +878,23 @@ const EmployeeTasks = () => {
   };
 
   const handleReassignTask = async () => {
-    if (!selectedTask || !selectedAssignee) {
-      toast.error('Select an employee to reassign the task.');
-      return;
-    }
+    // API: POST /api/tasks/:id/request-reassignment
+    if (!selectedTaskForReassignment) return;
     setReassigning(true);
     try {
-      const taskId = getTaskIdForApi(selectedTask);
-      const payload = {
-        assigned_to: [selectedAssignee],
-        projectId: selectedProjectId,
-      };
-      
-      const resp = await fetchWithTenant(`/api/projects/tasks/${taskId}`, {
-        method: 'PUT',
-        body: JSON.stringify(payload),
+      const taskId = getTaskIdForApi(selectedTaskForReassignment);
+      const resp = await httpPostService(`/api/tasks/${taskId}/request-reassignment`, {
+        reason: selectedTaskForReassignment.reassignReason || 'Requesting reassignment',
       });
-      
-      toast.success(resp?.message || 'Task reassigned successfully');
-     
-      // Update local task state
-      const targetEmployee = employees.find((emp) =>
-        String(emp.internalId || emp.id || emp._id || emp.public_id) === String(selectedAssignee)
-      );
-      
-      const updatedTask = {
-        ...selectedTask,
-        assignedUsers: targetEmployee ? [{
-          id: targetEmployee.public_id || targetEmployee.id || targetEmployee._id,
-          name: targetEmployee.name || targetEmployee.title || 'Employee',
-          internalId: targetEmployee.internalId || targetEmployee.id || targetEmployee._id,
-        }] : selectedTask.assignedUsers,
-        assigned_to: targetEmployee ? [targetEmployee.internalId || targetEmployee.public_id || targetEmployee.id || targetEmployee._id] : selectedTask.assigned_to,
-      };
-      
-      setSelectedTask(updatedTask);
-      updateLocalTaskState(normalizeId(selectedTask), updatedTask);
-     
-      refreshAllTasks();
+      if (resp.success) {
+        toast.success(resp.message || 'Reassignment request sent');
+        setForceRefresh(f => f + 1);
+        setSelectedTaskForReassignment(null);
+      } else {
+        toast.error(resp.error || 'Failed to request reassignment');
+      }
     } catch (err) {
-      toast.error(err?.message || 'Unable to reassign task');
+      toast.error(err.message || 'Failed to request reassignment');
     } finally {
       setReassigning(false);
     }
