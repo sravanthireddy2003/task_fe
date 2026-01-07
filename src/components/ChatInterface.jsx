@@ -222,8 +222,13 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
       .padStart(2, '0')}`;
   };
 
-  // ✅ Render message with colored mentions (adapts colors based on message owner)
+  // ✅ FIXED: Render message with colored mentions (handles undefined text)
   const renderMessageWithMentions = (text, isCurrentUser = false) => {
+    // Handle null/undefined text
+    if (!text || typeof text !== 'string') {
+      return text || ''; // Return empty string if text is falsy
+    }
+
     // Match @username or @everyone
     const mentionRegex = /@(\w+)/g;
     const parts = [];
@@ -543,89 +548,91 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
             </div>
           )}
 
-          {/* Messages list */}
-          {messages.map((msg) => {
-            const isCurrentUser = isCurrentUserMessage(msg);
-            
-            return (
-              <div
-                key={msg.id || msg._id}
-                className={`flex gap-2 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
-              >
-                {/* Avatar for non-current users */}
-                {!isCurrentUser && (
-                  <div className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm ${
-                    msg.message_type === 'bot'
-                      ? 'bg-gradient-to-br from-purple-500 to-purple-700'
-                      : 'bg-gradient-to-br from-blue-400 to-blue-600'
-                  }`}>
-                    {msg.message_type === 'bot' ? '🤖' : msg.sender_name?.charAt(0)?.toUpperCase() || '?'}
-                  </div>
-                )}
-
-                <div className={`flex flex-col gap-1 ${isCurrentUser ? 'items-end' : 'items-start'}`}>
-                  {/* Message group */}
-                  <div className={`max-w-sm ${isCurrentUser ? 'lg:max-w-md' : ''}`}>
-                    {/* Sender label for non-current users */}
-                    {!isCurrentUser && msg.sender_name && (
-                      <p className={`text-xs font-semibold mb-1 px-2 ${
-                        msg.message_type === 'bot'
-                          ? 'text-purple-600'
-                          : 'text-slate-600'
-                      }`}>
-                        {msg.message_type === 'bot' ? '🤖 ' : ''}{msg.sender_name}
-                      </p>
-                    )}
-
-                    {/* Message bubble */}
-                    <div
-                      className={`rounded-2xl px-4 py-3 shadow-md transition-all ${
-                        isCurrentUser
-                          ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-br-none'
-                          : msg.message_type === 'bot'
-                          ? 'bg-gradient-to-r from-purple-100 to-purple-50 text-slate-900 rounded-bl-none border border-purple-200'
-                          : 'bg-white text-slate-900 rounded-bl-none border border-slate-200'
-                      } break-words whitespace-pre-wrap`}
-                    >
-                      <p className="text-sm leading-relaxed font-medium">
-                        {renderMessageWithMentions(msg.message, isCurrentUser)}
-                      </p>
-                    </div>
-
-                    {/* Timestamp and delete button */}
-                    <div className={`flex items-center gap-2 mt-2 px-2 text-xs font-medium ${
-                      isCurrentUser ? 'justify-end text-blue-600' : 'justify-start text-slate-500'
+          {/* Messages list - Added filter to skip messages without content */}
+          {messages
+            .filter(msg => msg && (msg.message || msg.message === '')) // Filter out messages without message property
+            .map((msg) => {
+              const isCurrentUser = isCurrentUserMessage(msg);
+              
+              return (
+                <div
+                  key={msg.id || msg._id}
+                  className={`flex gap-2 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
+                >
+                  {/* Avatar for non-current users */}
+                  {!isCurrentUser && (
+                    <div className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm ${
+                      msg.message_type === 'bot'
+                        ? 'bg-gradient-to-br from-purple-500 to-purple-700'
+                        : 'bg-gradient-to-br from-blue-400 to-blue-600'
                     }`}>
-                      <span>{formatTime(msg.created_at || msg.timestamp)}</span>
+                      {msg.message_type === 'bot' ? '🤖' : msg.sender_name?.charAt(0)?.toUpperCase() || '?'}
+                    </div>
+                  )}
 
-                      {/* YOU label for current user */}
-                      {isCurrentUser && (
-                        <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">YOU</span>
+                  <div className={`flex flex-col gap-1 ${isCurrentUser ? 'items-end' : 'items-start'}`}>
+                    {/* Message group */}
+                    <div className={`max-w-sm ${isCurrentUser ? 'lg:max-w-md' : ''}`}>
+                      {/* Sender label for non-current users */}
+                      {!isCurrentUser && msg.sender_name && (
+                        <p className={`text-xs font-semibold mb-1 px-2 ${
+                          msg.message_type === 'bot'
+                            ? 'text-purple-600'
+                            : 'text-slate-600'
+                        }`}>
+                          {msg.message_type === 'bot' ? '🤖 ' : ''}{msg.sender_name}
+                        </p>
                       )}
 
-                      {/* Delete button for current user messages */}
-                      {isCurrentUser && (
-                        <button
-                          onClick={() => handleDeleteMessage(msg.id || msg._id)}
-                          className="text-slate-400 hover:text-red-500 transition-colors ml-1 hover:scale-110"
-                          title="Delete message"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      )}
+                      {/* Message bubble */}
+                      <div
+                        className={`rounded-2xl px-4 py-3 shadow-md transition-all ${
+                          isCurrentUser
+                            ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-br-none'
+                            : msg.message_type === 'bot'
+                            ? 'bg-gradient-to-r from-purple-100 to-purple-50 text-slate-900 rounded-bl-none border border-purple-200'
+                            : 'bg-white text-slate-900 rounded-bl-none border border-slate-200'
+                        } break-words whitespace-pre-wrap`}
+                      >
+                        <p className="text-sm leading-relaxed font-medium">
+                          {renderMessageWithMentions(msg.message || '', isCurrentUser)}
+                        </p>
+                      </div>
+
+                      {/* Timestamp and delete button */}
+                      <div className={`flex items-center gap-2 mt-2 px-2 text-xs font-medium ${
+                        isCurrentUser ? 'justify-end text-blue-600' : 'justify-start text-slate-500'
+                      }`}>
+                        <span>{formatTime(msg.created_at || msg.timestamp)}</span>
+
+                        {/* YOU label for current user */}
+                        {isCurrentUser && (
+                          <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">YOU</span>
+                        )}
+
+                        {/* Delete button for current user messages */}
+                        {isCurrentUser && (
+                          <button
+                            onClick={() => handleDeleteMessage(msg.id || msg._id)}
+                            className="text-slate-400 hover:text-red-500 transition-colors ml-1 hover:scale-110"
+                            title="Delete message"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Avatar for current user */}
-                {isCurrentUser && (
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
-                    {currentUserName?.charAt(0)?.toUpperCase() || 'U'}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                  {/* Avatar for current user */}
+                  {isCurrentUser && (
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
+                      {currentUserName?.charAt(0)?.toUpperCase() || 'U'}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           
           {/* Typing indicator */}
           {isTyping && (
