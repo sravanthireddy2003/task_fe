@@ -17,15 +17,48 @@
   }
 }
 
-*
-{
+* {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-
   font-family: "Zalando Sans", sans-serif;
 }
 
+/* ===== SCROLLBAR HIDE FOR SIDEBAR ===== */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari, Opera */
+}
+
+/* Keep your existing scrollbar styles for other areas */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+  transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+/* Your existing utility classes */
 .cell {
   display: inline-block;
   width: 49%;
@@ -62,29 +95,6 @@
   box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
   border-radius: 10px;
   box-sizing: border-box;
-}
-
-/* Custom Scrollbar Styles */
-/* Track */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-/* Handle */
-::-webkit-scrollbar-thumb {
-  background-color: #807c7c;
-  border-radius: 6px;
-  display: none;
-}
-
-/* Handle on hover */
-::-webkit-scrollbar-thumb:hover {
-  background-color: #302f2f;
-}
-
-/* Track */
-::-webkit-scrollbar-track {
-  background: transparent;
 }
 
 .dots-container {
@@ -127,13 +137,11 @@
     background-color: #b3d4fc;
     box-shadow: 0 0 0 0 rgba(178, 212, 252, 0.7);
   }
-
   50% {
     transform: scale(1.2);
     background-color: #4b79e4;
     box-shadow: 0 0 0 10px rgba(178, 212, 252, 0);
   }
-
   100% {
     transform: scale(0.8);
     background-color: #2584f8;
@@ -141,33 +149,6 @@
   }
 }
 
-/* ===== Custom Scrollbar Styling ===== */
-/* For WebKit browsers (Chrome, Safari, Edge) */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: #f1f5f9;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-  transition: background 0.3s ease;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-/* For Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 #f1f5f9;
-}
-
-/* Fade-in animation for typing indicator */
 @keyframes fadeIn {
   from {
     opacity: 0;

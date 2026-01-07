@@ -36,8 +36,8 @@ const Sidebar = () => {
         </button>
       </div>
 
-      {/* ✅ DESKTOP NAVIGATION */}
-      <nav className="flex-1 mt-6 px-3 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-slate-900">
+      {/* ✅ DESKTOP NAVIGATION - FIXED SCROLLBAR */}
+      <nav className="flex-1 mt-6 px-3 space-y-1 overflow-y-auto scrollbar-hide">
         {modules.map((mod, idx) => {
           const meta = MODULE_MAP[mod.name];
           if (!meta) return null;

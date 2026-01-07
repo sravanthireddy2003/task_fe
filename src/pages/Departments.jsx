@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react'; // REMOVED useCallback/useMemo causing issues
 import { useDispatch, useSelector } from 'react-redux';
 import {
   fetchDepartments,
@@ -99,7 +99,12 @@ const Departments = () => {
   const status = useSelector(selectDepartmentStatus);
   const error = useSelector(selectDepartmentError);
   const allUsers = useSelector(selectUsers) || [];
-  const managers = allUsers.filter((u) => (u?.role || '').toLowerCase() === 'manager');
+  
+  // FIXED: Direct filtering without complex logic
+  const managers = React.useMemo(() => 
+    allUsers.filter((u) => (u?.role || '').toLowerCase() === 'manager'), 
+  [allUsers]
+  );
 
   const [showModal, setShowModal] = useState(false);
   const [editDept, setEditDept] = useState(null);
@@ -112,6 +117,7 @@ const Departments = () => {
     dispatch(fetchUsers());
   }, [dispatch]);
 
+  // SIMPLIFIED data processing - no refreshKey causing loops
   const processedDepartments = departments.map((dept, index) => {
     const mgrId = dept.manager_id || dept.managerId || dept.manager || dept.managerId;
     let managerDetails = null;
@@ -123,16 +129,12 @@ const Departments = () => {
     }
 
     const managerName = managerDetails?.name || dept.manager_name || dept.managerName || dept.manager || 'Unassigned';
-    const managerId = managerDetails?.public_id || managerDetails?._id || managerDetails?.id || mgrId || '';
-    const headRef = dept.headId || dept.head_id || dept.parentDepartmentId || dept.parentId || '';
     
     return {
       ...dept,
       displayId: index + 1,
       actualId: dept.public_id || dept._id || dept.id,
-      headRef,
       managerName,
-      managerId,
       createdAt: dept.createdAt || dept.created_at || 'N/A',
       name: dept.name || 'Unnamed Department',
       color: ['#6366F1', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'][index % 5]
@@ -149,7 +151,6 @@ const Departments = () => {
     try {
       await dispatch(deleteDepartment(id)).unwrap();
       toast.success('Department deleted successfully');
-      dispatch(fetchDepartments());
     } catch (e) {
       toast.error(e?.message || 'Delete failed');
     }
@@ -169,24 +170,25 @@ const Departments = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
     try {
       if (editDept) {
         const departmentId = editDept.actualId;
         await dispatch(updateDepartment({ departmentId, data: form })).unwrap();
         toast.success('Department updated successfully');
-        setShowModal(false);
       } else {
         await dispatch(createDepartment(form)).unwrap();
         toast.success('Department created successfully');
         setForm({ name: '', managerId: '', headId: '' });
-        setShowModal(false);
       }
-      dispatch(fetchDepartments());
+      setShowModal(false);
+      // Redux will automatically update the list
     } catch (err) {
       toast.error(err?.message || 'Save failed');
     }
   };
 
+  // Loading and error states
   if (status === 'loading') {
     return (
       <div className="min-h-[400px] flex items-center justify-center p-8">
@@ -215,16 +217,29 @@ const Departments = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        
-        {/* Header - Matching Users page */}
+        {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <Title title="Department Management" />
             <p className="text-gray-600 text-sm mt-1">Organize and manage your company departments</p>
+            {/* Debug info */}
+            <p className="text-xs text-gray-500 mt-1">Managers found: {managers.length}</p>
           </div>
           
           <div className="flex items-center gap-3">
-            {/* View Mode Toggle */}
+            <button
+              onClick={() => {
+                dispatch(fetchDepartments());
+                dispatch(fetchUsers());
+              }}
+              className="p-2.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2 font-semibold text-sm"
+              title="Refresh departments"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
+            
             <div className="flex bg-gray-100 p-1 rounded-xl">
               <button
                 onClick={() => setViewMode('grid')}
@@ -261,7 +276,7 @@ const Departments = () => {
           </div>
         </div>
 
-        {/* Stats - Matching Users page */}
+        {/* Stats - SIMPLIFIED */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
             <div className="flex items-center justify-between">
@@ -304,11 +319,8 @@ const Departments = () => {
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-600 font-medium">Avg. Size</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">
-                  {processedDepartments.length > 0 ? 
-                    Math.round(allUsers.length / processedDepartments.length) : 0}
-                </p>
+                <p className="text-xs text-gray-600 font-medium">Total Managers</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{managers.length}</p>
               </div>
               <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center">
                 <IoPerson size={20} />
@@ -317,7 +329,7 @@ const Departments = () => {
           </div>
         </div>
 
-        {/* Search and Filters - Matching Users page */}
+        {/* Search */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1">
@@ -350,7 +362,7 @@ const Departments = () => {
           </div>
         </div>
 
-        {/* Main Content */}
+        {/* Main Content - SAME AS BEFORE */}
         {filteredDepartments.length === 0 ? (
           <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-2xl p-12 text-center">
             <IoBusiness className="w-16 h-16 text-gray-400 mx-auto mb-6" />
@@ -369,7 +381,7 @@ const Departments = () => {
         ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredDepartments.map((d) => (
-              <div key={d.actualId} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-lg hover:border-blue-300 transition-all duration-300 group">
+              <div key={d.actualId} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-lg hover:border-blue-300 transition-all duration-300">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <div 
@@ -404,7 +416,7 @@ const Departments = () => {
                   <div className="text-xs text-gray-500">
                     Created: {d.createdAt}
                   </div>
-                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-2">
                     <button
                       onClick={() => openEdit(d)}
                       className="p-2 rounded-lg hover:bg-blue-50 text-gray-500 hover:text-blue-600 hover:shadow-md transition-all duration-200"
@@ -424,7 +436,6 @@ const Departments = () => {
               </div>
             ))}
             
-            {/* Add New Card */}
             <div 
               onClick={handleCreate}
               className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center hover:border-blue-300 hover:bg-blue-50 transition-all duration-300 cursor-pointer flex flex-col items-center justify-center min-h-[280px]"
@@ -437,7 +448,6 @@ const Departments = () => {
             </div>
           </div>
         ) : (
-          /* List View - Matching Users page table */
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -451,7 +461,7 @@ const Departments = () => {
                 </thead>
                 <tbody>
                   {filteredDepartments.map((d) => (
-                    <tr key={d.actualId} className="border-b border-gray-100 hover:bg-gray-50 transition-colors group">
+                    <tr key={d.actualId} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                       <td className="py-4 pl-6 pr-4">
                         <div className="flex items-center gap-3">
                           <div 
@@ -475,15 +485,11 @@ const Departments = () => {
                       </td>
 
                       <td className="py-4 px-4">
-                        <div className="text-sm text-gray-600">{d.headRef || '-'}</div>
-                      </td>
-
-                      <td className="py-4 px-4">
                         <div className="text-sm text-gray-600">{d.createdAt}</div>
                       </td>
 
                       <td className="py-4 pr-6">
-                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => openEdit(d)}
                             className="p-2.5 rounded-xl hover:bg-blue-50 text-gray-500 hover:text-blue-600 hover:shadow-md transition-all duration-200"
@@ -506,7 +512,6 @@ const Departments = () => {
               </table>
             </div>
             
-            {/* Add New in List View */}
             <div 
               onClick={handleCreate}
               className="border-t border-gray-100 p-6 text-center hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
@@ -524,7 +529,6 @@ const Departments = () => {
           </div>
         )}
 
-        {/* Modal */}
         <DepartmentsModal
           show={showModal}
           onClose={() => setShowModal(false)}
