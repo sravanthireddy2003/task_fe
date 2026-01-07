@@ -27,28 +27,38 @@ const EmployeeChat = () => {
         
         const allProjects = projectsRes.data || [];
         
-        // Try to fetch tasks assigned to this user (try multiple parameter names)
+        // Try to fetch tasks assigned to this user
         let userTasks = [];
-        const paramVariations = [
-          `api/tasks?assigned_to=${user?.id}`,
-          `api/tasks?assignedTo=${user?.id}`,
-          `api/tasks?user_id=${user?.id}`,
-          `api/tasks?userId=${user?.id}`,
-          `api/tasks?employee_id=${user?.id}`,
-          `api/employee/tasks`,
-        ];
-        
-        for (const param of paramVariations) {
-          try {
-            const res = await httpGetService(param);
-            if (res?.success && res?.data && res.data.length > 0) {
-              userTasks = res.data;
-              console.log(`✅ Tasks fetched from: ${param}`, userTasks.length);
-              break;
+        try {
+          const res = await httpGetService('api/employee/my-tasks');
+          if (res?.success && res?.data && res.data.length > 0) {
+            userTasks = res.data;
+            console.log('✅ Tasks fetched from: api/employee/my-tasks', userTasks.length);
+          }
+        } catch (e) {
+          console.log('⚠️ Failed to fetch from api/employee/my-tasks, trying fallback...');
+          // Fallback to the old method if needed
+          const paramVariations = [
+            `api/tasks?assigned_to=${user?.id}`,
+            `api/tasks?assignedTo=${user?.id}`,
+            `api/tasks?user_id=${user?.id}`,
+            `api/tasks?userId=${user?.id}`,
+            `api/tasks?employee_id=${user?.id}`,
+            `api/employee/tasks`,
+          ];
+          
+          for (const param of paramVariations) {
+            try {
+              const res = await httpGetService(param);
+              if (res?.success && res?.data && res.data.length > 0) {
+                userTasks = res.data;
+                console.log(`✅ Tasks fetched from: ${param}`, userTasks.length);
+                break;
+              }
+            } catch (e) {
+              console.log(`⚠️ Failed to fetch from ${param}, trying next...`);
+              continue;
             }
-          } catch (e) {
-            console.log(`⚠️ Failed to fetch from ${param}, trying next...`);
-            continue;
           }
         }
         
@@ -56,7 +66,7 @@ const EmployeeChat = () => {
         if (userTasks && userTasks.length > 0) {
           const projectIdSet = new Set(
             userTasks
-              .map(task => task.project_id || task.projectId || task.project)
+              .map(task => task.project?.publicId || task.project?.id || task.project_id || task.projectId)
               .filter(id => id)
           );
           
