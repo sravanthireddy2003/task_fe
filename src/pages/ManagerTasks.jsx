@@ -24,7 +24,7 @@ const ManagerTasks = () => {
     priority: 'MEDIUM',
     stage: 'PENDING',
     taskDate: '',
-    assignedUsers: [],
+    assignedUsers: [], // This will contain only one ID
     projectId: '',
     timeAlloted: 8,
   });
@@ -58,6 +58,17 @@ const ManagerTasks = () => {
   const getProjectDisplayName = (project) => {
     if (!project) return 'Unknown Project';
     return project.name || project.title || `Project ${normalizeProjectId(project)?.slice(0, 8)}...`;
+  };
+
+  // Validation helper function
+  const validateAssignment = (userIds) => {
+    if (!userIds || userIds.length === 0) {
+      return { valid: false, error: 'Task must be assigned to one employee' };
+    }
+    if (userIds.length > 1) {
+      return { valid: false, error: 'Only one employee can be assigned to a task' };
+    }
+    return { valid: true, error: null };
   };
 
   // Utility functions
@@ -190,6 +201,14 @@ const ManagerTasks = () => {
     setLoading(true);
     try {
       const resp = await fetchWithTenant(`/api/tasks?projectId=${encodeURIComponent(projectId)}`);
+      
+      if (resp && resp.error) {
+        if (resp.error.includes('assigned_to')) {
+          console.warn('Backend assignment error:', resp.error);
+        }
+        throw new Error(resp.error || 'Failed to load tasks');
+      }
+      
       const tasksData = Array.isArray(resp?.data) ? resp.data : [];
       
       // Find the selected project in the projects array
@@ -380,13 +399,23 @@ const ManagerTasks = () => {
     return foundProject;
   }, [projects, selectedProjectId]);
 
-  // Task Actions
+  // Task Actions - FIXED VERSION
   const handleCreateTask = async (event) => {
     event.preventDefault();
+    
+    // Validate required fields
     if (!formData.title || !selectedProjectId) {
       toast.error('Title and project are required');
       return;
     }
+    
+    // Validate single user assignment
+    const assignmentValidation = validateAssignment(formData.assignedUsers);
+    if (!assignmentValidation.valid) {
+      toast.error(assignmentValidation.error);
+      return;
+    }
+    
     setActionLoading(true);
     try {
       const selectedProject = projects.find(
@@ -401,6 +430,10 @@ const ManagerTasks = () => {
           return projectIds.includes(selectedProjectId);
         }
       );
+      
+      // Ensure only one user ID is sent
+      const assignedUserId = formData.assignedUsers[0];
+      
       const payload = {
         title: formData.title,
         description: formData.description,
@@ -410,14 +443,31 @@ const ManagerTasks = () => {
         timeAlloted: Number(formData.timeAlloted) || 0,
         projectId: selectedProjectId,
         client_id: selectedProject?.client?.public_id || selectedProject?.client?.id || selectedProject?.client_id,
-        assigned_to: formData.assignedUsers,
+        assigned_to: assignedUserId, // Send single user ID instead of array
       };
+      
       const resp = await fetchWithTenant('api/projects/tasks', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(payload),
       });
-      toast.success(resp?.message || 'Task created successfully');
+      
+      // Handle response - FIXED: Check for error property, not success property
+      if (resp && resp.error) {
+        if (resp.error.includes('assigned_to') && resp.error.includes('exactly one')) {
+          toast.error('Error: Task must be assigned to exactly one user');
+          return;
+        }
+        throw new Error(resp.error || 'Unable to create task');
+      }
+      
+      // Success - show message from response or default
+      const successMessage = resp?.message || 'Task created successfully';
+      toast.success(successMessage);
 
+      // Reset form
       setFormData({
         title: '',
         description: '',
@@ -428,10 +478,33 @@ const ManagerTasks = () => {
         timeAlloted: 8,
         projectId: selectedProjectId
       });
+      
+      // Close modal and refresh tasks
       setShowCreateTaskModal(false);
       loadTasks(selectedProjectId);
     } catch (err) {
-      toast.error(err?.message || 'Unable to create task');
+      console.error('Error creating task:', err);
+      
+      // Check if this is actually a success response that was thrown as an error
+      if (err.response && err.response.message && err.response.message.includes('successfully')) {
+        // This was actually a success
+        toast.success(err.response.message || 'Task created successfully');
+        setFormData({
+          title: '',
+          description: '',
+          assignedUsers: [],
+          priority: 'MEDIUM',
+          stage: 'PENDING',
+          taskDate: '',
+          timeAlloted: 8,
+          projectId: selectedProjectId
+        });
+        setShowCreateTaskModal(false);
+        loadTasks(selectedProjectId);
+      } else {
+        // Real error
+        toast.error(err?.message || 'Unable to create task');
+      }
     } finally {
       setActionLoading(false);
     }
@@ -439,7 +512,7 @@ const ManagerTasks = () => {
 
   const handleReassignTask = async () => {
     if (!selectedTask || !selectedAssignee) {
-      toast.error('Select employee(s) to reassign');
+      toast.error('Select an employee to reassign');
       return;
     }
     
@@ -448,8 +521,9 @@ const ManagerTasks = () => {
       const taskId = selectedTask.id || selectedTask.public_id || selectedTask._id;
       const projectId = selectedTask.project_id || selectedTask.projectId;
       
+      // Send single user ID instead of array
       const payload = {
-        assigned_to: Array.isArray(selectedAssignee) ? selectedAssignee : [selectedAssignee],
+        assigned_to: selectedAssignee, // Single user ID
         projectId: projectId,
         status: 'IN_PROGRESS',
         handleResignationRequestId: selectedTask.lock_info?.request_id || 
@@ -470,18 +544,24 @@ const ManagerTasks = () => {
         body: JSON.stringify(payload)
       });
       
-      if (!resp.success && resp.error) {
+      // Handle response - FIXED: Check for error property, not success property
+      if (resp && resp.error) {
+        if (resp.error.includes('assigned_to') && resp.error.includes('exactly one')) {
+          toast.error('Error: Task must be assigned to exactly one user');
+          return;
+        }
         throw new Error(resp.error || 'Reassignment failed');
       }
       
-      toast.success('✅ Task reassigned! Original requester → read-only');
+      toast.success('Task reassigned successfully!');
       setShowReassignForm(false);
       setSelectedAssignee('');
       setSelectedTask(null);
       loadTasks(selectedProjectId);
       
     } catch (err) {
-      toast.error(err?.message || `Reassignment failed: ${err.message}`);
+      console.error('Error reassigning task:', err);
+      toast.error(err?.message || 'Reassignment failed');
     } finally {
       setReassigning(false);
     }
@@ -508,7 +588,12 @@ const ManagerTasks = () => {
         method: 'POST',
       });
 
-      toast.success(resp?.message || '✅ Reassignment approved! Original requester now read-only');
+      // Check for error in response
+      if (resp && resp.error) {
+        throw new Error(resp.error);
+      }
+
+      toast.success(resp?.message || 'Reassignment approved! Original requester now read-only');
 
       setSelectedTask(prev => ({
         ...prev,
@@ -545,7 +630,12 @@ const ManagerTasks = () => {
         method: 'POST',
       });
 
-      toast.success(resp?.message || '✅ Request rejected. Task unlocked.');
+      // Check for error in response
+      if (resp && resp.error) {
+        throw new Error(resp.error);
+      }
+
+      toast.success(resp?.message || 'Request rejected. Task unlocked.');
 
       setSelectedTask(prev => ({
         ...prev,
@@ -1209,65 +1299,65 @@ const ManagerTasks = () => {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                             </svg>
                             <span>Ready to reassign task</span>
-                          </div>
-                          <p className="text-sm text-blue-700 mt-1">
-                            Select an employee to reassign this task
-                          </p>
                         </div>
-                      )}
-
-                      <div className="flex items-center gap-2 mb-3">
-                        <RefreshCw className="w-5 h-5 text-blue-600" />
-                        <span className="font-medium text-blue-800">
-                          {hasApprovedRequest(selectedTask) ? 'Reassign Approved Task' : 'Reassign Task'}
-                        </span>
+                        <p className="text-sm text-blue-700 mt-1">
+                          Select an employee to reassign this task
+                        </p>
                       </div>
+                    )}
 
-                      <div className="flex flex-col gap-3">
-                        <select
-                          value={selectedAssignee}
-                          onChange={(e) => setSelectedAssignee(e.target.value)}
-                          disabled={employeesLoading}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                        >
-                          <option value="">Select employee</option>
-                          {employees.map((employee) => {
-                            const key = employee.internalId || employee.id || employee.public_id || employee._id;
-                            return (
-                              <option key={key} value={key}>
-                                {employee.name || employee.email || 'Unnamed'}
-                              </option>
-                            );
-                          })}
-                        </select>
-
-                        <button
-                          onClick={handleReassignTask}
-                          disabled={reassigning || !selectedAssignee || employeesLoading}
-                          className={`w-full px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${reassigning || !selectedAssignee || employeesLoading
-                              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                              : 'bg-blue-600 text-white hover:bg-blue-700'
-                            }`}
-                        >
-                          {reassigning ? (
-                            <>
-                              <RefreshCw className="w-4 h-4 animate-spin" />
-                              Reassigning...
-                            </>
-                          ) : (
-                            'Reassign Task'
-                          )}
-                        </button>
-                      </div>
-
-                      {employeesLoading && (
-                        <div className="flex items-center gap-2 mt-2 text-sm text-gray-600">
-                          <RefreshCw className="w-4 h-4 animate-spin" />
-                          Loading employees...
-                        </div>
-                      )}
+                    <div className="flex items-center gap-2 mb-3">
+                      <RefreshCw className="w-5 h-5 text-blue-600" />
+                      <span className="font-medium text-blue-800">
+                        {hasApprovedRequest(selectedTask) ? 'Reassign Approved Task' : 'Reassign Task'}
+                      </span>
                     </div>
-                  )}
+
+                    <div className="flex flex-col gap-3">
+                      <select
+                        value={selectedAssignee}
+                        onChange={(e) => setSelectedAssignee(e.target.value)}
+                        disabled={employeesLoading}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                      >
+                        <option value="">Select employee</option>
+                        {employees.map((employee) => {
+                          const key = employee.internalId || employee.id || employee.public_id || employee._id;
+                          return (
+                            <option key={key} value={key}>
+                              {employee.name || employee.email || 'Unnamed'}
+                            </option>
+                          );
+                        })}
+                      </select>
+
+                      <button
+                        onClick={handleReassignTask}
+                        disabled={reassigning || !selectedAssignee || employeesLoading}
+                        className={`w-full px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${reassigning || !selectedAssignee || employeesLoading
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                          }`}
+                      >
+                        {reassigning ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            Reassigning...
+                          </>
+                        ) : (
+                          'Reassign Task'
+                        )}
+                      </button>
+                    </div>
+
+                    {employeesLoading && (
+                      <div className="flex items-center gap-2 mt-2 text-sm text-gray-600">
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        Loading employees...
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Checklist */}
                 {selectedTask.checklist?.length > 0 && (
@@ -1421,17 +1511,21 @@ const ManagerTasks = () => {
 
                 <div>
                   <label className="block text-gray-700 font-medium mb-2">
-                    Assign To
+                    Assign To <span className="text-red-500">*</span>
                   </label>
                   <select
-                    multiple
-                    value={formData.assignedUsers}
+                    required
+                    value={formData.assignedUsers[0] || ''}
                     onChange={(e) => {
-                      const values = Array.from(e.target.selectedOptions).map(o => o.value);
-                      setFormData({ ...formData, assignedUsers: values });
+                      const selectedUserId = e.target.value;
+                      setFormData({ 
+                        ...formData, 
+                        assignedUsers: selectedUserId ? [selectedUserId] : [] 
+                      });
                     }}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-32"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
+                    <option value="">Select an employee</option>
                     {employees.map((employee) => {
                       const key = employee.internalId || employee.id || employee.public_id || employee._id;
                       return (
@@ -1441,7 +1535,7 @@ const ManagerTasks = () => {
                       );
                     })}
                   </select>
-                  <p className="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple</p>
+                  <p className="text-xs text-gray-500 mt-1">Only one employee can be assigned</p>
                 </div>
               </div>
 

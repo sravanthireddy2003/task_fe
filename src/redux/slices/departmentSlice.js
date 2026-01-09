@@ -2,7 +2,6 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { httpGetService, httpPostService, httpPutService, httpDeleteService } from '../../App/httpHandler';
 import { fetchNotifications } from './notificationSlice';
 
-// Helper to normalize errors into a string for thunk rejection payloads
 const formatRejectValue = (err) => {
   if (!err) return 'Unknown error';
   if (typeof err === 'string') return err;
@@ -14,60 +13,56 @@ const formatRejectValue = (err) => {
   }
 };
 
-// Thunks
+// ✅ FIXED: Proper error handling in ALL thunks
 export const fetchDepartments = createAsyncThunk(
   'departments/fetch',
-  async (params = {}, thunkAPI) => {
+  async (params = {}, { rejectWithValue }) => {
     try {
-      // support optional query param object -> query string handled by caller if needed
       const userId = params.userId ? `?userId=${params.userId}` : '';
       const res = await httpGetService(`api/admin/departments${userId}`);
       return Array.isArray(res) ? res : res?.data || res?.departments || [];
     } catch (err) {
-      return thunkAPI.rejectWithValue(formatRejectValue(err));
+      return rejectWithValue(formatRejectValue(err));
     }
   }
 );
 
 export const createDepartment = createAsyncThunk(
   'departments/create',
-  async (payload, thunkAPI) => {
+  async (payload, { dispatch, rejectWithValue }) => {
     try {
       const res = await httpPostService('api/admin/departments', payload);
-      // ✅ NEW: Refresh notifications after successful department creation
-      await new Promise(resolve => setTimeout(resolve, 500));
-      thunkAPI.dispatch(fetchNotifications());
-      // backend may return created object as data or department
+      // ✅ Safe notification refresh
+      setTimeout(() => dispatch(fetchNotifications()), 500);
       return res?.data || res || {};
     } catch (err) {
-      return thunkAPI.rejectWithValue(formatRejectValue(err));
+      return rejectWithValue(formatRejectValue(err));
     }
   }
 );
 
 export const updateDepartment = createAsyncThunk(
   'departments/update',
-  async ({ departmentId, data }, thunkAPI) => {
+  async ({ departmentId, data }, { dispatch, rejectWithValue }) => {
     try {
       const res = await httpPutService(`api/admin/departments/${departmentId}`, data);
-      // ✅ NEW: Refresh notifications after successful department update
-      await new Promise(resolve => setTimeout(resolve, 500));
-      thunkAPI.dispatch(fetchNotifications());
+      setTimeout(() => dispatch(fetchNotifications()), 500);
       return res?.data || res || {};
     } catch (err) {
-      return thunkAPI.rejectWithValue(formatRejectValue(err));
+      return rejectWithValue(formatRejectValue(err));
     }
   }
 );
 
 export const deleteDepartment = createAsyncThunk(
   'departments/delete',
-  async (departmentId, thunkAPI) => {
+  async (departmentId, { dispatch, rejectWithValue }) => {
     try {
       const res = await httpDeleteService(`api/admin/departments/${departmentId}`);
+      setTimeout(() => dispatch(fetchNotifications()), 500);
       return { id: departmentId, ...((res && typeof res === 'object') ? res : {}) };
     } catch (err) {
-      return thunkAPI.rejectWithValue(formatRejectValue(err));
+      return rejectWithValue(formatRejectValue(err));
     }
   }
 );
@@ -81,9 +76,14 @@ const initialState = {
 const departmentSlice = createSlice({
   name: 'departments',
   initialState,
-  reducers: {},
+  reducers: {
+    clearError: (state) => {
+      state.error = null;
+    }
+  },
   extraReducers: (builder) => {
     builder
+      // Fetch
       .addCase(fetchDepartments.pending, (state) => {
         state.status = 'loading';
         state.error = null;
@@ -91,56 +91,72 @@ const departmentSlice = createSlice({
       .addCase(fetchDepartments.fulfilled, (state, action) => {
         state.status = 'succeeded';
         state.departments = action.payload || [];
+        state.error = null;
       })
       .addCase(fetchDepartments.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = action.payload || action.error?.message;
+        state.error = action.payload || action.error?.message || 'Fetch failed';
       })
 
+      // Create  
       .addCase(createDepartment.pending, (state) => {
         state.status = 'loading';
         state.error = null;
       })
       .addCase(createDepartment.fulfilled, (state, action) => {
         state.status = 'succeeded';
-        // append created dept
-        if (action.payload) state.departments.unshift(action.payload);
+        state.error = null;
+        if (action.payload) {
+          state.departments.unshift(action.payload);
+        }
       })
       .addCase(createDepartment.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = action.payload || action.error?.message;
+        state.error = action.payload || 'Create failed';
       })
 
+      // Update
       .addCase(updateDepartment.pending, (state) => {
         state.status = 'loading';
         state.error = null;
       })
       .addCase(updateDepartment.fulfilled, (state, action) => {
         state.status = 'succeeded';
+        state.error = null;
         const updated = action.payload;
-        state.departments = state.departments.map((d) => (d._id === (updated._id || updated.id) ? { ...d, ...updated } : d));
+        const id = updated._id || updated.id;
+        if (id) {
+          state.departments = state.departments.map((d) => 
+            d._id === id || d.id === id ? { ...d, ...updated } : d
+          );
+        }
       })
       .addCase(updateDepartment.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = action.payload || action.error?.message;
+        state.error = action.payload || 'Update failed';
       })
 
+      // Delete
       .addCase(deleteDepartment.pending, (state) => {
         state.status = 'loading';
         state.error = null;
       })
       .addCase(deleteDepartment.fulfilled, (state, action) => {
         state.status = 'succeeded';
-        const id = action.payload?.id;
-        if (id) state.departments = state.departments.filter((d) => d._id !== id && d.id !== id);
+        state.error = null;
+        const id = action.payload?.id || action.meta.arg;
+        state.departments = state.departments.filter((d) => 
+          d._id !== id && d.id !== id && d.public_id !== id
+        );
       })
       .addCase(deleteDepartment.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = action.payload || action.error?.message;
+        state.error = action.payload || 'Delete failed';
       });
   },
 });
 
+export const { clearError } = departmentSlice.actions;
 export const selectDepartments = (state) => state.departments.departments || [];
 export const selectDepartmentStatus = (state) => state.departments.status;
 export const selectDepartmentError = (state) => state.departments.error;

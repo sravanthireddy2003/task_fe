@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'; // REMOVED useCallback/useMemo causing issues
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   fetchDepartments,
@@ -19,10 +19,18 @@ import clsx from 'clsx';
 
 function DepartmentsModal({ show, onClose, form, setForm, onSubmit, editing, managers = [] }) {
   if (!show) return null;
+  
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="absolute inset-0" onClick={onClose}></div>
-      <form onSubmit={onSubmit} className="relative bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto z-10">
+      <form 
+        onSubmit={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onSubmit(e);
+        }} 
+        className="relative bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto z-10"
+      >
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-gray-900 text-xl font-bold">{editing ? 'Edit Department' : 'Add Department'}</h2>
           <button
@@ -100,7 +108,6 @@ const Departments = () => {
   const error = useSelector(selectDepartmentError);
   const allUsers = useSelector(selectUsers) || [];
   
-  // FIXED: Direct filtering without complex logic
   const managers = React.useMemo(() => 
     allUsers.filter((u) => (u?.role || '').toLowerCase() === 'manager'), 
   [allUsers]
@@ -117,7 +124,6 @@ const Departments = () => {
     dispatch(fetchUsers());
   }, [dispatch]);
 
-  // SIMPLIFIED data processing - no refreshKey causing loops
   const processedDepartments = departments.map((dept, index) => {
     const mgrId = dept.manager_id || dept.managerId || dept.manager || dept.managerId;
     let managerDetails = null;
@@ -145,6 +151,31 @@ const Departments = () => {
     dept.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     dept.managerName?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+const handleSubmit = async (e) => {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  
+  try {
+    if (editDept) {
+      await dispatch(updateDepartment({ 
+        departmentId: editDept.actualId, 
+        data: form 
+      })).unwrap();
+      toast.success('✅ Department updated');
+    } else {
+      await dispatch(createDepartment(form)).unwrap();
+      toast.success('✅ Department created');
+      setForm({ name: '', managerId: '', headId: '' });
+    }
+    setShowModal(false);
+  } catch (err) {
+    console.error('Submit error:', err); // ✅ Debug
+    toast.error(err.message || '❌ Operation failed');
+  }
+};
+
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this department?')) return;
@@ -164,31 +195,15 @@ const Departments = () => {
 
   const openEdit = (d) => {
     setEditDept(d);
-    setForm({ name: d.name || '', managerId: d.managerId || '', headId: d.headId || '' });
+    setForm({ 
+      name: d.name || '', 
+      managerId: d.managerId || d.manager_id || '', 
+      headId: d.headId || '' 
+    });
     setShowModal(true);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    try {
-      if (editDept) {
-        const departmentId = editDept.actualId;
-        await dispatch(updateDepartment({ departmentId, data: form })).unwrap();
-        toast.success('Department updated successfully');
-      } else {
-        await dispatch(createDepartment(form)).unwrap();
-        toast.success('Department created successfully');
-        setForm({ name: '', managerId: '', headId: '' });
-      }
-      setShowModal(false);
-      // Redux will automatically update the list
-    } catch (err) {
-      toast.error(err?.message || 'Save failed');
-    }
-  };
-
-  // Loading and error states
+  // Loading state
   if (status === 'loading') {
     return (
       <div className="min-h-[400px] flex items-center justify-center p-8">
@@ -197,6 +212,7 @@ const Departments = () => {
     );
   }
 
+  // Error state
   if (status === 'failed') {
     return (
       <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center max-w-2xl mx-auto">
@@ -222,7 +238,6 @@ const Departments = () => {
           <div>
             <Title title="Department Management" />
             <p className="text-gray-600 text-sm mt-1">Organize and manage your company departments</p>
-            {/* Debug info */}
             <p className="text-xs text-gray-500 mt-1">Managers found: {managers.length}</p>
           </div>
           
@@ -276,7 +291,7 @@ const Departments = () => {
           </div>
         </div>
 
-        {/* Stats - SIMPLIFIED */}
+        {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
             <div className="flex items-center justify-between">
@@ -362,7 +377,7 @@ const Departments = () => {
           </div>
         </div>
 
-        {/* Main Content - SAME AS BEFORE */}
+        {/* Main Content */}
         {filteredDepartments.length === 0 ? (
           <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-2xl p-12 text-center">
             <IoBusiness className="w-16 h-16 text-gray-400 mx-auto mb-6" />
