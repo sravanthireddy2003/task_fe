@@ -12,6 +12,7 @@ import {
   MessageCircle,
   Paperclip,
   ChevronRight,
+  ChevronDown,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -48,6 +49,8 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
   const [mentionQuery, setMentionQuery] = useState('');
   const [mentionCursorPos, setMentionCursorPos] = useState(0);
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const typingTimeoutRef = useRef(null);
   const messageCountRef = useRef(messages.length);
   const inputRef = useRef(null);
@@ -97,14 +100,37 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
     }
   }, [error, dispatch]);
 
-  // ✅ Auto-scroll to bottom with better handling
+  // ✅ Auto-scroll to bottom only if user is near bottom
   useEffect(() => {
-    // Use setTimeout to ensure DOM has updated
-    const timer = setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
-    return () => clearTimeout(timer);
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100;
+
+    if (isNearBottom) {
+      // Use setTimeout to ensure DOM has updated
+      const timer = setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+      return () => clearTimeout(timer);
+    }
   }, [messages]);
+
+  // ✅ Handle scroll to show/hide scroll to bottom button
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100; // 100px threshold
+      setShowScrollToBottom(!isNearBottom);
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // ✅ Handle typing indicator and mentions
   const handleMessageChange = (e) => {
@@ -220,6 +246,11 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
       .getMinutes()
       .toString()
       .padStart(2, '0')}`;
+  };
+
+  // ✅ Handle scroll to bottom
+  const handleScrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   // ✅ FIXED: Render message with colored mentions (handles undefined text)
@@ -528,7 +559,7 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
       )}
 
       {/* ===== MAIN MESSAGES AREA ===== */}
-      <div className="flex-1 overflow-y-auto bg-gradient-to-b from-slate-50 via-white to-blue-50 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100 hover:scrollbar-thumb-slate-400">
+      <div ref={messagesContainerRef} className="relative flex-1 overflow-y-auto bg-gradient-to-b from-slate-50 via-white to-blue-50 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100 hover:scrollbar-thumb-slate-400">
         <div className="px-4 py-6 max-w-5xl mx-auto space-y-4">
           {/* Loading state */}
           {messageLoading && (
@@ -650,6 +681,17 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
                 </div>
               </div>
             </div>
+          )}
+          
+          {/* Scroll to bottom button */}
+          {showScrollToBottom && (
+            <button
+              onClick={handleScrollToBottom}
+              className="absolute bottom-4 right-4 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg transition-all duration-200 z-10"
+              title="Scroll to bottom"
+            >
+              <ChevronDown size={20} />
+            </button>
           )}
           
           <div ref={messagesEndRef} />

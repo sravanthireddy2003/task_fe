@@ -17,16 +17,6 @@ const EmployeeChat = () => {
       try {
         setLoading(true);
         
-        // Fetch all projects first
-        const projectsRes = await httpGetService('api/projects');
-        if (!projectsRes?.success) {
-          toast.error('Failed to load projects');
-          setLoading(false);
-          return;
-        }
-        
-        const allProjects = projectsRes.data || [];
-        
         // Try to fetch tasks assigned to this user
         let userTasks = [];
         try {
@@ -62,31 +52,38 @@ const EmployeeChat = () => {
           }
         }
         
-        // If we got tasks, filter projects by those tasks
+        // Extract unique projects from tasks
         if (userTasks && userTasks.length > 0) {
-          const projectIdSet = new Set(
-            userTasks
-              .map(task => task.project?.publicId || task.project?.id || task.project_id || task.projectId)
-              .filter(id => id)
-          );
+          const projectMap = new Map();
           
-          const assignedProjects = allProjects.filter(p => 
-            projectIdSet.has(p._id) || projectIdSet.has(p.id)
-          );
+          userTasks.forEach(task => {
+            if (task.project) {
+              const projectId = task.project.publicId || task.project.id;
+              const projectName = task.project.name || task.project.title || 'Unknown Project';
+              
+              if (projectId && !projectMap.has(projectId)) {
+                projectMap.set(projectId, {
+                  id: projectId,
+                  _id: projectId, // For compatibility
+                  name: projectName,
+                  title: projectName, // For compatibility
+                });
+              }
+            }
+          });
           
-          console.log(`📊 Projects with tasks: ${assignedProjects.length} out of ${allProjects.length}`);
+          const assignedProjects = Array.from(projectMap.values());
+          
+          console.log(`📊 Projects extracted from tasks: ${assignedProjects.length}`);
           setProjects(assignedProjects);
           
           if (assignedProjects.length > 0) {
-            setSelectedProjectId(assignedProjects[0]._id || assignedProjects[0].id);
+            setSelectedProjectId(assignedProjects[0].id);
           }
         } else {
-          // If no tasks found or API failed, show all projects as fallback
-          console.warn('⚠️ No tasks found for employee, showing all projects as fallback');
-          setProjects(allProjects);
-          if (allProjects.length > 0) {
-            setSelectedProjectId(allProjects[0]._id || allProjects[0].id);
-          }
+          // If no tasks found, show no projects
+          console.warn('⚠️ No tasks found for employee');
+          setProjects([]);
         }
       } catch (err) {
         console.error('Error fetching projects:', err);
