@@ -1,11 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
 import fetchWithTenant from '../utils/fetchWithTenant';
 import { selectUser } from '../redux/slices/authSlice';
 import {
   RefreshCw, AlertCircle, Calendar, Clock, User, Plus, CheckSquare, Check, Eye, Filter,
-  Lock, UserCheck, Clock as ClockIcon, AlertTriangle, ChevronDown, ChevronUp
+  Lock, UserCheck, Clock as ClockIcon, AlertTriangle
 } from 'lucide-react';
 
 const ManagerTasks = () => {
@@ -37,13 +37,6 @@ const ManagerTasks = () => {
   const [reassigning, setReassigning] = useState(false);
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState('all');
-  const [showReassignForm, setShowReassignForm] = useState(false);
-  const [pendingRequests, setPendingRequests] = useState([]);
-  const [approvingRequestId, setApprovingRequestId] = useState(null);
-  const [rejectingRequestId, setRejectingRequestId] = useState(null);
-  const [expandedRequestId, setExpandedRequestId] = useState(null);
-
-  const reassignFormRef = useRef(null);
 
   // Status options
   const statusOptions = ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'ON_HOLD'];
@@ -89,14 +82,6 @@ const ManagerTasks = () => {
       'REQUEST APPROVED': 'Request Approved'
     };
     return statusMap[status] || status || 'Pending';
-  };
-
-  // Check if task has pending reassignment request
-  const hasReassignmentRequest = (task) => {
-    if (task.lock_info && task.lock_info.request_status) {
-      return task.lock_info.request_status === 'PENDING';
-    }
-    return false;
   };
 
   // Check if task has approved request
@@ -241,58 +226,7 @@ const ManagerTasks = () => {
         return task;
       });
 
-      // Load all pending reassignment requests for manager
-      let pendingRequestsData = [];
-      try {
-        const reassignmentResp = await fetchWithTenant('/api/tasks/reassign-requests');
-        pendingRequestsData = Array.isArray(reassignmentResp?.requests) ? reassignmentResp.requests : [];
-      } catch (reqErr) {
-        // Silently fail - reassignment requests are optional
-      }
-
-      setPendingRequests(pendingRequestsData);
-
-      // Create a map of task public_id to pending request
-      const pendingRequestMap = {};
-      pendingRequestsData.forEach(req => {
-        if (req.task_public_id) {
-          pendingRequestMap[req.task_public_id] = req;
-        }
-      });
-
-      // Merge tasks with pending requests
-      const mergedTasks = tasksWithProjectInfo.map(task => {
-        const pendingRequest = pendingRequestMap[task.id];
-
-        if (pendingRequest) {
-          return {
-            ...task,
-            is_locked: true,
-            lock_info: {
-              is_locked: true,
-              request_status: 'PENDING',
-              request_id: pendingRequest.id,
-              requested_at: pendingRequest.requested_at,
-              responded_at: pendingRequest.responded_at,
-              requested_by: pendingRequest.requested_by,
-              requester_name: pendingRequest.requester_name,
-              requester_id: pendingRequest.requester_public_id,
-              task_status: pendingRequest.task_status,
-              task_public_id: pendingRequest.task_public_id,
-              reason: pendingRequest.reason
-            },
-            task_status: {
-              current_status: task.task_status?.current_status || task.status || task.stage || 'PENDING',
-              is_locked: true,
-              requester_name: pendingRequest.requester_name
-            }
-          };
-        }
-
-        return task;
-      });
-
-      setTasks(mergedTasks);
+      setTasks(tasksWithProjectInfo);
       setError(null);
     } catch (err) {
       setError(err.message || 'Failed to load tasks for the project');
@@ -350,34 +284,11 @@ const ManagerTasks = () => {
 
   useEffect(() => {
     setSelectedTask(null);
-    setShowReassignForm(false);
-    setExpandedRequestId(null);
   }, [selectedProjectId]);
 
   useEffect(() => {
     loadEmployees();
   }, [loadEmployees]);
-
-  // Effect to reset reassign form when task changes
-  useEffect(() => {
-    if (selectedTask) {
-      setShowReassignForm(false);
-      setSelectedAssignee('');
-      setExpandedRequestId(null);
-    }
-  }, [selectedTask]);
-
-  // Effect to focus on reassign form when it becomes visible
-  useEffect(() => {
-    if (showReassignForm && reassignFormRef.current) {
-      setTimeout(() => {
-        const select = reassignFormRef.current?.querySelector('select');
-        if (select) {
-          select.focus();
-        }
-      }, 150);
-    }
-  }, [showReassignForm]);
 
   // Computed values
   const detailProject = selectedTask?.project || selectedTask?.project_details || selectedTask?.meta?.project;
@@ -398,6 +309,19 @@ const ManagerTasks = () => {
     
     return foundProject;
   }, [projects, selectedProjectId]);
+
+  // Effects
+  useEffect(() => {
+    loadProjects();
+  }, [loadProjects]);
+
+  useEffect(() => {
+    loadTasks(selectedProjectId);
+  }, [loadTasks, selectedProjectId]);
+
+  useEffect(() => {
+    loadEmployees();
+  }, [loadEmployees]);
 
   // Task Actions - FIXED VERSION
   const handleCreateTask = async (event) => {
@@ -510,163 +434,6 @@ const ManagerTasks = () => {
     }
   };
 
-  const handleReassignTask = async () => {
-    if (!selectedTask || !selectedAssignee) {
-      toast.error('Select an employee to reassign');
-      return;
-    }
-    
-    setReassigning(true);
-    try {
-      const taskId = selectedTask.id || selectedTask.public_id || selectedTask._id;
-      const projectId = selectedTask.project_id || selectedTask.projectId;
-      
-      // Send single user ID instead of array
-      const payload = {
-        assigned_to: selectedAssignee, // Single user ID
-        projectId: projectId,
-        status: 'IN_PROGRESS',
-        handleResignationRequestId: selectedTask.lock_info?.request_id || 
-                                  selectedTask.task_status?.approved_request_id,
-        stage: 'IN_PROGRESS',
-        task_status: {
-          current_status: 'IN_PROGRESS'
-        },
-        project_id: projectId
-      };
-      
-      const resp = await fetchWithTenant(`/api/projects/tasks/${encodeURIComponent(taskId)}`, {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-      
-      // Handle response - FIXED: Check for error property, not success property
-      if (resp && resp.error) {
-        if (resp.error.includes('assigned_to') && resp.error.includes('exactly one')) {
-          toast.error('Error: Task must be assigned to exactly one user');
-          return;
-        }
-        throw new Error(resp.error || 'Reassignment failed');
-      }
-      
-      toast.success('Task reassigned successfully!');
-      setShowReassignForm(false);
-      setSelectedAssignee('');
-      setSelectedTask(null);
-      loadTasks(selectedProjectId);
-      
-    } catch (err) {
-      console.error('Error reassigning task:', err);
-      toast.error(err?.message || 'Reassignment failed');
-    } finally {
-      setReassigning(false);
-    }
-  };
-
-  const getAssignmentStatus = (task) => {
-    if (!task.assignedUsers?.length) return [];
-
-    const hasApprovedRequest = task.lock_info?.request_status === 'APPROVED' ||
-      task.status === 'Request Approved';
-
-    return task.assignedUsers.map(user => ({
-      ...user,
-      is_read_only: hasApprovedRequest && user.id === task.lock_info?.requested_by
-    }));
-  };
-
-  const handleApproveRequest = async (requestId) => {
-    if (!requestId || approvingRequestId) return;
-    setApprovingRequestId(requestId);
-    try {
-      const taskId = selectedTask.id || selectedTask.public_id;
-      const resp = await fetchWithTenant(`/api/tasks/${taskId}/reassign-requests/${requestId}/approve`, {
-        method: 'POST',
-      });
-
-      // Check for error in response
-      if (resp && resp.error) {
-        throw new Error(resp.error);
-      }
-
-      toast.success(resp?.message || 'Reassignment approved! Original requester now read-only');
-
-      setSelectedTask(prev => ({
-        ...prev,
-        is_locked: false,
-        status: 'Request Approved',
-        lock_info: {
-          ...prev.lock_info,
-          request_status: 'APPROVED',
-          request_id: requestId,
-          responded_at: new Date().toISOString(),
-        },
-        task_status: {
-          current_status: 'Request Approved',
-          is_locked: false,
-          approved_request_id: requestId
-        }
-      }));
-
-      setShowReassignForm(true);
-      loadTasks(selectedProjectId);
-    } catch (err) {
-      toast.error(err?.message || 'Failed to approve request');
-    } finally {
-      setApprovingRequestId(null);
-    }
-  };
-
-  const handleRejectRequest = async (requestId) => {
-    if (!requestId || rejectingRequestId) return;
-    setRejectingRequestId(requestId);
-    try {
-      const taskId = selectedTask.id || selectedTask.public_id;
-      const resp = await fetchWithTenant(`/api/tasks/${taskId}/reassign-requests/${requestId}/reject`, {
-        method: 'POST',
-      });
-
-      // Check for error in response
-      if (resp && resp.error) {
-        throw new Error(resp.error);
-      }
-
-      toast.success(resp?.message || 'Request rejected. Task unlocked.');
-
-      setSelectedTask(prev => ({
-        ...prev,
-        is_locked: false,
-        status: 'In Progress',
-        lock_info: {
-          ...prev.lock_info,
-          request_status: 'REJECTED',
-          responded_at: new Date().toISOString(),
-        },
-        task_status: {
-          ...prev.task_status,
-          current_status: 'In Progress',
-          is_locked: false
-        }
-      }));
-
-      setShowReassignForm(false);
-      loadTasks(selectedProjectId);
-    } catch (err) {
-      toast.error(err?.message || 'Failed to reject request');
-    } finally {
-      setRejectingRequestId(null);
-    }
-  };
-
-  // Toggle request details
-  const toggleRequestDetails = (requestId) => {
-    setExpandedRequestId(expandedRequestId === requestId ? null : requestId);
-  };
-
   // UI Modals & Actions
   const openCreateTaskModal = () => {
     if (!selectedProjectId) {
@@ -751,75 +518,6 @@ const ManagerTasks = () => {
         <div className="flex items-center justify-center p-4 mb-6 bg-blue-50 rounded-lg">
           <RefreshCw className="w-5 h-5 mr-2 animate-spin text-blue-600" />
           <span className="text-blue-600 font-medium">Loading tasks...</span>
-        </div>
-      )}
-
-      {/* PENDING REASSIGNMENT REQUESTS SECTION */}
-      {pendingRequests.length > 0 && (
-        <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6 mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-red-500 text-white rounded-xl flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-red-900">Pending Reassignment Requests</h3>
-              <p className="text-red-800">
-                You have {pendingRequests.length} task(s) waiting for your approval
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {pendingRequests
-              .slice(0, 3)
-              .map(request => {
-                const task = tasks.find(t => t.id === request.task_public_id);
-                return (
-                  <div key={request.id} className="bg-white border border-red-200 rounded-lg p-4">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h4 className="font-semibold text-gray-900">{request.task_title}</h4>
-                        <p className="text-sm text-gray-600">
-                          Requested by: {request.requester_name} • {formatDate(request.requested_at)}
-                        </p>
-                        {request.reason && (
-                          <p className="text-sm text-gray-500 mt-1">
-                            Reason: {request.reason}
-                          </p>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => {
-                          if (task) {
-                            setSelectedTask(task);
-                          }
-                        }}
-                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
-                      >
-                        Review Request
-                      </button>
-                    </div>
-                  </div>
-                );
-              })
-            }
-
-            {pendingRequests.length > 3 && (
-              <div className="text-center pt-2">
-                <button
-                  onClick={() => {
-                    const lockedTaskElement = document.querySelector('.bg-orange-50');
-                    if (lockedTaskElement) {
-                      lockedTaskElement.scrollIntoView({ behavior: 'smooth' });
-                    }
-                  }}
-                  className="text-red-700 hover:text-red-900 font-medium text-sm"
-                >
-                  View all {pendingRequests.length} pending requests →
-                </button>
-              </div>
-            )}
-          </div>
         </div>
       )}
 
@@ -968,7 +666,6 @@ const ManagerTasks = () => {
                   ) : (
                     filteredTasks.map((task) => {
                       const isActive = selectedTask?.id === task.id || selectedTask?.public_id === task.public_id;
-                      const hasRequest = hasReassignmentRequest(task);
                       const taskStatus = getTaskStatus(task);
 
                       return (
@@ -976,45 +673,21 @@ const ManagerTasks = () => {
                           key={task.id || task.public_id || task._id || task.internalId}
                           onClick={() => handleRowClick(task)}
                           className={`border-b transition-colors cursor-pointer ${isActive ? 'bg-gray-50' : 'hover:bg-gray-50'
-                            } ${hasRequest ? 'bg-orange-50 hover:bg-orange-100' : ''}`}
+                            }`}
                         >
                           <td className="p-4">
                             <div className="font-medium text-gray-900">{task.title || task.name}</div>
                             {task.description && (
                               <div className="text-sm text-gray-500 mt-1 line-clamp-2">{task.description}</div>
                             )}
-                            {hasRequest && (
-                              <div className="flex items-center gap-1 mt-1">
-                                <AlertTriangle className="w-3 h-3 text-orange-500" />
-                                <span className="text-xs text-orange-700 font-medium">Reassignment Requested</span>
-                              </div>
-                            )}
                           </td>
 
                           <td className="p-4">
                             <div className="flex items-center gap-2">
-                              <User className="w-4 h-4 text-gray-400" />
-                              {(() => {
-                                const assignments = getAssignmentStatus(selectedTask || task);
-                                if (!assignments.length) return <span className="text-sm text-gray-700">Unassigned</span>;
-
-                                return (
-                                  <div className="space-y-1">
-                                    {assignments.map((user, idx) => (
-                                      <div key={user.id || idx} className="flex items-center gap-1 text-sm">
-                                        <span className={`font-medium ${user.is_read_only ? 'text-yellow-600' : 'text-gray-700'}`}>
-                                          {user.name}
-                                        </span>
-                                        {user.is_read_only && (
-                                          <span className="text-xs bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded-full">
-                                            🔒 read-only
-                                          </span>
-                                        )}
-                                      </div>
-                                    ))}
-                                  </div>
-                                );
-                              })()}
+                              <User className="w-4 h-4 text-gray-400" />wa
+                              <span className="text-sm text-gray-700">
+                                {getAssignedUsers(selectedTask || task)}
+                              </span>
                             </div>
                           </td>
 
@@ -1089,8 +762,6 @@ const ManagerTasks = () => {
                   <button
                     onClick={() => {
                       setSelectedTask(null);
-                      setShowReassignForm(false);
-                      setExpandedRequestId(null);
                     }}
                     className="text-gray-400 hover:text-gray-600"
                   >
@@ -1106,6 +777,11 @@ const ManagerTasks = () => {
                     <div className="font-semibold text-gray-900">
                       {selectedProject ? getProjectDisplayName(selectedProject) : 'Loading...'}
                     </div>
+                  </div>
+                  
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <div className="text-xs uppercase text-gray-500 font-medium mb-1">Assigned To</div>
+                    <div className="font-semibold text-gray-900">{getAssignedUsers(selectedTask)}</div>
                   </div>
                   
                   <div className="bg-gray-50 p-3 rounded-lg">
@@ -1160,204 +836,6 @@ const ManagerTasks = () => {
                     </div>
                   </div>
                 </div>
-
-                {/* REASSIGNMENT REQUEST SECTION - Show for PENDING requests */}
-                {selectedTask && selectedTask.lock_info?.request_status === 'PENDING' && (
-                  <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-6 mb-6">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-12 h-12 bg-orange-500 text-white rounded-xl flex items-center justify-center">
-                        <AlertTriangle className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-orange-900">Reassignment Request Pending</h3>
-                        <p className="text-orange-800">Employee requested reassignment</p>
-                      </div>
-                    </div>
-
-                    {/* Request Summary with Toggle */}
-                    <div className="bg-white border rounded-lg p-4 mb-4">
-                      <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleRequestDetails(selectedTask.lock_info.request_id)}>
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                            <AlertTriangle className="w-5 h-5 text-orange-600" />
-                          </div>
-                          <div>
-                            <div className="font-semibold text-gray-900">Request #{selectedTask.lock_info.request_id}</div>
-                            <div className="text-sm text-gray-600">Click to view details</div>
-                          </div>
-                        </div>
-                        <button className="text-gray-500 hover:text-gray-700">
-                          {expandedRequestId === selectedTask.lock_info.request_id ? (
-                            <ChevronUp className="w-5 h-5" />
-                          ) : (
-                            <ChevronDown className="w-5 h-5" />
-                          )}
-                        </button>
-                      </div>
-
-                      {/* Expanded Request Details */}
-                      {expandedRequestId === selectedTask.lock_info.request_id && (
-                        <div className="mt-4 pt-4 border-t space-y-3">
-                          <div className="grid grid-cols-2 gap-3 text-sm">
-                            <div>
-                              <span className="text-gray-500">Request ID:</span>
-                              <div className="font-semibold text-gray-900">#{selectedTask.lock_info.request_id}</div>
-                            </div>
-                            <div>
-                              <span className="text-gray-500">Status:</span>
-                              <div className="font-semibold text-orange-600">
-                                {selectedTask.lock_info.request_status || 'Pending'}
-                              </div>
-                            </div>
-                            <div>
-                              <span className="text-gray-500">Task Status:</span>
-                              <div className="font-semibold">{getTaskStatus(selectedTask)}</div>
-                            </div>
-                            <div>
-                              <span className="text-gray-500">Requested By:</span>
-                              <div className="font-semibold">
-                                {selectedTask.lock_info.requester_name || selectedTask.task_status?.requester_name || 'Unknown'}
-                              </div>
-                            </div>
-                            <div>
-                              <span className="text-gray-500">Requested At:</span>
-                              <div className="font-semibold">
-                                {formatDateTime(selectedTask.lock_info.requested_at)}
-                              </div>
-                            </div>
-                            <div>
-                              <span className="text-gray-500">Responded At:</span>
-                              <div className="font-semibold">
-                                {selectedTask.lock_info.responded_at ? formatDateTime(selectedTask.lock_info.responded_at) : 'Pending'}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Reason for Request */}
-                          {selectedTask.lock_info.reason && (
-                            <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                              <div className="text-sm text-gray-500 mb-1">Reason for reassignment request:</div>
-                              <div className="text-gray-700">{selectedTask.lock_info.reason}</div>
-                            </div>
-                          )}
-
-                          {/* Action Buttons */}
-                          <div className="flex gap-3 pt-4">
-                            <button
-                              onClick={() => handleApproveRequest(selectedTask.lock_info.request_id)}
-                              disabled={approvingRequestId === selectedTask.lock_info.request_id || rejectingRequestId === selectedTask.lock_info.request_id}
-                              className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {approvingRequestId === selectedTask.lock_info.request_id ? (
-                                <>
-                                  <RefreshCw className="w-5 h-5 animate-spin" />
-                                  Approving...
-                                </>
-                              ) : (
-                                <>
-                                  ✅ Approve Reassignment
-                                </>
-                              )}
-                            </button>
-                            <button
-                              onClick={() => handleRejectRequest(selectedTask.lock_info.request_id)}
-                              disabled={rejectingRequestId === selectedTask.lock_info.request_id || approvingRequestId === selectedTask.lock_info.request_id}
-                              className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {rejectingRequestId === selectedTask.lock_info.request_id ? (
-                                <>
-                                  <RefreshCw className="w-5 h-5 animate-spin" />
-                                  Rejecting...
-                                </>
-                              ) : (
-                                <>
-                                  ❌ Reject Request
-                                </>
-                              )}
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* REASSIGN SECTION */}
-                {(showReassignForm || hasApprovedRequest(selectedTask) ||
-                  (!(getTaskStatus(selectedTask) === 'COMPLETED' || getTaskStatus(selectedTask) === 'Completed') &&
-                    !hasReassignmentRequest(selectedTask))) && (
-                    <div
-                      ref={reassignFormRef}
-                      className={`bg-blue-50 border border-blue-200 rounded-lg p-4 transition-all duration-300 ${showReassignForm ? 'ring-2 ring-blue-500 shadow-lg' : ''
-                        }`}
-                    >
-                      {/* Auto-open notification for approved requests */}
-                      {(showReassignForm || hasApprovedRequest(selectedTask)) && (
-                        <div className="mb-3 p-3 bg-blue-100 border border-blue-300 rounded-lg">
-                          <div className="flex items-center gap-2 text-blue-800 font-medium">
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                            </svg>
-                            <span>Ready to reassign task</span>
-                        </div>
-                        <p className="text-sm text-blue-700 mt-1">
-                          Select an employee to reassign this task
-                        </p>
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-2 mb-3">
-                      <RefreshCw className="w-5 h-5 text-blue-600" />
-                      <span className="font-medium text-blue-800">
-                        {hasApprovedRequest(selectedTask) ? 'Reassign Approved Task' : 'Reassign Task'}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-col gap-3">
-                      <select
-                        value={selectedAssignee}
-                        onChange={(e) => setSelectedAssignee(e.target.value)}
-                        disabled={employeesLoading}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                      >
-                        <option value="">Select employee</option>
-                        {employees.map((employee) => {
-                          const key = employee.internalId || employee.id || employee.public_id || employee._id;
-                          return (
-                            <option key={key} value={key}>
-                              {employee.name || employee.email || 'Unnamed'}
-                            </option>
-                          );
-                        })}
-                      </select>
-
-                      <button
-                        onClick={handleReassignTask}
-                        disabled={reassigning || !selectedAssignee || employeesLoading}
-                        className={`w-full px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${reassigning || !selectedAssignee || employeesLoading
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            : 'bg-blue-600 text-white hover:bg-blue-700'
-                          }`}
-                      >
-                        {reassigning ? (
-                          <>
-                            <RefreshCw className="w-4 h-4 animate-spin" />
-                            Reassigning...
-                          </>
-                        ) : (
-                          'Reassign Task'
-                        )}
-                      </button>
-                    </div>
-
-                    {employeesLoading && (
-                      <div className="flex items-center gap-2 mt-2 text-sm text-gray-600">
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        Loading employees...
-                      </div>
-                    )}
-                  </div>
-                )}
 
                 {/* Checklist */}
                 {selectedTask.checklist?.length > 0 && (

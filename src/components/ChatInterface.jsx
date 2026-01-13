@@ -400,18 +400,18 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
   };
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-white border border-gray-200 rounded-lg shadow-sm">
       {/* ===== HEADER ===== */}
-      <div className="flex-shrink-0 bg-gradient-to-r from-slate-50 to-blue-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+      <div className="flex-shrink-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white font-bold text-lg shadow-md">
+          <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-bold text-lg">
             💬
           </div>
           <div>
-            <h2 className="text-lg font-bold text-slate-900">{projectName || 'Project Chat'}</h2>
+            <h2 className="text-lg font-bold text-gray-900">{projectName || 'Project Chat'}</h2>
             <div className="flex items-center gap-2 mt-1">
-              <span className={`w-2 h-2 rounded-full ${isConnected() ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}></span>
-              <p className="text-xs font-medium text-slate-600">
+              <span className={`w-2 h-2 rounded-full ${isConnected() ? 'bg-success-500 animate-pulse' : 'bg-warning-500'}`}></span>
+              <p className="text-xs font-medium text-gray-600">
                 {isConnected() ? 'Connected' : 'Reconnecting...'}
               </p>
             </div>
@@ -423,7 +423,7 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
               console.log('🔄 Manually refreshing messages...');
               dispatch(getProjectMessages({ projectId, limit: 50, offset: 0 }));
             }}
-            className="p-2.5 hover:bg-white text-slate-600 hover:text-blue-600 rounded-lg transition-all duration-200"
+            className="p-2.5 hover:bg-gray-50 text-gray-600 hover:text-gray-800 rounded-lg transition-all duration-200"
             title="Refresh messages"
           >
             <MessageCircle size={20} />
@@ -434,7 +434,7 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
               setShowParticipants(false);
               setShowHelp(false);
             }}
-            className="p-2.5 hover:bg-white text-slate-600 hover:text-blue-600 rounded-lg transition-all duration-200"
+            className="p-2.5 hover:bg-gray-50 text-gray-600 hover:text-gray-800 rounded-lg transition-all duration-200"
             title="Chat Statistics"
           >
             <BarChart3 size={20} />
@@ -445,12 +445,12 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
               setShowStats(false);
               setShowHelp(false);
             }}
-            className="p-2.5 hover:bg-white text-slate-600 hover:text-blue-600 rounded-lg transition-all duration-200 relative"
+            className="p-2.5 hover:bg-gray-50 text-gray-600 hover:text-gray-800 rounded-lg transition-all duration-200 relative"
             title="Online Members"
           >
             <Users size={20} />
             {participants.length > 0 && (
-              <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 bg-gray-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
                 {participants.length}
               </span>
             )}
@@ -471,54 +471,54 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
 
       {/* ===== STATS PANEL ===== */}
       {showStats && stats && (
-        <div className="flex-shrink-0 bg-gradient-to-r from-blue-50 to-slate-50 border-b border-slate-200 px-6 py-5 grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
-            <p className="text-2xl font-bold text-blue-600">{stats.total_messages || 0}</p>
-            <p className="text-xs font-medium text-slate-600 mt-2">Messages</p>
+        <div className="flex-shrink-0 bg-gray-50 border-b border-gray-200 px-6 py-5 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white p-4 rounded-lg border border-gray-200">
+            <p className="text-2xl font-bold text-gray-900">{stats.total_messages || 0}</p>
+            <p className="text-xs font-medium text-gray-600 mt-2">Messages</p>
           </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
-            <p className="text-2xl font-bold text-emerald-600">{stats.unique_senders || 0}</p>
-            <p className="text-xs font-medium text-slate-600 mt-2">Participants</p>
+          <div className="bg-white p-4 rounded-lg border border-gray-200">
+            <p className="text-2xl font-bold text-gray-900">{stats.unique_senders || 0}</p>
+            <p className="text-xs font-medium text-gray-600 mt-2">Participants</p>
           </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
-            <p className="text-2xl font-bold text-purple-600">{stats.online_participants || 0}</p>
-            <p className="text-xs font-medium text-slate-600 mt-2">Online</p>
+          <div className="bg-white p-4 rounded-lg border border-gray-200">
+            <p className="text-2xl font-bold text-gray-900">{stats.online_participants || 0}</p>
+            <p className="text-xs font-medium text-gray-600 mt-2">Online</p>
           </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
-            <p className="text-lg font-bold text-slate-700">
+          <div className="bg-white p-4 rounded-lg border border-gray-200">
+            <p className="text-lg font-bold text-gray-900">
               {stats.last_message_time ? formatTime(stats.last_message_time) : '—'}
             </p>
-            <p className="text-xs font-medium text-slate-600 mt-2">Last Active</p>
+            <p className="text-xs font-medium text-gray-600 mt-2">Last Active</p>
           </div>
         </div>
       )}
 
       {/* ===== PARTICIPANTS PANEL ===== */}
       {showParticipants && (
-        <div className="flex-shrink-0 bg-gradient-to-b from-white to-slate-50 border-b border-slate-200 px-6 py-5 max-h-64 overflow-y-auto">
-          <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2 text-sm">
+        <div className="flex-shrink-0 bg-gray-50 border-b border-gray-200 px-6 py-5 max-h-64 overflow-y-auto">
+          <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2 text-sm">
             <span className="text-lg">👥</span>
             Team Members ({participants.length})
           </h3>
           <div className="space-y-2">
             {participants.length === 0 ? (
-              <p className="text-sm text-slate-500 py-4 text-center">No members yet</p>
+              <p className="text-sm text-gray-500 py-4 text-center">No members yet</p>
             ) : (
               participants.map((p) => (
                 <div
                   key={p.user_id}
-                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-100 transition-colors border border-transparent hover:border-blue-200"
+                  className="flex items-center gap-3 p-3 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 transition-colors"
                 >
-                  <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-700 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 shadow-sm">
+                  <div className="w-9 h-9 bg-gray-200 text-gray-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
                     {(p.user_name || 'U').charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-900 truncate">
+                    <p className="text-sm font-semibold text-gray-900 truncate">
                       {p.user_name}
                     </p>
-                    <p className="text-xs text-slate-600 capitalize">{p.user_role || 'Member'}</p>
+                    <p className="text-xs text-gray-600 capitalize">{p.user_role || 'Member'}</p>
                   </div>
-                  <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full flex-shrink-0 animate-pulse"></div>
+                  <div className="w-2.5 h-2.5 bg-success-500 rounded-full flex-shrink-0 animate-pulse"></div>
                 </div>
               ))
             )}
@@ -528,8 +528,8 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
 
       {/* ===== CHATBOT HELP PANEL ===== */}
       {showHelp && (
-        <div className="flex-shrink-0 bg-gradient-to-r from-blue-50 to-slate-50 border-b border-slate-200 px-6 py-5 max-h-64 overflow-y-auto">
-          <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2 text-sm">
+        <div className="flex-shrink-0 bg-gray-50 border-b border-gray-200 px-6 py-5 max-h-64 overflow-y-auto">
+          <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2 text-sm">
             <span className="text-lg">💡</span>
             Quick Commands
           </h3>
@@ -545,13 +545,13 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
               <button
                 key={item.cmd}
                 onClick={() => handleChatbotCommand(item.cmd)}
-                className="w-full text-left p-3 bg-white rounded-lg hover:bg-blue-50 transition-all border border-slate-200 hover:border-blue-400 hover:shadow-sm flex items-center justify-between group"
+                className="w-full text-left p-3 bg-white rounded-lg hover:bg-gray-50 transition-all border border-gray-200 hover:border-gray-300 hover:shadow-sm flex items-center justify-between group"
               >
                 <div>
-                  <p className="text-sm font-semibold text-blue-600">{item.cmd}</p>
-                  <p className="text-xs text-slate-600 mt-0.5">{item.desc}</p>
+                  <p className="text-sm font-semibold text-gray-800">{item.cmd}</p>
+                  <p className="text-xs text-gray-600 mt-0.5">{item.desc}</p>
                 </div>
-                <ChevronRight size={16} className="text-slate-400 group-hover:text-blue-600 transition-colors" />
+                <ChevronRight size={16} className="text-gray-400 group-hover:text-gray-600 transition-colors" />
               </button>
             ))}
           </div>
@@ -559,13 +559,13 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
       )}
 
       {/* ===== MAIN MESSAGES AREA ===== */}
-      <div ref={messagesContainerRef} className="relative flex-1 overflow-y-auto bg-gradient-to-b from-slate-50 via-white to-blue-50 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100 hover:scrollbar-thumb-slate-400">
+      <div ref={messagesContainerRef} className="relative flex-1 overflow-y-auto bg-gray-50">
         <div className="px-4 py-6 max-w-5xl mx-auto space-y-4">
           {/* Loading state */}
           {messageLoading && (
             <div className="flex justify-center items-center py-12">
               <div className="text-center">
-                <div className="animate-spin w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full mx-auto mb-2"></div>
+                <div className="animate-spin w-8 h-8 border-4 border-gray-200 border-t-gray-600 rounded-full mx-auto mb-2"></div>
                 <p className="text-sm text-gray-500">Loading messages...</p>
               </div>
             </div>
@@ -594,8 +594,8 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
                   {!isCurrentUser && (
                     <div className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm ${
                       msg.message_type === 'bot'
-                        ? 'bg-gradient-to-br from-purple-500 to-purple-700'
-                        : 'bg-gradient-to-br from-blue-400 to-blue-600'
+                        ? 'bg-gray-600'
+                        : 'bg-gray-500'
                     }`}>
                       {msg.message_type === 'bot' ? '🤖' : msg.sender_name?.charAt(0)?.toUpperCase() || '?'}
                     </div>
@@ -608,8 +608,8 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
                       {!isCurrentUser && msg.sender_name && (
                         <p className={`text-xs font-semibold mb-1 px-2 ${
                           msg.message_type === 'bot'
-                            ? 'text-purple-600'
-                            : 'text-slate-600'
+                            ? 'text-gray-600'
+                            : 'text-gray-600'
                         }`}>
                           {msg.message_type === 'bot' ? '🤖 ' : ''}{msg.sender_name}
                         </p>
@@ -617,12 +617,12 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
 
                       {/* Message bubble */}
                       <div
-                        className={`rounded-2xl px-4 py-3 shadow-md transition-all ${
+                        className={`rounded-2xl px-4 py-3 shadow-sm transition-all ${
                           isCurrentUser
-                            ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-br-none'
+                            ? 'bg-gray-900 text-white rounded-br-none'
                             : msg.message_type === 'bot'
-                            ? 'bg-gradient-to-r from-purple-100 to-purple-50 text-slate-900 rounded-bl-none border border-purple-200'
-                            : 'bg-white text-slate-900 rounded-bl-none border border-slate-200'
+                            ? 'bg-gray-100 text-gray-900 rounded-bl-none border border-gray-200'
+                            : 'bg-white text-gray-900 rounded-bl-none border border-gray-200'
                         } break-words whitespace-pre-wrap`}
                       >
                         <p className="text-sm leading-relaxed font-medium">
@@ -632,20 +632,20 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
 
                       {/* Timestamp and delete button */}
                       <div className={`flex items-center gap-2 mt-2 px-2 text-xs font-medium ${
-                        isCurrentUser ? 'justify-end text-blue-600' : 'justify-start text-slate-500'
+                        isCurrentUser ? 'justify-end text-gray-600' : 'justify-start text-gray-500'
                       }`}>
                         <span>{formatTime(msg.created_at || msg.timestamp)}</span>
 
                         {/* YOU label for current user */}
                         {isCurrentUser && (
-                          <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">YOU</span>
+                          <span className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full text-xs">YOU</span>
                         )}
 
                         {/* Delete button for current user messages */}
                         {isCurrentUser && (
                           <button
                             onClick={() => handleDeleteMessage(msg.id || msg._id)}
-                            className="text-slate-400 hover:text-red-500 transition-colors ml-1 hover:scale-110"
+                            className="text-gray-400 hover:text-red-500 transition-colors ml-1 hover:scale-110"
                             title="Delete message"
                           >
                             <Trash2 size={14} />
@@ -657,7 +657,7 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
 
                   {/* Avatar for current user */}
                   {isCurrentUser && (
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-white text-xs font-bold">
                       {currentUserName?.charAt(0)?.toUpperCase() || 'U'}
                     </div>
                   )}
@@ -668,15 +668,15 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
           {/* Typing indicator */}
           {isTyping && (
             <div className="flex justify-start gap-2 animate-fadeIn">
-              <div className="flex-shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-slate-400 to-slate-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+              <div className="flex-shrink-0 w-9 h-9 rounded-full bg-gray-400 flex items-center justify-center text-white text-xs font-bold shadow-sm">
                 ✏️
               </div>
               <div className="flex flex-col gap-1">
-                <div className="bg-white text-slate-900 rounded-2xl rounded-bl-none px-4 py-3 shadow-md border border-slate-200">
+                <div className="bg-white text-gray-900 rounded-2xl rounded-bl-none px-4 py-3 shadow-sm border border-gray-200">
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 bg-slate-400 rounded-full animate-bounce"></div>
-                    <div className="w-2.5 h-2.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2.5 h-2.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="w-2.5 h-2.5 bg-gray-400 rounded-full animate-bounce"></div>
+                    <div className="w-2.5 h-2.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-2.5 h-2.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   </div>
                 </div>
               </div>
@@ -687,7 +687,7 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
           {showScrollToBottom && (
             <button
               onClick={handleScrollToBottom}
-              className="absolute bottom-4 right-4 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg transition-all duration-200 z-10"
+              className="absolute bottom-4 right-4 bg-gray-600 hover:bg-gray-700 text-white p-3 rounded-full shadow-lg transition-all duration-200 z-10"
               title="Scroll to bottom"
             >
               <ChevronDown size={20} />
@@ -699,26 +699,26 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
       </div>
 
       {/* ===== INPUT AREA ===== */}
-      <div className="flex-shrink-0 border-t border-slate-200 bg-gradient-to-r from-white to-blue-50 relative">
+      <div className="flex-shrink-0 border-t border-gray-200 bg-white relative">
         {/* Mention Dropdown */}
         {showMentionDropdown && getMentionSuggestions().length > 0 && (
-          <div className="absolute bottom-full left-4 right-4 mb-3 bg-white border border-slate-200 rounded-xl shadow-lg z-50 max-h-48 overflow-y-auto">
+          <div className="absolute bottom-full left-4 right-4 mb-3 bg-white border border-gray-200 rounded-xl shadow-lg z-50 max-h-48 overflow-y-auto">
             <div className="py-2">
               {getMentionSuggestions().map((suggestion, idx) => (
                 <button
                   key={idx}
                   type="button"
                   onClick={() => handleMentionSelect(suggestion.name)}
-                  className="w-full text-left px-4 py-2.5 hover:bg-blue-50 transition-colors flex items-center gap-3 group"
+                  className="w-full text-left px-4 py-2.5 hover:bg-gray-50 transition-colors flex items-center gap-3 group"
                 >
                   <span className="text-lg">{suggestion.icon}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-800 truncate">
+                    <p className="text-sm font-semibold text-gray-800 truncate">
                       @{suggestion.name}
-                      {suggestion.type === 'special' && <span className="text-xs text-blue-600 ml-1">(Notify all)</span>}
+                      {suggestion.type === 'special' && <span className="text-xs text-gray-600 ml-1">(Notify all)</span>}
                     </p>
                     {suggestion.role && (
-                      <p className="text-xs text-slate-500 capitalize">{suggestion.role}</p>
+                      <p className="text-xs text-gray-500 capitalize">{suggestion.role}</p>
                     )}
                   </div>
                 </button>
@@ -735,7 +735,7 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
             {/* Attachment button (optional) */}
             <button
               type="button"
-              className="p-2.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+              className="p-2.5 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-all duration-200"
               title="Attach file"
             >
               <Paperclip size={20} />
@@ -748,7 +748,7 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
               value={newMessage}
               onChange={handleMessageChange}
               placeholder="Type @ to mention someone..."
-              className="flex-1 border border-slate-300 rounded-full px-5 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:border-transparent text-sm bg-white transition-all placeholder-slate-400"
+              className="flex-1 border border-gray-300 rounded-full px-5 py-3 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:border-transparent text-sm bg-white transition-all placeholder-gray-400"
               disabled={chatLoading}
             />
             
@@ -756,7 +756,7 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
             <button
               type="submit"
               disabled={!newMessage.trim() || chatLoading}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-3 rounded-full hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all min-w-[44px] min-h-[44px] flex items-center justify-center shadow-md hover:shadow-lg disabled:shadow-none"
+              className="bg-gray-900 text-white p-3 rounded-full hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all min-w-[44px] min-h-[44px] flex items-center justify-center shadow-sm hover:shadow-md disabled:shadow-none"
               title="Send message"
             >
               {chatLoading ? (

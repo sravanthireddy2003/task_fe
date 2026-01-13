@@ -105,20 +105,29 @@ function Layout() {
   const { user, isSidebarCollapsed } = useSelector((state) => state.auth);
 
   return user ? (
-    <div className="w-full h-screen flex flex-row bg-gray-50">
+    <div className="w-full h-screen flex flex-row bg-gray-100">
+      {/* Sidebar */}
       <div
         className={clsx(
-          "h-screen bg-white border-r border-gray-200 hidden md:flex sticky top-0 z-40 transition-all duration-200 group",
-          isSidebarCollapsed ? "w-16 group-hover:w-64" : "w-64"
+          "h-screen bg-gray-900 border-r border-gray-700 hidden md:flex sticky top-0 z-40 transition-all duration-300 ease-in-out shadow-xl",
+          isSidebarCollapsed ? "w-16" : "w-64"
         )}
       >
         <Sidebar />
       </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Navbar />
-        <div className="flex-1 bg-white overflow-y-auto p-4 2xl:px-10">
-          <Outlet />
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        {/* Navbar */}
+        <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-30">
+          <Navbar />
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 bg-gray-50 overflow-y-auto">
+          <div className="min-h-full p-6 lg:p-8 xl:p-10 max-w-full">
+            <Outlet />
+          </div>
         </div>
       </div>
     </div>

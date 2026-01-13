@@ -9,7 +9,9 @@ import {
   X,
   LayoutGrid,
   List,
+  KanbanSquare,
 } from "lucide-react";
+import WorkflowKanban from "../components/WorkflowKanban";
 
 // ---------------- STATIC SAMPLE DATA ---------------- //
 
@@ -65,10 +67,11 @@ export default function Workflow() {
   const [loading, setLoading] = useState(true);
 
   // UI states
-  const [viewMode, setViewMode] = useState("cards"); // cards | table
+  const [viewMode, setViewMode] = useState("cards"); // cards | table | kanban
   const [showModal, setShowModal] = useState(false);
   const [editingFlow, setEditingFlow] = useState(null);
   const [previewFlow, setPreviewFlow] = useState(null); // drawer
+  const [selectedWorkflowForKanban, setSelectedWorkflowForKanban] = useState(null);
   const [query, setQuery] = useState("");
 
   // modal states
@@ -179,8 +182,8 @@ export default function Workflow() {
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-semibold">Workflow</h2>
-          <p className="text-gray-500">Manage workflows & steps</p>
+          <h2 className="text-2xl font-semibold">Workflow Management</h2>
+          <p className="text-gray-500">Create workflows, manage steps, and track progress with kanban boards</p>
         </div>
 
         <div className="flex gap-3">
@@ -190,6 +193,7 @@ export default function Workflow() {
             className={`p-2 rounded-lg border ${
               viewMode === "cards" ? "bg-blue-600 text-white" : "bg-white"
             }`}
+            title="Card View"
           >
             <LayoutGrid size={18} />
           </button>
@@ -199,8 +203,19 @@ export default function Workflow() {
             className={`p-2 rounded-lg border ${
               viewMode === "table" ? "bg-blue-600 text-white" : "bg-white"
             }`}
+            title="Table View"
           >
             <List size={18} />
+          </button>
+
+          <button
+            onClick={() => setViewMode("kanban")}
+            className={`p-2 rounded-lg border ${
+              viewMode === "kanban" ? "bg-blue-600 text-white" : "bg-white"
+            }`}
+            title="Kanban View"
+          >
+            <KanbanSquare size={18} />
           </button>
 
           <button
@@ -256,15 +271,27 @@ export default function Workflow() {
                     <button
                       className="p-2"
                       onClick={() => setPreviewFlow(flow)}
+                      title="View Details"
                     >
                       <Eye size={16} />
                     </button>
-                    <button className="p-2" onClick={() => openEdit(flow)}>
+                    <button
+                      className="p-2 text-blue-500"
+                      onClick={() => {
+                        setSelectedWorkflowForKanban(flow);
+                        setViewMode("kanban");
+                      }}
+                      title="View Kanban"
+                    >
+                      <KanbanSquare size={16} />
+                    </button>
+                    <button className="p-2" onClick={() => openEdit(flow)} title="Edit">
                       <Edit2 size={16} />
                     </button>
                     <button
                       className="p-2 text-red-500"
                       onClick={() => handleDelete(flow)}
+                      title="Delete"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -290,7 +317,60 @@ export default function Workflow() {
         </div>
       )}
 
-      {/* ---- TABLE VIEW ---- */}
+      {/* ---- KANBAN VIEW ---- */}
+      {viewMode === "kanban" && (
+        <div className="space-y-6">
+          {selectedWorkflowForKanban ? (
+            <WorkflowKanban
+              selectedWorkflow={selectedWorkflowForKanban}
+              onBack={() => setSelectedWorkflowForKanban(null)}
+            />
+          ) : (
+            <div className="text-center py-12">
+              <KanbanSquare size={48} className="mx-auto text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Select a Workflow for Kanban</h3>
+              <p className="text-gray-500 mb-6">Choose a workflow from the cards below to view its kanban board</p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-w-4xl mx-auto">
+                {filtered.map((flow) => {
+                  const dept = sampleDepartments.find(d => d.id === flow.departmentId);
+                  return (
+                    <div
+                      key={flow.id}
+                      className="border rounded-lg p-4 bg-white hover:shadow-md transition-shadow cursor-pointer"
+                      onClick={() => setSelectedWorkflowForKanban(flow)}
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h4 className="font-medium text-gray-900">{flow.name}</h4>
+                          <p className="text-sm text-gray-500">{flow.description}</p>
+                        </div>
+                        <KanbanSquare size={20} className="text-blue-500" />
+                      </div>
+
+                      <div className="flex items-center gap-2 mb-3">
+                        <span
+                          className="text-xs px-2 py-1 rounded-full text-white"
+                          style={{ background: dept?.color }}
+                        >
+                          {dept?.name}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {flow.steps.length} steps
+                        </span>
+                      </div>
+
+                      <div className="text-xs text-blue-600 font-medium">
+                        Click to view kanban →
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
       {viewMode === "table" && (
         <div className="bg-white border rounded-xl shadow-sm p-4">
           <table className="w-full text-sm">
@@ -354,18 +434,31 @@ export default function Workflow() {
                       <button
                         onClick={() => setPreviewFlow(flow)}
                         className="p-2"
+                        title="View Details"
                       >
                         <Eye size={16} />
                       </button>
                       <button
+                        onClick={() => {
+                          setSelectedWorkflowForKanban(flow);
+                          setViewMode("kanban");
+                        }}
+                        className="p-2 text-blue-500"
+                        title="View Kanban"
+                      >
+                        <KanbanSquare size={16} />
+                      </button>
+                      <button
                         onClick={() => openEdit(flow)}
                         className="p-2"
+                        title="Edit"
                       >
                         <Edit2 size={16} />
                       </button>
                       <button
                         onClick={() => handleDelete(flow)}
                         className="p-2 text-red-500"
+                        title="Delete"
                       >
                         <Trash2 size={16} />
                       </button>

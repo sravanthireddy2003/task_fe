@@ -148,8 +148,8 @@ const AddUser = ({ open, setOpen, userData }) => {
 
   return (
     <ModalWrapper open={open} setOpen={setOpen}>
-      <form onSubmit={handleSubmit(handleOnSubmit)} className="space-y-6">
-        <Dialog.Title as="h2" className="text-2xl font-bold text-gray-900 border-b pb-4">
+      <form onSubmit={handleSubmit(handleOnSubmit)} className="space-y-8">
+        <Dialog.Title as="h2" className="text-xl font-semibold text-gray-900 border-b border-gray-200 pb-4">
           {userData ? "Edit User" : "Add New User"}
         </Dialog.Title>
 
@@ -162,7 +162,7 @@ const AddUser = ({ open, setOpen, userData }) => {
             register={register("name", nameValidation)}
             error={errors.name?.message}
           />
-          
+
           {/* Title */}
           <Textbox
             placeholder="Job title/position"
@@ -173,7 +173,7 @@ const AddUser = ({ open, setOpen, userData }) => {
             })}
             error={errors.title?.message}
           />
-          
+
           {/* Email */}
           <Textbox
             placeholder="user@company.com"
@@ -182,7 +182,7 @@ const AddUser = ({ open, setOpen, userData }) => {
             register={register("email", emailValidation)}
             error={errors.email?.message}
           />
-          
+
           {/* Phone */}
           <Textbox
             placeholder="+1 (555) 123-4567"
@@ -196,13 +196,13 @@ const AddUser = ({ open, setOpen, userData }) => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Role *</label>
             <select
-              {...register("role", { 
-                required: "Role is required!" 
+              {...register("role", {
+                required: "Role is required!"
               })}
               disabled={isSubmitting}
               className={clsx(
-                "w-full px-3 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm",
-                errors.role ? "border-red-300 bg-red-50" : "border-gray-300"
+                "w-full px-3 py-2.5 border rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 text-sm bg-white",
+                errors.role ? "border-red-300 bg-red-50" : "border-gray-300 hover:border-gray-400"
               )}
             >
               <option value="">Select Role</option>
@@ -222,12 +222,12 @@ const AddUser = ({ open, setOpen, userData }) => {
             <select
               {...register("departmentId")}
               disabled={isSubmitting || departments.length === 0}
-              className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm"
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 text-sm bg-white hover:border-gray-400"
             >
               <option value="">-- Select Department --</option>
               {departments.map((dept) => (
-                <option 
-                  key={dept.public_id || dept.id || dept._id} 
+                <option
+                  key={dept.public_id || dept.id || dept._id}
                   value={dept.public_id || dept.id || dept._id}
                 >
                   {dept.name}
@@ -240,37 +240,37 @@ const AddUser = ({ open, setOpen, userData }) => {
         {/* Status Checkboxes */}
         <fieldset className="border-t border-gray-200 pt-6">
           <legend className="text-sm font-medium text-gray-700 px-1">Status Settings</legend>
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-200 cursor-pointer group">
-              <input 
-                type="checkbox" 
-                {...register("isActive", { 
-                  required: userData ? false : "Active status required" 
-                })} 
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200 cursor-pointer group">
+              <input
+                type="checkbox"
+                {...register("isActive", {
+                  required: userData ? false : "Active status required"
+                })}
                 className={clsx(
-                  "h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-all duration-200",
+                  "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-colors duration-200",
                   isSubmitting && "cursor-not-allowed opacity-50"
                 )}
                 disabled={isSubmitting}
               />
               <div>
-                <span className="text-sm font-semibold text-gray-900 group-hover:text-blue-600">Active User</span>
+                <span className="text-sm font-medium text-gray-900 group-hover:text-blue-600">Active User</span>
                 <p className="text-xs text-gray-500">User can login and access system</p>
               </div>
             </label>
-            
-            <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-200 cursor-pointer group">
-              <input 
-                type="checkbox" 
-                {...register("isGuest")} 
+
+            <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200 cursor-pointer group">
+              <input
+                type="checkbox"
+                {...register("isGuest")}
                 className={clsx(
-                  "h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-all duration-200",
+                  "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-colors duration-200",
                   isSubmitting && "cursor-not-allowed opacity-50"
                 )}
                 disabled={isSubmitting}
               />
               <div>
-                <span className="text-sm font-semibold text-gray-700 group-hover:text-blue-600">Guest User</span>
+                <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600">Guest User</span>
                 <p className="text-xs text-gray-500">Limited access user</p>
               </div>
             </label>
@@ -282,27 +282,27 @@ const AddUser = ({ open, setOpen, userData }) => {
 
         {/* Server Error Display */}
         {errors.root?.serverError && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-sm text-red-800">{errors.root.serverError.message}</p>
           </div>
         )}
 
         {/* Submit Buttons */}
-        <div className="flex justify-end gap-3 pt-8 border-t border-gray-200">
-          <Button 
-            type="button" 
-            className="px-8 py-3 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-xl font-semibold transition-all duration-200 shadow-sm"
+        <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
+          <Button
+            type="button"
+            className="px-6 py-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 rounded-lg font-medium transition-colors duration-200 shadow-sm"
             onClick={handleCancel}
             disabled={isSubmitting}
             label="Cancel"
           />
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             className={clsx(
-              "px-10 py-3 font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2 min-w-[120px] justify-center",
-              isSubmitting 
-                ? "bg-gray-400 text-gray-600 cursor-not-allowed" 
-                : "bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800"
+              "px-8 py-2 font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-2 min-w-[120px] justify-center",
+              isSubmitting
+                ? "bg-gray-400 text-gray-600 cursor-not-allowed"
+                : "bg-blue-600 text-white hover:bg-blue-700"
             )}
             disabled={isSubmitting}
           >

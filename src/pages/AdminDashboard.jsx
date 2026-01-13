@@ -78,7 +78,7 @@ const AdminDashboard = () => {
   }, [unattendedTasks]);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
       {/* Main Dashboard Content */}
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto space-y-8">
@@ -86,16 +86,16 @@ const AdminDashboard = () => {
           {/* Header */}
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
             <div>
-              <h1 className="text-3xl lg:text-4xl font-bold text-slate-900">Dashboard Overview</h1>
-              <p className="text-slate-600 mt-2">Monitor performance metrics and workflow analytics</p>
+              <h1 className="text-h1">Dashboard Overview</h1>
+              <p className="text-body mt-2">Monitor performance metrics and workflow analytics</p>
             </div>
             <div className="flex items-center gap-4">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                 <input 
                   type="text" 
                   placeholder="Search..." 
-                  className="pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
+                  className="pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent w-64 shadow-sm"
                 />
               </div>
               <button className="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2.5 rounded-xl hover:bg-slate-50 transition-colors shadow-sm">
@@ -151,11 +151,11 @@ const AdminDashboard = () => {
             <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900">Turnaround Analysis</h2>
-                  <p className="text-slate-600 text-sm">Actual vs target completion times</p>
+                  <h2 className="text-h2">Turnaround Analysis</h2>
+                  <p className="text-caption">Actual vs target completion times</p>
                 </div>
                 <div className="flex items-center gap-4">
-                  <button className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1">
+                  <button className="text-link flex items-center gap-1">
                     View details <ChevronRight size={14} />
                   </button>
                   <button className="p-1.5 hover:bg-slate-100 rounded-lg">
@@ -178,7 +178,7 @@ const AdminDashboard = () => {
             {/* Task Distribution */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-slate-900">Task Distribution</h2>
+                <h2 className="text-h2">Task Distribution</h2>
                 <button className="p-1.5 hover:bg-slate-100 rounded-lg">
                   <MoreVertical size={16} className="text-slate-500" />
                 </button>
@@ -231,7 +231,7 @@ const AdminDashboard = () => {
             {/* Department Tasks */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-slate-900">Tasks by Department</h2>
+                <h2 className="text-h2">Tasks by Department</h2>
                 <button className="p-1.5 hover:bg-slate-100 rounded-lg">
                   <MoreVertical size={16} className="text-slate-500" />
                 </button>
@@ -252,7 +252,7 @@ const AdminDashboard = () => {
             {/* Aging Analysis */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-slate-900">Task Aging Analysis</h2>
+                <h2 className="text-h2">Task Aging Analysis</h2>
                 <button className="p-1.5 hover:bg-slate-100 rounded-lg">
                   <MoreVertical size={16} className="text-slate-500" />
                 </button>
@@ -266,21 +266,21 @@ const AdminDashboard = () => {
                         style={{ backgroundColor: item.color }}
                       />
                       <div>
-                        <div className="font-medium text-slate-900">{item.category}</div>
-                        <div className="text-sm text-slate-500">{item.count} tasks</div>
+                        <div className="text-body font-medium">{item.category}</div>
+                        <div className="text-caption">{item.count} tasks</div>
                       </div>
                     </div>
-                    <div className="text-lg font-bold text-slate-900">{item.count}</div>
+                    <div className="text-h3 font-bold">{item.count}</div>
                   </div>
                 ))}
               </div>
               <div className="mt-8 pt-6 border-t border-slate-200">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-sm text-slate-600">Average resolution time</div>
-                    <div className="text-2xl font-bold text-slate-900">4.2 hours</div>
+                    <div className="text-caption">Average resolution time</div>
+                    <div className="text-h2 font-bold">4.2 hours</div>
                   </div>
-                  <div className="text-emerald-600 text-sm font-medium flex items-center gap-1">
+                  <div className="text-emerald-600 text-caption font-medium flex items-center gap-1">
                     <ArrowUpRight size={16} />
                     12% faster
                   </div>
@@ -294,7 +294,7 @@ const AdminDashboard = () => {
             {/* Unattended Tasks */}
             <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-slate-900">Unattended Tasks</h2>
+                <h2 className="text-h2">Unattended Tasks</h2>
                 <div className="flex items-center gap-3">
                   <button 
                     onClick={() => setShowMailPopup(true)}
@@ -321,19 +321,19 @@ const AdminDashboard = () => {
                         <AlertTriangle size={18} />
                       </div>
                       <div>
-                        <div className="font-medium text-slate-900">{task.title}</div>
-                        <div className="text-sm text-slate-500">{task.assignedTo}</div>
+                        <div className="text-body font-medium">{task.title}</div>
+                        <div className="text-caption">{task.assignedTo}</div>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
                       <span className={clsx(
-                        "px-3 py-1 rounded-full text-xs font-medium",
+                        "px-3 py-1 rounded-full text-caption font-medium",
                         task.diffHours > 72 ? "bg-red-100 text-red-800" :
                         "bg-amber-100 text-amber-800"
                       )}>
                         {task.diffHours}h
                       </span>
-                      <button className="text-blue-600 hover:text-blue-800 font-medium text-sm">
+                      <button className="text-link">
                         Escalate
                       </button>
                     </div>
@@ -345,7 +345,7 @@ const AdminDashboard = () => {
             {/* Notifications */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-slate-900">Recent Notifications</h2>
+                <h2 className="text-h2">Recent Notifications</h2>
                 <button className="p-1.5 hover:bg-slate-100 rounded-lg">
                   <MoreVertical size={16} className="text-slate-500" />
                 </button>
@@ -362,9 +362,9 @@ const AdminDashboard = () => {
                       <Bell size={16} />
                     </div>
                     <div className="flex-1">
-                      <div className="font-medium text-slate-900">{notification.title}</div>
-                      <div className="text-sm text-slate-500 mt-1">{notification.message}</div>
-                      <div className="text-xs text-slate-400 mt-1">
+                      <div className="text-body font-medium">{notification.title}</div>
+                      <div className="text-caption mt-1">{notification.message}</div>
+                      <div className="text-meta mt-1">
                         {new Date(notification.timestamp).toLocaleDateString()}
                       </div>
                     </div>
@@ -377,9 +377,9 @@ const AdminDashboard = () => {
           {/* Audit Logs */}
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-slate-900">Recent Activity</h2>
+              <h2 className="text-h2">Recent Activity</h2>
               <div className="flex items-center gap-3">
-                <button className="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center gap-1">
+                <button className="text-link flex items-center gap-1">
                   View all <ChevronRight size={14} />
                 </button>
                 <button className="p-1.5 hover:bg-slate-100 rounded-lg">
@@ -391,23 +391,23 @@ const AdminDashboard = () => {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-slate-200">
-                    <th className="text-left py-3 text-sm font-medium text-slate-600">Timestamp</th>
-                    <th className="text-left py-3 text-sm font-medium text-slate-600">User</th>
-                    <th className="text-left py-3 text-sm font-medium text-slate-600">Action</th>
-                    <th className="text-left py-3 text-sm font-medium text-slate-600">Status</th>
+                    <th className="text-left py-3 text-caption font-medium">Timestamp</th>
+                    <th className="text-left py-3 text-caption font-medium">User</th>
+                    <th className="text-left py-3 text-caption font-medium">Action</th>
+                    <th className="text-left py-3 text-caption font-medium">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {auditLogs.map((log) => (
                     <tr key={log.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
-                      <td className="py-3 text-sm text-slate-600">
+                      <td className="py-3 text-caption">
                         {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </td>
-                      <td className="py-3 text-sm font-medium text-slate-900">{log.user.split('@')[0]}</td>
-                      <td className="py-3 text-sm text-slate-600">{log.action}</td>
+                      <td className="py-3 text-body font-medium">{log.user.split('@')[0]}</td>
+                      <td className="py-3 text-caption">{log.action}</td>
                       <td className="py-3">
                         <span className={clsx(
-                          "px-2 py-1 rounded text-xs font-medium",
+                          "px-2 py-1 rounded text-caption font-medium",
                           log.status === 'success' ? "bg-emerald-100 text-emerald-800" :
                           log.status === 'warning' ? "bg-amber-100 text-amber-800" :
                           "bg-red-100 text-red-800"
@@ -430,14 +430,14 @@ const AdminDashboard = () => {
           <div className="bg-white rounded-xl max-w-2xl w-full shadow-xl">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-slate-900">Notify Superior</h3>
+                <h3 className="text-h2">Notify Superior</h3>
                 <button onClick={() => setShowMailPopup(false)} className="text-slate-400 hover:text-slate-600">
                   ✕
                 </button>
               </div>
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Select Superior</label>
+                  <label className="block text-caption font-medium mb-2">Select Superior</label>
                   <select 
                     className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     value={selectedSuperior || ''}
@@ -449,7 +449,7 @@ const AdminDashboard = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Message</label>
+                  <label className="block text-caption font-medium mb-2">Message</label>
                   <textarea 
                     className="w-full border border-slate-300 rounded-lg px-4 py-3 h-32 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     defaultValue={`${unattendedTasks.length} tasks require immediate attention.`}
@@ -493,7 +493,7 @@ const MetricCard = ({ title, value, change, trend, icon, color }) => (
         {icon}
       </div>
       <div className={clsx(
-        "text-sm font-medium flex items-center gap-1",
+        "text-caption font-medium flex items-center gap-1",
         trend === 'up' && "text-emerald-600",
         trend === 'down' && "text-red-600",
         trend === 'alert' && "text-amber-600"
@@ -503,8 +503,8 @@ const MetricCard = ({ title, value, change, trend, icon, color }) => (
         {change}
       </div>
     </div>
-    <div className="text-3xl font-bold text-slate-900 mb-2">{value}</div>
-    <div className="text-sm text-slate-600">{title}</div>
+    <div className="text-h2 font-bold mb-2">{value}</div>
+    <div className="text-caption">{title}</div>
   </div>
 );
 

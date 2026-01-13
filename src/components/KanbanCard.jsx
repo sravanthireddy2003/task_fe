@@ -103,20 +103,20 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentR
       onClick={hasPendingReassignment || isCompleted ? undefined : onClick}
     >
       {/* Task Title */}
-      <h4 className="font-medium text-gray-900 mb-2 line-clamp-2">
+      <h4 className="font-semibold text-gray-900 mb-2 line-clamp-2">
         {task.title || task.name || 'Untitled Task'}
       </h4>
 
       {/* Task Description */}
       {task.description && (
-        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+        <p className="text-body-small text-gray-600 mb-3 line-clamp-2">
           {task.description}
         </p>
       )}
 
       {/* Project Name */}
       {task.project && (
-        <div className="text-xs text-gray-500 mb-2">
+        <div className="text-meta mb-2">
           📁 {task.project.name || task.project.title || 'Project'}
         </div>
       )}
@@ -158,7 +158,7 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentR
       {task.due_date && (
         <div className="flex items-center gap-1 mb-2">
           <Calendar className="w-3 h-3 text-gray-400" />
-          <span className="text-xs text-gray-600">
+          <span className="text-caption">
             Due {formatDate(task.due_date)}
           </span>
         </div>
@@ -169,8 +169,8 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentR
         <div className="flex items-center gap-2 mt-3 p-2 bg-green-100 rounded-lg">
           <CheckCircle2 className="w-4 h-4 text-green-600" />
           <div>
-            <p className="text-xs font-semibold text-green-700">✓ Task Completed</p>
-            <p className="text-xs text-green-600">
+            <p className="text-caption font-semibold text-green-700">✓ Task Completed</p>
+            <p className="text-caption text-green-600">
               Total: {task.total_time_hhmmss || formatDuration(task.total_time_seconds || 0)}
             </p>
           </div>
@@ -178,7 +178,7 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentR
       ) : (liveTime > 0 || (task.status || task.stage) === 'In Progress') && (
         <div className="flex items-center gap-1">
           <Clock className={`w-3 h-3 ${(task.status || task.stage) === 'In Progress' ? 'text-blue-500 animate-pulse' : 'text-gray-400'}`} />
-          <span className={`text-xs font-medium ${(task.status || task.stage) === 'In Progress' ? 'text-blue-600' : 'text-gray-600'}`}>
+          <span className={`text-caption font-medium ${(task.status || task.stage) === 'In Progress' ? 'text-blue-600' : 'text-gray-600'}`}>
             {formatDuration(liveTime)}
           </span>
         </div>
@@ -188,7 +188,7 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentR
       {task.checklist && task.checklist.length > 0 && (
         <div className="flex items-center gap-1 mt-2">
           <CheckSquare className="w-3 h-3 text-gray-400" />
-          <span className="text-xs text-gray-600">
+          <span className="text-caption">
             {task.checklist.filter(i => i.status === 'Completed').length}/{task.checklist.length} items
           </span>
         </div>

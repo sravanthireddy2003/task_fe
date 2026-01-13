@@ -337,12 +337,13 @@ export default function Tasks() {
  
   // Get status text for display
   const getStatusText = (status) => {
-    if (!status) return 'Pending';
+    if (!status) return 'To Do';
     const normalized = String(status).toLowerCase();
     if (normalized === 'completed') return 'Completed';
-    if (normalized === 'on_hold' || normalized === 'on hold') return 'On Hold';
+    if (normalized === 'on_hold' || normalized === 'on hold') return 'Blocked';
     if (normalized === 'in_progress') return 'In Progress';
-    if (normalized === 'pending') return 'Pending';
+    if (normalized === 'pending') return 'To Do';
+    if (normalized === 'review') return 'Review';
     return status.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
   };
 
@@ -369,10 +370,11 @@ export default function Tasks() {
  
   // Status colors
   const statusColors = {
-    pending: 'bg-yellow-100 text-yellow-800 border border-yellow-200',
-    in_progress: 'bg-blue-100 text-blue-800 border border-blue-200',
-    completed: 'bg-green-100 text-green-800 border border-green-200',
-    on_hold: 'bg-red-100 text-red-800 border border-red-200',
+    pending: 'bg-gray-100 text-gray-800 border border-gray-200', // To Do
+    in_progress: 'bg-blue-100 text-blue-800 border border-blue-200', // In Progress
+    review: 'bg-yellow-100 text-yellow-800 border border-yellow-200', // Review
+    completed: 'bg-green-100 text-green-800 border border-green-200', // Completed
+    on_hold: 'bg-red-100 text-red-800 border border-red-200', // Blocked
   };
  
   // Priority colors
@@ -415,7 +417,7 @@ export default function Tasks() {
     return false;
   })();
    return (
-    <div className="p-8">
+    <div className="p-8 bg-gray-50">
       {/* DEBUG INFO - Remove in production */}
       <div className="mb-4 p-2 bg-gray-100 rounded text-xs">
         <div>Selected Project: {selectedProjectId}</div>
@@ -428,8 +430,8 @@ export default function Tasks() {
       {/* HEADER */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Tasks</h1>
-          <p className="text-gray-600">Manage and track all your tasks</p>
+          <h1 className="text-heading-2 mb-2">Tasks</h1>
+          <p className="text-body text-gray-600">Manage and track all your tasks</p>
         </div>
  
         <div className="flex items-center gap-3">
@@ -517,17 +519,20 @@ export default function Tasks() {
       {/* STATUS SUMMARY - Only show when a project is selected */}
       {selectedProjectId !== 'all' && tasks.length > 0 && (
         <div className="flex flex-wrap gap-3 mb-6">
-          <div className="px-4 py-2 rounded-lg bg-yellow-100 text-yellow-800 font-semibold shadow-sm border border-yellow-200">
-            Pending: {tasks.filter((t) => (t.stage || '').toLowerCase() === 'pending').length}
+          <div className="px-4 py-2 rounded-lg bg-gray-100 text-gray-800 font-semibold shadow-sm border border-gray-200">
+            To Do: {tasks.filter((t) => (t.stage || '').toLowerCase() === 'pending').length}
           </div>
           <div className="px-4 py-2 rounded-lg bg-blue-100 text-blue-800 font-semibold shadow-sm border border-blue-200">
             In Progress: {tasks.filter((t) => (t.stage || '').toLowerCase() === 'in_progress').length}
+          </div>
+          <div className="px-4 py-2 rounded-lg bg-yellow-100 text-yellow-800 font-semibold shadow-sm border border-yellow-200">
+            Review: {tasks.filter((t) => (t.stage || '').toLowerCase() === 'review').length}
           </div>
           <div className="px-4 py-2 rounded-lg bg-green-100 text-green-800 font-semibold shadow-sm border border-green-200">
             Completed: {tasks.filter((t) => (t.stage || '').toLowerCase() === 'completed').length}
           </div>
           <div className="px-4 py-2 rounded-lg bg-red-100 text-red-800 font-semibold shadow-sm border border-red-200">
-            On Hold: {tasks.filter((t) => (t.stage || '').toLowerCase() === 'on_hold').length}
+            Blocked: {tasks.filter((t) => (t.stage || '').toLowerCase() === 'on_hold').length}
           </div>
         </div>
       )}

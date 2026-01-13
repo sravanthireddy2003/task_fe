@@ -94,7 +94,7 @@ const EmployeeDashboard = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Employee Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Employee Dashboard</h1>
         <p className="mt-1 text-sm text-gray-600">
           Overview of your work, access and modules.
         </p>
@@ -105,7 +105,7 @@ const EmployeeDashboard = () => {
         {kpis.map((item) => (
           <div
             key={item.key}
-            className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
+            className="card hover:shadow-md transition-shadow"
           >
             <div className="text-sm text-gray-500">{item.label}</div>
             <div className="mt-2 text-2xl font-semibold text-gray-900">
@@ -118,10 +118,10 @@ const EmployeeDashboard = () => {
       {/* Clients and Projects Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Latest Clients */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+        <div className="card">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">My Clients</h2>
-            <Link to="/employee/clients" className="text-sm text-blue-600 hover:text-blue-800">
+            <Link to="/employee/clients" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
               View all
             </Link>
           </div>
@@ -132,9 +132,9 @@ const EmployeeDashboard = () => {
           ) : (
             <div className="space-y-3">
               {latestClients.map((client) => (
-                <div key={client.id || client._id || client.public_id} className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50">
-                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                    <span className="text-sm font-medium text-blue-600">
+                <div key={client.id || client._id || client.public_id} className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:bg-primary-50 transition-colors">
+                  <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
+                    <span className="text-sm font-medium text-primary-600">
                       {(client.name || client.company_name || 'C').charAt(0).toUpperCase()}
                     </span>
                   </div>
@@ -149,10 +149,10 @@ const EmployeeDashboard = () => {
         </div>
 
         {/* Latest Projects */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+        <div className="card">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">My Projects</h2>
-            <Link to="/employee/projects" className="text-sm text-blue-600 hover:text-blue-800">
+            <Link to="/employee/projects" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
               View all
             </Link>
           </div>
@@ -163,9 +163,9 @@ const EmployeeDashboard = () => {
           ) : (
             <div className="space-y-3">
               {latestProjects.map((project) => (
-                <div key={project.id || project._id || project.public_id} className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50">
-                  <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                    <span className="text-sm font-medium text-green-600">
+                <div key={project.id || project._id || project.public_id} className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:bg-success-50 transition-colors">
+                  <div className="w-10 h-10 rounded-full bg-success-100 flex items-center justify-center">
+                    <span className="text-sm font-medium text-success-600">
                       {(project.name || 'P').charAt(0).toUpperCase()}
                     </span>
                   </div>
@@ -182,7 +182,7 @@ const EmployeeDashboard = () => {
 
       {/* Module shortcuts */}
       {modules.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+        <div className="card">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold text-gray-900">My modules</h2>
             <p className="text-xs text-gray-500">
@@ -197,9 +197,9 @@ const EmployeeDashboard = () => {
                 <Link
                   key={mod.moduleId || mod.id || mod._id || mod.name}
                   to={href || '#'}
-                  className="flex items-center gap-3 rounded-xl border border-gray-200 px-3 py-2 hover:border-blue-400 hover:bg-blue-50 transition"
+                  className="flex items-center gap-3 rounded-xl border border-gray-200 px-3 py-2 hover:border-primary-400 hover:bg-primary-50 transition-colors"
                 >
-                  <div className="h-9 w-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl">
+                  <div className="h-9 w-9 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center text-xl">
                     {moduleMeta.icon || (mod.name?.charAt(0) || 'M')}
                   </div>
                   <div>
@@ -221,7 +221,7 @@ const EmployeeDashboard = () => {
       {(resources?.features?.length || resources?.restrictions) && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {resources?.features?.length > 0 && (
-            <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+            <div className="card">
               <h3 className="font-semibold text-gray-900 mb-2 text-sm">
                 You can use
               </h3>
@@ -233,23 +233,23 @@ const EmployeeDashboard = () => {
             </div>
           )}
           {resources?.restrictions && (
-            <div className="bg-white rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
-              <h3 className="font-semibold text-amber-900 mb-2 text-sm">
+            <div className="bg-warning-50 border border-warning-200 rounded-xl p-4 shadow-sm">
+              <h3 className="font-semibold text-warning-900 mb-2 text-sm">
                 Restrictions
               </h3>
-              <p className="text-sm text-amber-900">{resources.restrictions}</p>
+              <p className="text-sm text-warning-900">{resources.restrictions}</p>
             </div>
           )}
         </div>
       )}
 
       {/* My tasks */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+      <div className="card">
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-semibold text-gray-900">My tasks</h2>
           <Link
             to="/employee/tasks"
-            className="text-xs text-blue-600 hover:underline"
+            className="text-xs text-primary-600 hover:text-primary-700 font-medium hover:underline"
           >
             Go to tasks
           </Link>
@@ -257,7 +257,7 @@ const EmployeeDashboard = () => {
         {loading ? (
           <div className="text-sm text-gray-500">Loading...</div>
         ) : error ? (
-          <div className="text-sm text-red-500">Error: {error}</div>
+          <div className="text-sm text-error-500">Error: {error}</div>
         ) : tasks.length === 0 ? (
           <div className="text-sm text-gray-500">No tasks assigned yet.</div>
         ) : (
@@ -265,14 +265,14 @@ const EmployeeDashboard = () => {
             {tasks.map((t) => (
               <li
                 key={t.id || t._id}
-                className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2"
+                className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 hover:bg-primary-50 transition-colors"
               >
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-sm font-medium text-gray-900">{t.title}</div>
                     <div className="text-xs text-gray-500">{t.description}</div>
                   </div>
-                  <span className="ml-4 inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 capitalize">
+                  <span className="ml-4 inline-flex items-center rounded-full bg-primary-100 px-3 py-1 text-xs font-medium text-primary-700 capitalize">
                     {t.status || 'pending'}
                   </span>
                 </div>

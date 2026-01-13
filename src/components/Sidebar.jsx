@@ -1,10 +1,10 @@
-// Sidebar.jsx - DESKTOP ONLY (No Mobile, No Double Header)
+// Sidebar.jsx - Enterprise Dark Sidebar
 import { Link, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import clsx from "clsx";
 import { MODULE_MAP } from "../App/moduleMap.jsx";
 import { setSidebarCollapsed } from "../redux/slices/authSlice";
-import { Menu, ChevronLeft } from "lucide-react";
+import { Menu } from "lucide-react";
 
 const Sidebar = () => {
   const dispatch = useDispatch();
@@ -14,30 +14,30 @@ const Sidebar = () => {
 
   return (
     <aside className={clsx(
-      "h-screen bg-slate-900 text-slate-300 flex flex-col sticky top-0 transition-all duration-300 ease-in-out z-50",
-      isSidebarCollapsed ? "w-20" : "w-64"
+      "h-screen bg-gray-900 text-gray-300 flex flex-col sticky top-0 transition-all duration-300 ease-in-out z-50 shadow-2xl",
+      isSidebarCollapsed ? "w-16" : "w-64"
     )}>
-      {/* ✅ DESKTOP HEADER ONLY */}
-      <div className="flex items-center justify-between px-5 h-16 border-b border-slate-800">
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 h-16 border-b border-gray-700 bg-gray-800">
         {!isSidebarCollapsed && (
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">T</span>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center shadow-lg">
+              <span className="text-white font-bold text-lg">TM</span>
             </div>
-            <span className="font-bold text-white tracking-tight text-xl">Task Manager</span>
+            <span className="font-bold text-white tracking-tight text-lg">Task Manager</span>
           </div>
         )}
         <button
           onClick={() => dispatch(setSidebarCollapsed(!isSidebarCollapsed))}
-          className="p-1.5 rounded-lg hover:bg-slate-800 transition-colors text-slate-400"
+          className="p-2 rounded-lg hover:bg-gray-700 transition-colors text-gray-400 hover:text-white"
           title={isSidebarCollapsed ? "Expand" : "Collapse"}
         >
-          {isSidebarCollapsed ? <Menu size={20} /> : <ChevronLeft size={20} />}
+          <Menu size={20} />
         </button>
       </div>
 
-      {/* ✅ DESKTOP NAVIGATION - FIXED SCROLLBAR */}
-      <nav className="flex-1 mt-6 px-3 space-y-1 overflow-y-auto scrollbar-hide">
+      {/* Navigation */}
+      <nav className="flex-1 mt-8 px-4 space-y-2 overflow-y-auto scrollbar-hide">
         {modules.map((mod, idx) => {
           const meta = MODULE_MAP[mod.name];
           if (!meta) return null;
@@ -50,38 +50,38 @@ const Sidebar = () => {
               key={idx}
               to={fullPath}
               className={clsx(
-                "group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 relative",
+                "group flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-200 relative",
                 isActive
-                  ? "bg-indigo-600 text-white shadow-lg shadow-indigo-900/20"
-                  : "hover:bg-slate-800 hover:text-white text-slate-300"
+                  ? "bg-primary-600 text-white shadow-lg shadow-primary-900/30"
+                  : "hover:bg-gray-800 hover:text-white text-gray-300"
               )}
             >
               <span className="transition-transform duration-200 group-hover:scale-110 flex-shrink-0">
                 {meta.icon}
               </span>
               {!isSidebarCollapsed && (
-                <span className="font-medium text-[14px] truncate">{meta.label || mod.name}</span>
+                <span className="font-medium text-sm truncate">{meta.label || mod.name}</span>
               )}
               {isActive && !isSidebarCollapsed && (
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-white rounded-full" />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full shadow-sm" />
               )}
             </Link>
           );
         })}
       </nav>
 
-      {/* ✅ DESKTOP FOOTER */}
-      <div className="p-4 border-t border-slate-800">
+      {/* User Section */}
+      <div className="p-4 border-t border-gray-700 bg-gray-800">
         <div className={clsx("flex items-center gap-3", isSidebarCollapsed ? "justify-center" : "px-2")}>
-          <div className="w-8 h-8 rounded-full bg-slate-700 flex-shrink-0 border-2 border-slate-600">
-            <span className="text-xs font-bold text-white">
+          <div className="w-10 h-10 rounded-full bg-primary-100 border-2 border-primary-200 flex items-center justify-center flex-shrink-0">
+            <span className="text-sm font-bold text-primary-700">
               {user?.name?.charAt(0)?.toUpperCase() || 'A'}
             </span>
           </div>
           {!isSidebarCollapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">{user?.name || "Admin"}</p>
-              <p className="text-xs text-slate-400 truncate capitalize">{user?.role || "Admin"}</p>
+              <p className="text-sm font-semibold text-white truncate">{user?.name || "Admin"}</p>
+              <p className="text-xs text-gray-400 truncate capitalize">{user?.role || "Admin"}</p>
             </div>
           )}
         </div>
