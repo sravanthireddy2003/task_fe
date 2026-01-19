@@ -127,7 +127,18 @@ const UserAvatar = () => {
               <span className="text-gray-700 font-medium">Change Password</span>
             </button>
 
-            <button onClick={() => go('/admin/settings')} className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-50 flex items-center gap-3 text-sm transition-colors">
+            <button
+              onClick={() => {
+                // Route manager/admin/etc. to their role-scoped settings page
+                const role = (user?.role || '').toString().toLowerCase();
+                let path = '/admin/settings';
+                if (role.includes('manager')) path = '/manager/settings';
+                else if (role.includes('employee')) path = '/employee/settings';
+                else if (role.includes('client')) path = '/client/settings';
+                go(path);
+              }}
+              className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-50 flex items-center gap-3 text-sm transition-colors"
+            >
               <FaCog className="text-gray-500 w-4 h-4" />
               <span className="text-gray-700 font-medium">Settings</span>
             </button>

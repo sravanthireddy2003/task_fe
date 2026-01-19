@@ -19,7 +19,10 @@ export default async function fetchWithTenant(pathOrUrl, options = {}) {
   if (tenantId) headers['x-tenant-id'] = tenantId;
 
   const token = getAccessToken();
-  if (token) headers['Authorization'] = `Bearer ${token}`;
+  // If token helper returns nothing, try direct localStorage fallbacks for diagnostics
+  const finalToken = token || localStorage.getItem('tm_access_token') || localStorage.getItem('accessToken') || null;
+  if (!finalToken) console.debug('[fetchWithTenant] no access token found in storage');
+  if (finalToken) headers['Authorization'] = `Bearer ${finalToken}`;
 
   // Do not set Content-Type if body is FormData
   if (options.body instanceof FormData) {
@@ -29,6 +32,13 @@ export default async function fetchWithTenant(pathOrUrl, options = {}) {
   }
 
   const merged = { ...options, headers };
+
+  // Debug: show outgoing request headers for tracing Authorization issues
+  try {
+    const hdrs = {};
+    Object.keys(headers || {}).forEach((k) => { hdrs[k] = headers[k]; });
+    console.debug('[fetchWithTenant] ->', { url, headers: hdrs, method: merged.method || 'GET' });
+  } catch (e) {}
 
   let resp = await fetch(url, merged);
 
@@ -82,6 +92,7 @@ export default async function fetchWithTenant(pathOrUrl, options = {}) {
   // If still unauthorized, throw with details
   if (resp.status === 401) {
     const text = await resp.text();
+    console.debug('[fetchWithTenant] response 401 body:', text);
     const err = new Error('Unauthorized');
     err.status = 401;
     err.body = text;

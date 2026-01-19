@@ -303,6 +303,8 @@ function App() {
 
         <Route element={<Layout />}>
           {MODULE_ROUTE_CONFIG.map(({ moduleName, Component }) => {
+            // Skip guarded route generation for Settings so explicit role routes handle it
+            if (moduleName === 'Settings & Master Configuration') return null;
             const moduleMeta = MODULE_MAP[moduleName];
             const basePath = (moduleMeta?.link || `/${slugifyModuleName(moduleName)}`).replace(/^\//, "");
 
@@ -510,6 +512,11 @@ function App() {
 
           <Route path="/profile" element={<Profile />} />
           <Route path="/change-password" element={<ChangePassword />} />
+
+          {/* Explicit role-scoped settings routes to avoid 404 when modules list lacks Settings */}
+          <Route path="/admin/settings" element={<Settings />} />
+          <Route path="/manager/settings" element={<Settings />} />
+          <Route path="/employee/settings" element={<Settings />} />
         </Route>
 
         <Route path="/log-in" element={<Login />} />

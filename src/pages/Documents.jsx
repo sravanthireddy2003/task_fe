@@ -27,7 +27,7 @@ const Documents = () => {
 
   // State management
   const [documents, setDocuments] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
@@ -69,24 +69,54 @@ const Documents = () => {
     }
   };
 
-  // Load documents
-  const loadDocuments = useCallback(async (projectId = '') => {
+  // Load documents - accepts projectId and pagination
+  const loadDocuments = useCallback(async (projectId = '', page = 1, limit = 25) => {
     try {
       setLoading(true);
       setError(null);
 
+      // Find the selected project to get its public_id
+      const selectedProject = projects.find(p =>
+        p.id === projectId || p._id === projectId || p.public_id === projectId
+      );
+
       const headers = {};
-      if (projectId) {
-        // Find the selected project to get its public_id
-        const selectedProject = projects.find(p => p.id === projectId || p._id === projectId || p.public_id === projectId);
-        if (selectedProject && selectedProject.public_id) {
-          headers['project-id'] = selectedProject.public_id;
-        }
+      let projectHeaderValue = '';
+      if (selectedProject && selectedProject.public_id) {
+        projectHeaderValue = selectedProject.public_id;
+      } else if (projectId) {
+        // Fallback to projectId if public_id not found
+        projectHeaderValue = projectId;
       }
 
-      const response = await fetchWithTenant('/api/documents', {
+      // If available, send the project public id as header (backend expects `project-id`)
+      if (projectHeaderValue) {
+        headers['project-id'] = projectHeaderValue;
+        console.log('Sending project-id header:', projectHeaderValue);
+      }
+
+      // Always include Authorization like the curl example
+      const accessToken = localStorage.getItem('accessToken') || localStorage.getItem('tm_access_token');
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
+
+      // Use page & limit as query params (backend expects these)
+      const queryObj = { page: String(page), limit: String(limit) };
+      // Also include project_public_id and public_id in query when available (backend may accept either)
+      if (projectHeaderValue) {
+        queryObj.project_public_id = projectHeaderValue;
+        queryObj.public_id = projectHeaderValue;
+      }
+      const query = new URLSearchParams(queryObj).toString();
+      const path = `/api/documents?${query}`;
+      console.log('Making request to', path, 'with headers:', headers);
+
+      const response = await fetchWithTenant(path, {
         headers
       });
+
+      console.log('API response:', response);
 
       if (response && response.success && Array.isArray(response.data)) {
         setDocuments(response.data);
@@ -107,9 +137,11 @@ const Documents = () => {
   const loadProjects = useCallback(async () => {
     setProjectsLoading(true);
     try {
-      const resp = await fetchWithTenant('/api/admin/projects');
+      // prefer projects dropdown endpoint
+      const resp = await fetchWithTenant('/api/projects?dropdown=1');
       const data = Array.isArray(resp?.data) ? resp.data : resp;
       const projectsArray = Array.isArray(data) ? data : [];
+      console.log('Loaded projects:', projectsArray);
       setProjects(projectsArray);
     } catch (err) {
       console.error('Error loading projects:', err);
@@ -117,7 +149,7 @@ const Documents = () => {
     } finally {
       setProjectsLoading(false);
     }
-  }, []);
+  }, [userRole]);
 
   // Upload document
   const handleUpload = async (e) => {
@@ -138,10 +170,11 @@ const Documents = () => {
     try {
       const formData = new FormData();
       formData.append('document', uploadForm.file);
-      formData.append('entityType', uploadForm.entityType);
-      if (uploadForm.entityId) {
-        formData.append('entityId', uploadForm.entityId);
-      }
+      // follow Postman: include projectId, taskId, clientId, fileName
+      formData.append('projectId', selectedProjectId || '');
+      formData.append('taskId', uploadForm.taskId || '');
+      formData.append('clientId', uploadForm.clientId || '');
+      formData.append('fileName', uploadForm.file.name || '');
 
       const response = await fetch('/api/documents/upload', {
         method: 'POST',
@@ -158,7 +191,7 @@ const Documents = () => {
         toast.success('Document uploaded successfully!');
         setShowUploadModal(false);
         setUploadForm({ file: null, entityType: 'PROJECT', entityId: '', accessType: 'READ' });
-        loadDocuments();
+        loadDocuments(selectedProjectId, 1, 25);
       } else {
         throw new Error(result.error || 'Upload failed');
       }
@@ -173,12 +206,69 @@ const Documents = () => {
   // Preview document
   const handlePreview = async (documentId) => {
     try {
-      const response = await fetchWithTenant(`/api/documents/${documentId}/preview`);
+      // Find the selected project to get its projectId or public_id
+      const selectedProject = projects.find(p =>
+        p.projectId === selectedProjectId || p.public_id === selectedProjectId || p.id === selectedProjectId || p._id === selectedProjectId
+      );
+
+      const headers = {};
+      if (selectedProject && (selectedProject.projectId || selectedProject.public_id)) {
+        headers['project-id'] = selectedProject.projectId ?? selectedProject.public_id;
+      } else if (selectedProjectId) {
+        // Fallback to selectedProjectId if not found
+        headers['project-id'] = selectedProjectId;
+      }
+
+      const accessToken = localStorage.getItem('accessToken') || localStorage.getItem('tm_access_token');
+      if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+
+      let projectHeaderValue = '';
+      if (selectedProject && (selectedProject.projectId || selectedProject.public_id)) projectHeaderValue = selectedProject.projectId ?? selectedProject.public_id;
+      else if (selectedProjectId) projectHeaderValue = selectedProjectId;
+
+      let previewPath = `/api/documents/preview/${documentId}`;
+      // also attach project_public_id as query param
+      if (projectHeaderValue) previewPath += `?project_public_id=${encodeURIComponent(projectHeaderValue)}`;
+
+      const response = await fetchWithTenant(previewPath, {
+        headers
+      });
 
       if (response && response.success && response.data) {
         // Handle preview - could be a URL or base64 data
         if (response.data.previewUrl) {
-          window.open(response.data.previewUrl, '_blank');
+          const previewUrl = response.data.previewUrl;
+          // If preview URL is same-origin or protected, fetch using Authorization header then open blob URL
+          try {
+            const accessToken = localStorage.getItem('accessToken') || localStorage.getItem('tm_access_token');
+            const tenant = localStorage.getItem('tenantId') || 'default';
+            const isSameOrigin = previewUrl.startsWith(window.location.origin) || previewUrl.startsWith('/');
+            if (isSameOrigin && accessToken) {
+              const fileResp = await fetch(previewUrl, {
+                method: 'GET',
+                headers: {
+                  'Authorization': `Bearer ${accessToken}`,
+                  'x-tenant-id': tenant
+                }
+              });
+              if (fileResp.ok) {
+                const blob = await fileResp.blob();
+                const url = window.URL.createObjectURL(blob);
+                window.open(url, '_blank');
+                // revoke after short delay
+                setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+              } else {
+                // fallback to opening the URL directly
+                window.open(previewUrl, '_blank');
+              }
+            } else {
+              // external URL or no token — open directly
+              window.open(previewUrl, '_blank');
+            }
+          } catch (err) {
+            console.error('Preview fetch error:', err);
+            window.open(response.data.previewUrl, '_blank');
+          }
         } else {
           toast.info('Preview not available for this document type');
         }
@@ -196,12 +286,34 @@ const Documents = () => {
     setDownloading(documentId);
 
     try {
-      const response = await fetch(`/api/documents/${documentId}/download`, {
+
+      // Find the selected project to get its projectId or public_id
+      const selectedProject = projects.find(p =>
+        p.projectId === selectedProjectId || p.public_id === selectedProjectId || p.id === selectedProjectId || p._id === selectedProjectId
+      );
+
+      const headers = {
+        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+        'x-tenant-id': localStorage.getItem('tenantId') || 'default'
+      };
+
+      if (selectedProject && (selectedProject.projectId || selectedProject.public_id)) {
+        headers['project-id'] = selectedProject.projectId ?? selectedProject.public_id;
+      } else if (selectedProjectId) {
+        // Fallback to selectedProjectId if not found
+        headers['project-id'] = selectedProjectId;
+      }
+
+      let projectHeaderValue = '';
+      if (selectedProject && (selectedProject.projectId || selectedProject.public_id)) projectHeaderValue = selectedProject.projectId ?? selectedProject.public_id;
+      else if (selectedProjectId) projectHeaderValue = selectedProjectId;
+
+      let downloadPath = `/api/documents/download/${documentId}`;
+      if (projectHeaderValue) downloadPath += `?project_public_id=${encodeURIComponent(projectHeaderValue)}`;
+
+      const response = await fetch(downloadPath, {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-          'x-tenant-id': localStorage.getItem('tenantId') || 'default'
-        }
+        headers
       });
 
       if (response.ok) {
@@ -234,20 +346,41 @@ const Documents = () => {
     }
 
     try {
+      // Find the selected project to get its projectId or public_id
+      const selectedProject = projects.find(p =>
+        p.projectId === selectedProjectId || p.public_id === selectedProjectId || p.id === selectedProjectId || p._id === selectedProjectId
+      );
+
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+
+      if (selectedProject && (selectedProject.projectId || selectedProject.public_id)) {
+        headers['project-id'] = selectedProject.projectId ?? selectedProject.public_id;
+      } else if (selectedProjectId) {
+        // Fallback to selectedProjectId if not found
+        headers['project-id'] = selectedProjectId;
+      }
+
+      const accessToken = localStorage.getItem('accessToken') || localStorage.getItem('tm_access_token');
+      if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+
+      let projectHeaderValue = '';
+      if (selectedProject && (selectedProject.projectId || selectedProject.public_id)) projectHeaderValue = selectedProject.projectId ?? selectedProject.public_id;
+      else if (selectedProjectId) projectHeaderValue = selectedProjectId;
+
+      const bodyPayload = { userId, accessType };
+      if (projectHeaderValue) bodyPayload.project_public_id = projectHeaderValue;
+
       const response = await fetchWithTenant(`/api/documents/${documentId}/assign-access`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId,
-          accessType
-        })
+        headers,
+        body: JSON.stringify(bodyPayload)
       });
 
       if (response && response.success) {
         toast.success('Access assigned successfully!');
-        loadDocuments();
+        loadDocuments(selectedProjectId, 1, 25);
       } else {
         throw new Error(response.error || 'Failed to assign access');
       }
@@ -295,9 +428,10 @@ const Documents = () => {
     return userRole === 'admin';
   };
 
-  // Load documents on mount and when selected project changes
+  // Load documents when selected project changes
   useEffect(() => {
-    loadDocuments(selectedProjectId);
+    console.log('useEffect triggered - selectedProjectId:', selectedProjectId);
+    loadDocuments(selectedProjectId, 1, 25);
   }, [loadDocuments, selectedProjectId]);
 
   // Load projects on mount
@@ -311,7 +445,7 @@ const Documents = () => {
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
         <div>
           <h2 className="text-3xl font-bold text-gray-800">Document Management</h2>
-          <p className="text-gray-600 mt-1">Manage and organize your project documents</p>
+          <p className="text-gray-600 mt-1">Select a project to view and manage its documents</p>
         </div>
 
         <div className="flex gap-3">
@@ -355,18 +489,26 @@ const Documents = () => {
 
           <select
             value={selectedProjectId}
-            onChange={(e) => setSelectedProjectId(e.target.value)}
+            onChange={(e) => {
+              const newValue = e.target.value;
+              console.log('Project selected:', newValue);
+              setSelectedProjectId(newValue);
+            }}
             disabled={projectsLoading}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
           >
             <option value="">
               {projectsLoading ? 'Loading projects...' : 'All Projects'}
             </option>
-            {projects.map(project => (
-              <option key={project.id || project._id || project.public_id} value={project.id || project._id || project.public_id}>
-                {project.name || project.title || `Project ${project.public_id}`}
-              </option>
-            ))}
+            {projects.map(project => {
+              const val = project.projectId ?? project.public_id ?? project.id ?? project._id;
+              const label = project.projectName ?? project.name ?? project.title ?? project.project_name ?? `Project ${val ?? ''}`;
+              return (
+                <option key={val} value={val}>
+                  {label}
+                </option>
+              );
+            })}
           </select>
 
           <button
@@ -391,7 +533,7 @@ const Documents = () => {
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Error Loading Documents</h3>
           <p className="text-gray-600 mb-4">{error}</p>
           <button
-            onClick={loadDocuments}
+            onClick={() => loadDocuments(selectedProjectId, 1, 25)}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             Try Again
@@ -402,9 +544,11 @@ const Documents = () => {
           <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-gray-900 mb-2">No Documents Found</h3>
           <p className="text-gray-600 mb-6">
-            {searchQuery || filterType !== 'all'
-              ? 'No documents match your search criteria.'
-              : 'No documents have been uploaded yet.'}
+            {selectedProjectId
+              ? (searchQuery || filterType !== 'all'
+                  ? 'No documents match your search criteria.'
+                  : 'No documents have been uploaded for this project yet.')
+              : 'Please select a project from the dropdown above to view its documents.'}
           </p>
           {canUpload() && (
             <button

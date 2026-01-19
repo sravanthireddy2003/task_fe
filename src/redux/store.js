@@ -9,6 +9,7 @@ import projectReducer from "./slices/projectSlice";
 import subtaskReducer from "./slices/subtaskSlice";
 import notificationReducer from "./slices/notificationSlice";
 import chatReducer from "./slices/chatSlice";
+import reportsReducer from "./slices/reportsSlice";
 
 const store = configureStore({
   reducer: {
@@ -19,6 +20,7 @@ const store = configureStore({
     clients: clientReducer,
     tasks: taskReducer,
     projects: projectReducer,
+    reports: reportsReducer,
     subtasks: subtaskReducer,
     notifications: notificationReducer,
     chat: chatReducer,

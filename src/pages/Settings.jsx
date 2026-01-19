@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { selectUser } from '../redux/slices/authSlice';
 import fetchWithTenant from '../utils/fetchWithTenant';
+import { httpGetService } from '../App/httpHandler';
+import { getAccessToken, getRefreshToken } from '../utils/tokenService';
+import { setAuthToken } from '../App/httpHandler';
+import { refreshToken as refreshTokenThunk } from '../redux/slices/authSlice';
 import { 
   FaCog, 
   FaDatabase, 
@@ -15,6 +21,7 @@ import {
   FaQrcode,
   FaMobileAlt,
   FaExclamationTriangle,
+  FaHistory,
   FaCopy
 } from 'react-icons/fa';
 import { toast } from 'sonner';
@@ -495,6 +502,27 @@ const Settings = () => {
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null);
   const [expandedSection, setExpandedSection] = useState('general');
+  const user = useSelector(selectUser);
+
+  // Diagnostic: ensure axios defaults and log token state
+  useEffect(() => {
+    try {
+      const access = getAccessToken();
+      const refresh = getRefreshToken();
+      console.debug('[Settings] tokens:', { access: access ? 'present' : null, refresh: refresh ? 'present' : null });
+      if (access) setAuthToken(access, refresh || null, 'local');
+    } catch (e) {
+      console.warn('Settings token diagnostic failed', e);
+    }
+  }, []);
+
+  const [showToken, setShowToken] = useState(false);
+
+  // Audit logs state
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditError, setAuditError] = useState(null);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     const load = async () => {
@@ -510,6 +538,32 @@ const Settings = () => {
     };
     load();
   }, []);
+
+  const fetchAuditLogs = async () => {
+    try {
+      setAuditLoading(true);
+      setAuditError(null);
+      const role = (user?.role || '').toLowerCase();
+      let endpoint = '/api/employee/audit-logs?limit=25&page=1';
+      if (role === 'admin') endpoint = '/api/admin/audit-logs?limit=25&page=1';
+      else if (role === 'manager') endpoint = '/api/manager/audit-logs?limit=25&page=1';
+
+      // Use axios-backed httpGetService so axios' default Authorization header is used
+      const resp = await httpGetService(endpoint.replace(/^\//, ''));
+      const data = resp?.data ?? resp;
+      const logs = Array.isArray(data?.logs) ? data.logs : (Array.isArray(data) ? data : []);
+      setAuditLogs(logs);
+    } catch (err) {
+      console.error('Failed to load audit logs', err);
+      setAuditError(err.message || 'Failed to load audit logs');
+    } finally {
+      setAuditLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAuditLogs();
+  }, [user]);
 
   const handleSettingChange = (category, key, value) => {
     setSettings(prev => ({
@@ -658,7 +712,50 @@ const Settings = () => {
             </h1>
             <p className="text-gray-600 mt-2">Configure your system preferences and security settings</p>
           </div>
-          
+            {/* Token Diagnostic Panel */}
+            <div className="text-sm text-gray-600">
+              <div className="mb-2">Token status: <strong>{getAccessToken() ? 'Present' : 'Missing'}</strong></div>
+              {getAccessToken() && (
+                <div className="mb-2 text-xs text-gray-500">Token: {showToken ? getAccessToken() : (getAccessToken() ? `${getAccessToken().slice(0,8)}...${getAccessToken().slice(-6)}` : '')}</div>
+              )}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    const access = getAccessToken();
+                    const refresh = getRefreshToken();
+                    if (access) {
+                      setAuthToken(access, refresh || null, 'local');
+                      console.debug('[Settings] reattached token to axios defaults');
+                    } else {
+                      console.warn('[Settings] no access token found to attach');
+                    }
+                  }}
+                  className="px-3 py-2 bg-gray-50 border border-gray-200 rounded text-sm"
+                >
+                  Reattach Token
+                </button>
+                {getAccessToken() && (
+                  <button
+                    onClick={() => setShowToken(v => !v)}
+                    className="px-3 py-2 bg-gray-50 border border-gray-200 rounded text-sm"
+                  >
+                    {showToken ? 'Hide Token' : 'Show Token'}
+                  </button>
+                )}
+                <button
+                  onClick={() => dispatch(refreshTokenThunk())}
+                  className="px-3 py-2 bg-gray-50 border border-gray-200 rounded text-sm"
+                >
+                  Refresh Token
+                </button>
+                <button
+                  onClick={() => fetchAuditLogs()}
+                  className="px-3 py-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700"
+                >
+                  Retry Audit Fetch
+                </button>
+              </div>
+            </div>
           <div className="flex items-center gap-3">
             {saveStatus === 'success' && (
               <div className="flex items-center gap-2 text-green-600">
@@ -825,6 +922,116 @@ const Settings = () => {
                     type={key.toLowerCase().includes('key') || key.toLowerCase().includes('secret') ? 'password' : 'text'}
                   />
                 ))}
+              </div>
+            </SettingCard>
+
+            {/* Audit Logs */}
+            <SettingCard title="Audit Logs" icon={FaHistory} sectionKey="auditLogs">
+              <div className="space-y-3">
+                {auditLoading ? (
+                  <div className="flex items-center gap-3 text-sm text-gray-600">
+                    <FaSpinner className="animate-spin" />
+                    Loading audit logs...
+                  </div>
+                ) : auditError ? (
+                  <div className="text-sm text-red-600">{auditError}</div>
+                ) : auditLogs.length === 0 ? (
+                  <div className="text-sm text-gray-600">No audit logs available.</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-gray-600">
+                          <th className="px-3 py-2">Time</th>
+                          <th className="px-3 py-2">Actor</th>
+                          <th className="px-3 py-2">Action</th>
+                          <th className="px-3 py-2">Entity</th>
+                          <th className="px-3 py-2">Details</th>
+                          <th className="px-3 py-2">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {auditLogs.slice(0, 100).map((log, idx) => {
+                          const id = log.id || log._id || idx;
+                          const whenRaw = log.timestamp || log.created_at || log.time || log.date || '';
+                          const actorRaw = log.actor || (log.user && (log.user.name || log.user.email)) || log.username || '';
+                          const actionRaw = log.action || log.verb || '';
+                          const entityRaw = log.entity || log.resource || '';
+                          const details = log.details || {};
+                          const fileUrl = details?.file_url || details?.url || details?.fileUrl;
+
+                          const safeToString = (v) => {
+                            if (v === null || v === undefined) return '';
+                            if (typeof v === 'string') return v;
+                            if (typeof v === 'number' || typeof v === 'boolean') return String(v);
+                            if (typeof v === 'object') {
+                              // prefer name or id if present
+                              return v.name || v.title || v.id || v._id || JSON.stringify(v);
+                            }
+                            return String(v);
+                          };
+
+                          const when = safeToString(whenRaw);
+                          const actor = safeToString(actorRaw);
+                          const action = safeToString(actionRaw);
+                          const entity = safeToString(entityRaw);
+
+                          return (
+                            <tr key={id} className="border-t border-gray-100">
+                              <td className="px-3 py-2 align-top text-gray-700">{when}</td>
+                              <td className="px-3 py-2 align-top text-gray-700">{actor}</td>
+                              <td className="px-3 py-2 align-top text-gray-700">{action}</td>
+                              <td className="px-3 py-2 align-top text-gray-700">{entity}</td>
+                              <td className="px-3 py-2 align-top text-gray-700">{JSON.stringify(details)}</td>
+                              <td className="px-3 py-2 align-top text-gray-700">
+                                <div className="flex items-center gap-2">
+                                  {fileUrl && (
+                                    <>
+                                      <button
+                                        onClick={async () => {
+                                          try {
+                                            const accessToken = localStorage.getItem('accessToken') || localStorage.getItem('tm_access_token');
+                                            const tenant = localStorage.getItem('tenantId') || 'default';
+                                            const isSameOrigin = fileUrl.startsWith(window.location.origin) || fileUrl.startsWith('/');
+                                            if (isSameOrigin && accessToken) {
+                                              const resp = await fetch(fileUrl, { headers: { 'Authorization': `Bearer ${accessToken}`, 'x-tenant-id': tenant } });
+                                              if (resp.ok) {
+                                                const blob = await resp.blob();
+                                                const url = window.URL.createObjectURL(blob);
+                                                window.open(url, '_blank');
+                                                setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+                                                return;
+                                              }
+                                            }
+                                            window.open(fileUrl, '_blank');
+                                          } catch (err) {
+                                            console.error('Preview audit file error', err);
+                                            window.open(fileUrl, '_blank');
+                                          }
+                                        }}
+                                        className="text-blue-600 hover:underline text-sm"
+                                      >
+                                        Preview
+                                      </button>
+                                      <a
+                                        href={fileUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-gray-600 text-sm"
+                                      >
+                                        Download
+                                      </a>
+                                    </>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </SettingCard>
           </div>

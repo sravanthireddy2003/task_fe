@@ -21,6 +21,30 @@ try {
 // ✅ FIXED: Bootstrapping sequence - NO DEV TOKEN AUTO-LOGIN
 async function boot() {
   try {
+    // Wrap global fetch to automatically attach Authorization and x-tenant-id for API calls
+    try {
+      const originalFetch = window.fetch.bind(window);
+      const baseURL = import.meta.env.VITE_SERVERURL || '';
+      window.fetch = async (input, init = {}) => {
+        try {
+          let url = typeof input === 'string' ? input : input.url;
+          const isApiCall = url && (url.startsWith(baseURL) || url.startsWith('/api') || url.includes('/api/'));
+          const headers = new Headers(init.headers || (typeof input === 'object' && input.headers) || {});
+          const token = getAccessToken();
+          const tenant = localStorage.getItem('tenantId') || import.meta.env.VITE_TENANT_ID || '';
+          if (isApiCall) {
+            if (token && !headers.has('Authorization')) headers.set('Authorization', `Bearer ${token}`);
+            if (tenant && !headers.has('x-tenant-id')) headers.set('x-tenant-id', tenant);
+          }
+          const newInit = { ...init, headers };
+          return await originalFetch(input, newInit);
+        } catch (e) {
+          return await originalFetch(input, init);
+        }
+      };
+    } catch (e) {
+      console.warn('Could not patch global fetch to auto-attach tokens', e);
+    }
     // ✅ STEP 1: ONLY load existing tokens from localStorage (NO dev seed)
     const access = getAccessToken();
     const refresh = getRefreshToken();

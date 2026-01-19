@@ -110,6 +110,21 @@ api.interceptors.request.use((config) => {
   } catch (e) {
     // ignore
   }
+  try {
+    // Log method/url and whether auth header is present (mask token)
+    const safeHeaders = {};
+    if (config && config.headers) {
+      Object.keys(config.headers).forEach((k) => {
+        if (/authorization/i.test(k)) {
+          const val = config.headers[k];
+          safeHeaders[k] = typeof val === 'string' ? (val.length > 20 ? `${val.slice(0,10)}...${val.slice(-6)}` : val) : val;
+        } else {
+          safeHeaders[k] = config.headers[k];
+        }
+      });
+    }
+    console.debug('[apiClient] request ->', { method: (config && config.method) || 'get', url: config.url, headers: safeHeaders });
+  } catch (e) {}
   return config;
 });
 
