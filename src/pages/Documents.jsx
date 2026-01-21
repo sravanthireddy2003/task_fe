@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { selectUser } from '../redux/slices/authSlice';
 import fetchWithTenant from '../utils/fetchWithTenant';
+import { httpGetService, httpPostService } from '../App/httpHandler';
 import { toast } from 'sonner';
 import {
   FileText,
@@ -24,6 +25,20 @@ import {
 const Documents = () => {
   const user = useSelector(selectUser);
   const userRole = user?.role?.toLowerCase() || 'employee';
+  const currentUserId = user?.id ?? user?.userId ?? user?.user_id ?? user?.publicId ?? '';
+
+  // Normalize access types to canonical values: VIEW, EDIT, OWNER
+  const normalizeAccessType = (val) => {
+    if (val === null || typeof val === 'undefined') throw new Error('Invalid access type: empty. Allowed values: VIEW, EDIT, OWNER');
+    const s = String(val).trim().toLowerCase();
+    const view = ['view', 'read', 'preview', 'download', 'none'];
+    const edit = ['edit', 'write', 'delete'];
+    const owner = ['owner', 'admin'];
+    if (view.includes(s)) return 'VIEW';
+    if (edit.includes(s)) return 'EDIT';
+    if (owner.includes(s)) return 'OWNER';
+    throw new Error(`Invalid access type: ${val}. Allowed values: VIEW, EDIT, OWNER`);
+  };
 
   // State management
   const [documents, setDocuments] = useState([]);
@@ -39,6 +54,15 @@ const Documents = () => {
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [downloading, setDownloading] = useState(null);
+  const [showManageAccessModal, setShowManageAccessModal] = useState(false);
+  const [managingDocId, setManagingDocId] = useState(null);
+  const [members, setMembers] = useState([]);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [showMembersModal, setShowMembersModal] = useState(false);
+  const [modalMembers, setModalMembers] = useState([]);
+  const [selectedAssignees, setSelectedAssignees] = useState([]);
+  const [permissionLevel, setPermissionLevel] = useState('VIEW');
+  const [assigningAccess, setAssigningAccess] = useState(false);
 
   // Upload form state
   const [uploadForm, setUploadForm] = useState({
@@ -69,57 +93,47 @@ const Documents = () => {
     }
   };
 
+  // Memoize entity types to prevent unnecessary re-renders
+  const entityTypes = useMemo(() => getEntityTypes(), [userRole]);
+
   // Load documents - accepts projectId and pagination
   const loadDocuments = useCallback(async (projectId = '', page = 1, limit = 25) => {
     try {
       setLoading(true);
       setError(null);
 
-      // Find the selected project to get its public_id
+      // Find the selected project to get a stable project identifier
       const selectedProject = projects.find(p =>
-        p.id === projectId || p._id === projectId || p.public_id === projectId
+        p.id === projectId || p._id === projectId || p.public_id === projectId || p.projectId === projectId
       );
 
-      const headers = {};
-      let projectHeaderValue = '';
-      if (selectedProject && selectedProject.public_id) {
-        projectHeaderValue = selectedProject.public_id;
+      let projectQueryValue = '';
+      if (selectedProject && (selectedProject.projectId || selectedProject.public_id)) {
+        projectQueryValue = selectedProject.projectId || selectedProject.public_id;
       } else if (projectId) {
-        // Fallback to projectId if public_id not found
-        projectHeaderValue = projectId;
+        projectQueryValue = projectId;
       }
 
-      // If available, send the project public id as header (backend expects `project-id`)
-      if (projectHeaderValue) {
-        headers['project-id'] = projectHeaderValue;
-        console.log('Sending project-id header:', projectHeaderValue);
-      }
+      // Build query string using Postman-friendly `projectId` param
+      const params = new URLSearchParams();
+      params.set('page', String(page));
+      params.set('limit', String(limit));
+      if (projectQueryValue) params.set('projectId', projectQueryValue);
 
-      // Always include Authorization like the curl example
-      const accessToken = localStorage.getItem('accessToken') || localStorage.getItem('tm_access_token');
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-      }
+      // If the current user is an employee and no project is provided, use the employee-scoped endpoint
+      const path = (userRole === 'employee' && !projectQueryValue)
+        ? 'documents/my'
+        : `documents?${params.toString()}`;
+      
+      console.debug('[Documents] loading documents', { path });
 
-      // Use page & limit as query params (backend expects these)
-      const queryObj = { page: String(page), limit: String(limit) };
-      // Also include project_public_id and public_id in query when available (backend may accept either)
-      if (projectHeaderValue) {
-        queryObj.project_public_id = projectHeaderValue;
-        queryObj.public_id = projectHeaderValue;
-      }
-      const query = new URLSearchParams(queryObj).toString();
-      const path = `/api/documents?${query}`;
-      console.log('Making request to', path, 'with headers:', headers);
-
-      const response = await fetchWithTenant(path, {
-        headers
-      });
-
-      console.log('API response:', response);
-
-      if (response && response.success && Array.isArray(response.data)) {
-        setDocuments(response.data);
+      // Use axios-backed httpGetService which attaches Authorization and tenant headers
+      const resp = await httpGetService(path);
+      // httpGetService returns resp.data normally; be tolerant of shapes
+      const data = Array.isArray(resp?.data) ? resp.data : (Array.isArray(resp) ? resp : (resp?.documents || resp?.data?.documents || []));
+      
+      if (Array.isArray(data)) {
+        setDocuments(data);
       } else {
         setDocuments([]);
         setError('Failed to load documents');
@@ -131,25 +145,36 @@ const Documents = () => {
     } finally {
       setLoading(false);
     }
-  }, [projects]);
+  }, [projects, userRole]);
 
   // Load projects
   const loadProjects = useCallback(async () => {
     setProjectsLoading(true);
     try {
       // prefer projects dropdown endpoint
-      const resp = await fetchWithTenant('/api/projects?dropdown=1');
-      const data = Array.isArray(resp?.data) ? resp.data : resp;
+      const resp = await httpGetService('projects?dropdown=1');
+      const data = Array.isArray(resp?.data) ? resp.data : (Array.isArray(resp) ? resp : resp?.data);
       const projectsArray = Array.isArray(data) ? data : [];
       console.log('Loaded projects:', projectsArray);
       setProjects(projectsArray);
+
+      // Auto-select the first project and load documents for it
+      if (projectsArray && projectsArray.length > 0) {
+        const first = projectsArray[0];
+        const firstVal = first.projectId ?? first.public_id ?? first.id ?? first._id ?? '';
+        if (firstVal) {
+          setSelectedProjectId(firstVal);
+          // Load documents for the first project (initial load)
+          await loadDocuments(firstVal, 1, 25);
+        }
+      }
     } catch (err) {
       console.error('Error loading projects:', err);
       toast.error('Failed to load projects');
     } finally {
       setProjectsLoading(false);
     }
-  }, [userRole]);
+  }, [loadDocuments]);
 
   // Upload document
   const handleUpload = async (e) => {
@@ -170,30 +195,26 @@ const Documents = () => {
     try {
       const formData = new FormData();
       formData.append('document', uploadForm.file);
-      // follow Postman: include projectId, taskId, clientId, fileName
+      // Postman: include projectId, clientId, taskId and optional fileName
       formData.append('projectId', selectedProjectId || '');
-      formData.append('taskId', uploadForm.taskId || '');
-      formData.append('clientId', uploadForm.clientId || '');
+      if (uploadForm.taskId) formData.append('taskId', uploadForm.taskId);
+      if (uploadForm.clientId) formData.append('clientId', uploadForm.clientId);
       formData.append('fileName', uploadForm.file.name || '');
 
-      const response = await fetch('/api/documents/upload', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-          'x-tenant-id': localStorage.getItem('tenantId') || 'default'
-        },
-        body: formData
-      });
+      // Use httpPostService which handles FormData and attaches auth/tenant headers
+      const result = await httpPostService('documents/upload', formData);
 
-      const result = await response.json();
+      // Check for 200 status or success flag
+      const isSuccess = (result && (result.success || result?.data?.success)) || 
+                       (result?.status >= 200 && result?.status < 300);
 
-      if (result.success) {
+      if (isSuccess) {
         toast.success('Document uploaded successfully!');
         setShowUploadModal(false);
         setUploadForm({ file: null, entityType: 'PROJECT', entityId: '', accessType: 'READ' });
         loadDocuments(selectedProjectId, 1, 25);
       } else {
-        throw new Error(result.error || 'Upload failed');
+        throw new Error((result && result.error) || 'Upload failed');
       }
     } catch (err) {
       console.error('Upload error:', err);
@@ -206,74 +227,25 @@ const Documents = () => {
   // Preview document
   const handlePreview = async (documentId) => {
     try {
-      // Find the selected project to get its projectId or public_id
       const selectedProject = projects.find(p =>
         p.projectId === selectedProjectId || p.public_id === selectedProjectId || p.id === selectedProjectId || p._id === selectedProjectId
       );
 
-      const headers = {};
-      if (selectedProject && (selectedProject.projectId || selectedProject.public_id)) {
-        headers['project-id'] = selectedProject.projectId ?? selectedProject.public_id;
-      } else if (selectedProjectId) {
-        // Fallback to selectedProjectId if not found
-        headers['project-id'] = selectedProjectId;
-      }
+      const projectQuery = selectedProject && (selectedProject.projectId || selectedProject.public_id)
+        ? `?projectId=${encodeURIComponent(selectedProject.projectId || selectedProject.public_id)}`
+        : (selectedProjectId ? `?projectId=${encodeURIComponent(selectedProjectId)}` : '');
 
-      const accessToken = localStorage.getItem('accessToken') || localStorage.getItem('tm_access_token');
-      if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
-
-      let projectHeaderValue = '';
-      if (selectedProject && (selectedProject.projectId || selectedProject.public_id)) projectHeaderValue = selectedProject.projectId ?? selectedProject.public_id;
-      else if (selectedProjectId) projectHeaderValue = selectedProjectId;
-
-      let previewPath = `/api/documents/preview/${documentId}`;
-      // also attach project_public_id as query param
-      if (projectHeaderValue) previewPath += `?project_public_id=${encodeURIComponent(projectHeaderValue)}`;
-
-      const response = await fetchWithTenant(previewPath, {
-        headers
-      });
-
-      if (response && response.success && response.data) {
-        // Handle preview - could be a URL or base64 data
-        if (response.data.previewUrl) {
-          const previewUrl = response.data.previewUrl;
-          // If preview URL is same-origin or protected, fetch using Authorization header then open blob URL
-          try {
-            const accessToken = localStorage.getItem('accessToken') || localStorage.getItem('tm_access_token');
-            const tenant = localStorage.getItem('tenantId') || 'default';
-            const isSameOrigin = previewUrl.startsWith(window.location.origin) || previewUrl.startsWith('/');
-            if (isSameOrigin && accessToken) {
-              const fileResp = await fetch(previewUrl, {
-                method: 'GET',
-                headers: {
-                  'Authorization': `Bearer ${accessToken}`,
-                  'x-tenant-id': tenant
-                }
-              });
-              if (fileResp.ok) {
-                const blob = await fileResp.blob();
-                const url = window.URL.createObjectURL(blob);
-                window.open(url, '_blank');
-                // revoke after short delay
-                setTimeout(() => window.URL.revokeObjectURL(url), 10000);
-              } else {
-                // fallback to opening the URL directly
-                window.open(previewUrl, '_blank');
-              }
-            } else {
-              // external URL or no token — open directly
-              window.open(previewUrl, '_blank');
-            }
-          } catch (err) {
-            console.error('Preview fetch error:', err);
-            window.open(response.data.previewUrl, '_blank');
-          }
-        } else {
-          toast.info('Preview not available for this document type');
-        }
+      const resp = await httpGetService(`documents/${documentId}/preview${projectQuery}`);
+      const payload = resp?.data ?? resp;
+      
+      if (payload && payload.previewUrl) {
+        window.open(payload.previewUrl, '_blank');
+      } else if (payload && payload.blob) {
+        const url = window.URL.createObjectURL(payload.blob);
+        window.open(url, '_blank');
+        setTimeout(() => window.URL.revokeObjectURL(url), 10000);
       } else {
-        toast.error('Failed to load document preview');
+        toast.info('Preview not available for this document type');
       }
     } catch (err) {
       console.error('Preview error:', err);
@@ -286,38 +258,18 @@ const Documents = () => {
     setDownloading(documentId);
 
     try {
-
-      // Find the selected project to get its projectId or public_id
       const selectedProject = projects.find(p =>
         p.projectId === selectedProjectId || p.public_id === selectedProjectId || p.id === selectedProjectId || p._id === selectedProjectId
       );
 
-      const headers = {
-        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-        'x-tenant-id': localStorage.getItem('tenantId') || 'default'
-      };
+      const projectQuery = selectedProject && (selectedProject.projectId || selectedProject.public_id)
+        ? `?projectId=${encodeURIComponent(selectedProject.projectId || selectedProject.public_id)}`
+        : (selectedProjectId ? `?projectId=${encodeURIComponent(selectedProjectId)}` : '');
 
-      if (selectedProject && (selectedProject.projectId || selectedProject.public_id)) {
-        headers['project-id'] = selectedProject.projectId ?? selectedProject.public_id;
-      } else if (selectedProjectId) {
-        // Fallback to selectedProjectId if not found
-        headers['project-id'] = selectedProjectId;
-      }
-
-      let projectHeaderValue = '';
-      if (selectedProject && (selectedProject.projectId || selectedProject.public_id)) projectHeaderValue = selectedProject.projectId ?? selectedProject.public_id;
-      else if (selectedProjectId) projectHeaderValue = selectedProjectId;
-
-      let downloadPath = `/api/documents/download/${documentId}`;
-      if (projectHeaderValue) downloadPath += `?project_public_id=${encodeURIComponent(projectHeaderValue)}`;
-
-      const response = await fetch(downloadPath, {
-        method: 'GET',
-        headers
-      });
-
-      if (response.ok) {
-        const blob = await response.blob();
+      // Use axios helper to download blob with auth/tenant headers attached
+      const blob = await httpGetService(`documents/${documentId}/download${projectQuery}`, { responseType: 'blob' });
+      
+      if (blob) {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -338,68 +290,373 @@ const Documents = () => {
     }
   };
 
-  // Assign document access (Admin only)
-  const handleAssignAccess = async (documentId, userId, accessType) => {
-    if (userRole !== 'admin') {
-      toast.error('Access denied');
-      return;
-    }
-
+  // Fetch project members for access assignment
+  const fetchProjectMembers = async (projectIdentifier) => {
+    setMembersLoading(true);
+    setMembers([]);
     try {
-      // Find the selected project to get its projectId or public_id
-      const selectedProject = projects.find(p =>
-        p.projectId === selectedProjectId || p.public_id === selectedProjectId || p.id === selectedProjectId || p._id === selectedProjectId
-      );
-
-      const headers = {
-        'Content-Type': 'application/json',
-      };
-
-      if (selectedProject && (selectedProject.projectId || selectedProject.public_id)) {
-        headers['project-id'] = selectedProject.projectId ?? selectedProject.public_id;
-      } else if (selectedProjectId) {
-        // Fallback to selectedProjectId if not found
-        headers['project-id'] = selectedProjectId;
+      if (!projectIdentifier) {
+        toast.error('Project identifier missing for fetching members');
+        return;
       }
 
-      const accessToken = localStorage.getItem('accessToken') || localStorage.getItem('tm_access_token');
-      if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+      // projectIdentifier may already be a public_id or internal id
+      const path = `documents/project/${encodeURIComponent(projectIdentifier)}/members`;
+      const resp = await httpGetService(path);
+      
+      // Handle 200 status
+      const isSuccess = (resp && (resp.success || resp?.data?.success)) || 
+                       (resp?.status >= 200 && resp?.status < 300);
 
-      let projectHeaderValue = '';
-      if (selectedProject && (selectedProject.projectId || selectedProject.public_id)) projectHeaderValue = selectedProject.projectId ?? selectedProject.public_id;
-      else if (selectedProjectId) projectHeaderValue = selectedProjectId;
-
-      const bodyPayload = { userId, accessType };
-      if (projectHeaderValue) bodyPayload.project_public_id = projectHeaderValue;
-
-      const response = await fetchWithTenant(`/api/documents/${documentId}/assign-access`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(bodyPayload)
-      });
-
-      if (response && response.success) {
-        toast.success('Access assigned successfully!');
-        loadDocuments(selectedProjectId, 1, 25);
+      if (isSuccess) {
+        const payload = resp?.data ?? resp;
+        const membersArray = (payload && (payload.members || payload.data?.members)) || payload || [];
+        setMembers(Array.isArray(membersArray) ? membersArray : []);
       } else {
-        throw new Error(response.error || 'Failed to assign access');
+        throw new Error(resp?.error || 'Failed to load members');
       }
     } catch (err) {
-      console.error('Assign access error:', err);
-      toast.error('Failed to assign document access');
+      console.error('Failed to load project members:', err);
+      toast.error('Failed to load project members');
+    } finally {
+      setMembersLoading(false);
     }
   };
 
+  const openManageAccess = async (doc) => {
+    try {
+      const projectCandidate = doc?.projectId || doc?.project_public_id || doc?.project || selectedProjectId;
+      const projectIdentifier = projectCandidate || selectedProjectId;
+      setManagingDocId(doc?.documentId || doc?.id || null);
+      setSelectedAssignees([]);
+      setPermissionLevel('VIEW');
+      setShowManageAccessModal(true);
+      if (projectIdentifier) await fetchProjectMembers(projectIdentifier);
+    } catch (err) {
+      console.error('openManageAccess error:', err);
+      toast.error('Unable to open access manager');
+    }
+  };
+
+  const toggleAssignee = (assigneeId) => {
+    setSelectedAssignees(prev => {
+      if (prev.includes(assigneeId)) return prev.filter(id => id !== assigneeId);
+      return [...prev, assigneeId];
+    });
+  };
+
+  const submitAssignAccess = async () => {
+    if (!managingDocId) {
+      toast.error('No document selected');
+      return;
+    }
+    if (!selectedAssignees || selectedAssignees.length === 0) {
+      toast.error('Select at least one user to assign access');
+      return;
+    }
+    
+    // Get the project identifier from the managing document
+    const managingDoc = documents.find(d => d.documentId === managingDocId || d.id === managingDocId);
+    const projectIdentifier = managingDoc?.projectId || managingDoc?.project_public_id || managingDoc?.project || selectedProjectId;
+    
+    setAssigningAccess(true);
+    try {
+      // Normalize permission level and try bulk assign first
+      let normalizedPermission;
+      try {
+        normalizedPermission = normalizeAccessType(permissionLevel || 'VIEW');
+      } catch (err) {
+        toast.error(err.message);
+        setAssigningAccess(false);
+        return;
+      }
+
+      const bulkPayload = {
+        documentId: managingDocId,
+        assigneeIds: Array.isArray(selectedAssignees) ? selectedAssignees : [selectedAssignees],
+        accessType: normalizedPermission,
+        projectId: projectIdentifier || undefined
+      };
+      
+      console.debug('[Documents] submitAssignAccess bulk payload:', bulkPayload);
+
+      let aggregatedResults = [];
+      let serverSuccessMessage = null;
+      let hasSuccess = false;
+      
+      try {
+        const resp = await httpPostService('documents/access', bulkPayload);
+        console.debug('[Documents] API raw response:', resp);
+        
+        const result = resp?.data ?? resp;
+        console.debug('[Documents] API response data:', result);
+
+        // Check HTTP status code first
+        const httpStatus = resp?.status || resp?.statusCode || 200;
+        const isHttpSuccess = httpStatus >= 200 && httpStatus < 300;
+        
+        // Check success flags
+        const hasSuccessFlag = result?.success === true || result?.status === 'success';
+        
+        console.debug('[Documents] Status check:', {
+          httpStatus,
+          isHttpSuccess,
+          hasSuccessFlag,
+          resultSuccess: result?.success,
+          resultStatus: result?.status
+        });
+
+        if (isHttpSuccess || hasSuccessFlag) {
+          hasSuccess = true;
+          serverSuccessMessage = result?.message || result?.data?.message || 'Access assigned successfully';
+          
+          // Extract assignments from the response
+          const assignments = result?.data?.assignments || result?.assignments || result?.data?.results || result?.results || [];
+          
+          console.debug('[Documents] Assignments found:', assignments);
+          
+          if (Array.isArray(assignments) && assignments.length > 0) {
+            aggregatedResults = assignments.map(a => {
+              const raw = a.accessType ?? a.permissionLevel ?? a.action ?? a.access_type ?? permissionLevel;
+              let norm;
+              try {
+                norm = normalizeAccessType(raw);
+              } catch (e) {
+                console.warn('[Documents] Invalid accessType from server, defaulting to VIEW:', raw);
+                norm = permissionLevel || 'VIEW';
+              }
+              return {
+                assigneeId: a.userId ?? a.assigneeId ?? a.id ?? a.user_id,
+                permissionLevel: norm
+              };
+            });
+          } else {
+            // If no assignments array but success, assume it worked
+            aggregatedResults = selectedAssignees.map(assigneeId => ({
+              assigneeId,
+              permissionLevel: normalizedPermission || 'VIEW'
+            }));
+          }
+          
+          console.debug('[Documents] Aggregated results:', aggregatedResults);
+          
+          // Show success message and close modal
+          toast.success(serverSuccessMessage);
+          setShowManageAccessModal(false);
+        } else {
+          // Check if there's an error message in the response
+          const errorMsg = result?.error || result?.message || 'Failed to assign access';
+          console.error('[Documents] API returned error:', errorMsg);
+          throw new Error(errorMsg);
+        }
+      } catch (err) {
+        console.error('[Documents] Bulk assign failed:', err.message || err);
+        
+        // If we already have success from HTTP 200, don't fallback
+        if (hasSuccess) {
+          console.log('[Documents] Already succeeded, skipping fallback');
+        } else {
+          // Fallback to individual assignments if bulk fails
+          console.log('[Documents] Falling back to individual assignments...');
+          
+          let successfulCount = 0;
+          let failedCount = 0;
+          
+          for (const assignee of selectedAssignees) {
+            try {
+              const singlePayload = {
+                documentId: managingDocId,
+                assigneeId: assignee,
+                accessType: normalizedPermission || 'VIEW',
+                projectId: projectIdentifier || undefined
+              };
+              
+              console.debug('[Documents] Individual payload:', singlePayload);
+              
+              const resp = await httpPostService('documents/access', singlePayload);
+              const result = resp?.data ?? resp;
+              
+              console.debug('[Documents] Individual response:', result);
+              
+              // Check HTTP status code for individual request
+              const httpStatus = resp?.status || resp?.statusCode || 200;
+              const isHttpSuccess = httpStatus >= 200 && httpStatus < 300;
+              
+              // Check success flags for individual request
+              const hasSuccessFlag = result?.success === true || result?.status === 'success';
+              
+              if (isHttpSuccess || hasSuccessFlag) {
+                aggregatedResults.push({
+                  assigneeId: assignee,
+                  permissionLevel: normalizedPermission || 'VIEW'
+                });
+                successfulCount++;
+              } else {
+                aggregatedResults.push({
+                  assigneeId: assignee,
+                  error: result?.error || result?.message || 'failed'
+                });
+                failedCount++;
+              }
+            } catch (singleErr) {
+              console.error(`[Documents] Failed for assignee ${assignee}:`, singleErr);
+              aggregatedResults.push({
+                assigneeId: assignee,
+                error: singleErr.message || 'failed'
+              });
+              failedCount++;
+            }
+          }
+          
+          // Show summary of results
+          if (successfulCount > 0) {
+            toast.success(`Successfully assigned access to ${successfulCount} users${failedCount > 0 ? `, ${failedCount} failed` : ''}`);
+            // Close modal on partial success
+            setShowManageAccessModal(false);
+          } else {
+            toast.error('Failed to assign access to any users');
+            // Don't close modal if all failed
+          }
+        }
+      }
+
+      // Update UI based on aggregatedResults
+      if (aggregatedResults.length > 0) {
+        setMembers(prev => prev.map(m => {
+          const match = aggregatedResults.find(r => 
+            String(r.assigneeId) === String(m.id) || 
+            String(r.assigneeId) === String(m.publicId) ||
+            String(r.assigneeId) === String(m.userId)
+          );
+          if (match && !match.error) {
+            return { ...m, permissionLevel: match.permissionLevel || permissionLevel };
+          }
+          return m;
+        }));
+      }
+
+      // Refresh documents list if any success
+      if (hasSuccess || aggregatedResults.some(r => !r.error)) {
+        loadDocuments(selectedProjectId, 1, 25);
+      }
+    } catch (err) {
+      console.error('[Documents] submitAssignAccess error:', err);
+      toast.error(err.message || 'Failed to assign access');
+    } finally {
+      setAssigningAccess(false);
+    }
+  };
+
+  // Determine if current user has only VIEW access for a document
+  const userHasViewOnly = useCallback((doc) => {
+    if (!doc) return false;
+    
+    // Admins and managers can always download
+    if (['admin', 'manager'].includes(userRole)) return false;
+    
+    // Check user's access from accessMembers array
+    const membersList = doc.accessMembers || [];
+    const userAccess = membersList.find(m => 
+      String(m.userId) === String(currentUserId) || 
+      String(m.id) === String(currentUserId)
+    );
+    
+    if (!userAccess) {
+      // If user is not in accessMembers, they might have default access
+      // For safety, assume VIEW only for employees
+      return userRole === 'employee';
+    }
+    
+    const accessType = (userAccess.accessType || userAccess.permissionLevel || '').toString().toUpperCase();
+    
+    // Only truly restrictive access types should prevent download
+    // VIEWONLY and READONLY mean view only, no download
+    // VIEW now allows download
+    return ['VIEWONLY', 'READONLY', 'NONE'].includes(accessType);
+  }, [userRole, currentUserId]);
+
+  // Check if user can download the document
+  const userCanDownload = useCallback((doc) => {
+    if (!doc) return false;
+    
+    // Admins and managers can always download
+    if (['admin', 'manager'].includes(userRole)) return true;
+    
+    // Check user's access from accessMembers array
+    const membersList = doc.accessMembers || [];
+    const userAccess = membersList.find(m => 
+      String(m.userId) === String(currentUserId) || 
+      String(m.id) === String(currentUserId)
+    );
+    
+    if (!userAccess) {
+      // If user is not in accessMembers, check if they're the uploader
+      const isUploader = String(doc.uploadedById) === String(currentUserId) || 
+                         String(doc.uploadedBy) === String(currentUserId);
+      return isUploader || userRole !== 'employee';
+    }
+    
+    const accessType = (userAccess.accessType || userAccess.permissionLevel || '').toString().toUpperCase();
+    
+    // VIEW, DOWNLOAD, EDIT, OWNER permissions allow download
+    // VIEW now includes download permission
+    return ['VIEW', 'DOWNLOAD', 'EDIT', 'OWNER'].includes(accessType);
+  }, [userRole, currentUserId]);
+
+  // Filter members for display (hide OWNER details for employees)
+  const filterMembersForDisplay = useCallback((membersList) => {
+    if (!Array.isArray(membersList)) return [];
+    
+    if (userRole === 'employee') {
+      return membersList.filter(m => {
+        const accessType = (m.accessType || m.permissionLevel || '').toString().toUpperCase();
+        return accessType !== 'OWNER';
+      });
+    }
+    
+    return membersList;
+  }, [userRole]);
+
+  // Get user's access level for a document
+  const getUserAccessLevel = useCallback((doc) => {
+    if (!doc) return 'NONE';
+    
+    // Admins have full access
+    if (userRole === 'admin') return 'ADMIN';
+    
+    // Managers have manager access
+    if (userRole === 'manager') return 'MANAGER';
+    
+    // Check user's access from accessMembers array
+    const membersList = doc.accessMembers || [];
+    const userAccess = membersList.find(m => 
+      String(m.userId) === String(currentUserId) || 
+      String(m.id) === String(currentUserId)
+    );
+    
+    if (!userAccess) {
+      // Check if user is the uploader
+      const isUploader = String(doc.uploadedById) === String(currentUserId) || 
+                         String(doc.uploadedBy) === String(currentUserId);
+      return isUploader ? 'OWNER' : 'NONE';
+    }
+    
+    const accessType = (userAccess.accessType || userAccess.permissionLevel || '').toString().toUpperCase();
+    return accessType || 'VIEW';
+  }, [userRole, currentUserId]);
+
   // Filter documents
-  const filteredDocuments = documents.filter(doc => {
-    const matchesSearch = doc.fileName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         doc.uploadedBy?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         doc.entityType?.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredDocuments = useMemo(() => {
+    return documents.filter(doc => {
+      const matchesSearch = doc.fileName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           doc.uploadedBy?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           doc.entityType?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesFilter = filterType === 'all' || doc.entityType === filterType;
+      const matchesFilter = filterType === 'all' || doc.entityType === filterType;
 
-    return matchesSearch && matchesFilter;
-  });
+      return matchesSearch && matchesFilter;
+    });
+  }, [documents, searchQuery, filterType]);
 
   // Get file icon based on type
   const getFileIcon = (mimeType) => {
@@ -428,96 +685,107 @@ const Documents = () => {
     return userRole === 'admin';
   };
 
-  // Load documents when selected project changes
-  useEffect(() => {
-    console.log('useEffect triggered - selectedProjectId:', selectedProjectId);
-    loadDocuments(selectedProjectId, 1, 25);
-  }, [loadDocuments, selectedProjectId]);
-
-  // Load projects on mount
+  // Load projects once on mount
   useEffect(() => {
     loadProjects();
-  }, [loadProjects]);
+  }, []);
 
+  // Main component return
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="container mx-auto px-4 py-8">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
         <div>
-          <h2 className="text-3xl font-bold text-gray-800">Document Management</h2>
-          <p className="text-gray-600 mt-1">Select a project to view and manage its documents</p>
+          <h1 className="text-3xl font-bold text-gray-900">Documents</h1>
+          <p className="text-gray-600 mt-2">
+            Manage and organize project documents, files, and resources
+          </p>
         </div>
 
-        <div className="flex gap-3">
-          {canUpload() && (
-            <button
-              onClick={() => setShowUploadModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-            >
-              <Upload className="w-4 h-4" />
-              Upload Document
-            </button>
-          )}
-        </div>
+        {canUpload() && (
+          <button
+            onClick={() => setShowUploadModal(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Upload className="w-5 h-5" />
+            Upload Document
+          </button>
+        )}
       </div>
 
-      {/* Filters and Search */}
-      <div className="bg-white rounded-xl border p-4 mb-6">
+      {/* Search and Filter Bar */}
+      <div className="bg-white rounded-xl border p-6 mb-8">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search documents..."
+              placeholder="Search documents by name, type, or uploader..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">All Types</option>
-            <option value="PROJECT">Projects</option>
-            <option value="CLIENT">Clients</option>
-            <option value="TASK">Tasks</option>
-            <option value="GENERAL">General</option>
-          </select>
+          <div className="flex gap-4">
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Types</option>
+              <option value="PROJECT">Projects</option>
+              <option value="CLIENT">Clients</option>
+              <option value="TASK">Tasks</option>
+              <option value="GENERAL">General</option>
+            </select>
 
-          <select
-            value={selectedProjectId}
-            onChange={(e) => {
-              const newValue = e.target.value;
-              console.log('Project selected:', newValue);
-              setSelectedProjectId(newValue);
-            }}
-            disabled={projectsLoading}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-          >
-            <option value="">
-              {projectsLoading ? 'Loading projects...' : 'All Projects'}
-            </option>
-            {projects.map(project => {
-              const val = project.projectId ?? project.public_id ?? project.id ?? project._id;
-              const label = project.projectName ?? project.name ?? project.title ?? project.project_name ?? `Project ${val ?? ''}`;
-              return (
-                <option key={val} value={val}>
-                  {label}
-                </option>
-              );
-            })}
-          </select>
+            <select
+              value={selectedProjectId}
+              onChange={(e) => {
+                const newValue = e.target.value;
+                console.log('Project selected:', newValue);
+                setSelectedProjectId(newValue);
+                // Immediately load documents for the selected project
+                loadDocuments(newValue, 1, 25);
+              }}
+              disabled={projectsLoading}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            >
+              <option value="">
+                {projectsLoading ? 'Loading projects...' : 'All Projects'}
+              </option>
+              {projects.map(project => {
+                const val = project.projectId ?? project.public_id ?? project.id ?? project._id;
+                const label = project.projectName ?? project.name ?? project.title ?? project.project_name ?? `Project ${val ?? ''}`;
+                return (
+                  <option key={val} value={val}>
+                    {label}
+                  </option>
+                );
+              })}
+            </select>
 
-          <button
-            onClick={() => setSelectedProjectId('')}
-            disabled={loading}
-            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors"
-          >
-            Clear Filter
-          </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => loadDocuments(selectedProjectId, 1, 25)}
+                disabled={loading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              >
+                Load Documents
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedProjectId('');
+                  loadDocuments('', 1, 25);
+                }}
+                disabled={loading}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors"
+              >
+                Clear Filter
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -561,83 +829,145 @@ const Documents = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredDocuments.map((doc) => (
-            <div key={doc.documentId} className="bg-white rounded-xl border hover:shadow-lg transition-shadow p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  {getFileIcon(doc.mimeType)}
-                  <div>
-                    <h3 className="font-semibold text-gray-900 truncate max-w-[200px]" title={doc.fileName}>
-                      {doc.fileName}
-                    </h3>
-                    <p className="text-sm text-gray-500">{formatFileSize(doc.fileSize)}</p>
+          {filteredDocuments.map((doc) => {
+            const userAccessLevel = getUserAccessLevel(doc);
+            const canDownload = userCanDownload(doc);
+            const displayMembers = filterMembersForDisplay(doc.accessMembers || []);
+            
+            return (
+              <div key={doc.documentId || doc.id} className="bg-white rounded-xl border hover:shadow-lg transition-shadow p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    {getFileIcon(doc.mimeType)}
+                    <div>
+                      <h3 className="font-semibold text-gray-900 truncate max-w-[200px]" title={doc.fileName}>
+                        {doc.fileName}
+                      </h3>
+                      <p className="text-sm text-gray-500">{formatFileSize(doc.fileSize)}</p>
+                    </div>
                   </div>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    doc.entityType === 'PROJECT' ? 'bg-blue-100 text-blue-800' :
+                    doc.entityType === 'CLIENT' ? 'bg-green-100 text-green-800' :
+                    doc.entityType === 'TASK' ? 'bg-purple-100 text-purple-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {doc.entityType}
+                  </span>
                 </div>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  doc.entityType === 'PROJECT' ? 'bg-blue-100 text-blue-800' :
-                  doc.entityType === 'CLIENT' ? 'bg-green-100 text-green-800' :
-                  doc.entityType === 'TASK' ? 'bg-purple-100 text-purple-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
-                  {doc.entityType}
-                </span>
-              </div>
 
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <User className="w-4 h-4" />
-                  <span>{doc.uploadedBy || 'Unknown'}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Calendar className="w-4 h-4" />
-                  <span>{new Date(doc.uploadedAt).toLocaleDateString()}</span>
-                </div>
-                {doc.entityId && (
+                <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Shield className="w-4 h-4" />
-                    <span>ID: {doc.entityId}</span>
+                    <User className="w-4 h-4" />
+                    <span>{doc.uploadedBy || 'Unknown'}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Calendar className="w-4 h-4" />
+                    <span>{new Date(doc.uploadedAt).toLocaleDateString()}</span>
+                  </div>
+                  
+                  {/* Show user's access level */}
+                  <div className="flex items-center gap-2 text-sm">
+                    <Shield className="w-4 h-4 text-gray-500" />
+                    <span className={`font-medium ${
+                      userAccessLevel === 'OWNER' ? 'text-green-600' :
+                      userAccessLevel === 'ADMIN' ? 'text-red-600' :
+                      userAccessLevel === 'MANAGER' ? 'text-blue-600' :
+                      userAccessLevel === 'EDIT' ? 'text-purple-600' :
+                      userAccessLevel === 'DOWNLOAD' ? 'text-blue-500' :
+                      'text-gray-600'
+                    }`}>
+                      Your access: {userAccessLevel}
+                    </span>
+                  </div>
+
+                  {displayMembers.length > 0 && (
+                    <div className="mt-2">
+                      <div className="flex items-center justify-between">
+                        <div className="text-xs text-gray-500 mb-1">
+                          {displayMembers.length} member{displayMembers.length !== 1 ? 's' : ''}
+                        </div>
+                        <button
+                          onClick={() => {
+                            setModalMembers(displayMembers);
+                            setShowMembersModal(true);
+                          }}
+                          className="text-xs text-blue-600 hover:underline"
+                        >
+                          View Members
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {displayMembers.slice(0, 3).map((m) => (
+                          <div key={m.userId} className="text-xs bg-gray-100 px-2 py-1 rounded-md text-gray-700">
+                            <strong className="mr-1">{m.name || `User ${m.userId}`}</strong>
+                            <span className="uppercase">
+                              {(m.accessType && m.accessType !== '') ? m.accessType : 'VIEW'}
+                            </span>
+                            {m.role && (
+                              <span className="ml-1 text-gray-400">({m.role})</span>
+                            )}
+                          </div>
+                        ))}
+                        {displayMembers.length > 3 && (
+                          <div className="text-xs bg-gray-100 px-2 py-1 rounded-md text-gray-700">
+                            +{displayMembers.length - 3} more
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handlePreview(doc.documentId || doc.id)}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
+                  >
+                    <Eye className="w-4 h-4" />
+                    Preview
+                  </button>
+                  
+                  {/* Show download button if user can download (VIEW, DOWNLOAD, EDIT, OWNER) */}
+                  {canDownload ? (
+                    <button
+                      onClick={() => handleDownload(doc.documentId || doc.id, doc.fileName)}
+                      disabled={downloading === (doc.documentId || doc.id)}
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 disabled:opacity-50 transition-colors"
+                    >
+                      {downloading === (doc.documentId || doc.id) ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-700"></div>
+                      ) : (
+                        <Download className="w-4 h-4" />
+                      )}
+                      Download
+                    </button>
+                  ) : (
+                    <button
+                      disabled
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gray-100 text-gray-500 rounded-lg cursor-not-allowed"
+                      title="You don't have permission to download this document"
+                    >
+                      <Download className="w-4 h-4" />
+                      No Download
+                    </button>
+                  )}
+                </div>
+
+                {canAssignAccess() && (
+                  <div className="mt-3 pt-3 border-t">
+                    <button
+                      onClick={() => openManageAccess(doc)}
+                      className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <Shield className="w-4 h-4" />
+                      Manage Access
+                    </button>
                   </div>
                 )}
               </div>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handlePreview(doc.documentId)}
-                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
-                >
-                  <Eye className="w-4 h-4" />
-                  Preview
-                </button>
-                <button
-                  onClick={() => handleDownload(doc.documentId, doc.fileName)}
-                  disabled={downloading === doc.documentId}
-                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 disabled:opacity-50 transition-colors"
-                >
-                  {downloading === doc.documentId ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-700"></div>
-                  ) : (
-                    <Download className="w-4 h-4" />
-                  )}
-                  Download
-                </button>
-              </div>
-
-              {canAssignAccess() && (
-                <div className="mt-3 pt-3 border-t">
-                  <button
-                    onClick={() => {
-                      // TODO: Implement access assignment modal
-                      toast.info('Access assignment feature coming soon');
-                    }}
-                    className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
-                  >
-                    <Shield className="w-4 h-4" />
-                    Manage Access
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -678,7 +1008,7 @@ const Documents = () => {
                   onChange={(e) => setUploadForm({ ...uploadForm, entityType: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  {getEntityTypes().map(type => (
+                  {entityTypes.map(type => (
                     <option key={type.value} value={type.value}>
                       {type.label}
                     </option>
@@ -729,6 +1059,133 @@ const Documents = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Manage Access Modal */}
+      {showManageAccessModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-lg w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Manage Document Access</h3>
+              <button 
+                onClick={() => setShowManageAccessModal(false)} 
+                className="text-gray-500 hover:text-gray-700"
+                disabled={assigningAccess}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Project Members</label>
+                {membersLoading ? (
+                  <div className="text-sm text-gray-500">Loading members...</div>
+                ) : members.length === 0 ? (
+                  <div className="text-sm text-gray-500">No members found for this project.</div>
+                ) : (
+                  <div className="max-h-48 overflow-auto border rounded-md p-2">
+                    {members.map(m => (
+                      <label key={m.id || m.publicId} className="flex items-center gap-2 py-1">
+                        <input
+                          type="checkbox"
+                          checked={selectedAssignees.includes(m.id || m.publicId)}
+                          onChange={() => toggleAssignee(m.id || m.publicId)}
+                          disabled={assigningAccess}
+                        />
+                        <span className="text-sm">{m.name} <span className="text-xs text-gray-400">({m.role})</span></span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Permission Level</label>
+                <select 
+                  value={permissionLevel} 
+                  onChange={(e) => setPermissionLevel(e.target.value)} 
+                  className="w-full px-3 py-2 border rounded-md"
+                  disabled={assigningAccess}
+                >
+                  <option value="VIEW">View</option>
+                  <option value="DOWNLOAD">Download</option>
+                  <option value="EDIT">Edit</option>
+                  <option value="OWNER">Owner</option>
+                  <option value="NONE">Revoke</option>
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button 
+                  onClick={() => setShowManageAccessModal(false)} 
+                  className="px-4 py-2 border rounded-md"
+                  disabled={assigningAccess}
+                >
+                  Cancel
+                </button>
+                <button 
+                  disabled={assigningAccess || membersLoading} 
+                  onClick={submitAssignAccess} 
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md disabled:opacity-50"
+                >
+                  {assigningAccess ? 'Assigning...' : 'Assign Access'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Members Detail Modal */}
+      {showMembersModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Document Members</h3>
+              <button onClick={() => setShowMembersModal(false)} className="text-gray-500 hover:text-gray-700">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 max-h-64 overflow-auto">
+              {modalMembers.length === 0 ? (
+                <div className="text-sm text-gray-500">No members available.</div>
+              ) : (
+                modalMembers.map(m => {
+                  const accessType = (m.accessType || m.permissionLevel || '').toString().toUpperCase();
+                  return (
+                    <div key={m.userId} className="flex items-center justify-between p-2 border rounded-md">
+                      <div>
+                        <div className="text-sm font-medium">{m.name || `User ${m.userId}`}</div>
+                        <div className="text-xs text-gray-500">ID: {m.userId}</div>
+                        {m.role && (
+                          <div className="text-xs text-gray-500">Role: {m.role}</div>
+                        )}
+                      </div>
+                      <div className={`text-sm font-semibold uppercase px-2 py-1 rounded ${
+                        accessType === 'OWNER' ? 'bg-green-100 text-green-800' :
+                        accessType === 'ADMIN' ? 'bg-red-100 text-red-800' :
+                        accessType === 'MANAGER' ? 'bg-blue-100 text-blue-800' :
+                        accessType === 'EDIT' ? 'bg-purple-100 text-purple-800' :
+                        accessType === 'DOWNLOAD' ? 'bg-blue-50 text-blue-700' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {accessType || 'VIEW'}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            <div className="flex justify-end pt-4">
+              <button onClick={() => setShowMembersModal(false)} className="px-4 py-2 bg-gray-200 rounded-md">
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
