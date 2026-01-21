@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Users, ClipboardList, Clock, AlertCircle,
   CheckCircle, Briefcase, ChevronRight, 
@@ -20,10 +20,10 @@ const STATIC_DATA = {
     activeProjects: 2
   },
   taskDistribution: [
-    { name: 'Completed', value: 38, color: '#10B981' },
-    { name: 'In Progress', value: 25, color: '#3B82F6' },
-    { name: 'Not Started', value: 25, color: '#F59E0B' },
-    { name: 'Overdue', value: 13, color: '#EF4444' }
+    { name: 'Completed', value: 38, color: '#059669' },
+    { name: 'In Progress', value: 25, color: '#1D4ED8' },
+    { name: 'Not Started', value: 25, color: '#B45309' },
+    { name: 'Overdue', value: 13, color: '#DC2626' }
   ],
   weeklyTrends: [
     { day: 'Mon', tasks: 12 },
@@ -88,14 +88,44 @@ const STATIC_DATA = {
   ]
 };
 
+import { httpGetService } from '../App/httpHandler';
+
 const Dashboard = () => {
-  const [metrics] = useState(STATIC_DATA.dashboardMetrics);
-  const [taskDistribution] = useState(STATIC_DATA.taskDistribution);
-  const [weeklyTrends] = useState(STATIC_DATA.weeklyTrends);
-  const [topEmployees] = useState(STATIC_DATA.topEmployees);
-  const [clientWorkload] = useState(STATIC_DATA.clientWorkload);
-  const [recentActivities] = useState(STATIC_DATA.recentActivities);
-  const [activeProjects] = useState(STATIC_DATA.activeProjects);
+  const [metrics, setMetrics] = useState(STATIC_DATA.dashboardMetrics);
+  const [taskDistribution, setTaskDistribution] = useState(STATIC_DATA.taskDistribution);
+  const [weeklyTrends, setWeeklyTrends] = useState(STATIC_DATA.weeklyTrends);
+  const [topEmployees, setTopEmployees] = useState(STATIC_DATA.topEmployees);
+  const [clientWorkload, setClientWorkload] = useState(STATIC_DATA.clientWorkload);
+  const [recentActivities, setRecentActivities] = useState(STATIC_DATA.recentActivities);
+  const [activeProjects, setActiveProjects] = useState(STATIC_DATA.activeProjects);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const loadDashboard = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const resp = await httpGetService('/api/admin/dashboard');
+        const payload = resp && resp.data ? resp.data : resp;
+
+        // Map response fields with sensible fallbacks
+        if (payload.dashboardMetrics) setMetrics(payload.dashboardMetrics);
+        if (payload.taskDistribution) setTaskDistribution(payload.taskDistribution);
+        if (payload.weeklyTrends) setWeeklyTrends(payload.weeklyTrends);
+        if (payload.topEmployees) setTopEmployees(payload.topEmployees);
+        if (payload.clientWorkload) setClientWorkload(payload.clientWorkload);
+        if (payload.recentActivities) setRecentActivities(payload.recentActivities);
+        if (payload.activeProjects) setActiveProjects(payload.activeProjects);
+      } catch (err) {
+        setError(err?.message || 'Failed to load dashboard');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboard();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -186,12 +216,13 @@ const Dashboard = () => {
                     outerRadius={80}
                     paddingAngle={2}
                     dataKey="value"
+                    labelLine={false}
                   >
                     {taskDistribution.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
+                      <Cell key={`cell-${index}`} fill={entry.color} stroke="#ffffff" strokeWidth={2} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => [`${value}%`, 'Percentage']} />
+                  <Tooltip formatter={(value, name) => [value, name]} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -202,7 +233,7 @@ const Dashboard = () => {
                     className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: item.color }}
                   />
-                  <span className="text-sm text-gray-600">{item.name}: {item.value}%</span>
+                  <span className="text-sm text-gray-600">{item.name}: {item.value}</span>
                 </div>
               ))}
             </div>
@@ -218,12 +249,12 @@ const Dashboard = () => {
             </div>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={weeklyTrends}>
+                <BarChart data={weeklyTrends} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="day" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="tasks" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                  <XAxis dataKey="day" tick={{ fill: '#6b7280', fontSize: 12 }} />
+                  <YAxis tick={{ fill: '#6b7280', fontSize: 12 }} domain={[0, 'dataMax + 5']} />
+                  <Tooltip wrapperStyle={{ borderRadius: 8 }} contentStyle={{ borderRadius: 8 }} />
+                  <Bar dataKey="tasks" fill="#3B82F6" stroke="#1E40AF" barSize={28} radius={[6,6,0,0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
