@@ -5,38 +5,77 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import ProjectDropdown from '../components/ProjectDropdown';
 import DatePicker from '../components/DatePicker';
-import {
-  fetchProjects,
-  generateProjectReport,
-  clearReport
-} from '../redux/slices/reportsSlice';
+import { Chart } from '../components/Chart';
+import { fetchProjects } from '../redux/slices/reportsSlice';
+import { httpGetService, httpPostService } from '../App/httpHandler';
 
 const ReportPage = () => {
   const dispatch = useDispatch();
-  const { projects, report, loading, error } = useSelector(
-    (s) => s.reports || { projects: [], report: null, loading: false, error: null }
-  );
+  const projects = useSelector((s) => (s.reports && s.reports.projects) || []);
 
   const [projectId, setProjectId] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [startDate, setStartDate] = useState(moment().startOf('month').format('YYYY-MM-DD'));
+  const [endDate, setEndDate] = useState(moment().endOf('month').format('YYYY-MM-DD'));
+
+  const [overview, setOverview] = useState(null);
+  const [overviewLoading, setOverviewLoading] = useState(false);
+  const [overviewError, setOverviewError] = useState(null);
+  const [activeTab, setActiveTab] = useState('taskStatus');
+
+  const [report, setReport] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     dispatch(fetchProjects());
-    return () => dispatch(clearReport());
   }, [dispatch]);
+
+  useEffect(() => {
+    // load overview on mount or when date range changes
+    const loadOverview = async () => {
+      setOverviewLoading(true);
+      setOverviewError(null);
+      try {
+        const qs = `?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`;
+        const resp = await httpGetService(`/api/reports/overview${qs}`);
+        // resp may have shape { success, data }
+        const data = (resp && resp.data) ? resp.data : resp;
+        setOverview(data || null);
+      } catch (err) {
+        setOverviewError(err?.message || 'Failed to load overview');
+        setOverview(null);
+      } finally {
+        setOverviewLoading(false);
+      }
+    };
+
+    loadOverview();
+  }, [startDate, endDate, dispatch]);
 
   const handleReset = () => {
     setProjectId('');
-    setStartDate('');
-    setEndDate('');
-    dispatch(clearReport());
+    setStartDate(moment().startOf('month').format('YYYY-MM-DD'));
+    setEndDate(moment().endOf('month').format('YYYY-MM-DD'));
+    setReport(null);
+    setError(null);
   };
 
-  const handleGenerate = (e) => {
+  const handleGenerate = async (e) => {
     e.preventDefault();
     if (!projectId || !startDate || !endDate) return;
-    dispatch(generateProjectReport({ projectId, startDate, endDate }));
+    setLoading(true);
+    setError(null);
+    setReport(null);
+    try {
+      const payload = { projectId, startDate, endDate };
+      const resp = await httpPostService('/api/reports/project', payload);
+      const data = (resp && resp.data) ? resp.data : resp;
+      setReport(data || null);
+    } catch (err) {
+      setError(err?.message || 'Failed to generate report');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const downloadPDF = async () => {
@@ -55,6 +94,7 @@ const ReportPage = () => {
     pdf.save(`project-report-${projectId}.pdf`);
   };
 
+  // derive reportTasks/summary/statusDistribution/userProductivity from either project report or overview
   const reportTasks = Array.isArray(report?.tasks) ? report.tasks : [];
   const summary = report?.summary ?? {};
 
@@ -84,8 +124,9 @@ const ReportPage = () => {
     summary.totalHoursLogged ??
     reportTasks.reduce((s, t) => s + (parseFloat(t.hoursLogged) || 0), 0);
 
-  const statusDistribution = report?.statusDistribution ?? {};
-  const userProductivity = report?.userProductivity ?? [];
+  const statusDistribution = (report && report.statusDistribution) || (overview && overview.taskStatus) || {};
+  const userProductivity = (report && report.userProductivity) || (overview && overview.userProductivity) || [];
+  const clientSummary = overview?.clientSummary ?? [];
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -165,26 +206,24 @@ const ReportPage = () => {
         </form>
 
         {/* STATES */}
+        {overviewLoading && (
+          <div className="mt-6 text-center text-gray-600">Loading overview...</div>
+        )}
+
+        {overviewError && (
+          <div className="mt-6 text-center text-red-600 font-medium">{overviewError}</div>
+        )}
+
         {loading && (
-          <div className="mt-6 text-center text-gray-600">
-            Generating report, please wait...
-          </div>
+          <div className="mt-6 text-center text-gray-600">Generating report, please wait...</div>
         )}
 
         {error && (
-          <div className="mt-6 text-center text-red-600 font-medium">
-            {error}
-          </div>
-        )}
-
-        {!loading && !report && !error && (
-          <div className="mt-10 text-center text-gray-500">
-            Select a project and date range to generate a report
-          </div>
+          <div className="mt-6 text-center text-red-600 font-medium">{error}</div>
         )}
 
         {/* REPORT CONTENT */}
-        {report && (
+        {report ? (
           <div id="report-content" className="mt-8">
             {/* PROJECT HEADER */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
@@ -333,7 +372,118 @@ const ReportPage = () => {
               </div>
             </div>
           </div>
-        )}
+        ) : overview ? (
+          <div id="report-content" className="mt-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <SummaryCard title="Tasks Created" value={(overview.summary?.tasksCreated ?? 0)} />
+                <SummaryCard title="Tasks Completed" value={(overview.summary?.tasksCompleted ?? 0)} color="text-green-600" />
+                <SummaryCard title="Hours Logged" value={`${(overview.summary?.hoursLogged ?? 0)}h`} color="text-purple-600" />
+                <SummaryCard title="Active Projects" value={(overview.summary?.activeProjects ?? 0)} />
+              </div>
+
+              <div className="mt-6">
+                <div className="flex gap-3 mb-4">
+                  <button
+                    onClick={() => setActiveTab('taskStatus')}
+                    className={`px-4 py-2 rounded-full border ${activeTab === 'taskStatus' ? 'bg-blue-600 text-white' : 'bg-white'}`}>
+                    Task Status
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('userProductivity')}
+                    className={`px-4 py-2 rounded-full border ${activeTab === 'userProductivity' ? 'bg-blue-600 text-white' : 'bg-white'}`}>
+                    User Productivity
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('clientSummary')}
+                    className={`px-4 py-2 rounded-full border ${activeTab === 'clientSummary' ? 'bg-blue-600 text-white' : 'bg-white'}`}>
+                    Client Summary
+                  </button>
+                </div>
+
+                {activeTab === 'taskStatus' && (
+                  <div className="bg-white border rounded-xl p-4">
+                    <h3 className="text-sm font-semibold text-gray-600 mb-3">Task Status Distribution</h3>
+                    <Chart
+                      data={[
+                        { name: 'Completed', total: overview.taskStatus?.completed ?? 0 },
+                        { name: 'In Progress', total: overview.taskStatus?.inProgress ?? 0 },
+                        { name: 'Not Started', total: overview.taskStatus?.notStarted ?? 0 },
+                        { name: 'Overdue', total: overview.taskStatus?.overdue ?? 0 },
+                      ]}
+                      dataKey='total'
+                      height={280}
+                    />
+                  </div>
+                )}
+
+                {activeTab === 'userProductivity' && (
+                  <div className="mt-6 bg-white border rounded-xl p-4">
+                    <h3 className="text-sm font-semibold text-gray-600 mb-3">User Productivity Report</h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead className="text-left text-gray-600">
+                          <tr>
+                            <th className="p-3">User</th>
+                            <th className="p-3">Role</th>
+                            <th className="p-3">Total Tasks</th>
+                            <th className="p-3">Completed</th>
+                            <th className="p-3">In Progress</th>
+                            <th className="p-3">Hours Logged</th>
+                            <th className="p-3">Completion Rate</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {overview.userProductivity && overview.userProductivity.map((u) => (
+                            <tr key={u.userId} className="border-t">
+                              <td className="p-3">{u.userName}</td>
+                              <td className="p-3">{u.role}</td>
+                              <td className="p-3">{u.totalTasks ?? 0}</td>
+                              <td className="p-3 text-green-600">{u.completed ?? 0}</td>
+                              <td className="p-3 text-blue-600">{u.inProgress ?? 0}</td>
+                              <td className="p-3">{u.hoursLogged ?? 0}h</td>
+                              <td className="p-3"><span className="px-2 py-1 bg-red-100 rounded-full text-xs">{u.completionRate ?? 0}%</span></td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'clientSummary' && (
+                  <div className="mt-6 bg-white border rounded-xl p-4">
+                    <h3 className="text-sm font-semibold text-gray-600 mb-3">Client Task Summary</h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead className="text-left text-gray-600">
+                          <tr>
+                            <th className="p-3">Client</th>
+                            <th className="p-3">Projects</th>
+                            <th className="p-3">Total Tasks</th>
+                            <th className="p-3">Completed</th>
+                            <th className="p-3">In Progress</th>
+                            <th className="p-3">Overdue</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {clientSummary.map((c) => (
+                            <tr key={c.clientId} className="border-t">
+                              <td className="p-3">{c.clientName}</td>
+                              <td className="p-3">{c.projects}</td>
+                              <td className="p-3">{c.totalTasks}</td>
+                              <td className="p-3 text-green-600">{c.completed}</td>
+                              <td className="p-3 text-blue-600">{c.inProgress}</td>
+                              <td className="p-3 text-red-600">{c.overdue}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : null}
       </div>
     </div>
   );

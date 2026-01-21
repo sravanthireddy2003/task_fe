@@ -528,7 +528,13 @@ const Settings = () => {
     const load = async () => {
       try {
         setLoading(true);
-        const res = await fetchWithTenant('/api/admin/settings', { method: 'GET' });
+        const role = (user?.role || '').toString().toLowerCase();
+        let settingsEndpoint = '/api/admin/settings';
+        if (role.includes('manager')) settingsEndpoint = '/api/manager/settings';
+        else if (role.includes('employee')) settingsEndpoint = '/api/employee/settings';
+        else if (role.includes('client')) settingsEndpoint = '/api/client/settings';
+
+        const res = await fetchWithTenant(settingsEndpoint, { method: 'GET' });
         setSettings(res?.data || res || {});
       } catch (err) {
         setError(err.message || 'Failed to load settings');
@@ -579,7 +585,13 @@ const Settings = () => {
     try {
       setSaving(true);
       setSaveStatus(null);
-      await fetchWithTenant('/api/admin/settings', {
+      const role = (user?.role || '').toString().toLowerCase();
+      let settingsEndpoint = '/api/admin/settings';
+      if (role.includes('manager')) settingsEndpoint = '/api/manager/settings';
+      else if (role.includes('employee')) settingsEndpoint = '/api/employee/settings';
+      else if (role.includes('client')) settingsEndpoint = '/api/client/settings';
+
+      await fetchWithTenant(settingsEndpoint, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings)
