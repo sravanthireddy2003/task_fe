@@ -2,11 +2,34 @@ import React from "react";
 import clsx from "clsx";
 
 const Textbox = React.forwardRef(
-  ({ type, placeholder, label, className, register, name, error, disabled, icon, helperText, required }, ref) => {
+  (
+    {
+      type,
+      placeholder,
+      label,
+      className,
+      register,
+      name,
+      error,
+      disabled,
+      icon,
+      rightIcon, // New: for password eye
+      helperText,
+      required,
+      showPassword, // New: controlled password state
+      onPasswordToggle, // New: toggle handler
+    },
+    ref
+  ) => {
+    const inputType = type === "password" && showPassword ? "text" : type;
+
     return (
-      <div className='w-full flex flex-col gap-2'>
+      <div className="w-full flex flex-col gap-2">
         {label && (
-          <label htmlFor={name} className='text-caption font-medium text-slate-700 flex items-center gap-1'>
+          <label
+            htmlFor={name}
+            className="text-caption font-medium text-slate-700 flex items-center gap-1"
+          >
             {label}
             {required && <span className="text-red-500">*</span>}
           </label>
@@ -19,8 +42,20 @@ const Textbox = React.forwardRef(
             </div>
           )}
 
+          {rightIcon && onPasswordToggle && (
+            <button
+              type="button"
+              onClick={onPasswordToggle}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 transition-colors"
+              disabled={disabled}
+              tabIndex="-1"
+            >
+              {rightIcon}
+            </button>
+          )}
+
           <input
-            type={type}
+            type={inputType}
             name={name}
             placeholder={placeholder}
             ref={ref}
@@ -32,6 +67,7 @@ const Textbox = React.forwardRef(
               "focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:shadow-md",
               "hover:border-slate-300 hover:shadow-sm",
               icon && "pl-11",
+              rightIcon && "pr-12", // Extra padding for right icon
               disabled && "bg-slate-50 cursor-not-allowed opacity-60 border-slate-200",
               error && "border-red-300 focus:ring-red-500 focus:border-red-500",
               className

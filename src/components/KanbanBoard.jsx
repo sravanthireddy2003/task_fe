@@ -691,7 +691,7 @@ const KanbanBoard = ({
   }, [columns]);
 
   return (
-    <div className="w-full">
+    <div className="w-full overflow-x-hidden">
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}

@@ -134,7 +134,7 @@ const KanbanColumn = ({ id, title, tasks, onTaskClick, userRole, reassignmentReq
       </div>
 
       {/* Column Content */}
-      <div className="p-4 min-h-[500px] space-y-3">
+      <div className="p-4 max-h-[65vh] overflow-y-auto space-y-3">
         <SortableContext
           items={tasks.map(task => task.id || task._id || task.public_id)}
           strategy={verticalListSortingStrategy}

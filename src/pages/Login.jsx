@@ -1,7 +1,9 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
+import taskManagerLogo from "../assets/task1.png";
+import { Eye, EyeOff } from "lucide-react"; // Import eye icons
 
 import Textbox from "../components/Textbox";
 import Button from "../components/Button";
@@ -22,14 +24,43 @@ const Login = () => {
   const authStatus = useSelector(selectAuthStatus);
   const authError = useSelector(selectAuthError);
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm();
 
+  // Load saved credentials on mount
+  useEffect(() => {
+    const savedEmail = localStorage.getItem("loginEmail");
+    const savedPassword = localStorage.getItem("loginPassword");
+    const savedRemember = localStorage.getItem("rememberMe") === "true";
+
+    if (savedEmail) {
+      setValue("email", savedEmail);
+      setRememberMe(savedRemember);
+    }
+    if (savedPassword && savedRemember) {
+      setValue("password", savedPassword);
+    }
+  }, [setValue]);
+
   const onSubmit = async (data) => {
     try {
+      // Save if remember me checked
+      if (rememberMe) {
+        localStorage.setItem("loginEmail", data.email);
+        localStorage.setItem("loginPassword", data.password);
+        localStorage.setItem("rememberMe", "true");
+      } else {
+        localStorage.removeItem("loginPassword");
+        localStorage.setItem("rememberMe", "false");
+      }
+
       const res = await dispatch(authLogin(data)).unwrap();
 
       const requires2fa = res?.requires2fa || res?.requires_2fa || false;
@@ -62,7 +93,7 @@ const Login = () => {
         });
         return;
       }
-    } catch (err) { }
+    } catch (err) {}
   };
 
   useEffect(() => {
@@ -73,93 +104,131 @@ const Login = () => {
   }, [user, navigate]);
 
   return (
-    <div className="w-full min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-5xl flex flex-col lg:flex-row justify-center items-center gap-12">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center px-4">
+      <div className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-2">
+          {/* LEFT – LOGIN FORM */}
+          <div className="p-12 md:p-14">
+            <div className="mb-10">
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                Welcome back
+              </h1>
+              <p className="text-gray-600 text-lg">
+                Sign in to continue to Task Manager Pro
+              </p>
+            </div>
 
-        {/* Left Section */}
-        <div className="w-full lg:w-1/2 flex flex-col items-center text-center gap-6">
-          <span className="py-2 px-5 border rounded-full text-gray-600 text-sm border-gray-300 bg-white shadow-sm">
-            Manage all your tasks in one place!
-          </span>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+              <div className="space-y-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Email address
+                </label>
+                <Textbox
+                  type="email"
+                  name="email"
+                  placeholder="korapatishwini@gmail.com"
+                  register={register("email", {
+                    required: "Email is required",
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: "Invalid email address",
+                    },
+                  })}
+                  error={errors.email?.message}
+                  className="h-14 text-base rounded-xl"
+                />
+              </div>
 
-          <h1 className="text-gray-900 font-extrabold text-5xl md:text-6xl leading-tight">
-            Cloud-Based <br /> Task Manager
-          </h1>
+              <div className="space-y-1">
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Password
+                  </label>
+                  <Link
+                    to="/forgot"
+                    className="text-sm text-blue-600 font-medium hover:text-blue-800 hover:underline transition-colors"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+                <Textbox
+                  type="password"
+                  name="password"
+                  placeholder="••••••••"
+                  register={register("password", {
+                    required: "Password is required",
+                    minLength: {
+                      value: 6,
+                      message: "Password must be at least 6 characters",
+                    },
+                  })}
+                  error={errors.password?.message}
+                  showPassword={showPassword}
+                  onPasswordToggle={() => setShowPassword(!showPassword)}
+                  rightIcon={showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                  className="h-14 text-base rounded-xl"
+                />
+              </div>
 
-          <p className="text-gray-600 max-w-md">
-            Streamline your workflow, track progress, and manage tasks efficiently.
-          </p>
+              <div className="flex items-center space-x-3">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    id="remember"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 transition-all cursor-pointer"
+                  />
+                </div>
+                <label
+                  htmlFor="remember"
+                  className="text-gray-700 cursor-pointer select-none hover:text-gray-900 transition-colors"
+                >
+                  Remember me
+                </label>
+              </div>
 
-          <div className="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center mt-4">
-            <div className="w-16 h-16 bg-gray-400 rounded-full"></div>
+              {authStatus === "failed" && authError && (
+                <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+                  <p className="text-red-700 text-sm font-medium">
+                    {authError}
+                  </p>
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                label={authStatus === "loading" ? "Signing in..." : "Sign in"}
+                disabled={authStatus === "loading"}
+                className="w-full h-14 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold text-lg rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-md"
+              />
+            </form>
           </div>
-        </div>
 
-        {/* Right Section – Login Form */}
-        <div className="w-full lg:w-1/2 flex justify-center">
-          <form
-            onSubmit={handleSubmit(onSubmit)}
-            className="w-full max-w-md bg-white shadow-lg rounded-xl p-10 flex flex-col gap-6 border border-gray-200"
-          >
-            <h2 className="text-3xl font-bold text-gray-900 text-center">
-              Welcome back!
-            </h2>
-            <p className="text-center text-gray-600 mb-4">
-              Keep all your credentials safe.
-            </p>
+          {/* RIGHT – ILLUSTRATION & INFO */}
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-12 md:p-14 flex flex-col items-center justify-center">
+            <div className="mb-10">
+              <img
+                src={taskManagerLogo}
+                alt="Task management illustration"
+                className="w-full max-w-md mb-10 drop-shadow-lg"
+              />
+            </div>
 
-            <Textbox
-              placeholder="email@example.com"
-              type="email"
-              name="email"
-              label="Email Address"
-              className="w-full rounded-lg"
-              register={register("email", {
-                required: "Email Address is required!",
-              })}
-              error={errors.email?.message}
-            />
-
-            <Textbox
-              placeholder="Your password"
-              type="password"
-              name="password"
-              label="Password"
-              className="w-full rounded-lg"
-              register={register("password", {
-                required: "Password is required!",
-              })}
-              error={errors.password?.message}
-            />
-
-            {authStatus === "failed" && authError && (
-              <p className="text-sm text-error-500 text-center bg-error-50 p-2 rounded-lg border border-error-200">{authError}</p>
-            )}
-
-            <Link
-              to="/forgot"
-              className="text-sm text-gray-500 hover:text-gray-700 hover:underline text-center mb-2"
-            >
-              Forgot Password?
-            </Link>
-
-            <Button
-              type="submit"
-              label={authStatus === "loading" ? "Signing in..." : "Sign In"}
-              className="w-full h-12 bg-gray-900 text-white rounded-lg flex justify-center items-center font-semibold hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={authStatus === "loading"}
-            />
-
-            <p className="text-center text-gray-600 text-sm mt-2">
-              Don't have an account?{" "}
-              <Link
-                to="/register"
-                className="text-primary-600 font-semibold hover:text-primary-700 hover:underline"
-              >
-                Sign up
-              </Link>
-            </p>
-          </form>
+            <div className="text-center max-w-md">
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                Secure & organized workflow
+              </h3>
+              <p className="text-gray-700 leading-relaxed">
+                Manage tasks efficiently with role-based access, OTP verification,
+                and real-time tracking — all in one place.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
