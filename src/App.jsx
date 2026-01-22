@@ -31,7 +31,7 @@ import Users from "./pages/Users";
 import Client from "./pages/Client";
 import ClientDashboard from "./pages/ClientDashboard";
 import DashboardRouter from "./components/DashboardRouter";
-import AddClient from "./pages/AddClientsP";
+import ClientForm from "./components/client/ClientForm";
 import Profile from "./pages/Profile";
 import ChangePassword from "./pages/ChangePassword";
 import Forgot from "./pages/Forgot";
@@ -493,7 +493,7 @@ function App() {
           </Route>
 
           <Route element={<ModuleRouteGuard moduleName="Clients" />}>
-            <Route path="/add-client" element={<AddClient />} />
+            <Route path="/add-client" element={<ClientForm />} />
             <Route path="/client-dashboard/:id" element={<ClientDashboard />} />
           </Route>
           

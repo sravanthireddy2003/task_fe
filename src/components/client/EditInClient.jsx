@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FaEdit, FaSort, FaTrash } from "react-icons/fa";
+import { IoSwapVertical, IoCreateOutline, IoTrashOutline } from "react-icons/io5";
 
 const Table = ({ clients, onEdit, onRowClick, onDelete }) => {
   const [sortField, setSortField] = useState("");
@@ -66,124 +66,163 @@ const Table = ({ clients, onEdit, onRowClick, onDelete }) => {
   };
 
   return (
-    <div>
-      {/* Filter Input */}
-      <div className="flex items-center justify-end mb-4">
-        <input
-          type="text"
-          placeholder="Filter by Name/Company "
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className="border rounded-md p-3 width-full"
-        />
+    <div className="space-y-4">
+      {/* Header - Search Filter */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex-1">
+          <input
+            type="text"
+            placeholder="Search by name, company, or manager..."
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+          />
+        </div>
+        <div className="text-xs font-medium text-gray-600 whitespace-nowrap">
+          {totalClients} result{totalClients !== 1 ? 's' : ''}
+        </div>
       </div>
 
       {/* Table */}
-      <table className="min-w-full table-auto border-collapse">
-        <thead>
-          <tr className="bg-blue-600">
-            <th className="border px-4 py-2">
-              Ref{" "}
-              <button onClick={() => handleSort("ref")} className="ml-2">
-                <FaSort />
-              </button>
-            </th>
-            <th className="border px-4 py-2">
-              Company{" "}
-              <button onClick={() => handleSort("company")} className="ml-2">
-                <FaSort />
-              </button>
-            </th>
-            <th className="border px-4 py-2">
-              Manager{" "}
-              <button onClick={() => handleSort("manager_name")} className="ml-2">
-                <FaSort />
-              </button>
-            </th>
-            <th className="border px-4 py-2">Email</th>
-            <th className="border px-4 py-2">Phone</th>
-            <th className="border px-4 py-2">
-              Name{" "}
-              <button onClick={() => handleSort("name")} className="ml-2">
-                <FaSort />
-              </button>
-            </th>
-            <th className="border px-4 py-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {currentClients.map((client) => (
-            <tr
-              key={client.id}
-              onClick={() => onRowClick(client)}
-              className="cursor-pointer bg-white hover:bg-blue-300"
-            >
-              <td className="border px-4 py-2">{client.ref}</td>
-              <td className="border px-4 py-2">{client.company}</td>
-              <td className="border px-4 py-2">{client.manager_name || client.managerName || client.manager || ''}</td>
-              <td className="border px-4 py-2">{client.email}</td>
-              <td className="border px-4 py-2">{client.phone}</td>
-              <td className="border px-4 py-2">{client.name}</td>
-              <td className="border px-4 py-2 flex space-x-2">
+      <div className="overflow-x-auto rounded-lg border border-gray-200">
+        <table className="w-full">
+          <thead>
+            <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+              <th className="px-4 py-3 text-left">
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit(client);
-                  }}
-                  className="text-blue-600 hover:text-blue-800"
+                  onClick={() => handleSort("ref")}
+                  className="flex items-center gap-2 text-xs font-semibold text-gray-700 hover:text-gray-900 transition-colors"
                 >
-                  <FaEdit />
+                  Ref
+                  <IoSwapVertical className="w-3 h-3" />
                 </button>
+              </th>
+              <th className="px-4 py-3 text-left">
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation(); // Prevent row click event
-                    onDelete(client.id);
-                    console.log("Delete clicked");
-                  }}
-                  className="text-red-600 hover:text-red-800"
+                  onClick={() => handleSort("company")}
+                  className="flex items-center gap-2 text-xs font-semibold text-gray-700 hover:text-gray-900 transition-colors"
                 >
-                  <FaTrash />
+                  Company
+                  <IoSwapVertical className="w-3 h-3" />
                 </button>
-              </td>
+              </th>
+              <th className="px-4 py-3 text-left">
+                <button
+                  onClick={() => handleSort("name")}
+                  className="flex items-center gap-2 text-xs font-semibold text-gray-700 hover:text-gray-900 transition-colors"
+                >
+                  Name
+                  <IoSwapVertical className="w-3 h-3" />
+                </button>
+              </th>
+              <th className="px-4 py-3 text-left">
+                <button
+                  onClick={() => handleSort("manager_name")}
+                  className="flex items-center gap-2 text-xs font-semibold text-gray-700 hover:text-gray-900 transition-colors"
+                >
+                  Manager
+                  <IoSwapVertical className="w-3 h-3" />
+                </button>
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Email</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Phone</th>
+              <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700">Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {currentClients.length === 0 ? (
+              <tr>
+                <td colSpan="7" className="px-4 py-8 text-center text-sm text-gray-500">
+                  No clients found
+                </td>
+              </tr>
+            ) : (
+              currentClients.map((client) => (
+                <tr
+                  key={client.id}
+                  onClick={() => onRowClick(client)}
+                  className="hover:bg-blue-50 transition-colors cursor-pointer"
+                >
+                  <td className="px-4 py-3 text-sm font-medium text-gray-900">{client.ref || '-'}</td>
+                  <td className="px-4 py-3 text-sm text-gray-700">{client.company || '-'}</td>
+                  <td className="px-4 py-3 text-sm text-gray-700">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-xs font-semibold text-blue-600">
+                        {(client.name || 'C').charAt(0).toUpperCase()}
+                      </div>
+                      {client.name || '-'}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-700">{client.manager_name || client.managerName || client.manager || '-'}</td>
+                  <td className="px-4 py-3 text-sm text-gray-700 truncate max-w-xs">{client.email || '-'}</td>
+                  <td className="px-4 py-3 text-sm text-gray-700">{client.phone || '-'}</td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEdit(client);
+                        }}
+                        className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Edit"
+                      >
+                        <IoCreateOutline className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDelete(client.id);
+                        }}
+                        className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete"
+                      >
+                        <IoTrashOutline className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {/* Pagination Controls */}
-      <div className="flex justify-center mt-4">
-        <button
-          onClick={() => handlePageChange(1)}
-          disabled={currentPage === 1}
-          className="px-4 py-2 bg-blue-500 text-white rounded-md mx-1"
-        >
-          First
-        </button>
-        <button
-          onClick={() => handlePageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-          className="px-4 py-2 bg-blue-500 text-white rounded-md mx-1"
-        >
-          Prev
-        </button>
-        <span className="px-4 py-2">
-          Page {currentPage} of {totalPages}
-        </span>
-        <button
-          onClick={() => handlePageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-          className="px-4 py-2 bg-blue-500 text-white rounded-md mx-1"
-        >
-          Next
-        </button>
-        <button
-          onClick={() => handlePageChange(totalPages)}
-          disabled={currentPage === totalPages}
-          className="px-4 py-2 bg-blue-500 text-white rounded-md mx-1"
-        >
-          Last
-        </button>
-      </div>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          <button
+            onClick={() => handlePageChange(1)}
+            disabled={currentPage === 1}
+            className="px-2 py-1 text-xs font-medium border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            First
+          </button>
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="px-2 py-1 text-xs font-medium border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Prev
+          </button>
+          <span className="px-3 py-1 text-xs text-gray-700 font-medium">
+            Page {currentPage} of {totalPages}
+          </span>
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="px-2 py-1 text-xs font-medium border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Next
+          </button>
+          <button
+            onClick={() => handlePageChange(totalPages)}
+            disabled={currentPage === totalPages}
+            className="px-2 py-1 text-xs font-medium border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Last
+          </button>
+        </div>
+      )}
     </div>
   );
 };

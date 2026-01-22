@@ -1,12 +1,10 @@
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import Title from "../components/Title";
-import Button from "../components/Button";
 import clsx from "clsx";
+import Button from "../components/Button";
 import ConfirmatioDialog from "../components/Dialogs";
 import AddUser from "../components/AddUser";
 import { toast } from "sonner";
-
 import {
   fetchUsers,
   deleteUser,
@@ -15,112 +13,386 @@ import {
   selectUserError,
 } from "../redux/slices/userSlice";
 
-import { IoMdAdd } from "react-icons/io";
+import { IoMdAdd, IoMdRefresh } from "react-icons/io";
 import {
-  IoEyeOutline,
-  IoPencilOutline,
-  IoTrashOutline,
-  IoCloseOutline,
-  IoEllipsisVertical,
   IoGridOutline,
   IoListOutline,
   IoBriefcaseOutline,
   IoCheckmarkCircleOutline,
-  IoAlertCircleOutline,
   IoPeopleOutline,
-  IoFilterOutline,
   IoSearchOutline,
-  IoCaretDownOutline,
-  IoChevronDownOutline,
+  IoMailOutline,
   IoTimeOutline,
-  IoCheckmarkDoneOutline,
+  IoCloseOutline,
+  IoPencilOutline,
+  IoTrashOutline,
 } from "react-icons/io5";
 
-const getInitials = (name = "") => {
-  if (!name || typeof name !== "string") return "??";
-  return name
-    .split(" ")
-    .map((p) => p[0]?.toUpperCase())
-    .join("")
-    .slice(0, 2);
-};
+// Simple Stats Cards (3 cards only)
+const StatsCards = ({ users }) => {
+  const stats = useMemo(() => {
+    const total = users.length;
+    const active = users.filter(user => user?.isActive).length;
+    const inactive = total - active;
 
-const getProjectStats = (user) => {
-  const projects = user?.projects || [];
-  const tasks = user?.tasks || [];
-
-  // Count tasks by status/stage
-  const taskStats = tasks.reduce((acc, task) => {
-    const stage = task?.stage || 'UNKNOWN';
-    acc[stage] = (acc[stage] || 0) + 1;
-    return acc;
-  }, {});
-
-  const stats = [];
-
-  // Projects stat
-  if (projects.length > 0) {
-    stats.push({
-      label: "Projects",
-      value: projects.length,
-      color: "blue",
-      icon: <IoBriefcaseOutline size={14} />
-    });
-  }
-
-  // Tasks stat - show total tasks
-  if (tasks.length > 0) {
-    stats.push({
-      label: "Tasks",
-      value: tasks.length,
-      color: "green",
-      icon: <IoCheckmarkCircleOutline size={14} />
-    });
-  }
-
-  // Active tasks (IN_PROGRESS, PENDING)
-  const activeTasks = tasks.filter(task =>
-    task?.stage === 'IN_PROGRESS' || task?.stage === 'PENDING'
-  ).length;
-  if (activeTasks > 0) {
-    stats.push({
-      label: "Active Tasks",
-      value: activeTasks,
-      color: "orange",
-      icon: <IoTimeOutline size={14} />
-    });
-  }
-
-  // Completed tasks
-  const completedTasks = tasks.filter(task => task?.stage === 'COMPLETED').length;
-  if (completedTasks > 0) {
-    stats.push({
-      label: "Completed",
-      value: completedTasks,
-      color: "emerald",
-      icon: <IoCheckmarkDoneOutline size={14} />
-    });
-  }
-
-  // If no projects or tasks, show default stats
-  if (stats.length === 0) {
     return [
-      { label: "Projects", value: 0, color: "blue", icon: <IoBriefcaseOutline size={14} /> },
-      { label: "Tasks", value: 0, color: "green", icon: <IoCheckmarkCircleOutline size={14} /> },
+      {
+        title: "Total Members",
+        value: total,
+        icon: IoPeopleOutline,
+        bgColor: "bg-blue-50",
+        textColor: "text-blue-600"
+      },
+      {
+        title: "Active",
+        value: active,
+        icon: IoCheckmarkCircleOutline,
+        bgColor: "bg-emerald-50",
+        textColor: "text-emerald-600"
+      },
+      {
+        title: "Inactive",
+        value: inactive,
+        icon: IoTimeOutline,
+        bgColor: "bg-gray-50",
+        textColor: "text-gray-600"
+      }
     ];
-  }
+  }, [users]);
 
-  return stats;
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      {stats.map((stat, index) => {
+        const Icon = stat.icon;
+        return (
+          <div
+            key={index}
+            className={`${stat.bgColor} border rounded-lg p-4`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className={`${stat.textColor} font-medium text-sm`}>
+                {stat.title}
+              </div>
+              <Icon className={stat.textColor} size={20} />
+            </div>
+            <div className="text-2xl font-bold text-gray-900">
+              {stat.value}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 };
 
+// Clean Avatar Component
+const UserAvatar = ({ user, size = "md" }) => {
+  const getInitials = (name = "") => {
+    if (!name || typeof name !== "string") return "??";
+    return name
+      .split(" ")
+      .map((p) => p[0]?.toUpperCase())
+      .join("")
+      .slice(0, 2);
+  };
+
+  const sizes = {
+    sm: "w-8 h-8 text-sm",
+    md: "w-12 h-12 text-base",
+    lg: "w-16 h-16 text-xl",
+  };
+
+  return (
+    <div className="relative">
+      <div
+        className={`${sizes[size]} rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center font-bold shadow-sm`}
+      >
+        {getInitials(user?.name)}
+      </div>
+      <div
+        className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${
+          user?.isActive ? "bg-green-500" : "bg-gray-400"
+        }`}
+      />
+    </div>
+  );
+};
+
+// Clean Card View (No overlapping data)
+const UserCard = ({ user, onClick }) => {
+  return (
+    <div 
+      className="bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all cursor-pointer"
+      onClick={() => onClick(user)}
+    >
+      <div className="p-4">
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-3">
+          <UserAvatar user={user} size="md" />
+          <div className="min-w-0 flex-1">
+            <h3 className="font-medium text-gray-900 truncate mb-0.5">
+              {user?.name}
+            </h3>
+            <p className="text-sm text-gray-600 truncate">{user?.title || user?.role}</p>
+          </div>
+        </div>
+
+        {/* Contact Info */}
+        <div className="space-y-2 mb-4">
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <IoMailOutline size={12} />
+            <span className="truncate">{user?.email}</span>
+          </div>
+          {user?.departmentName && (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <IoBriefcaseOutline size={12} />
+              <span className="truncate">{user.departmentName}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="pt-3 border-t border-gray-100">
+          <div className="flex items-center justify-between">
+            <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+              user?.isActive 
+                ? "bg-green-50 text-green-700" 
+                : "bg-gray-100 text-gray-700"
+            }`}>
+              {user?.isActive ? "Active" : "Inactive"}
+            </span>
+            <span className="text-xs text-blue-600 font-medium">
+              View details
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Clean List Row
+const UserListRow = ({ user, onClick }) => {
+  return (
+    <tr 
+      className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
+      onClick={() => onClick(user)}
+    >
+      <td className="py-3 px-4">
+        <div className="flex items-center gap-3">
+          <UserAvatar user={user} size="sm" />
+          <div className="min-w-0">
+            <div className="font-medium text-gray-900 truncate">{user?.name}</div>
+            <div className="text-sm text-gray-500 truncate">{user?.title}</div>
+          </div>
+        </div>
+      </td>
+      <td className="py-3 px-4">
+        <div className="text-sm text-gray-900 truncate max-w-[200px]">{user?.email}</div>
+      </td>
+      <td className="py-3 px-4">
+        <span className={`text-xs font-medium px-2 py-1 rounded ${
+          user?.role === "Admin" ? "bg-purple-100 text-purple-800" :
+          user?.role === "Manager" ? "bg-orange-100 text-orange-800" :
+          "bg-blue-100 text-blue-800"
+        }`}>
+          {user?.role}
+        </span>
+      </td>
+      <td className="py-3 px-4">
+        <div className="text-sm text-gray-600">{user?.departmentName || "-"}</div>
+      </td>
+      <td className="py-3 px-4">
+        <div className="flex items-center gap-2">
+          <div className={`w-2 h-2 rounded-full ${
+            user?.isActive ? "bg-green-500" : "bg-gray-400"
+          }`} />
+          <span className="text-sm">{user?.isActive ? "Active" : "Inactive"}</span>
+        </div>
+      </td>
+      <td className="py-3 px-4">
+        <span className="text-sm text-blue-600 font-medium">
+          View
+        </span>
+      </td>
+    </tr>
+  );
+};
+
+// Clean Modal (No emoji feeling)
+const UserDetailsModal = ({ user, isOpen, onClose, onEdit, onDelete }) => {
+  if (!isOpen || !user) return null;
+
+  const stats = [
+    { label: "Projects", value: user.projects?.length || 0, color: "blue" },
+    { label: "Total Tasks", value: user.tasks?.length || 0, color: "green" },
+    { label: "Completed Tasks", value: user.tasks?.filter(t => t.stage === 'COMPLETED').length || 0, color: "emerald" },
+    { label: "In Progress", value: user.tasks?.filter(t => t.stage === 'IN_PROGRESS' || t.stage === 'PENDING').length || 0, color: "orange" },
+  ];
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b">
+          <div className="flex items-center gap-4">
+            <UserAvatar user={user} size="lg" />
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">{user.name}</h2>
+              <p className="text-gray-600">{user.title || user.role}</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            <IoCloseOutline size={20} />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="space-y-6">
+            {/* Contact Info */}
+            <div>
+              <h3 className="font-medium text-gray-900 mb-3">Contact Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <div className="text-sm text-gray-500 mb-1">Email</div>
+                  <div className="font-medium text-gray-900">{user.email}</div>
+                </div>
+                {user.phone && (
+                  <div>
+                    <div className="text-sm text-gray-500 mb-1">Phone</div>
+                    <div className="font-medium text-gray-900">{user.phone}</div>
+                  </div>
+                )}
+                <div>
+                  <div className="text-sm text-gray-500 mb-1">Role</div>
+                  <span className={`font-medium px-3 py-1 rounded-full text-sm ${
+                    user.role === "Admin" ? "bg-purple-100 text-purple-800" :
+                    user.role === "Manager" ? "bg-orange-100 text-orange-800" :
+                    "bg-blue-100 text-blue-800"
+                  }`}>
+                    {user.role}
+                  </span>
+                </div>
+                {user.departmentName && (
+                  <div>
+                    <div className="text-sm text-gray-500 mb-1">Department</div>
+                    <div className="font-medium text-gray-900">{user.departmentName}</div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div>
+              <h3 className="font-medium text-gray-900 mb-3">Activity Overview</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {stats.map((stat, index) => (
+                  <div key={index} className="bg-gray-50 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className={`w-2 h-2 rounded-full ${
+                        stat.color === "blue" ? "bg-blue-500" :
+                        stat.color === "green" ? "bg-green-500" :
+                        stat.color === "orange" ? "bg-orange-500" :
+                        "bg-emerald-500"
+                      }`} />
+                      <span className="text-xs text-gray-600">{stat.label}</span>
+                    </div>
+                    <div className="text-xl font-bold text-gray-900">{stat.value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Projects */}
+            {user.projects && user.projects.length > 0 && (
+              <div>
+                <h3 className="font-medium text-gray-900 mb-3">Projects ({user.projects.length})</h3>
+                <div className="flex flex-wrap gap-2">
+                  {user.projects.map((project, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center px-3 py-1 bg-blue-50 text-blue-700 rounded-lg text-sm"
+                    >
+                      {project.name || `Project ${project.internalId}`}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Tasks */}
+            {user.tasks && user.tasks.length > 0 && (
+              <div>
+                <h3 className="font-medium text-gray-900 mb-3">Tasks ({user.tasks.length})</h3>
+                <div className="space-y-2">
+                  {user.tasks.slice(0, 5).map((task, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <div className="font-medium text-gray-900">{task.title}</div>
+                        <div className="text-sm text-gray-500">
+                          {task.project?.name || `Project ${task.project?.internalId}`}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className={`text-xs font-medium px-2 py-1 rounded ${
+                          task.stage === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                          task.stage === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' :
+                          'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {task.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="p-6 border-t bg-gray-50">
+          <div className="flex gap-3">
+            <Button
+              onClick={() => {
+                onClose();
+                onEdit(user);
+              }}
+              icon={IoPencilOutline}
+              label="Edit User"
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white border-transparent"
+            />
+            <Button
+              onClick={() => {
+                onClose();
+                onDelete(user);
+              }}
+              icon={IoTrashOutline}
+              label="Delete User"
+              className="flex-1 bg-red-600 hover:bg-red-700 text-white border-transparent"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Main Component
 const Users = () => {
   const dispatch = useDispatch();
   const users = useSelector(selectUsers) || [];
   const status = useSelector(selectUserStatus);
   const error = useSelector(selectUserError);
   const isLoading = status === "loading";
+  
   const [openForm, setOpenForm] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
+  const [openViewModal, setOpenViewModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [viewMode, setViewMode] = useState("grid");
   const [searchTerm, setSearchTerm] = useState("");
@@ -128,22 +400,21 @@ const Users = () => {
     role: "all",
     status: "all",
     department: "all",
-    title: "all",
   });
-  const [showFilters, setShowFilters] = useState(false);
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
 
   useEffect(() => {
-    dispatch(fetchUsers());
+    loadUsers();
   }, [dispatch]);
 
-  const filteredAndSortedUsers = useMemo(() => {
-    let result = users.filter((user) => {
+  const loadUsers = () => {
+    dispatch(fetchUsers());
+  };
+
+  const filteredUsers = useMemo(() => {
+    return users.filter((user) => {
       const matchesSearch = searchTerm === "" ||
         user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user?.departmentName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user?.role?.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesRole = filters.role === "all" || user?.role === filters.role;
@@ -151,72 +422,32 @@ const Users = () => {
         (filters.status === "active" && user?.isActive === true) ||
         (filters.status === "inactive" && user?.isActive === false);
       const matchesDepartment = filters.department === "all" || user?.departmentName === filters.department;
-      const matchesTitle = filters.title === "all" || user?.title === filters.title;
 
-      return matchesSearch && matchesRole && matchesStatus && matchesDepartment && matchesTitle;
+      return matchesSearch && matchesRole && matchesStatus && matchesDepartment;
     });
+  }, [users, searchTerm, filters]);
 
-    if (sortConfig.key) {
-      result.sort((a, b) => {
-        let aValue = a[sortConfig.key] || "";
-        let bValue = b[sortConfig.key] || "";
-
-        if (sortConfig.key === "isActive") {
-          aValue = a.isActive ? 1 : 0;
-          bValue = b.isActive ? 1 : 0;
-        }
-
-        if (typeof aValue === 'string') aValue = aValue.toLowerCase();
-        if (typeof bValue === 'string') bValue = bValue.toLowerCase();
-
-        if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
-        if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
-        return 0;
-      });
-    }
-
-    return result;
-  }, [users, searchTerm, filters, sortConfig]);
-
-  const getFilterOptions = useCallback((field) => {
-    const options = users.reduce((acc, user) => {
-      const value = user[field];
-      if (value && !acc.includes(value)) {
-        acc.push(value);
-      }
-      return acc;
-    }, ["all"]);
-    return Array.from(new Set(options)).sort();
-  }, [users]);
-
-  const handleSort = (key) => {
-    setSortConfig((prev) => ({
-      key,
-      direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
-    }));
+  const getUniqueValues = (field) => {
+    const values = new Set(users.map(u => u[field]).filter(Boolean));
+    return Array.from(values);
   };
 
-  const updateFilter = (field, value) => {
-    setFilters((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const clearAllFilters = () => {
+  const clearFilters = () => {
     setSearchTerm("");
-    setFilters({ role: "all", status: "all", department: "all", title: "all" });
-    setSortConfig({ key: null, direction: "asc" });
+    setFilters({ role: "all", status: "all", department: "all" });
   };
 
-  const addClick = () => {
-    setSelectedUser(null);
-    setOpenForm(true);
+  const handleView = (user) => {
+    setSelectedUser(user);
+    setOpenViewModal(true);
   };
 
-  const editClick = (user) => {
+  const handleEdit = (user) => {
     setSelectedUser(user);
     setOpenForm(true);
   };
 
-  const deleteClick = (user) => {
+  const handleDelete = (user) => {
     setSelectedUser(user);
     setOpenDelete(true);
   };
@@ -224,7 +455,7 @@ const Users = () => {
   const deleteHandler = async () => {
     if (!selectedUser) return;
     try {
-      const userId = selectedUser.public_id || selectedUser._id || selectedUser.id;
+      const userId = selectedUser.id;
       await dispatch(deleteUser(userId)).unwrap();
       toast.success("User deleted successfully");
     } catch (err) {
@@ -235,254 +466,12 @@ const Users = () => {
     }
   };
 
-  const UserCard = ({ user }) => {
-    const stats = getProjectStats(user);
-
-    return (
-      <div className="bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200 group">
-        <div className="p-6">
-          {/* Header with Avatar and Actions */}
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-4 flex-1 min-w-0">
-              <div className="relative">
-                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">
-                  {getInitials(user?.name)}
-                </div>
-                <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
-                  user?.isActive ? "bg-green-500" : "bg-gray-400"
-                }`} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="font-semibold text-gray-900 text-lg truncate mb-1" title={user?.name}>
-                  {user?.name}
-                </h3>
-                <p className="text-gray-600 text-sm truncate mb-2" title={user?.title}>
-                  {user?.title || "Team Member"}
-                </p>
-                <div className="flex items-center gap-2">
-                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                    user?.role === "Admin" ? "bg-purple-100 text-purple-800" :
-                      user?.role === "Manager" ? "bg-orange-100 text-orange-800" :
-                        "bg-blue-100 text-blue-800"
-                  }`}>
-                    {user?.role || "Member"}
-                  </span>
-                  {user?.departmentName && (
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                      {user?.departmentName}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="relative opacity-0 group-hover:opacity-100 transition-opacity">
-              <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                <IoEllipsisVertical size={18} className="text-gray-500" />
-              </button>
-              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-20 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                <button
-                  className="w-full px-4 py-2.5 text-left text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-3 text-sm"
-                  onClick={() => editClick(user)}
-                >
-                  <IoPencilOutline size={16} />
-                  Edit Member
-                </button>
-                <button
-                  className="w-full px-4 py-2.5 text-left text-red-600 hover:bg-red-50 flex items-center gap-3 text-sm"
-                  onClick={() => deleteClick(user)}
-                >
-                  <IoTrashOutline size={16} />
-                  Remove Member
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Contact Info */}
-          <div className="space-y-3 mb-6">
-            <div>
-              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Email</div>
-              <div className="text-sm text-gray-900 truncate" title={user?.email}>
-                {user?.email || "No email"}
-              </div>
-            </div>
-          </div>
-
-          {/* Stats */}
-          {stats.length > 0 && (
-            <div className="space-y-3 mb-6">
-              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Activity</div>
-              <div className="grid grid-cols-2 gap-3">
-                {stats.slice(0, 2).map((stat, index) => (
-                  <div key={index} className="text-center">
-                    <div className="flex items-center justify-center mb-1">
-                      <div className={`w-2 h-2 rounded-full mr-2 ${
-                        stat.color === "blue" ? "bg-blue-500" :
-                          stat.color === "green" ? "bg-green-500" :
-                            stat.color === "orange" ? "bg-orange-500" :
-                              stat.color === "emerald" ? "bg-emerald-500" : "bg-red-500"
-                      }`} />
-                      <span className="text-xs text-gray-600">{stat.label}</span>
-                    </div>
-                    <span className="font-bold text-gray-900 text-lg">
-                      {stat.value}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Status and Last Activity */}
-          <div className="pt-4 border-t border-gray-200">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500">Status</span>
-              <span className={`font-medium ${
-                user?.isActive ? "text-green-700" : "text-gray-500"
-              }`}>
-                {user?.isActive ? "Active" : "Inactive"}
-              </span>
-            </div>
-            {user?.lastLogin && (
-              <div className="flex items-center justify-between text-sm mt-2">
-                <span className="text-gray-500">Last Login</span>
-                <span className="text-gray-700">
-                  {new Date(user.lastLogin).toLocaleDateString()}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const UserListRow = ({ user }) => {
-    const stats = getProjectStats(user);
-
-    return (
-      <div className="bg-white border-b border-gray-200 hover:bg-gray-50 transition-colors">
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4 flex-1 min-w-0">
-              <div className="relative">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center font-bold text-base shadow-sm">
-                  {getInitials(user?.name)}
-                </div>
-                <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${
-                  user?.isActive ? "bg-green-500" : "bg-gray-400"
-                }`} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-3">
-                  <h3 className="font-semibold text-gray-900 truncate" title={user?.name}>
-                    {user?.name}
-                  </h3>
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                    user?.role === "Admin" ? "bg-purple-100 text-purple-800" :
-                      user?.role === "Manager" ? "bg-orange-100 text-orange-800" :
-                        "bg-blue-100 text-blue-800"
-                  }`}>
-                    {user?.role || "Member"}
-                  </span>
-                </div>
-                <div className="flex items-center gap-4 mt-1">
-                  <span className="text-sm text-gray-600 truncate" title={user?.email}>
-                    {user?.email || "No email"}
-                  </span>
-                  {user?.title && (
-                    <>
-                      <span className="text-gray-300">•</span>
-                      <span className="text-sm text-gray-600 truncate" title={user?.title}>
-                        {user?.title}
-                      </span>
-                    </>
-                  )}
-                  {user?.departmentName && (
-                    <>
-                      <span className="text-gray-300">•</span>
-                      <span className="text-sm text-gray-600 truncate" title={user?.departmentName}>
-                        {user?.departmentName}
-                      </span>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4">
-              {/* Stats */}
-              {stats.length > 0 && (
-                <div className="hidden md:flex items-center gap-6">
-                  {stats.slice(0, 2).map((stat, index) => (
-                    <div key={index} className="text-center">
-                      <div className="flex items-center gap-1">
-                        <div className={`w-2 h-2 rounded-full ${
-                          stat.color === "blue" ? "bg-blue-500" :
-                            stat.color === "green" ? "bg-green-500" :
-                              stat.color === "orange" ? "bg-orange-500" :
-                                stat.color === "emerald" ? "bg-emerald-500" : "bg-red-500"
-                        }`} />
-                        <span className="text-xs text-gray-500">{stat.label}</span>
-                      </div>
-                      <span className="font-semibold text-gray-900 text-sm">
-                        {stat.value}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Status */}
-              <div className="text-right">
-                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                  user?.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
-                }`}>
-                  {user?.isActive ? "Active" : "Inactive"}
-                </span>
-                {user?.lastLogin && (
-                  <div className="text-xs text-gray-500 mt-1">
-                    Last login: {new Date(user.lastLogin).toLocaleDateString()}
-                  </div>
-                )}
-              </div>
-
-              {/* Actions */}
-              <div className="relative">
-                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                  <IoEllipsisVertical size={16} className="text-gray-500" />
-                </button>
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-20 opacity-0 invisible hover:opacity-100 hover:visible transition-all duration-200">
-                  <button
-                    className="w-full px-4 py-2.5 text-left text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-3 text-sm"
-                    onClick={() => editClick(user)}
-                  >
-                    <IoPencilOutline size={16} />
-                    Edit Member
-                  </button>
-                  <button
-                    className="w-full px-4 py-2.5 text-left text-red-600 hover:bg-red-50 flex items-center gap-3 text-sm"
-                    onClick={() => deleteClick(user)}
-                  >
-                    <IoTrashOutline size={16} />
-                    Remove Member
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   if (isLoading) {
     return (
-      <div className="min-h-[500px] flex items-center justify-center p-8">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin h-12 w-12 border-4 border-blue-200 border-t-blue-600 rounded-full mx-auto mb-4" />
-          <p className="text-gray-600">Loading team members...</p>
+          <div className="w-12 h-12 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 font-medium">Loading team members...</p>
         </div>
       </div>
     );
@@ -490,323 +479,254 @@ const Users = () => {
 
   if (error) {
     return (
-      <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-12 text-center max-w-2xl mx-auto">
-        <IoCloseOutline className="mx-auto mb-6 text-red-400" size={56} />
-        <h3 className="text-2xl font-bold text-red-800 mb-3">Failed to load users</h3>
-        <p className="text-red-600 mb-8 text-lg">
-          {error?.message || String(error)}
-        </p>
-        <Button
-          label="Retry Loading"
-          className="bg-red-600 hover:bg-red-700 text-white px-10 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
-          onClick={() => dispatch(fetchUsers())}
-        />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <IoCloseOutline className="text-red-600" size={32} />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to load users</h3>
+          <p className="text-gray-600 mb-6">{error?.message || String(error)}</p>
+          <Button
+            label="Retry Loading"
+            onClick={loadUsers}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          />
+        </div>
       </div>
     );
   }
 
+  const hasActiveFilters = searchTerm || Object.values(filters).some(f => f !== "all");
+
   return (
     <>
       <div className="min-h-screen bg-gray-50">
-        {/* Header Section - Bitrix Style */}
-        <div className="bg-white border-b border-gray-200 px-6 py-8">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-              <div className="space-y-2">
-                <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Team Members</h1>
-                <p className="text-lg text-gray-600">Manage your team members, roles, and permissions</p>
-                <div className="flex items-center gap-6 text-sm text-gray-500">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="font-medium">{users.filter(u => u?.isActive).length} Active</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                    <span className="font-medium">{users.filter(u => !u?.isActive).length} Inactive</span>
-                  </div>
-                  <div className="text-gray-300">•</div>
-                  <span className="font-medium text-gray-700">{users.length} Total Members</span>
-                </div>
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-6 lg:px-8 py-6">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Team Members</h1>
+                <p className="text-gray-600 mt-1">
+                  Manage team members and their access permissions
+                </p>
               </div>
-
-              <div className="flex items-center gap-4">
-                {/* View Toggle - Bitrix Style */}
-                <div className="flex bg-gray-100 p-1 rounded-lg border border-gray-200">
+              
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={loadUsers}
+                  icon={IoMdRefresh}
+                  label=""
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-300 h-10 px-4"
+                />
+                
+                <div className="flex bg-gray-100 rounded-lg p-1 border border-gray-200">
                   <button
                     onClick={() => setViewMode("grid")}
-                    className={`p-2.5 rounded-md transition-all duration-200 ${
-                      viewMode === "grid"
-                        ? "bg-white shadow-sm text-blue-600 border border-gray-200"
-                        : "text-gray-600 hover:text-gray-900 hover:bg-white/50"
+                    className={`px-3 py-2 rounded-md transition-all ${
+                      viewMode === "grid" 
+                        ? "bg-white text-blue-600 shadow-sm" 
+                        : "text-gray-600 hover:text-gray-900"
                     }`}
-                    title="Grid View"
+                    title="Grid view"
                   >
                     <IoGridOutline size={18} />
                   </button>
                   <button
                     onClick={() => setViewMode("list")}
-                    className={`p-2.5 rounded-md transition-all duration-200 ${
-                      viewMode === "list"
-                        ? "bg-white shadow-sm text-blue-600 border border-gray-200"
-                        : "text-gray-600 hover:text-gray-900 hover:bg-white/50"
+                    className={`px-3 py-2 rounded-md transition-all ${
+                      viewMode === "list" 
+                        ? "bg-white text-blue-600 shadow-sm" 
+                        : "text-gray-600 hover:text-gray-900"
                     }`}
-                    title="List View"
+                    title="List view"
                   >
                     <IoListOutline size={18} />
                   </button>
                 </div>
-
-                {/* Primary Action Button - Bitrix Style */}
-                <button
-                  onClick={addClick}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
-                >
-                  <IoMdAdd size={18} />
-                  <span>Invite Member</span>
-                </button>
+                
+                <Button
+                  onClick={() => {
+                    setSelectedUser(null);
+                    setOpenForm(true);
+                  }}
+                  icon={IoMdAdd}
+                  label="Add Member"
+                  className="bg-blue-600 hover:bg-blue-700 text-white border-transparent"
+                />
               </div>
             </div>
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
+          {/* Stats Cards */}
+          <StatsCards users={users} />
 
-        {/* Search and Filters Section - Bitrix Style */}
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-          <div className="p-6">
-            <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center">
-              {/* Search Input - Bitrix Style */}
+          {/* Search and Filters */}
+          <div className="bg-white rounded-lg border border-gray-200 p-5 mb-6">
+            <div className="flex flex-col lg:flex-row gap-4">
+              {/* Search */}
               <div className="flex-1">
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <IoSearchOutline className="h-5 w-5 text-gray-400" />
-                  </div>
+                  <IoSearchOutline className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                   <input
                     type="text"
-                    placeholder="Search members by name, email, role, or department..."
-                    className="block w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm placeholder-gray-500"
+                    placeholder="Search by name, email, or role..."
+                    className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
-                  {searchTerm && (
-                    <button
-                      onClick={() => setSearchTerm("")}
-                      className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
-                    >
-                      <IoCloseOutline size={18} />
-                    </button>
-                  )}
                 </div>
               </div>
-
-              {/* Quick Filters - Bitrix Style */}
-              <div className="flex items-center gap-3">
+              
+              {/* Filters */}
+              <div className="flex flex-wrap gap-3">
                 <select
-                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm bg-white min-w-[140px]"
+                  className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-700 font-medium min-w-[140px]"
                   value={filters.role}
-                  onChange={(e) => updateFilter("role", e.target.value)}
+                  onChange={(e) => setFilters({...filters, role: e.target.value})}
                 >
                   <option value="all">All Roles</option>
-                  {getFilterOptions("role").filter(r => r !== "all").map((role) => (
+                  {getUniqueValues("role").map(role => (
                     <option key={role} value={role}>{role}</option>
                   ))}
                 </select>
-
+                
                 <select
-                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm bg-white min-w-[120px]"
+                  className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-700 font-medium min-w-[140px]"
                   value={filters.status}
-                  onChange={(e) => updateFilter("status", e.target.value)}
+                  onChange={(e) => setFilters({...filters, status: e.target.value})}
                 >
                   <option value="all">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
+                  <option value="active">Active Only</option>
+                  <option value="inactive">Inactive Only</option>
                 </select>
 
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className={`inline-flex items-center gap-2 px-4 py-3 border rounded-lg transition-all duration-200 text-sm font-medium ${
-                    showFilters
-                      ? 'border-blue-300 bg-blue-50 text-blue-700'
-                      : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                  }`}
+                <select
+                  className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-700 font-medium min-w-[160px]"
+                  value={filters.department}
+                  onChange={(e) => setFilters({...filters, department: e.target.value})}
                 >
-                  <IoFilterOutline size={16} />
-                  <span>More Filters</span>
-                  <IoCaretDownOutline
-                    size={14}
-                    className={`transition-transform duration-200 ${
-                      showFilters ? 'rotate-180' : ''
-                    }`}
+                  <option value="all">All Departments</option>
+                  {getUniqueValues("departmentName").map(dept => (
+                    <option key={dept} value={dept}>{dept}</option>
+                  ))}
+                </select>
+                
+                {hasActiveFilters && (
+                  <Button
+                    onClick={clearFilters}
+                    label="Clear All"
+                    className="border-2 border-gray-300 hover:bg-gray-50 text-gray-700 h-11 px-5"
                   />
-                </button>
-
-                {(searchTerm || Object.values(filters).some(f => f !== "all") || sortConfig.key) && (
-                  <button
-                    onClick={clearAllFilters}
-                    className="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all duration-200 border border-gray-300"
-                  >
-                    <IoCloseOutline size={14} />
-                    <span>Clear ({filteredAndSortedUsers.length})</span>
-                  </button>
                 )}
               </div>
             </div>
-
-            {/* Advanced Filters - Bitrix Style */}
-            {showFilters && (
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-900">Department</label>
-                    <select
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm bg-white"
-                      value={filters.department}
-                      onChange={(e) => updateFilter("department", e.target.value)}
-                    >
-                      <option value="all">All Departments</option>
-                      {getFilterOptions("departmentName").filter(d => d !== "all").map((dept) => (
-                        <option key={dept} value={dept}>{dept}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-900">Job Title</label>
-                    <select
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm bg-white"
-                      value={filters.title}
-                      onChange={(e) => updateFilter("title", e.target.value)}
-                    >
-                      <option value="all">All Titles</option>
-                      {getFilterOptions("title").filter(t => t !== "all").map((title) => (
-                        <option key={title} value={title}>{title}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-900">Sort By</label>
-                    <select
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm bg-white"
-                      value={sortConfig.key || ""}
-                      onChange={(e) => {
-                        const key = e.target.value;
-                        if (key) {
-                          setSortConfig({ key, direction: "asc" });
-                        } else {
-                          setSortConfig({ key: null, direction: "asc" });
-                        }
-                      }}
-                    >
-                      <option value="">Default</option>
-                      <option value="name">Name</option>
-                      <option value="title">Title</option>
-                      <option value="role">Role</option>
-                      <option value="departmentName">Department</option>
-                      <option value="isActive">Status</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
-        </div>
 
-        {/* View Toggle and Results */}
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-          <div className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-600">
-                Showing <span className="font-semibold text-gray-900">{filteredAndSortedUsers.length}</span> of{' '}
-                <span className="font-semibold text-gray-900">{users.length}</span> team members
-                {sortConfig.key && (
-                  <span className="ml-3 text-gray-500">
-                    • Sorted by <span className="font-medium capitalize">{sortConfig.key.replace(/([A-Z])/g, ' $1')}</span>
-                    <span className="ml-1">({sortConfig.direction})</span>
-                  </span>
-                )}
-              </div>
-
-              {/* View Toggle */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600 mr-2">View:</span>
-                <div className="flex bg-gray-100 rounded-lg p-1">
-                  <button
-                    onClick={() => setViewMode("grid")}
-                    className={`p-2 rounded-md transition-all duration-200 ${
-                      viewMode === "grid"
-                        ? "bg-white text-blue-600 shadow-sm"
-                        : "text-gray-600 hover:text-gray-900"
-                    }`}
-                    title="Grid View"
-                  >
-                    <IoGridOutline size={16} />
-                  </button>
-                  <button
-                    onClick={() => setViewMode("list")}
-                    className={`p-2 rounded-md transition-all duration-200 ${
-                      viewMode === "list"
-                        ? "bg-white text-blue-600 shadow-sm"
-                        : "text-gray-600 hover:text-gray-900"
-                    }`}
-                    title="List View"
-                  >
-                    <IoListOutline size={16} />
-                  </button>
-                </div>
-              </div>
+          {/* Results Info */}
+          <div className="mb-5 flex items-center justify-between">
+            <div className="text-sm text-gray-600">
+              Showing <span className="font-semibold text-gray-900">{filteredUsers.length}</span> of <span className="font-semibold text-gray-900">{users.length}</span> members
             </div>
           </div>
-        </div>
 
-        {/* Users Display */}
-        {filteredAndSortedUsers.length === 0 ? (
-          <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-            <IoPeopleOutline className="mx-auto mb-4 text-gray-400" size={48} />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No team members found</h3>
-            <p className="text-gray-600 mb-6">
-              {searchTerm || Object.values(filters).some(f => f !== "all")
-                ? "Try adjusting your search or filters to find what you're looking for."
-                : "Get started by inviting your first team member."}
-            </p>
-            {(searchTerm || Object.values(filters).some(f => f !== "all")) && (
-              <Button
-                label="Clear Filters"
-                onClick={clearAllFilters}
-                className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg"
-              />
-            )}
-          </div>
-        ) : viewMode === "grid" ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredAndSortedUsers.map((user) => (
-              <UserCard key={user.public_id || user._id || user.id} user={user} />
-            ))}
-          </div>
-        ) : (
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            {filteredAndSortedUsers.map((user) => (
-              <UserListRow key={user.public_id || user._id || user.id} user={user} />
-            ))}
-          </div>
-        )}
+          {/* Users Grid/List */}
+          {filteredUsers.length === 0 ? (
+            <div className="bg-white rounded-lg border-2 border-dashed border-gray-300 p-16 text-center">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <IoPeopleOutline className="text-gray-400" size={32} />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No members found</h3>
+              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                {hasActiveFilters
+                  ? "No members match your current filters. Try adjusting your search criteria."
+                  : "Get started by adding your first team member."}
+              </p>
+              {hasActiveFilters ? (
+                <Button
+                  onClick={clearFilters}
+                  icon={IoCloseOutline}
+                  label="Clear all filters"
+                  className="text-blue-600 hover:text-blue-700 bg-transparent border-transparent hover:bg-blue-50"
+                />
+              ) : (
+                <Button
+                  onClick={() => {
+                    setSelectedUser(null);
+                    setOpenForm(true);
+                  }}
+                  icon={IoMdAdd}
+                  label="Add First Member"
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                />
+              )}
+            </div>
+          ) : viewMode === "grid" ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {filteredUsers.map((user) => (
+                <UserCard
+                  key={user.id}
+                  user={user}
+                  onClick={handleView}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="py-3.5 px-6 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Member</th>
+                      <th className="py-3.5 px-6 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Email</th>
+                      <th className="py-3.5 px-6 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Role</th>
+                      <th className="py-3.5 px-6 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Department</th>
+                      <th className="py-3.5 px-6 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
+                      <th className="py-3.5 px-6 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-100">
+                    {filteredUsers.map((user) => (
+                      <UserListRow
+                        key={user.id}
+                        user={user}
+                        onClick={handleView}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-      </div>
+
+      {/* Modals */}
+      <UserDetailsModal
+        user={selectedUser}
+        isOpen={openViewModal}
+        onClose={() => setOpenViewModal(false)}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
 
       <AddUser
         open={openForm}
         setOpen={setOpenForm}
-        userData={selectedUser && typeof selectedUser === "object" ? selectedUser : null}
+        userData={selectedUser}
       />
 
       <ConfirmatioDialog
         open={openDelete}
         setOpen={setOpenDelete}
         onClick={deleteHandler}
-        title="Delete User?"
-        message={`Are you sure you want to remove "${selectedUser?.name || 'this user'}" from the team? This action cannot be undone.`}
-        confirmText="Remove Member"
-        confirmClassName="bg-red-600 hover:bg-red-700 text-white"
+        title="Delete Member"
+        message={`Are you sure you want to remove "${selectedUser?.name}" from the team? This action cannot be undone.`}
+        confirmText="Delete Member"
+        confirmClassName="bg-red-600 hover:bg-red-700"
       />
     </>
   );
