@@ -1,23 +1,16 @@
 import React, { useState } from "react";
-import { BiMessageAltDetail } from "react-icons/bi";
-import {
-  MdAttachFile,
-  MdKeyboardArrowDown,
-  MdKeyboardArrowUp,
-  MdKeyboardDoubleArrowUp,
-} from "react-icons/md";
 import { toast } from "sonner";
 import { BGS, PRIOTITYSTYELS, TASK_TYPE, formatDate } from "../../utils";
 import clsx from "clsx";
-import { FaList } from "react-icons/fa";
+import * as Icons from "../../icons";
 import UserInfo from "../UserInfo";
 import Button from "../Button";
 import ConfirmatioDialog from "../Dialogs";
 
 const ICONS = {
-  high: <MdKeyboardDoubleArrowUp />,
-  medium: <MdKeyboardArrowUp />,
-  low: <MdKeyboardArrowDown />,
+  high: <Icons.ChevronsUp className="w-4 h-4" />,
+  medium: <Icons.ChevronUp className="w-4 h-4" />,
+  low: <Icons.ChevronDown className="w-4 h-4" />,
 };
 
 const Table = ({ tasks }) => {
@@ -91,20 +84,20 @@ const Table = ({ tasks }) => {
         </td>
 
         <td className='py-2'>
-          <div className='flex items-center gap-3'>
-            <div className='flex gap-1 items-center text-sm text-gray-600'>
-              <BiMessageAltDetail />
-              <span>{task?.activities?.length || 0}</span>
+            <div className='flex items-center gap-3'>
+              <div className='flex gap-1 items-center text-sm text-gray-600'>
+                <Icons.MessageSquare className="w-4 h-4" />
+                <span>{task?.activities?.length || 0}</span>
+              </div>
+              <div className='flex gap-1 items-center text-sm text-gray-600'>
+                <Icons.Paperclip className="w-4 h-4" />
+                <span>{task?.assets?.length || 0}</span>
+              </div>
+              <div className='flex gap-1 items-center text-sm text-gray-600'>
+                <Icons.ListChecks className="w-4 h-4" />
+                <span>0/{task?.subTasks?.length || 0}</span>
+              </div>
             </div>
-            <div className='flex gap-1 items-center text-sm text-gray-600'>
-              <MdAttachFile />
-              <span>{task?.assets?.length || 0}</span>
-            </div>
-            <div className='flex gap-1 items-center text-sm text-gray-600'>
-              <FaList />
-              <span>0/{task?.subTasks?.length || 0}</span>
-            </div>
-          </div>
         </td>
 
 <td className='py-2'>
@@ -147,24 +140,26 @@ const Table = ({ tasks }) => {
 
   return (
     <>
-      <div className='bg-white px-2 md:px-4 pt-4 pb-9 shadow-md rounded'>
-        <div className='overflow-x-auto'>
-          <table className='w-full'>
-            <TableHeader />
-            <tbody>
-              {tasks?.length > 0 ? (
-                tasks.map((task, index) => (
-                  <TableRow key={task._id || index} task={task} />
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={6} className='py-4 text-center text-gray-500'>
-                    No tasks found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+      <div className='bg-gray-50/60 p-4 rounded-xl'>
+        <div className='bg-white px-2 md:px-4 pt-4 pb-4 shadow-md rounded-xl border border-gray-200'>
+          <div className='overflow-x-auto'>
+            <table className='w-full text-sm text-gray-800'>
+              <TableHeader />
+              <tbody>
+                {tasks?.length > 0 ? (
+                  tasks.map((task, index) => (
+                    <TableRow key={task._id || index} task={task} />
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className='py-4 text-center text-gray-500'>
+                      No tasks found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 

@@ -1,19 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import {
-  Send,
-  Plus,
-  MoreVertical,
-  Trash2,
-  Users,
-  BarChart3,
-  Zap,
-  Clock,
-  MessageCircle,
-  Paperclip,
-  ChevronRight,
-  ChevronDown,
-} from 'lucide-react';
+import * as Icons from '../icons';
 import { toast } from 'sonner';
 import {
   getProjectMessages,
@@ -91,6 +78,25 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
       return () => clearInterval(refetchInterval);
     }
   }, [projectId, dispatch]);
+
+  // Diagnostic: log icons to detect undefined icon components
+  useEffect(() => {
+    console.log('chat icons:', {
+      Paperclip: Icons.Paperclip,
+      Send: Icons.Send,
+      MessageCircle: Icons.MessageCircle,
+      Zap: Icons.Zap,
+      BarChart3: Icons.BarChart3,
+      Users: Icons.Users,
+      HelpCircle: Icons.HelpCircle,
+      ChevronRight: Icons.ChevronRight,
+      Trash2: Icons.Trash2,
+      ChevronDown: Icons.ChevronDown,
+      RefreshCw: Icons.RefreshCw,
+    });
+  }, []);
+  
+  // Remove diagnostic log once icons are stable
 
   // ✅ Show error toast
   useEffect(() => {
@@ -426,45 +432,56 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
             className="p-2.5 hover:bg-gray-50 text-gray-600 hover:text-gray-800 rounded-lg transition-all duration-200"
             title="Refresh messages"
           >
-            <MessageCircle size={20} />
+            {Icons.RefreshCw && <Icons.RefreshCw className="tm-icon" />}
           </button>
+
           <button
-            onClick={() => {
-              setShowStats(!showStats);
-              setShowParticipants(false);
-              setShowHelp(false);
-            }}
-            className="p-2.5 hover:bg-gray-50 text-gray-600 hover:text-gray-800 rounded-lg transition-all duration-200"
-            title="Chat Statistics"
+            className="p-2.5 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-all duration-200"
+            title="Messages"
           >
-            <BarChart3 size={20} />
+            {Icons.MessageCircle && <Icons.MessageCircle className="tm-icon" />}
           </button>
+
           <button
-            onClick={() => {
-              setShowParticipants(!showParticipants);
-              setShowStats(false);
-              setShowHelp(false);
-            }}
-            className="p-2.5 hover:bg-gray-50 text-gray-600 hover:text-gray-800 rounded-lg transition-all duration-200 relative"
-            title="Online Members"
+            className="p-2.5 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-all duration-200"
+            title="Commands"
           >
-            <Users size={20} />
-            {participants.length > 0 && (
-              <span className="absolute -top-1 -right-1 bg-gray-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                {participants.length}
-              </span>
-            )}
+            {Icons.Zap && <Icons.Zap className="tm-icon" />}
           </button>
+
           <button
-            onClick={() => {
-              setShowHelp(!showHelp);
-              setShowStats(false);
-              setShowParticipants(false);
-            }}
+            className="p-2.5 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-all duration-200"
+            title="Stats"
+          >
+            {Icons.BarChart3 && <Icons.BarChart3 className="tm-icon" />}
+          </button>
+
+          <div className="relative">
+            <button
+              className="p-2.5 hover:bg-gray-50 text-gray-600 hover:text-gray-800 rounded-lg transition-all duration-200 relative"
+              title="Online Members"
+            >
+              {Icons.Users && <Icons.Users className="tm-icon" />}
+              {participants.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-gray-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  {participants.length}
+                </span>
+              )}
+            </button>
+          </div>
+
+          <button
+            className="p-2.5 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-all duration-200"
+            title="Participants"
+          >
+            {Icons.Users && <Icons.Users className="tm-icon" />}
+          </button>
+
+          <button
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600"
             title="Help"
           >
-            <Zap size={18} />
+            {Icons.HelpCircle && <Icons.HelpCircle className="tm-icon" />}
           </button>
         </div>
       </div>
@@ -551,7 +568,7 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
                   <p className="text-sm font-semibold text-gray-800">{item.cmd}</p>
                   <p className="text-xs text-gray-600 mt-0.5">{item.desc}</p>
                 </div>
-                <ChevronRight size={16} className="text-gray-400 group-hover:text-gray-600 transition-colors" />
+                {Icons.ChevronRight && <Icons.ChevronRight className="tm-icon text-gray-400 group-hover:text-gray-600 transition-colors" />}
               </button>
             ))}
           </div>
@@ -574,7 +591,7 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
           {/* Empty state */}
           {!messageLoading && messages.length === 0 && (
             <div className="flex flex-col items-center justify-center h-96 text-gray-400">
-              <MessageCircle size={48} className="mb-3 opacity-50" />
+                {Icons.MessageCircle && <Icons.MessageCircle className="tm-icon-hero mb-3 opacity-50" />}
               <p className="text-gray-500">No messages yet. Start the conversation!</p>
             </div>
           )}
@@ -645,10 +662,10 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
                         {isCurrentUser && (
                           <button
                             onClick={() => handleDeleteMessage(msg.id || msg._id)}
-                            className="text-gray-400 hover:text-red-500 transition-colors ml-1 hover:scale-110"
+                            className="text-gray-400 hover:text-red-500 transition-colors ml-1 hover:scale-110 icon-center"
                             title="Delete message"
                           >
-                            <Trash2 size={14} />
+                            {Icons.Trash2 && <Icons.Trash2 className="tm-icon" />}
                           </button>
                         )}
                       </div>
@@ -690,7 +707,7 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
               className="absolute bottom-4 right-4 bg-gray-600 hover:bg-gray-700 text-white p-3 rounded-full shadow-lg transition-all duration-200 z-10"
               title="Scroll to bottom"
             >
-              <ChevronDown size={20} />
+              {Icons.ChevronDown && <Icons.ChevronDown className="tm-icon" />}
             </button>
           )}
           
@@ -731,14 +748,14 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
           onSubmit={handleSendMessage} 
           className="px-5 py-4 max-w-5xl mx-auto"
         >
-          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
             {/* Attachment button (optional) */}
             <button
               type="button"
               className="p-2.5 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-all duration-200"
               title="Attach file"
             >
-              <Paperclip size={20} />
+              {Icons.Paperclip && <Icons.Paperclip className="tm-icon" />}
             </button>
             
             {/* Message input */}
@@ -762,7 +779,7 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
               {chatLoading ? (
                 <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
               ) : (
-                <Send size={20} />
+                Icons.Send && <Icons.Send className="tm-icon" />
               )}
             </button>
           </div>

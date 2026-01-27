@@ -4,7 +4,9 @@ import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
 import fetchWithTenant from '../utils/fetchWithTenant';
 import { selectUser } from '../redux/slices/authSlice';
-import { AlertCircle, CheckCircle, XCircle, Play, Pause, RotateCcw, Check, Clock, Kanban, List, CheckSquare, MessageSquare, Plus, Send, User, Calendar, RefreshCw, Eye, Filter, ChevronDown } from 'lucide-react';
+import * as Icons from '../icons';
+
+const { AlertCircle, CheckCircle, XCircle, Play, Pause, RotateCcw, Check, Clock, Kanban, List, CheckSquare, MessageSquare, Plus, Send, User, Calendar, RefreshCw, Eye, Filter, ChevronDown } = Icons;
 import KanbanBoard from '../components/KanbanBoard';
 import ReassignTaskRequestModal from './ReassignTaskRequest';
 
@@ -136,7 +138,7 @@ const EmployeeTasks = () => {
   const [kanbanData, setKanbanData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [view, setView] = useState(userRole === 'employee' ? 'kanban' : 'list');
+  const [view, setView] = useState('list');
   
   // New checklist functionality states
   const [checklistForm, setChecklistForm] = useState({ title: '', dueDate: '' });
@@ -1005,17 +1007,6 @@ const EmployeeTasks = () => {
           {userRole === 'employee' && (
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setView('kanban')}
-                className={`px-3 py-2 rounded-lg border ${
-                  view === 'kanban'
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                <Kanban className="w-4 h-4 mr-2 inline" />
-                Kanban
-              </button>
-              <button
                 onClick={() => setView('list')}
                 className={`px-3 py-2 rounded-lg border ${
                   view === 'list'
@@ -1023,8 +1014,19 @@ const EmployeeTasks = () => {
                     : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                 }`}
               >
-                <List className="w-4 h-4 mr-2 inline" />
+                <List className="tm-icon mr-2 inline" />
                 List
+              </button>
+              <button
+                onClick={() => setView('kanban')}
+                className={`px-3 py-2 rounded-lg border ${
+                  view === 'kanban'
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <Kanban className="tm-icon mr-2 inline" />
+                Kanban
               </button>
             </div>
           )}

@@ -3,7 +3,9 @@ import { Transition } from "@headlessui/react";
 import clsx from "clsx";
 import { Fragment, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { IoClose } from "react-icons/io5";
+import * as Icons from "./icons";
+
+const { X } = Icons;
 import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { Toaster } from "sonner";
 
@@ -181,7 +183,7 @@ const MobileSidebar = () => {
               onClick={closeSidebar} 
               className="p-2 rounded-xl hover:bg-slate-800 transition-colors text-slate-400"
             >
-              <IoClose size={24} />
+              <X className="w-5 h-5" />
             </button>
           </div>
 

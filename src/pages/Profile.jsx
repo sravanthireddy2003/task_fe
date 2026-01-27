@@ -5,22 +5,9 @@ import { updateProfile, enable2FA, verify2FA, disable2FA } from '../redux/slices
 import { toast } from 'sonner';
 import Button from '../components/Button';
 import Textbox from '../components/Textbox';
-import { 
-  FaUser, 
-  FaEnvelope, 
-  FaPhone, 
-  FaCamera, 
-  FaSave, 
-  FaKey, 
-  FaQrcode, 
-  FaMobileAlt,
-  FaShieldAlt,
-  FaCheckCircle,
-  FaTimesCircle,
-  FaExclamationTriangle,
-  FaCopy,
-  FaDownload
-} from 'react-icons/fa';
+import * as Icons from '../icons';
+
+const { User, Mail, Phone, Camera, Save, KeyRound, QrCode, Smartphone, ShieldCheck, CheckCircle2, XCircle, AlertTriangle, Copy, Download } = Icons;
 
 const Profile = () => {
   const dispatch = useDispatch();
@@ -231,7 +218,7 @@ const Profile = () => {
                               {user.name.charAt(0).toUpperCase()}
                             </span>
                           ) : (
-                            <FaUser className="w-10 h-10 text-white" />
+                            <User className="w-10 h-10 text-white" />
                           )}
                         </div>
                       </div>
@@ -269,7 +256,7 @@ const Profile = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                        <FaUser className="text-gray-400" />
+                        <User className="text-gray-400" />
                         Full Name
                       </label>
                       <Textbox
@@ -286,7 +273,7 @@ const Profile = () => {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                        <FaEnvelope className="text-gray-400" />
+                        <Mail className="text-gray-400" />
                         Email Address
                       </label>
                       <Textbox
@@ -307,7 +294,7 @@ const Profile = () => {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                        <FaPhone className="text-gray-400" />
+                        <Phone className="text-gray-400" />
                         Phone Number
                       </label>
                       <Textbox
@@ -339,7 +326,7 @@ const Profile = () => {
                         label={saving ? "Saving..." : "Save Changes"}
                         disabled={saving}
                         className="w-full md:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        icon={FaSave}
+                        icon={Save}
                       />
                     </div>
                   )}
@@ -353,7 +340,7 @@ const Profile = () => {
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
                     <div className="p-3 bg-blue-50 rounded-lg">
-                      <FaShieldAlt className="w-6 h-6 text-blue-600" />
+                      <ShieldCheck className="w-6 h-6 text-blue-600" />
                     </div>
                     <div>
                       <h3 className="text-xl font-semibold text-gray-900">Two-Factor Authentication</h3>
@@ -364,12 +351,12 @@ const Profile = () => {
                   <div className={`px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2 ${get2FAStatusClass()}`}>
                     {twoFAEnabled ? (
                       <>
-                        <FaCheckCircle className="w-4 h-4" />
+                        <CheckCircle2 className="w-4 h-4" />
                         Enabled
                       </>
                     ) : (
                       <>
-                        <FaTimesCircle className="w-4 h-4" />
+                        <XCircle className="w-4 h-4" />
                         Disabled
                       </>
                     )}
@@ -381,7 +368,7 @@ const Profile = () => {
                     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
                       <div className="flex items-start gap-4">
                         <div className="p-3 bg-white rounded-lg shadow-sm">
-                          <FaKey className="w-8 h-8 text-blue-600" />
+                          <KeyRound className="w-8 h-8 text-blue-600" />
                         </div>
                         <div className="flex-1">
                           <h4 className="font-semibold text-gray-900 mb-2">Enhanced Account Security</h4>
@@ -391,7 +378,7 @@ const Profile = () => {
                             your authenticator app when signing in.
                           </p>
                           <div className="flex items-center gap-3 text-sm text-gray-600">
-                            <FaExclamationTriangle className="text-yellow-500" />
+                            <AlertTriangle className="text-yellow-500" />
                             <span>Recommended for all accounts with sensitive data</span>
                           </div>
                         </div>
@@ -402,7 +389,7 @@ const Profile = () => {
                       <div className="p-5 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all">
                         <div className="flex items-center gap-3 mb-3">
                           <div className="p-2 bg-blue-50 rounded">
-                            <FaMobileAlt className="w-5 h-5 text-blue-600" />
+                            <Smartphone className="w-5 h-5 text-blue-600" />
                           </div>
                           <h5 className="font-semibold text-gray-900">Authenticator Apps</h5>
                         </div>
@@ -414,7 +401,7 @@ const Profile = () => {
                       <div className="p-5 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all">
                         <div className="flex items-center gap-3 mb-3">
                           <div className="p-2 bg-green-50 rounded">
-                            <FaCheckCircle className="w-5 h-5 text-green-600" />
+                            <CheckCircle2 className="w-5 h-5 text-green-600" />
                           </div>
                           <h5 className="font-semibold text-gray-900">How It Works</h5>
                         </div>
@@ -428,7 +415,7 @@ const Profile = () => {
                       <div className="p-5 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all">
                         <div className="flex items-center gap-3 mb-3">
                           <div className="p-2 bg-purple-50 rounded">
-                            <FaQrcode className="w-5 h-5 text-purple-600" />
+                            <QrCode className="w-5 h-5 text-purple-600" />
                           </div>
                           <h5 className="font-semibold text-gray-900">Always Available</h5>
                         </div>
@@ -443,7 +430,7 @@ const Profile = () => {
                         onClick={handleEnable2FA}
                         className="w-full md:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
                       >
-                        <FaKey />
+                        <KeyRound />
                         Enable Two-Factor Authentication
                       </button>
                     </div>
@@ -452,7 +439,7 @@ const Profile = () => {
                   <div className="space-y-6">
                     <div className="bg-green-50 border border-green-200 rounded-xl p-6">
                       <div className="flex items-center gap-4">
-                        <FaCheckCircle className="w-8 h-8 text-green-600 flex-shrink-0" />
+                        <CheckCircle2 className="w-8 h-8 text-green-600 flex-shrink-0" />
                         <div>
                           <h4 className="font-semibold text-green-800">Two-Factor Authentication is Active</h4>
                           <p className="text-green-700 mt-1">
@@ -539,15 +526,15 @@ const Profile = () => {
               <h3 className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
               <div className="space-y-3">
                 <button className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-3">
-                  <FaKey className="text-gray-400" />
+                  <KeyRound className="text-gray-400" />
                   <span>Change Password</span>
                 </button>
                 <button className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-3">
-                  <FaEnvelope className="text-gray-400" />
+                  <Mail className="text-gray-400" />
                   <span>Email Preferences</span>
                 </button>
                 <button className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-3">
-                  <FaShieldAlt className="text-gray-400" />
+                  <ShieldCheck className="text-gray-400" />
                   <span>Privacy Settings</span>
                 </button>
               </div>
@@ -558,19 +545,19 @@ const Profile = () => {
               <h3 className="font-semibold text-blue-900 mb-3">Security Tips</h3>
               <ul className="space-y-3">
                 <li className="flex items-start gap-2 text-sm text-blue-800">
-                  <FaCheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
                   <span>Use a strong, unique password</span>
                 </li>
                 <li className="flex items-start gap-2 text-sm text-blue-800">
-                  <FaCheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
                   <span>Enable two-factor authentication</span>
                 </li>
                 <li className="flex items-start gap-2 text-sm text-blue-800">
-                  <FaCheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
                   <span>Keep your backup codes safe</span>
                 </li>
                 <li className="flex items-start gap-2 text-sm text-blue-800">
-                  <FaCheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
                   <span>Review login activity regularly</span>
                 </li>
               </ul>
@@ -656,7 +643,7 @@ const Profile = () => {
               <div className="space-y-6">
                 <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
                   <div className="flex items-start gap-3">
-                    <FaExclamationTriangle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                    <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
                     <div>
                       <p className="font-medium text-yellow-800">Save these codes in a secure place!</p>
                       <p className="text-sm text-yellow-700 mt-1">
@@ -682,14 +669,14 @@ const Profile = () => {
                     onClick={() => copyToClipboard(backupCodes.join('\n'))}
                     className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2"
                   >
-                    <FaCopy />
+                    <Copy />
                     Copy All
                   </button>
                   <button
                     onClick={downloadBackupCodes}
                     className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2"
                   >
-                    <FaDownload />
+                    <Download />
                     Download
                   </button>
                 </div>

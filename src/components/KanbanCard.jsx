@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Clock, User, Flag, Calendar, CheckSquare, CheckCircle2 } from 'lucide-react';
+import * as Icons from '../icons';
 
 const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentRequests = {} }) => {
   const [liveTime, setLiveTime] = useState(task.total_duration || 0);
@@ -124,7 +124,7 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentR
       {/* Priority */}
       {task.priority && (
         <div className="flex items-center gap-1 mb-2">
-          <Flag className={`w-3 h-3 ${getPriorityColor(task.priority)}`} />
+          <Icons.Flag className={`w-3 h-3 ${getPriorityColor(task.priority)}`} />
           <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${getPriorityColor(task.priority)}`}>
             {task.priority}
           </span>
@@ -134,7 +134,7 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentR
       {/* Assigned Users */}
       {assignedUsers.length > 0 && (
         <div className="flex items-center gap-1 mb-2">
-          <User className="w-3 h-3 text-gray-400" />
+          <Icons.User className="w-3 h-3 text-gray-400" />
           <div className="flex -space-x-1">
             {assignedUsers.slice(0, 3).map((user, index) => (
               <div
@@ -157,7 +157,7 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentR
       {/* Due Date */}
       {task.due_date && (
         <div className="flex items-center gap-1 mb-2">
-          <Calendar className="w-3 h-3 text-gray-400" />
+          <Icons.CalendarDays className="w-3 h-3 text-gray-400" />
           <span className="text-caption">
             Due {formatDate(task.due_date)}
           </span>
@@ -167,7 +167,7 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentR
       {/* Timer/Time Tracking or Total Hours for Completed */}
       {isCompleted ? (
         <div className="flex items-center gap-2 mt-3 p-2 bg-green-100 rounded-lg">
-          <CheckCircle2 className="w-4 h-4 text-green-600" />
+          <Icons.CheckCircle2 className="w-4 h-4 text-green-600" />
           <div>
             <p className="text-caption font-semibold text-green-700">✓ Task Completed</p>
             <p className="text-caption text-green-600">
@@ -177,7 +177,7 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentR
         </div>
       ) : (liveTime > 0 || (task.status || task.stage) === 'In Progress') && (
         <div className="flex items-center gap-1">
-          <Clock className={`w-3 h-3 ${(task.status || task.stage) === 'In Progress' ? 'text-blue-500 animate-pulse' : 'text-gray-400'}`} />
+          <Icons.Clock className={`w-3 h-3 ${(task.status || task.stage) === 'In Progress' ? 'text-blue-500 animate-pulse' : 'text-gray-400'}`} />
           <span className={`text-caption font-medium ${(task.status || task.stage) === 'In Progress' ? 'text-blue-600' : 'text-gray-600'}`}>
             {formatDuration(liveTime)}
           </span>
@@ -187,7 +187,7 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentR
       {/* Checklist Progress */}
       {task.checklist && task.checklist.length > 0 && (
         <div className="flex items-center gap-1 mt-2">
-          <CheckSquare className="w-3 h-3 text-gray-400" />
+          <Icons.CheckSquare className="w-3 h-3 text-gray-400" />
           <span className="text-caption">
             {task.checklist.filter(i => i.status === 'Completed').length}/{task.checklist.length} items
           </span>

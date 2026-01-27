@@ -3,11 +3,9 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import fetchWithTenant from '../utils/fetchWithTenant';
 import ReassignTaskRequestModal from './ReassignTaskRequest';
-import { 
-  ArrowLeft, Clock, AlertCircle, CheckCircle, XCircle, 
-  RefreshCw, Calendar, User, FileText, ChevronRight,
-  Folder, Flag, MessageSquare
-} from 'lucide-react';
+import * as Icons from '../icons';
+
+const { ArrowLeft, Clock, AlertCircle, CheckCircle, XCircle, RefreshCw, Calendar, User, FileText, ChevronRight, Folder, Flag, MessageSquare } = Icons;
 
 const formatDateString = (value) => {
   if (!value) return '—';

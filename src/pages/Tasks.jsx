@@ -1236,12 +1236,10 @@
 
 
 import { useState, useEffect, useCallback } from 'react';
-import { 
-  Plus, Edit2, Trash2, AlertCircle, Filter, List, Grid, Calendar, Clock, 
-  User, RefreshCw, GitBranch, Search, ChevronDown, MoreVertical, CheckCircle,
-  XCircle, PlayCircle, PauseCircle, Eye, LayoutGrid, Clock4, Folder,
-  ClipboardList, CheckSquare, Pause, Play
-} from 'lucide-react';
+import * as Icons from '../icons';
+import ViewToggle from '../components/ViewToggle';
+
+const { Plus, Edit2, Trash2, AlertCircle, Filter, List, Grid, Calendar, Clock, User, RefreshCw, GitBranch, Search, ChevronDown, MoreVertical, CheckCircle, XCircle, PlayCircle, PauseCircle, Eye, LayoutGrid, Clock4, Folder, ClipboardList, CheckSquare, Pause, Play } = Icons;
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'sonner';
 
@@ -1694,7 +1692,7 @@ export default function Tasks() {
     switch (view) {
       case 'list':
         return (
-          <div className="bg-white border rounded-xl overflow-hidden">
+          <div className="tm-list-container">
             <table className="w-full table-auto">
               <thead className="bg-gray-50 text-gray-700">
                 <tr>
@@ -1732,7 +1730,7 @@ export default function Tasks() {
 
                       <td className="p-4">
                         <div className="flex items-center gap-2">
-                          <User className="w-4 h-4 text-gray-400" />
+                          <User className="tm-icon text-gray-400" />
                           <span className="text-sm text-gray-700">{getAssignedUsers(task)}</span>
                         </div>
                       </td>
@@ -1765,7 +1763,7 @@ export default function Tasks() {
 
                       <td className="p-4">
                         <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-gray-400" />
+                          <Calendar className="tm-icon text-gray-400" />
                           <span className="text-sm text-gray-700">{formatDate(task.taskDate || task.dueDate)}</span>
                         </div>
                       </td>
@@ -1777,14 +1775,14 @@ export default function Tasks() {
                             className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                             title="Edit task"
                           >
-                            <Edit2 className="w-4 h-4" />
+                            <Edit2 className="tm-icon" />
                           </button>
                           <button
                             onClick={(e) => { e.stopPropagation(); handleDelete(task); }}
                             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                             title="Delete task"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="tm-icon" />
                           </button>
                         </div>
                       </td>
@@ -1816,7 +1814,7 @@ export default function Tasks() {
                   {columnTasks.map((task) => (
                     <div 
                       key={task.id} 
-                      className="bg-white rounded-lg border p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                      className="tm-card-shell cursor-pointer"
                       onClick={() => handleOpenTaskDetails(task)}
                     >
                       <div className="flex items-start justify-between mb-2">
@@ -1828,7 +1826,7 @@ export default function Tasks() {
                       <p className="text-sm text-gray-600 mb-3 line-clamp-2">{task.description}</p>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <User className="w-4 h-4 text-gray-400" />
+                          <User className="tm-icon text-gray-400" />
                           <span className="text-xs text-gray-600">{getAssignedUsers(task)}</span>
                         </div>
                         <div className="text-xs text-gray-500">{formatDate(task.dueDate || task.taskDate)}</div>
@@ -2007,10 +2005,10 @@ export default function Tasks() {
 
           return (
             <>
-              {card('To Do', counts.toDo, 'bg-slate-600', <ClipboardList className="w-6 h-6" />)}
-              {card('In Progress', counts.inProgress, 'bg-blue-600', <Play className="w-6 h-6" />)}
-              {card('On Hold', counts.onHold, 'bg-orange-600', <Pause className="w-6 h-6" />)}
-              {card('Completed', counts.completed, 'bg-emerald-600', <CheckSquare className="w-6 h-6" />)}
+              {card('To Do', counts.toDo, 'bg-slate-600', <ClipboardList className="tm-icon-xl" />)}
+              {card('In Progress', counts.inProgress, 'bg-blue-600', <Play className="tm-icon-xl" />)}
+              {card('On Hold', counts.onHold, 'bg-orange-600', <Pause className="tm-icon-xl" />)}
+              {card('Completed', counts.completed, 'bg-emerald-600', <CheckSquare className="tm-icon-xl" />)}
             </>
           );
         })()}
@@ -2059,8 +2057,15 @@ export default function Tasks() {
               }`}
             title="Refresh tasks"
           >
-            <RefreshCw className={`w-5 h-5 ${isFetching ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`tm-icon ${isFetching ? 'animate-spin' : ''} text-blue-600`} />
           </button>
+
+          {/* View Toggle: shared list/grid control (grid maps to kanban) */}
+          <ViewToggle
+            mode={view === 'list' ? 'list' : 'grid'}
+            onChange={(mode) => setView(mode === 'list' ? 'list' : 'kanban')}
+            className="ml-1"
+          />
 
           {/* Add Task Button */}
           <button
@@ -2071,7 +2076,7 @@ export default function Tasks() {
                 : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="tm-icon" />
             Add Task
           </button>
         </div>
@@ -2085,7 +2090,7 @@ export default function Tasks() {
               ? 'bg-white text-blue-600 border-t border-l border-r border-gray-300' 
               : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
         >
-          <List className="w-4 h-4" />
+          <List className="tm-icon" />
           List
         </button>
         <button
@@ -2094,7 +2099,7 @@ export default function Tasks() {
               ? 'bg-white text-blue-600 border-t border-l border-r border-gray-300' 
               : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
         >
-          <LayoutGrid className="w-4 h-4" />
+          <LayoutGrid className="tm-icon" />
           Kanban
         </button>
         <button
@@ -2103,7 +2108,7 @@ export default function Tasks() {
               ? 'bg-white text-blue-600 border-t border-l border-r border-gray-300' 
               : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
         >
-          <Calendar className="w-4 h-4" />
+          <Calendar className="tm-icon" />
           Calendar
         </button>
         <button
@@ -2112,7 +2117,7 @@ export default function Tasks() {
               ? 'bg-white text-blue-600 border-t border-l border-r border-gray-300' 
               : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
         >
-          <GitBranch className="w-4 h-4" />
+          <GitBranch className="tm-icon" />
           Timeline
         </button>
       </div>
@@ -2122,7 +2127,7 @@ export default function Tasks() {
         <div className="mb-6 space-y-4">
           {/* Search Bar */}
           <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 tm-icon text-gray-400" />
             <input
               type="text"
               placeholder="Search tasks..."
@@ -2135,7 +2140,7 @@ export default function Tasks() {
           {/* Filters */}
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-gray-600" />
+              <Filter className="tm-icon text-gray-600" />
               <span className="text-gray-700 font-medium">Filters:</span>
             </div>
             
@@ -2171,7 +2176,7 @@ export default function Tasks() {
       {/* Loading Indicator */}
       {isFetching && (
         <div className="flex items-center justify-center p-4 mb-6 bg-blue-50 rounded-lg">
-          <RefreshCw className="w-5 h-5 mr-2 animate-spin text-blue-600" />
+          <RefreshCw className="tm-icon mr-2 animate-spin text-blue-600" />
           <span className="text-blue-600 font-medium">Loading tasks...</span>
         </div>
       )}
@@ -2179,7 +2184,7 @@ export default function Tasks() {
       {/* NO PROJECT SELECTED STATE */}
       {selectedProjectId === 'all' && (
         <div className="bg-white rounded-xl border p-12 text-center">
-          <AlertCircle className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+          <AlertCircle className="tm-icon-hero mx-auto mb-4 text-gray-400" />
           <h3 className="text-xl font-semibold text-gray-900 mb-2">Select a Project</h3>
           <p className="text-gray-600 mb-6">
             Please select a project from the dropdown above to view and manage tasks.
@@ -2204,7 +2209,7 @@ export default function Tasks() {
       {/* NO TASKS STATE - When project selected but no tasks */}
       {selectedProjectId !== 'all' && !isFetching && tasks.length === 0 && (
         <div className="bg-white rounded-xl border p-12 text-center">
-          <AlertCircle className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+          <AlertCircle className="tm-icon-hero mx-auto mb-4 text-gray-400" />
           <h3 className="text-xl font-semibold text-gray-900 mb-2">No Tasks Found</h3>
           <p className="text-gray-600 mb-6">
             No tasks found for project "{getProjectName(selectedProjectId)}".

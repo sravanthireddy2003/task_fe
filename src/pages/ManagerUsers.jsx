@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { httpGetService } from "../App/httpHandler";
 import { toast } from "sonner";
-import { Clock, Users as UserIcon } from "lucide-react";
+import * as Icons from "../icons";
 import Title from "../components/Title";
 
 const normalizeEmployees = (payload) => {
@@ -55,11 +55,11 @@ const ManagerUsers = () => {
         />
         <div className="flex flex-wrap gap-3 text-sm text-gray-600">
           <div className="flex items-center gap-1">
-            <UserIcon className="h-4 w-4 text-gray-400" />
+            <Icons.Users className="h-4 w-4 text-gray-400" />
             <span>{employees.length} total</span>
           </div>
           <div className="flex items-center gap-1">
-            <Clock className="h-4 w-4 text-gray-400" />
+            <Icons.Clock className="h-4 w-4 text-gray-400" />
             <span>{activeCount} active</span>
           </div>
         </div>

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { Loader } from 'lucide-react';
+import * as Icons from '../icons';
+
+const { Loader } = Icons;
 import { toast } from 'sonner';
 import ChatInterface from '../components/ChatInterface';
 import { httpGetService } from '../App/httpHandler';

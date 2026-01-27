@@ -1,6 +1,8 @@
 import clsx from "clsx";
 import React from "react";
-import { IoMdAdd } from "react-icons/io";
+import * as Icons from "../icons";
+
+const { Plus } = Icons;
 
 const TaskTitle = ({ label, className }) => {
   return (
@@ -11,7 +13,7 @@ const TaskTitle = ({ label, className }) => {
       </div>
 
       <button className='hidden md:block'>
-        <IoMdAdd className='text-lg text-black' />
+        <Plus className='text-lg text-black' />
       </button>
     </div>
   );

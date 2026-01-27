@@ -1,23 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { IoMdAdd } from "react-icons/io";
-import { 
-  IoSearch, 
-  IoFilter, 
-  IoEyeOutline, 
-  IoPencilOutline, 
-  IoTrashOutline, 
-  IoBusinessOutline,
-  IoPersonOutline,
-  IoMailOutline, 
-  IoCallOutline, 
-  IoLocationOutline,
-  IoRefreshOutline,
-  IoGridOutline,
-  IoListOutline,
-  IoChevronDownOutline,
-  IoCheckmarkCircleOutline,
-  IoCloseCircleOutline
-} from "react-icons/io5";
+import * as Icons from "../icons";
 import { useDispatch, useSelector } from "react-redux";
 import Table from "../components/client/EditInClient";
 import ClientForm from "../components/client/ClientForm";
@@ -32,6 +14,7 @@ import {
 } from "../redux/slices/clientSlice";
 import { fetchUsers, selectUsers } from "../redux/slices/userSlice";
 import clsx from "clsx";
+import ViewToggle from "../components/ViewToggle";
 
 const Clients = () => {
   const navigate = useNavigate();
@@ -48,7 +31,7 @@ const Clients = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [managerFilter, setManagerFilter] = useState("all");
-  const [viewMode, setViewMode] = useState("table");
+  const [viewMode, setViewMode] = useState("list");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const loadData = async () => {
@@ -108,7 +91,7 @@ const Clients = () => {
 
   // Client Card Component for Grid View
   const ClientCard = ({ client }) => (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 hover:border-blue-300 hover:shadow-sm transition-all duration-200">
+    <div className="tm-card-shell">
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
           <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -119,7 +102,7 @@ const Clients = () => {
           <div>
             <h3 className="font-medium text-gray-900 text-sm">{client.name}</h3>
             <p className="text-xs text-gray-500 flex items-center gap-1">
-              <IoBusinessOutline className="w-3 h-3" />
+              <Icons.Building2 className="tm-icon" />
               {client.company || "No company"}
             </p>
           </div>
@@ -131,9 +114,9 @@ const Clients = () => {
             : "bg-green-50 text-green-700"
         )}>
           {client.isDeleted ? (
-            <IoCloseCircleOutline className="w-3 h-3" />
+            <Icons.XCircle className="tm-icon" />
           ) : (
-            <IoCheckmarkCircleOutline className="w-3 h-3" />
+            <Icons.CheckCircle2 className="tm-icon" />
           )}
           <span className="hidden sm:inline">{client.isDeleted ? "Deleted" : "Active"}</span>
         </span>
@@ -141,11 +124,11 @@ const Clients = () => {
 
       <div className="space-y-2 mb-3">
         <div className="flex items-center gap-2 text-xs text-gray-600">
-          <IoMailOutline className="w-3 h-3 text-gray-400" />
+          <Icons.Mail className="tm-icon text-gray-400" />
           <span className="truncate">{client.email || "No email"}</span>
         </div>
         <div className="flex items-center gap-2 text-xs text-gray-600">
-          <IoCallOutline className="w-3 h-3 text-gray-400" />
+          <Icons.Phone className="tm-icon text-gray-400" />
           <span>{client.phone || "No phone"}</span>
         </div>
       </div>
@@ -155,34 +138,34 @@ const Clients = () => {
           <div className="text-xs">
             <p className="text-gray-500">Manager</p>
             <p className="font-medium text-gray-900 flex items-center gap-1">
-              <IoPersonOutline className="w-3 h-3 text-gray-400" />
+              <Icons.User2 className="tm-icon text-gray-400" />
               {client.managerName?.split(" ")[0] || "Unassigned"}
             </p>
           </div>
           <div className="flex items-center gap-1">
             <button
               onClick={() => navigate(`/client-dashboard/${client.id}`)}
-              className="p-1.5 hover:bg-gray-100 rounded text-gray-500 hover:text-blue-600 transition-colors"
+              className="p-1.5 hover:bg-gray-100 rounded text-gray-500 hover:text-blue-600 transition-colors icon-center"
               title="View"
             >
-              <IoEyeOutline className="w-4 h-4" />
+              <Icons.Eye className="tm-icon" />
             </button>
             <button
               onClick={() => {
                 setSelectedClient(client);
                 setOpenClientForm(true);
               }}
-              className="p-1.5 hover:bg-gray-100 rounded text-gray-500 hover:text-blue-600 transition-colors"
+              className="p-1.5 hover:bg-gray-100 rounded text-gray-500 hover:text-blue-600 transition-colors icon-center"
               title="Edit"
             >
-              <IoPencilOutline className="w-4 h-4" />
+              <Icons.Pencil className="tm-icon" />
             </button>
             <button
               onClick={() => handleDelete(client.id)}
-              className="p-1.5 hover:bg-red-50 rounded text-gray-500 hover:text-red-600 transition-colors"
+              className="p-1.5 hover:bg-red-50 rounded text-gray-500 hover:text-red-600 transition-colors icon-center"
               title="Delete"
             >
-              <IoTrashOutline className="w-4 h-4" />
+              <Icons.Trash2 className="tm-icon" />
             </button>
           </div>
         </div>
@@ -217,16 +200,16 @@ const Clients = () => {
       <div className="p-6">
         <div className="max-w-7xl mx-auto">
           <div className="bg-white rounded-lg border border-red-200 p-6 text-center">
-            <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3">
-              <IoTrashOutline size={20} />
-            </div>
+              <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Icons.Trash2 className="tm-icon" />
+              </div>
             <h3 className="text-base font-medium text-gray-900 mb-2">Failed to load clients</h3>
             <p className="text-sm text-gray-600 mb-4">{error || 'An error occurred'}</p>
             <button
               onClick={loadData}
               className="bg-gray-800 hover:bg-black text-white px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5"
             >
-              <IoRefreshOutline className="w-4 h-4" />
+              <Icons.RefreshCcw className="tm-icon" />
               Try Again
             </button>
           </div>
@@ -248,34 +231,9 @@ const Clients = () => {
             <p className="text-sm text-gray-500">Manage your client portfolio</p>
           </div>
           
-          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
             {/* View Toggle */}
-            <div className="flex bg-gray-100 rounded-lg">
-              <button
-                onClick={() => setViewMode("grid")}
-                className={clsx(
-                  "p-2 rounded-l-lg transition-colors",
-                  viewMode === "grid" 
-                    ? "bg-white text-blue-600 shadow-sm" 
-                    : "text-gray-600 hover:text-gray-900"
-                )}
-                title="Grid View"
-              >
-                <IoGridOutline className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode("table")}
-                className={clsx(
-                  "p-2 rounded-r-lg transition-colors",
-                  viewMode === "table" 
-                    ? "bg-white text-blue-600 shadow-sm" 
-                    : "text-gray-600 hover:text-gray-900"
-                )}
-                title="Table View"
-              >
-                <IoListOutline className="w-4 h-4" />
-              </button>
-            </div>
+            <ViewToggle mode={viewMode} onChange={setViewMode} />
             
             {/* Refresh Button */}
             <button
@@ -284,7 +242,7 @@ const Clients = () => {
               className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
               title="Refresh"
             >
-              <IoRefreshOutline className={clsx("w-4 h-4", isRefreshing && "animate-spin")} />
+              <Icons.RefreshCcw className={clsx("tm-icon", isRefreshing && "animate-spin")} />
             </button>
             
             {/* Add Client Button */}
@@ -294,7 +252,7 @@ const Clients = () => {
                 setOpenClientForm(true);
               }}
               className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5">
-              <IoMdAdd className="w-4 h-4" />
+              <Icons.Plus className="tm-icon" />
               Add Client
             </button>
           </div>
@@ -309,7 +267,7 @@ const Clients = () => {
                 <p className="text-lg font-semibold text-gray-900">{stats.total}</p>
               </div>
               <div className="w-8 h-8 rounded bg-blue-50 flex items-center justify-center">
-                <IoBusinessOutline className="w-4 h-4 text-blue-600" />
+                <Icons.Building2 className="tm-icon text-blue-600" />
               </div>
             </div>
           </div>
@@ -321,7 +279,7 @@ const Clients = () => {
                 <p className="text-lg font-semibold text-gray-900">{stats.active}</p>
               </div>
               <div className="w-8 h-8 rounded bg-green-50 flex items-center justify-center">
-                <IoCheckmarkCircleOutline className="w-4 h-4 text-green-600" />
+                <Icons.CheckCircle2 className="tm-icon text-green-600" />
               </div>
             </div>
           </div>
@@ -333,7 +291,7 @@ const Clients = () => {
                 <p className="text-lg font-semibold text-gray-900">{stats.deleted}</p>
               </div>
               <div className="w-8 h-8 rounded bg-red-50 flex items-center justify-center">
-                <IoTrashOutline className="w-4 h-4 text-red-600" />
+                <Icons.Trash2 className="tm-icon text-red-600" />
               </div>
             </div>
           </div>
@@ -344,7 +302,7 @@ const Clients = () => {
           <div className="flex flex-col md:flex-row gap-3">
             <div className="flex-1">
               <div className="relative">
-                <IoSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Icons.Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
                   type="text"
                   placeholder="Search clients..."
@@ -366,7 +324,7 @@ const Clients = () => {
                   <option value="active">Active</option>
                   <option value="deleted">Deleted</option>
                 </select>
-                <IoChevronDownOutline className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none w-4 h-4" />
+                <Icons.ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none w-4 h-4" />
               </div>
 
               <div className="relative">
@@ -385,7 +343,7 @@ const Clients = () => {
                     );
                   })}
                 </select>
-                <IoPersonOutline className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none w-4 h-4" />
+                <Icons.User2 className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none w-4 h-4" />
               </div>
             </div>
           </div>
@@ -417,7 +375,7 @@ const Clients = () => {
           <div className="bg-green-50 border border-green-200 rounded-lg p-3">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
-                <IoCheckmarkCircleOutline className="w-4 h-4 text-green-600" />
+                <CheckCircle2 className="w-4 h-4 text-green-600" />
               </div>
               <div>
                 <p className="text-sm font-medium text-green-900">Success</p>
@@ -431,7 +389,7 @@ const Clients = () => {
         {filteredClients.length === 0 ? (
           <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
             <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <IoBusinessOutline className="w-6 h-6 text-gray-400" />
+              <Icons.Building2 className="w-6 h-6 text-gray-400" />
             </div>
             <h3 className="text-base font-medium text-gray-900 mb-1">
               {searchQuery || statusFilter !== "all" || managerFilter !== "all"
@@ -445,7 +403,7 @@ const Clients = () => {
             </p>
             <Link to="/add-client">
               <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5">
-                <IoMdAdd className="w-4 h-4" />
+                <Icons.Plus className="tm-icon" />
                 Add First Client
               </button>
             </Link>
@@ -461,7 +419,7 @@ const Clients = () => {
               <Link to="/add-client">
                 <div className="border border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 cursor-pointer flex flex-col items-center justify-center">
                   <div className="w-10 h-10 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center mb-2">
-                    <IoMdAdd className="w-5 h-5 text-gray-400" />
+                    <Icons.Plus className="w-5 h-5 text-gray-400" />
                   </div>
                   <h3 className="text-sm font-medium text-gray-900 mb-1">Add Client</h3>
                   <p className="text-xs text-gray-500">Click to add new</p>
@@ -470,7 +428,7 @@ const Clients = () => {
             </div>
           </>
         ) : (
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <div className="tm-list-container">
             <div className="overflow-x-auto">
               <Table
                 clients={filteredClients}
@@ -491,7 +449,7 @@ const Clients = () => {
                 }}
                 className="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-700 text-sm font-medium"
               >
-                <IoMdAdd className="w-4 h-4" />
+                <Icons.Plus className="tm-icon" />
                 Add New Client
               </button>
             </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Plus, Edit2, Trash2, FolderKanban, Filter, List, Grid } from "lucide-react";
+import * as Icons from "../icons";
+import ViewToggle from "../components/ViewToggle";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchProjects,
@@ -19,7 +20,27 @@ import { fetchClients, selectClients } from "../redux/slices/clientSlice";
 import { fetchUsers, selectUsers } from "../redux/slices/userSlice";
 import { toast } from "sonner";
 
-import { X, ClipboardList, CheckCircle2, Clock, AlertCircle, PauseCircle, Clock as ClockIcon, BarChart3, Activity, User, Calendar, FileText } from 'lucide-react';
+const {
+  Plus,
+  Edit3,
+  Edit2,
+  Trash2,
+  FolderKanban,
+  Filter,
+  List,
+  Grid,
+  X,
+  ClipboardList,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  PauseCircle,
+  BarChart3,
+  Activity,
+  User,
+  CalendarDays,
+  FileText,
+} = Icons;
 export default function Projects() {
   const dispatch = useDispatch();
 
@@ -48,7 +69,7 @@ export default function Projects() {
   const priorityOptions = ["Low", "Medium", "High"];
 
   // View and modal state
-  const [view, setView] = useState("card");
+  const [view, setView] = useState("list");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
   const [filterDept, setFilterDept] = useState("all");
@@ -320,23 +341,15 @@ export default function Projects() {
           <p className="text-gray-600">Manage and track all your projects</p>
         </div>
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setView("list")}
-            className={`p-2 rounded-lg border ${view === "list" ? "bg-blue-100 border-blue-400" : "bg-white"}`}
-          >
-            <List className="w-5 h-5 text-blue-600" />
-          </button>
-          <button
-            onClick={() => setView("card")}
-            className={`p-2 rounded-lg border ${view === "card" ? "bg-blue-100 border-blue-400" : "bg-white"}`}
-          >
-            <Grid className="w-5 h-5 text-blue-600" />
-          </button>
+          <ViewToggle
+            mode={view === "list" ? "list" : "grid"}
+            onChange={(mode) => setView(mode === "list" ? "list" : "card")}
+          />
           <button
             onClick={() => openModal()}
             className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="tm-icon" />
             Add Project
           </button>
         </div>
@@ -344,7 +357,7 @@ export default function Projects() {
 
       {/* PROJECT STATS DASHBOARD */}
       {projectStats && (
-        <div className="bg-white rounded-xl border p-6 mb-6">
+        <div className="tm-card-shell mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Project Statistics</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
             <div className="text-center">
@@ -501,7 +514,7 @@ export default function Projects() {
                         onClick={() => handleDelete(project)}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="tm-icon" />
                       </button>
                     </div>
                   </td>

@@ -21,7 +21,7 @@ const ModalWrapper = ({ open, setOpen, children }) => {
           leaveFrom='opacity-100'
           leaveTo='opacity-0'
         >
-          <div className='fixed inset-0 bg-black bg-opacity-60 transition-opacity' />
+          <div className='fixed inset-0 bg-gray-900 bg-opacity-60 transition-opacity' />
         </Transition.Child>
 
         <div className='fixed inset-0 z-50 w-screen overflow-y-auto'>
@@ -35,7 +35,7 @@ const ModalWrapper = ({ open, setOpen, children }) => {
               leaveFrom='opacity-100 translate-y-0 sm:scale-100'
               leaveTo='opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95'
             >
-              <Dialog.Panel className='w-full relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-5xl'>
+              <Dialog.Panel className='w-full relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-5xl'>
                 <div className='bg-white px-8 py-8 sm:p-8'>
                   <div className='w-full'>
                     {children}

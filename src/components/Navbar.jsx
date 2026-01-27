@@ -1,10 +1,11 @@
-import React, { useState } from "react";
-import { MdOutlineSearch, MdOutlineAdd, MdOutlineFilterList, MdOutlineViewWeek } from "react-icons/md";
+import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setOpenSidebar } from "../redux/slices/authSlice";
 import UserAvatar from "./UserAvatar";
 import NotificationPanel from "./NotificationPanel";
 import { useLocation } from "react-router-dom";
+import Button from "./Button";
+import * as Icons from "../icons";
 
 const Navbar = ({ searchQuery, setSearchQuery, onCreateTask, onFilterClick, onViewToggle }) => {
   const { user } = useSelector((state) => state.auth);
@@ -42,8 +43,8 @@ const Navbar = ({ searchQuery, setSearchQuery, onCreateTask, onFilterClick, onVi
 
         {/* Page Title */}
         <div>
-          <h1 className="text-h2 font-semibold text-slate-900">{getPageTitle()}</h1>
-          <p className="text-caption text-slate-500">Manage and track your work efficiently</p>
+          <h1 className="text-heading-3 font-semibold text-gray-900">{getPageTitle()}</h1>
+          <p className="text-caption text-gray-500">Manage and track your work efficiently</p>
         </div>
       </div>
 
@@ -62,24 +63,26 @@ const Navbar = ({ searchQuery, setSearchQuery, onCreateTask, onFilterClick, onVi
 
         {/* Filter Button */}
         {onFilterClick && (
-          <button
+          <Button
             onClick={onFilterClick}
-            className="hidden md:flex items-center gap-2 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 hover:border-slate-300 transition-all text-body text-slate-700"
-          >
-            <MdOutlineFilterList size={18} />
-            <span>Filter</span>
-          </button>
+            variant="secondary"
+            size="sm"
+            icon={Icons.Filter}
+            label="Filter"
+            className="hidden md:inline-flex"
+          />
         )}
 
         {/* View Toggle */}
         {onViewToggle && (
-          <button
+          <Button
             onClick={onViewToggle}
-            className="hidden md:flex items-center gap-2 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 hover:border-slate-300 transition-all text-body text-slate-700"
-          >
-            <MdOutlineViewWeek size={18} />
-            <span>View</span>
-          </button>
+            variant="secondary"
+            size="sm"
+            icon={Icons.LayoutPanelLeft}
+            label="View"
+            className="hidden md:inline-flex"
+          />
         )}
 
         {/* Create Task Button */}

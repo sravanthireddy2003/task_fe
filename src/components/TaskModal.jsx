@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Clock, Play, Pause, Square, User, Flag, Calendar, MessageSquare } from 'lucide-react';
+import * as Icons from '../icons';
 import { toast } from 'sonner';
 import TimeTracker from './TimeTracker';
 
@@ -128,7 +128,7 @@ const TaskModal = ({ task, onClose, onUpdate, userRole, projectId }) => {
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600"
           >
-            <X className="w-6 h-6" />
+            <Icons.X className="w-6 h-6" />
           </button>
         </div>
 

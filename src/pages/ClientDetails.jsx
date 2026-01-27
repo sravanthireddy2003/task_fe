@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import Table from '../components/task/Table';  // Reusable table component for tasks
 import Button from '../components/Button';
-import { FaEdit } from "react-icons/fa";
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchClientDetails, fetchClientTasks } from '../redux/slices/clientSlice';
 

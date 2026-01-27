@@ -1,14 +1,7 @@
 import { useState, useEffect } from 'react';
-import {
-  Bell,
-  Check,
-  CheckCheck,
-  Trash2,
-  AlertCircle,
-  RefreshCw,
-  Filter,
-  Clock,
-} from 'lucide-react';
+import * as Icons from '../icons';
+
+const { Bell, Check, CheckCheck, Trash2, AlertCircle, RefreshCw, Filter, Clock } = Icons;
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'sonner';
 
@@ -338,7 +331,7 @@ export default function Notifications() {
                       className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
                       title="Delete notification"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="tm-icon" />
                     </button>
                   </div>
                 </div>

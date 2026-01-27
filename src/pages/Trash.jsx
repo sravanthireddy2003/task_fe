@@ -1,10 +1,7 @@
 import clsx from "clsx";
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  MdDelete,
-  MdOutlineRestore,
-} from "react-icons/md";
+import * as Icons from "../icons";
 import Title from "../components/Title";
 import Button from "../components/Button";
 import ConfirmatioDialog from "../components/Dialogs";
@@ -121,11 +118,11 @@ const Trash = () => {
 
       <td className='py-2 flex gap-1 justify-end'>
         <Button
-          icon={<MdOutlineRestore className='text-xl text-gray-500' />}
+          icon={<Icons.RotateCcw className='text-xl text-gray-500' />}
           onClick={() => restoreClick(item.id || item._id)}
         />
         <Button
-          icon={<MdDelete className='text-xl text-red-600' />}
+          icon={<Icons.Trash2 className='text-xl text-red-600' />}
           onClick={() => deleteClick(item.id || item._id)}
         />
       </td>
@@ -141,14 +138,14 @@ const Trash = () => {
           <div className='flex gap-2 md:gap-4 items-center'>
             <Button
               label='Restore All'
-              icon={<MdOutlineRestore className='text-lg hidden md:flex' />}
+              icon={<Icons.RefreshCcw className='text-lg hidden md:flex' />}
               className='flex flex-row-reverse gap-1 items-center  text-black text-sm md:text-base rounded-md 2xl:py-2.5'
               onClick={() => restoreAllClick()}
               disabled={deletedClients.length === 0}
             />
             <Button
               label='Delete All'
-              icon={<MdDelete className='text-lg hidden md:flex' />}
+              icon={<Icons.Trash2 className='text-lg hidden md:flex' />}
               className='flex flex-row-reverse gap-1 items-center  text-red-600 text-sm md:text-base rounded-md 2xl:py-2.5'
               onClick={() => deleteAllClick()}
               disabled={deletedClients.length === 0}

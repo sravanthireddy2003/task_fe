@@ -1,5 +1,5 @@
 import React from "react";
-import { FaTasks, FaProjectDiagram, FaClock, FaCalendarAlt, FaArrowLeft } from "react-icons/fa";
+import * as Icons from "../../icons";
 import { Chart } from "../Chart";
 import { useNavigate } from "react-router-dom";
 
@@ -30,7 +30,7 @@ const ClientAnalytics = ({ client, tasks }) => {
             onClick={() => navigate(-1)}
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-gray-700 shadow-sm border border-gray-200 rounded-xl hover:bg-gray-50 hover:shadow-md transition-all duration-200 font-medium text-sm whitespace-nowrap"
           >
-            <FaArrowLeft className="w-4 h-4" />
+            <Icons.ArrowLeft className="w-4 h-4" />
             Back
           </button>
         </div>
@@ -45,11 +45,11 @@ const ClientAnalytics = ({ client, tasks }) => {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {[
-            { title: "Total Tasks", value: clientTasks.length.toString(), icon: <FaTasks className="text-blue-500" />, color: "from-blue-500 to-blue-600" },
-            { title: "Projects", value: projects.length.toString(), icon: <FaProjectDiagram className="text-emerald-500" />, color: "from-emerald-500 to-emerald-600" },
-            { title: "Hours", value: `${totalHours}h`, icon: <FaClock className="text-purple-500" />, color: "from-purple-500 to-purple-600" },
-            { title: "Deadlines", value: upcomingDeadlines.length.toString(), icon: <FaCalendarAlt className="text-orange-500" />, color: "from-orange-500 to-orange-600" },
+          {[ 
+            { title: "Total Tasks", value: clientTasks.length.toString(), icon: <ListChecks className="text-blue-500" />, color: "from-blue-500 to-blue-600" },
+            { title: "Projects", value: projects.length.toString(), icon: <Projector className="text-emerald-500" />, color: "from-emerald-500 to-emerald-600" },
+            { title: "Hours", value: `${totalHours}h`, icon: <Clock3 className="text-purple-500" />, color: "from-purple-500 to-purple-600" },
+            { title: "Deadlines", value: upcomingDeadlines.length.toString(), icon: <CalendarDays className="text-orange-500" />, color: "from-orange-500 to-orange-600" },
           ].map((stat, i) => (
             <div key={i} className="group bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-white/50 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 overflow-hidden h-full min-h-[140px] flex flex-col justify-between">
               <div className="flex items-start justify-between">
@@ -73,7 +73,7 @@ const ClientAnalytics = ({ client, tasks }) => {
             <div className="bg-white rounded-3xl border border-gray-200 shadow-xl p-8 overflow-hidden">
               <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-100">
                 <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                  Task Status <FaTasks className="text-amber-500" />
+                  Task Status <Icons.ListChecks className="text-amber-500" />
                 </h2>
               </div>
               <div className="flex items-center justify-center h-[22rem] w-full bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl border-2 border-dashed border-gray-200 overflow-hidden">
@@ -92,7 +92,7 @@ const ClientAnalytics = ({ client, tasks }) => {
                   </div>
                 ) : (
                   <div className="text-center p-12">
-                    <FaTasks className="w-24 h-24 text-gray-300 mx-auto mb-6" />
+                    <Icons.ListChecks className="w-24 h-24 text-gray-300 mx-auto mb-6" />
                     <h3 className="text-2xl font-bold text-gray-500 mb-2">No Tasks Yet</h3>
                     <p className="text-gray-400">Tasks will appear here once assigned to this client</p>
                   </div>
@@ -104,7 +104,7 @@ const ClientAnalytics = ({ client, tasks }) => {
             <div className="bg-white rounded-3xl border border-gray-200 shadow-xl p-8 overflow-hidden lg:h-[22rem]">
               <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-100">
                 <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                  Projects <FaProjectDiagram className="text-emerald-500" />
+                  Projects <Icons.Projector className="text-emerald-500" />
                 </h2>
               </div>
               {hasProjects ? (
@@ -114,7 +114,7 @@ const ClientAnalytics = ({ client, tasks }) => {
                     return (
                       <div key={i} className="group flex items-center gap-4 p-4 bg-gradient-to-r from-emerald-50 to-green-50 rounded-2xl border border-emerald-100 hover:shadow-lg transition-all cursor-pointer overflow-hidden">
                         <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg">
-                          <FaProjectDiagram className="text-white text-lg" />
+                          <Icons.Projector className="text-white text-lg" />
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="font-bold text-lg text-gray-900 line-clamp-1 mb-1">{project}</p>
@@ -130,7 +130,7 @@ const ClientAnalytics = ({ client, tasks }) => {
               ) : (
                 <div className="h-[18rem] flex items-center justify-center p-12 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl border-2 border-dashed border-gray-300">
                   <div className="text-center">
-                    <FaProjectDiagram className="w-20 h-20 text-gray-300 mx-auto mb-6" />
+                    <Icons.Projector className="w-20 h-20 text-gray-300 mx-auto mb-6" />
                     <h3 className="text-2xl font-bold text-gray-500 mb-2">No Projects</h3>
                     <p className="text-gray-400">Assign projects to see them here</p>
                   </div>
@@ -145,7 +145,7 @@ const ClientAnalytics = ({ client, tasks }) => {
             <div className="bg-white rounded-3xl border border-gray-200 shadow-xl p-8 overflow-hidden lg:h-[22rem]">
               <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-100">
                 <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                  Upcoming <FaCalendarAlt className="text-orange-500" />
+                  Upcoming <Icons.CalendarDays className="text-orange-500" />
                 </h2>
               </div>
               {upcomingDeadlines.length ? (
@@ -159,7 +159,7 @@ const ClientAnalytics = ({ client, tasks }) => {
                             <h4 className="font-bold text-xl text-gray-900 line-clamp-2 mb-2">{task.title || task.name}</h4>
                             <div className="flex items-center gap-3 text-sm text-gray-600">
                               <span className="flex items-center gap-1 px-2.5 py-1 bg-yellow-100 text-yellow-800 rounded-full font-medium">
-                                <FaClock className="w-3.5 h-3.5" />
+                                <Icons.Clock3 className="w-3.5 h-3.5" />
                                 {days}d
                               </span>
                               <span>{new Date(task.dueDate).toLocaleDateString()}</span>
@@ -176,7 +176,7 @@ const ClientAnalytics = ({ client, tasks }) => {
               ) : (
                 <div className="h-[18rem] flex items-center justify-center p-12 bg-gradient-to-r from-emerald-50 to-green-50 rounded-2xl border-2 border-dashed border-emerald-200">
                   <div className="text-center">
-                    <FaCalendarAlt className="w-20 h-20 text-emerald-400 mx-auto mb-6" />
+                    <Icons.CalendarDays className="w-20 h-20 text-emerald-400 mx-auto mb-6" />
                     <h3 className="text-2xl font-bold text-emerald-700 mb-2">All Clear! 🎉</h3>
                     <p className="text-emerald-600 font-medium">No upcoming deadlines</p>
                   </div>
@@ -188,7 +188,7 @@ const ClientAnalytics = ({ client, tasks }) => {
             <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-3xl border border-purple-200/50 shadow-2xl p-8 overflow-hidden">
               <div className="flex items-center justify-between mb-10 pb-6 border-b border-purple-200/50">
                 <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                  Hours Summary <FaClock className="text-purple-500" />
+                  Hours Summary <Icons.Clock3 className="text-purple-500" />
                 </h2>
               </div>
               <div className="text-center">

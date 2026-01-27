@@ -1,18 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { httpGetService } from '../App/httpHandler';
 import { toast } from 'sonner';
-import { 
-  ArrowUpRight, 
-  TrendingUp, 
-  Users, 
-  Briefcase, 
-  CheckSquare, 
-  Target,
-  BarChart3,
-  Calendar,
-  Clock,
-  ChevronRight
-} from 'lucide-react';
+import * as Icons from '../icons';
+
+const { ArrowUpRight, TrendingUp, Users, Briefcase, CheckSquare, Target, BarChart3, Calendar, Clock, ChevronRight } = Icons;
 
 const normalizeList = (payload) => {
   if (!payload) return [];

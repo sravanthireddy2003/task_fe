@@ -1,11 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  FaLock, FaUsers, FaProjectDiagram, FaTasks, FaChartPie, FaBell, FaFileAlt,
-  FaCogs, FaComments, FaCalendarAlt, FaSlidersH, FaCheck, FaRocket, FaShieldAlt,
-  FaSync, FaCloud, FaMobileAlt, FaChevronRight, FaGlobe, FaUserFriends
-} from 'react-icons/fa';
-import { FiMenu, FiX } from 'react-icons/fi';
+import * as Icons from './icons';
 
 export default function TaskFlowEnterprise() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -37,19 +32,19 @@ export default function TaskFlowEnterprise() {
 
   // --- DATA ---
   const heroFeatures = [
-    { icon: FaShieldAlt, text: 'Enterprise Security', color: 'text-blue-400' },
-    { icon: FaGlobe, text: 'Multi-tenant Ready', color: 'text-green-400' },
-    { icon: FaSync, text: 'Real-time Sync', color: 'text-purple-400' },
-    { icon: FaMobileAlt, text: 'Mobile First', color: 'text-pink-400' }
+    { icon: Icons.ShieldCheck, text: 'Enterprise Security', color: 'text-blue-400' },
+    { icon: Icons.Globe2, text: 'Multi-tenant Ready', color: 'text-green-400' },
+    { icon: Icons.RefreshCw, text: 'Real-time Sync', color: 'text-purple-400' },
+    { icon: Icons.Smartphone, text: 'Mobile First', color: 'text-pink-400' }
   ];
 
 const modules = [
-    { id: 'auth', icon: FaLock, title: 'Secure Authentication', description: '2FA, SSO, RBAC with multi-tenant SaaS architecture', features: ['Google SSO', 'Password Policies', 'Login History', 'Suspicious Alerts'], color: 'from-blue-500/20 to-cyan-500/20' },
-    { id: 'dashboard', icon: FaChartPie, title: 'Smart Dashboard', description: 'AI-powered insights with real-time KPIs and predictive analytics', features: ['Task Heatmaps', 'AI Insights', 'Productivity Scores', 'Trend Analysis'], color: 'from-purple-500/20 to-pink-500/20' },
-    { id: 'clients', icon: FaUsers, title: 'Client Management', description: 'Complete client lifecycle with portal access and automation', features: ['Client Portals', 'Auto Onboarding', 'Multiple Contacts', 'Document Mgmt'], color: 'from-emerald-500/20 to-green-500/20' },
-    { id: 'projects', icon: FaProjectDiagram, title: 'Project Suite', description: 'Gantt charts, milestones, budgets, and profitability tracking', features: ['Gantt Views', 'Budget Tracking', 'Templates', 'Time-Cost Analysis'], color: 'from-amber-500/20 to-orange-500/20' },
-    { id: 'tasks', icon: FaTasks, title: 'Task Engine', description: 'Advanced task management with dependencies and automation', features: ['Kanban/Calendar', 'Dependencies', 'Recurring Tasks', 'Gamification'], color: 'from-rose-500/20 to-red-500/20' },
-    { id: 'team', icon: FaUserFriends, title: 'Team Collaboration', description: 'Real-time chat, approvals, and workload balancing', features: ['Live Chat', 'Approval Workflows', 'Performance Tracking', 'Workload Balance'], color: 'from-indigo-500/20 to-violet-500/20' }
+    { id: 'auth', icon: Icons.Lock, title: 'Secure Authentication', description: '2FA, SSO, RBAC with multi-tenant SaaS architecture', features: ['Google SSO', 'Password Policies', 'Login History', 'Suspicious Alerts'], color: 'from-blue-500/20 to-cyan-500/20' },
+    { id: 'dashboard', icon: Icons.PieChart, title: 'Smart Dashboard', description: 'AI-powered insights with real-time KPIs and predictive analytics', features: ['Task Heatmaps', 'AI Insights', 'Productivity Scores', 'Trend Analysis'], color: 'from-purple-500/20 to-pink-500/20' },
+    { id: 'clients', icon: Icons.Users, title: 'Client Management', description: 'Complete client lifecycle with portal access and automation', features: ['Client Portals', 'Auto Onboarding', 'Multiple Contacts', 'Document Mgmt'], color: 'from-emerald-500/20 to-green-500/20' },
+    { id: 'projects', icon: Icons.Projector, title: 'Project Suite', description: 'Gantt charts, milestones, budgets, and profitability tracking', features: ['Gantt Views', 'Budget Tracking', 'Templates', 'Time-Cost Analysis'], color: 'from-amber-500/20 to-orange-500/20' },
+    { id: 'tasks', icon: Icons.CheckSquare, title: 'Task Engine', description: 'Advanced task management with dependencies and automation', features: ['Kanban/Calendar', 'Dependencies', 'Recurring Tasks', 'Gamification'], color: 'from-rose-500/20 to-red-500/20' },
+    { id: 'team', icon: Icons.UserSquare2, title: 'Team Collaboration', description: 'Real-time chat, approvals, and workload balancing', features: ['Live Chat', 'Approval Workflows', 'Performance Tracking', 'Workload Balance'], color: 'from-indigo-500/20 to-violet-500/20' }
   ];
 
   const solutions = [
@@ -109,7 +104,9 @@ const modules = [
           <div className="flex items-center gap-4">
             <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="hidden md:block px-6 py-2.5 border-2 border-blue-500 text-blue-600 font-semibold rounded-lg hover:bg-blue-50 hover:border-blue-600 shadow-sm hover:shadow-md transition-all" onClick={handleLogin}>Sign In</motion.button>
             <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="px-6 py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold shadow-lg hover:shadow-xl transition-all" onClick={handleSignup}>Start Free Trial</motion.button>
-            <button className="lg:hidden text-gray-700" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>{mobileMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}</button>
+            <button className="lg:hidden text-gray-700 icon-center" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+              {mobileMenuOpen ? <Icons.X className="tm-icon" /> : <Icons.Menu className="tm-icon" />}
+            </button>
           </div>
         </div>
 
@@ -142,7 +139,7 @@ const modules = [
         <div className="container mx-auto px-6 relative">
           <div className="max-w-4xl mx-auto text-center">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 border border-blue-200 mb-6">
-              <FaRocket className="text-blue-600" />
+              <Icons.Rocket className="text-blue-600" />
               <span className="text-sm font-medium text-blue-700">Trusted by 500+ companies worldwide</span>
             </motion.div>
             <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-4xl md:text-6xl font-bold mb-6">
@@ -152,7 +149,7 @@ const modules = [
             <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">Everything you need to manage tasks, collaborate with teams, and delight clients in one powerful platform.</motion.p>
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
               <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="px-8 py-3 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold text-lg shadow-lg hover:shadow-xl flex items-center justify-center gap-3" onClick={handleSignup}>
-                Start 14-Day Free Trial <FaChevronRight />
+                Start 14-Day Free Trial <Icons.ChevronRight />
               </motion.button>
             </motion.div>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="flex flex-wrap justify-center gap-8">
@@ -193,7 +190,7 @@ const modules = [
             {modules.map((module, idx) => (
               <motion.div key={module.id} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }} whileHover={{ y: -5 }} className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all cursor-pointer">
                 <div className="flex items-center gap-4 mb-4">
-                  <div className={`p-3 rounded-lg bg-gradient-to-br ${module.color}`}><module.icon className="w-6 h-6 text-white" /></div>
+                  <div className={`p-3 rounded-lg bg-gradient-to-br ${module.color}`}><module.icon className="tm-icon text-white" /></div>
                   <div>
                     <h3 className="text-xl font-semibold text-gray-800">{module.title}</h3>
                     <p className="text-gray-600">{module.description}</p>
@@ -202,7 +199,7 @@ const modules = [
                 <div className="space-y-2">
                   {module.features.map((feature, i) => (
                     <div key={i} className="flex items-center gap-2 text-gray-700">
-                      <FaCheck className="w-4 h-4 text-green-500" />
+                      <Icons.Check className="tm-icon text-green-500" />
                       <span className="text-sm">{feature}</span>
                     </div>
                   ))}
@@ -228,7 +225,7 @@ const modules = [
                 <ul className="space-y-2">
                   {solution.features.map((f, i) => (
                     <li key={i} className="flex items-center gap-2 text-gray-700">
-                      <FaCheck className="w-4 h-4 text-green-500" /> {f}
+                      <Icons.Check className="w-4 h-4 text-green-500" /> {f}
                     </li>
                   ))}
                 </ul>

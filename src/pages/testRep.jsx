@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import moment from "moment";
 import "./testRep.css";
-import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
-import { MdModeEdit } from "react-icons/md";
+import * as Icons from "../icons";
 import { Dialog } from "@headlessui/react";
 import CryptoJS from "crypto-js";
 
@@ -183,7 +182,7 @@ const WeekCalendar = () => {
           className="flex bg-blue-500 text-white px-4 py-2 rounded"
           onClick={handlePrevWeek}
         >
-          <FaChevronLeft />
+          <Icons.ChevronLeft className="w-4 h-4" />
         </button>
 
         <h2>
@@ -194,7 +193,7 @@ const WeekCalendar = () => {
           className="flex bg-blue-500 text-white px-4 py-2 rounded"
           onClick={handleNextWeek}
         >
-          <FaChevronRight />
+          <Icons.ChevronRight className="w-4 h-4" />
         </button>
       </div>
 
@@ -230,12 +229,11 @@ const WeekCalendar = () => {
                   >
                     <div className="flex justify-between items-center p-2">
                       <h3 className="text-lg">{taskHours}</h3>
-                      <MdModeEdit
+                      <Icons.Pencil
                         className={`cursor-pointer text-gray-700 ${
                           !selectedTasks[task.id] ? "opacity-50" : ""
                         }`}
                         onClick={() => handleEditClick(task, day)}
-                        disabled={!selectedTasks[task.id]}
                       />
                     </div>
                   </td>
