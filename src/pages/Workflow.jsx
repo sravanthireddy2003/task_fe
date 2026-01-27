@@ -12,6 +12,8 @@ import {
   KanbanSquare,
 } from "lucide-react";
 import WorkflowKanban from "../components/WorkflowKanban";
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchTemplates } from '../redux/slices/workflowSlice';
 
 // ---------------- STATIC SAMPLE DATA ---------------- //
 
@@ -63,8 +65,14 @@ const sampleFlows = [
 ];
 
 export default function Workflow() {
+  const dispatch = useDispatch();
+  const { templates = [], loading } = useSelector((s) => s.workflow || { templates: [], loading: false });
   const [flows, setFlows] = useState([]);
-  const [loading, setLoading] = useState(true);
+
+  // synchronize local UI copy with store templates (server source of truth)
+  useEffect(() => {
+    if (Array.isArray(templates)) setFlows(templates);
+  }, [templates]);
 
   // UI states
   const [viewMode, setViewMode] = useState("cards"); // cards | table | kanban
@@ -86,13 +94,16 @@ export default function Workflow() {
   const [form, setForm] = useState(emptyForm);
   const [newStepName, setNewStepName] = useState("");
 
-  // Load static data
+  // Load templates from API/store
   useEffect(() => {
-    setTimeout(() => {
-      setFlows(sampleFlows);
-      setLoading(false);
-    }, 300);
-  }, []);
+    console.debug('[Workflow page] dispatching fetchTemplates()');
+    dispatch(fetchTemplates()).catch((e) => console.warn('[Workflow page] fetchTemplates error', e));
+  }, [dispatch]);
+
+  // Log when templates (flows) update for debugging
+  useEffect(() => {
+    console.debug('[Workflow page] templates updated, count=', (flows || []).length, flows && flows.slice(0,3));
+  }, [flows]);
 
   // Search filter
   const matchesQuery = (flow) => {
@@ -300,7 +311,7 @@ export default function Workflow() {
 
                 {/* Steps */}
                 <div className="mt-4 flex gap-2 overflow-x-auto">
-                  {flow.steps.map((s, i) => (
+                  {(flow.steps || []).map((s, i) => (
                     <div key={i} className="flex items-center gap-2">
                       <div className="border px-3 py-2 bg-gray-50 rounded-lg text-sm">
                         {s.name}
@@ -419,7 +430,7 @@ export default function Workflow() {
 
                     <td className="py-3">
                       <div className="flex gap-1 flex-wrap">
-                        {flow.steps.map((s, i) => (
+                        {(flow.steps || []).map((s, i) => (
                           <span
                             key={i}
                             className="px-2 py-1 text-xs bg-gray-100 rounded-lg"
@@ -513,7 +524,7 @@ export default function Workflow() {
             <div className="mt-6">
               <h4 className="font-semibold mb-2">Steps</h4>
               <div className="space-y-2">
-                {previewFlow.steps.map((s, i) => (
+                {(previewFlow?.steps || []).map((s, i) => (
                   <div
                     key={i}
                     className="px-3 py-2 border rounded-lg bg-gray-50 flex items-center gap-2"
@@ -637,7 +648,7 @@ export default function Workflow() {
               </div>
 
               <div className="mt-2 space-y-2">
-                {form.steps.map((s, i) => (
+                {(form.steps || []).map((s, i) => (
                   <div
                     key={i}
                     className="flex justify-between items-center bg-gray-50 border rounded-lg p-2"

@@ -6,6 +6,7 @@ import App from "./App.jsx";
 import "./index.css";
  
 import store from "./redux/store";
+import { initWorkflowSocket } from "./socket/initWorkflowSocket";
 import { setTokens, getAccessToken, getRefreshToken } from "./utils/tokenService";
 import { setAuthToken } from "./App/httpHandler";
 import { refreshToken } from "./redux/slices/authSlice";
@@ -64,6 +65,13 @@ async function boot() {
     }
     // ✅ NO DEV SEED - Let user login normally
   } finally {
+    // initialize workflow socket after store is ready
+    try {
+      initWorkflowSocket(store);
+    } catch (e) {
+      console.warn('Could not init workflow socket', e);
+    }
+
     ReactDOM.createRoot(document.getElementById("root")).render(
       <Provider store={store}>
         <BrowserRouter>

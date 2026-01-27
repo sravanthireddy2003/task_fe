@@ -54,6 +54,9 @@ import Trash from "./pages/Trash";
 import Approvals from "./pages/Approvals";
 import LandingPage from "./Landingpage";
 import ModuleDetail from "./pages/ModuleDetail";
+import ProtectedRoute from "./components/ProtectedRoute";
+import WorkflowBuilder from "./pages/WorkflowBuilder";
+import ManagerApprovalQueue from "./pages/ManagerApprovalQueue";
 import { getFallbackModules, getFallbackSidebar } from "./utils/apiGuide";
 import { MODULE_MAP } from "./App/moduleMap.jsx";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -500,6 +503,16 @@ function App() {
           <Route element={<ModuleRouteGuard moduleName="Tasks" />}>
             <Route path="/task/:id" element={<TaskDetails />} />
             <Route path="/employee/tasks/:taskId" element={<TaskDetailsWithRequests />} />
+          </Route>
+
+          {/* Protected admin workflow builder */}
+          <Route element={<ProtectedRoute allowedRoles={["Admin"]} />}>
+            <Route path="/admin/workflows/builder" element={<WorkflowBuilder />} />
+          </Route>
+
+          {/* Protected manager approval queue */}
+          <Route element={<ProtectedRoute allowedRoles={["Manager"]} />}>
+            <Route path="/manager/workflows/queue" element={<ManagerApprovalQueue />} />
           </Route>
 
           <Route path="/trash" element={<Trash />} />

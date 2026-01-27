@@ -200,7 +200,7 @@ const WorkflowKanban = ({ selectedWorkflow, onBack }) => {
         onDragEnd={handleDragEnd}
       >
         <div className="flex gap-6 overflow-x-auto pb-6 min-h-[600px]">
-          {selectedWorkflow.steps.map((step) => (
+          {(selectedWorkflow?.steps || []).map((step) => (
             <KanbanColumn
               key={step.name}
               id={step.name}
