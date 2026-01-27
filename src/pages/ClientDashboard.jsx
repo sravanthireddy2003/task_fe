@@ -1,7 +1,6 @@
 // import React, { useEffect, useMemo } from "react";
 // import { Link, useParams } from "react-router-dom";
 // import { useDispatch, useSelector } from "react-redux";
-// import { FaChartLine, FaNewspaper, FaUsers } from "react-icons/fa";
 // import TaskCard from "../components/TaskCard";
 // import { getClient } from "../redux/slices/clientSlice";
 // import { selectUser } from "../redux/slices/authSlice";
@@ -223,9 +222,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { FaNewspaper, FaUsers, FaFileAlt, FaChartLine } from "react-icons/fa";
-import { FaArrowsToDot } from "react-icons/fa6";
-import { MdAdminPanelSettings, MdEdit } from "react-icons/md";
+import * as Icons from "../icons";
 import TaskCard from "../components/TaskCard";
 import clsx from "clsx";
 import { getClient } from "../redux/slices/clientSlice";
@@ -278,7 +275,7 @@ const ClientDashboard = () => {
       _id: "1",
       label: "TOTAL TASK",
       total: clientTasks.length || 0,
-      icon: <FaNewspaper />,
+      icon: <Icons.Newspaper />,
       bg: "bg-[#1d4ed8]",
       thought: "Assigned Overall",
     },
@@ -286,7 +283,7 @@ const ClientDashboard = () => {
       _id: "2",
       label: "COMPLETED TASK",
       total: clientTasks.filter((task) => task.stage === "COMPLETED").length,
-      icon: <MdAdminPanelSettings />,
+      icon: <Icons.ShieldCheck />,
       bg: "bg-[#0f766e]",
       thought: "Well Done",
     },
@@ -294,7 +291,7 @@ const ClientDashboard = () => {
       _id: "3",
       label: "TASK IN PROGRESS",
       total: clientTasks.filter((task) => task.stage === "IN PROGRESS").length,
-      icon: <MdEdit />,
+      icon: <Icons.Pencil />,
       bg: "bg-[#f59e0b]",
       thought: "Progress",
     },
@@ -302,7 +299,7 @@ const ClientDashboard = () => {
       _id: "4",
       label: "TODOS",
       total: clientTasks.filter((task) => task.stage === "TODO").length,
-      icon: <FaArrowsToDot />,
+      icon: <Icons.ArrowDownRight />,
       bg: "bg-[#be185d]",
       thought: "Remaining",
     },
@@ -385,7 +382,7 @@ const ClientDashboard = () => {
               activeTab === TABS.OVERVIEW && "bg-blue-600 text-white"
             )}
           >
-            <FaNewspaper />
+            <Icons.Newspaper className="tm-icon" />
             Overview
           </button>
           <button
@@ -395,7 +392,7 @@ const ClientDashboard = () => {
               activeTab === TABS.CONTACTS && "bg-blue-600 text-white"
             )}
           >
-            <FaUsers />
+            <Icons.Users className="tm-icon" />
             Contacts
           </button>
           <button
@@ -405,7 +402,7 @@ const ClientDashboard = () => {
               activeTab === TABS.DOCUMENTS && "bg-blue-600 text-white"
             )}
           >
-            <FaFileAlt />
+            <Icons.FileText className="tm-icon" />
             Documents
           </button>
           <button
@@ -415,7 +412,7 @@ const ClientDashboard = () => {
               activeTab === TABS.ANALYTICS && "bg-blue-600 text-white"
             )}
           >
-            <FaChartLine />
+            <Icons.LineChart className="tm-icon" />
             Analytics
           </button>
         </div>

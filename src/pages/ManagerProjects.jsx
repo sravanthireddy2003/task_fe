@@ -1,7 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
-import { FolderKanban, List, Grid } from 'lucide-react';
+import * as Icons from '../icons';
+import ViewToggle from "../components/ViewToggle";
+
+const { FolderKanban, List, Grid } = Icons;
 import fetchWithTenant from '../utils/fetchWithTenant';
 import { selectUser } from '../redux/slices/authSlice';
 
@@ -19,7 +22,7 @@ const ManagerProjects = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterPriority, setFilterPriority] = useState('all');
-  const [view, setView] = useState('card');
+  const [view, setView] = useState('list');
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [selectedSummaryProject, setSelectedSummaryProject] = useState(null);
 
@@ -205,20 +208,10 @@ const ManagerProjects = () => {
       {/* VIEW TOGGLE AND FILTERS */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 bg-white rounded-lg border p-1">
-            <button
-              onClick={() => setView('card')}
-              className={`p-2 rounded ${view === 'card' ? 'bg-blue-100 text-blue-600' : 'text-gray-600'}`}
-            >
-              <Grid className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setView('list')}
-              className={`p-2 rounded ${view === 'list' ? 'bg-blue-100 text-blue-600' : 'text-gray-600'}`}
-            >
-              <List className="w-4 h-4" />
-            </button>
-          </div>
+          <ViewToggle
+            mode={view === 'list' ? 'list' : 'grid'}
+            onChange={(mode) => setView(mode === 'list' ? 'list' : 'card')}
+          />
         </div>
 
         <div className="flex flex-wrap gap-3 text-sm">
@@ -274,7 +267,7 @@ const ManagerProjects = () => {
         <>
           {/* LIST VIEW */}
           {view === "list" && (
-            <div className="bg-white border rounded-xl overflow-hidden">
+            <div className="tm-list-container">
               <table className="w-full table-auto">
                 <thead className="bg-gray-100 text-gray-700">
                   <tr>
@@ -318,7 +311,7 @@ const ManagerProjects = () => {
           {view === "card" && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredProjects.map((project) => (
-                <div key={project.id || project._id} className="bg-white border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                <div key={project.id || project._id} className="tm-card-shell">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">

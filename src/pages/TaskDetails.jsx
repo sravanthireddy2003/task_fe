@@ -1,17 +1,9 @@
 import clsx from "clsx";
 import moment from "moment";
 import React, { useState, useEffect } from "react";
-import { FaBug, FaTasks, FaThumbsUp, FaUser } from "react-icons/fa";
-import { GrInProgress } from "react-icons/gr";
-import {
-  MdKeyboardArrowDown,
-  MdKeyboardArrowUp,
-  MdKeyboardDoubleArrowUp,
-  MdOutlineDoneAll,
-  MdOutlineMessage,
-  MdTaskAlt,
-} from "react-icons/md";
-import { RxActivityLog } from "react-icons/rx";
+import * as Icons from '../icons';
+
+const { AlertOctagon, ListChecks, ThumbsUp, User, ArrowDown, ArrowUp, ChevronUp, CheckCheck, MessageCircle, Activity } = Icons;
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 import Tabs from "../components/Tabs";
@@ -20,7 +12,7 @@ import Loading from "../components/Loader";
 import Button from "../components/Button";
 import { useSelector, useDispatch } from "react-redux";
 import { selectTasks, fetchTasksbyId, selectSubTasks, getSubTask } from "../redux/slices/taskSlice";
-import { Clock, User, Info } from 'lucide-react';
+const { Clock, Info } = Icons;
 import { httpPostService, httpGetService } from '../App/httpHandler';
 
 
@@ -32,9 +24,9 @@ const assets = [
 ];
 
 const ICONS = {
-  high: <MdKeyboardDoubleArrowUp />,
-  medium: <MdKeyboardArrowUp />,
-  low: <MdKeyboardArrowDown />,
+  high: <ChevronUp className="tm-icon" />,
+  medium: <ArrowUp className="tm-icon" />,
+  low: <ArrowDown className="tm-icon" />,
 };
 
 const bgColor = {
@@ -44,39 +36,39 @@ const bgColor = {
 };
 
 const TABS = [
-  { title: "Task Detail", icon: <FaTasks /> },
-  { title: "Activities/Timeline", icon: <RxActivityLog /> },
+  { title: "Task Detail", icon: <ListChecks className="tm-icon" /> },
+  { title: "Activities/Timeline", icon: <Activity className="tm-icon" /> },
 ];
 
 const TASKTYPEICON = {
   commented: (
     <div className='w-10 h-10 rounded-full bg-gray-500 flex items-center justify-center text-white'>
-      <MdOutlineMessage />,
+      <MessageCircle />,
     </div>
   ),
   started: (
     <div className='w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white'>
-      <FaThumbsUp size={20} />
+      <ThumbsUp className="tm-icon" />
     </div>
   ),
   assigned: (
     <div className='w-6 h-6 flex items-center justify-center rounded-full bg-gray-500 text-white'>
-      <FaUser size={14} />
+      <User className="tm-icon" />
     </div>
   ),
   bug: (
     <div className='text-red-600'>
-      <FaBug size={24} />
+      <AlertOctagon className="tm-icon" />
     </div>
   ),
   completed: (
     <div className='w-10 h-10 rounded-full bg-green-600 flex items-center justify-center text-white'>
-      <MdOutlineDoneAll size={24} />
+      <CheckCheck className="tm-icon" />
     </div>
   ),
   "in progress": (
     <div className='w-8 h-8 flex items-center justify-center rounded-full bg-violet-600 text-white'>
-      <GrInProgress size={16} />
+      <Activity className="tm-icon" />
     </div>
   ),
 };
@@ -381,7 +373,7 @@ const TaskDetails = () => {
                     {subtasks?.map((el, index) => (
                       <div key={index} className='flex gap-3'>
                         <div className='w-10 h-10 flex items-center justify-center rounded-full bg-violet-50-200'>
-                          <MdTaskAlt className='text-violet-600' size={26} />
+                          <ListChecks className='tm-icon text-violet-600' />
                         </div>
 
                         <div className='space-y-1'>
@@ -613,14 +605,14 @@ const Activities = ({ activity, taskId}) => {
 
         <div className='flex flex-col gap-y-1 mb-8'>
           <div className='flex items-center space-x-2'>
-            <User size={16} />
+            <User className='tm-icon' />
             <p className='font-semibold'>{item?.user_name}</p>
           </div>
 
           <div className='text-gray-500 space-y-2'>
             <span className='capitalize'>{item?.type}</span>
             <div className='flex items-center space-x-2'>
-              <Clock size={18} />
+              <Clock className='tm-icon' />
               <span className='text-sm'>{moment(item?.createdAt).fromNow()}</span>
             </div>
           </div>

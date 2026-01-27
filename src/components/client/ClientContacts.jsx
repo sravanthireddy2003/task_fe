@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import { useDispatch } from "react-redux";
-import { IoMdAdd, IoMdClose, IoMdPerson } from "react-icons/io";
-import { MdEdit, MdDelete, MdStar, MdStarBorder } from "react-icons/md";
-import Button from '../Button'
-import { addContact, updateContact, deleteContact, setPrimaryContact } from '../../redux/slices/clientSlice'
+import * as Icons from "../../icons";
+import Button from "../Button";
+import { addContact, updateContact, deleteContact, setPrimaryContact } from "../../redux/slices/clientSlice";
 
 const ClientContacts = ({ client }) => {
   const dispatch = useDispatch();
@@ -89,7 +88,7 @@ const ClientContacts = ({ client }) => {
         <h2 className="text-xl font-semibold text-gray-800">Client Contacts</h2>
         <Button
           label="Add Contact"
-          icon={<IoMdAdd />}
+          icon={<Icons.Plus />}
           onClick={() => setShowAddForm(true)}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
         />
@@ -104,9 +103,9 @@ const ClientContacts = ({ client }) => {
             </h3>
             <button
               onClick={resetForm}
-              className="text-gray-500 hover:text-gray-700"
+              className="text-gray-500 hover:text-gray-700 icon-center"
             >
-              <IoMdClose size={24} />
+              <Icons.X className="tm-icon" />
             </button>
           </div>
 
@@ -194,7 +193,7 @@ const ClientContacts = ({ client }) => {
       <div className="space-y-4">
         {contacts.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            <IoMdPerson size={48} className="mx-auto mb-4 text-gray-300" />
+            <Icons.User className="w-12 h-12 mx-auto mb-4 text-gray-300" />
             <p>No contacts added yet</p>
           </div>
         ) : (
@@ -205,13 +204,13 @@ const ClientContacts = ({ client }) => {
             >
               <div className="flex items-center space-x-4">
                 <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                  <IoMdPerson className="text-blue-600" size={20} />
+                  <Icons.User className="tm-icon text-blue-600" />
                 </div>
                 <div>
                   <div className="flex items-center space-x-2">
                     <h3 className="font-medium text-gray-900">{contact.name}</h3>
                     {contact.isPrimary && (
-                      <MdStar className="text-yellow-500" size={16} />
+                      <Icons.Star className="tm-icon text-yellow-500" />
                     )}
                   </div>
                   <div className="text-sm text-gray-600 space-y-1">
@@ -230,25 +229,25 @@ const ClientContacts = ({ client }) => {
                 {!contact.isPrimary && (
                   <button
                     onClick={() => handleSetPrimary(contact.id || contact._id)}
-                    className="text-yellow-500 hover:text-yellow-600 p-1"
+                    className="text-yellow-500 hover:text-yellow-600 p-1 icon-center"
                     title="Set as primary contact"
                   >
-                    <MdStarBorder size={20} />
+                    <Icons.StarOff className="tm-icon" />
                   </button>
                 )}
                 <button
                   onClick={() => handleEdit(contact)}
-                  className="text-blue-500 hover:text-blue-600 p-1"
+                  className="text-blue-500 hover:text-blue-600 p-1 icon-center"
                   title="Edit contact"
                 >
-                  <MdEdit size={20} />
+                  <Icons.Edit3 className="tm-icon" />
                 </button>
                 <button
                   onClick={() => handleDelete(contact.id || contact._id)}
-                  className="text-red-500 hover:text-red-600 p-1"
+                  className="text-red-500 hover:text-red-600 p-1 icon-center"
                   title="Delete contact"
                 >
-                  <MdDelete size={20} />
+                  <Icons.Trash2 className="tm-icon" />
                 </button>
               </div>
             </div>

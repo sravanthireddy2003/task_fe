@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Pause, Square, Clock } from 'lucide-react';
+import * as Icons from '../icons';
 import { toast } from 'sonner';
 
 const TimeTracker = ({ task, onUpdate, userRole }) => {
@@ -90,7 +90,7 @@ const TimeTracker = ({ task, onUpdate, userRole }) => {
     <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2">
-          <Clock className="w-4 h-4" />
+          <Icons.Clock className="w-4 h-4" />
           Time Tracking
         </h3>
         <div className={`text-lg font-mono font-bold ${
@@ -107,7 +107,7 @@ const TimeTracker = ({ task, onUpdate, userRole }) => {
             disabled={task.status === 'Completed'}
             className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Play className="w-4 h-4" />
+            <Icons.Play className="w-4 h-4" />
             Start
           </button>
         ) : (
@@ -115,7 +115,7 @@ const TimeTracker = ({ task, onUpdate, userRole }) => {
             onClick={handlePause}
             className="flex items-center gap-2 px-3 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
           >
-            <Pause className="w-4 h-4" />
+            <Icons.Pause className="w-4 h-4" />
             Pause
           </button>
         )}
@@ -125,7 +125,7 @@ const TimeTracker = ({ task, onUpdate, userRole }) => {
           disabled={!isRunning && timeSpent === 0}
           className="flex items-center gap-2 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <Square className="w-4 h-4" />
+          <Icons.Square className="w-4 h-4" />
           Complete
         </button>
       </div>

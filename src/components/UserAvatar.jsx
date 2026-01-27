@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { logout, selectUser, getProfile, logoutUser, selectProfileFetched, selectProfileLoading } from "../redux/slices/authSlice";
-import { FaUser, FaKey, FaCog, FaSignOutAlt } from "react-icons/fa";
+import * as Icons from "../icons";
 import { toast } from 'sonner';
 
 const UserAvatar = () => {
@@ -118,12 +118,12 @@ const UserAvatar = () => {
 
           <div className="p-2 divide-y divide-gray-100">
             <button onClick={() => go('/profile')} className="w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 flex items-center gap-3 text-sm transition-colors">
-              <FaUser className="text-gray-500 w-4 h-4" />
+              <Icons.User className="text-gray-500 w-4 h-4" />
               <span className="text-gray-700 font-medium">My Profile</span>
             </button>
 
             <button onClick={() => go('/change-password')} className="w-full text-left px-4 py-3 rounded-lg hover:bg-amber-50 flex items-center gap-3 text-sm transition-colors">
-              <FaKey className="text-gray-500 w-4 h-4" />
+              <Icons.KeyRound className="text-gray-500 w-4 h-4" />
               <span className="text-gray-700 font-medium">Change Password</span>
             </button>
 
@@ -139,7 +139,7 @@ const UserAvatar = () => {
               }}
               className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-50 flex items-center gap-3 text-sm transition-colors"
             >
-              <FaCog className="text-gray-500 w-4 h-4" />
+              <Icons.Settings className="text-gray-500 w-4 h-4" />
               <span className="text-gray-700 font-medium">Settings</span>
             </button>
 
@@ -147,7 +147,7 @@ const UserAvatar = () => {
               onClick={handleLogout}
               className="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 flex items-center gap-3 text-sm transition-colors text-red-600 font-medium"
             >
-              <FaSignOutAlt className="w-4 h-4" />
+              <Icons.LogOut className="w-4 h-4" />
               <span>Sign Out</span>
             </button>
           </div>

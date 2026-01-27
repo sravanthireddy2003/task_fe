@@ -601,7 +601,10 @@
 
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Eye, Check, X, List, Grid, Plus, RefreshCw, AlertCircle, User, Clock, ChevronRight } from 'lucide-react';
+import * as Icons from '../icons';
+import ViewToggle from "../components/ViewToggle";
+
+const { Eye, Check, X, List, Grid, Plus, RefreshCw, AlertCircle, User, Clock, ChevronRight, Rows4, LayoutGrid } = Icons;
 import { toast } from 'sonner';
 import fetchWithTenant from '../utils/fetchWithTenant';
 import { useSelector } from 'react-redux';
@@ -609,7 +612,7 @@ import { selectUser } from '../redux/slices/authSlice';
 
 const Approvals = () => {
   const user = useSelector(selectUser);
-  const [view, setView] = useState('card'); // card | list
+  const [view, setView] = useState('list'); // card | list
   const [loading, setLoading] = useState(true);
   const [employees, setEmployees] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
@@ -870,25 +873,13 @@ const Approvals = () => {
             className="flex-1 md:flex-none p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
             title="Refresh"
           >
-            <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+            <RefreshCw className={loading ? 'tm-icon animate-spin' : 'tm-icon'} />
             <span className="hidden sm:inline">Refresh</span>
           </button>
-          <div className="flex gap-1 border rounded-lg p-1 bg-white">
-            <button
-              className={`p-2 rounded ${view === 'card' ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-gray-100'}`}
-              onClick={() => setView('card')}
-              title="Card View"
-            >
-              <Grid size={18} />
-            </button>
-            <button
-              className={`p-2 rounded ${view === 'list' ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-gray-100'}`}
-              onClick={() => setView('list')}
-              title="List View"
-            >
-              <List size={18} />
-            </button>
-          </div>
+          <ViewToggle
+            mode={view === 'list' ? 'list' : 'grid'}
+            onChange={(mode) => setView(mode === 'list' ? 'list' : 'card')}
+          />
         </div>
       </div>
 
@@ -900,8 +891,8 @@ const Approvals = () => {
               <p className="text-sm text-gray-500">Total Requests</p>
               <p className="text-2xl font-bold text-gray-800">{approvals.length}</p>
             </div>
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <AlertCircle size={20} className="text-blue-600" />
+            <div className="p-2 bg-blue-100 rounded-lg flex items-center justify-center">
+              <AlertCircle className="tm-icon text-blue-600" />
             </div>
           </div>
         </div>
@@ -913,8 +904,8 @@ const Approvals = () => {
                 {approvals.filter(a => a.status === 'Pending').length}
               </p>
             </div>
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <Clock size={20} className="text-yellow-600" />
+            <div className="p-2 bg-yellow-100 rounded-lg flex items-center justify-center">
+              <Clock className="tm-icon text-yellow-600" />
             </div>
           </div>
         </div>
@@ -926,8 +917,8 @@ const Approvals = () => {
                 {approvals.filter(a => a.status !== 'Pending').length}
               </p>
             </div>
-            <div className="p-2 bg-green-100 rounded-lg">
-              <Check size={20} className="text-green-600" />
+            <div className="p-2 bg-green-100 rounded-lg flex items-center justify-center">
+              <Check className="tm-icon text-green-600" />
             </div>
           </div>
         </div>
@@ -945,13 +936,13 @@ const Approvals = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
             {loading ? (
               <div className="col-span-full flex flex-col items-center justify-center py-12">
-                <RefreshCw size={32} className="animate-spin text-blue-500 mb-4" />
+                <RefreshCw className="tm-icon-hero animate-spin text-blue-500 mb-4" />
                 <p className="text-gray-600">Loading requests...</p>
               </div>
             ) : approvals.length === 0 ? (
               <div className="col-span-full text-center py-12">
                 <div className="max-w-md mx-auto">
-                  <AlertCircle size={48} className="mx-auto text-gray-400 mb-4" />
+                  <AlertCircle className="tm-icon-hero mx-auto text-gray-400 mb-4" />
                   <h3 className="text-lg font-semibold text-gray-600 mb-2">No Approval Requests</h3>
                   <p className="text-gray-500 mb-4">All reassignment requests have been processed.</p>
                 </div>
@@ -1026,7 +1017,7 @@ const Approvals = () => {
                     {a.reason && (
                       <div className="mb-4">
                         <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                          <AlertCircle size={16} className="text-blue-600 mt-0.5 flex-shrink-0" />
+                          <AlertCircle className="tm-icon text-blue-600 mt-0.5 flex-shrink-0" />
                           <div className="flex-1">
                             <p className="text-xs font-medium text-blue-800 mb-1">Reason for Reassignment:</p>
                             <p className="text-sm text-blue-700 line-clamp-3" title={a.reason}>
@@ -1044,7 +1035,7 @@ const Approvals = () => {
                           onClick={() => console.log('View details:', a.id)}
                           className="flex-1 p-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center justify-center gap-1 transition-colors"
                         >
-                          <Eye size={14} /> Details
+                          <Eye className="tm-icon" /> Details
                         </button>
                         {a.status === 'Pending' && (
                           <>
@@ -1054,9 +1045,9 @@ const Approvals = () => {
                               className="flex-1 p-2 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 flex items-center justify-center gap-1 transition-colors"
                             >
                               {approvingRequestId === a.id ? (
-                                <RefreshCw size={14} className="animate-spin" />
+                                <RefreshCw className="tm-icon animate-spin" />
                               ) : (
-                                <Check size={14} />
+                                <Check className="tm-icon" />
                               )}
                               Approve
                             </button>
@@ -1066,9 +1057,9 @@ const Approvals = () => {
                               className="flex-1 p-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 flex items-center justify-center gap-1 transition-colors"
                             >
                               {rejectingRequestId === a.id ? (
-                                <RefreshCw size={14} className="animate-spin" />
+                                <RefreshCw className="tm-icon animate-spin" />
                               ) : (
-                                <X size={14} />
+                                <X className="tm-icon" />
                               )}
                               Reject
                             </button>
@@ -1119,7 +1110,7 @@ const Approvals = () => {
                   <tr>
                     <td colSpan="7" className="px-4 py-8 text-center">
                       <div className="flex flex-col items-center justify-center">
-                        <RefreshCw size={24} className="animate-spin text-blue-500 mb-2" />
+                        <RefreshCw className="tm-icon-xl animate-spin text-blue-500 mb-2" />
                         <p className="text-gray-600">Loading requests...</p>
                       </div>
                     </td>
@@ -1128,7 +1119,7 @@ const Approvals = () => {
                   <tr>
                     <td colSpan="7" className="px-4 py-8 text-center">
                       <div className="flex flex-col items-center justify-center">
-                        <AlertCircle size={32} className="text-gray-400 mb-2" />
+                        <AlertCircle className="tm-icon-xl text-gray-400 mb-2" />
                         <p className="text-gray-600 font-medium">No Approval Requests</p>
                         <p className="text-gray-500 text-sm">All requests have been processed.</p>
                       </div>
@@ -1166,7 +1157,7 @@ const Approvals = () => {
                       <td className="px-4 py-3">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-8 w-8 bg-gray-200 rounded-full flex items-center justify-center mr-2">
-                            <User size={14} className="text-gray-500" />
+                            <User className="tm-icon text-gray-500" />
                           </div>
                           <span className="text-sm text-gray-900 truncate" title={a.requester}>
                             {a.requester}
@@ -1202,7 +1193,7 @@ const Approvals = () => {
                             className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
                             title="View Details"
                           >
-                            <Eye size={16} />
+                            <Eye className="tm-icon" />
                           </button>
                           {a.status === 'Pending' && (
                             <>
@@ -1213,9 +1204,9 @@ const Approvals = () => {
                                 title="Approve"
                               >
                                 {approvingRequestId === a.id ? (
-                                  <RefreshCw size={16} className="animate-spin" />
+                                  <RefreshCw className="tm-icon animate-spin" />
                                 ) : (
-                                  <Check size={16} />
+                                  <Check className="tm-icon" />
                                 )}
                               </button>
                               <button
@@ -1225,9 +1216,9 @@ const Approvals = () => {
                                 title="Reject"
                               >
                                 {rejectingRequestId === a.id ? (
-                                  <RefreshCw size={16} className="animate-spin" />
+                                  <RefreshCw className="tm-icon animate-spin" />
                                 ) : (
-                                  <X size={16} />
+                                  <X className="tm-icon" />
                                 )}
                               </button>
                             </>
@@ -1256,12 +1247,12 @@ const Approvals = () => {
               }}
               className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 p-1 rounded-lg hover:bg-gray-100 transition-colors"
             >
-              <X size={20} />
+              <X className="tm-icon" />
             </button>
 
             <div className="text-center mb-6">
               <div className="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                <User size={24} className="text-blue-600" />
+                <User className="tm-icon-xl text-blue-600" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">Reassign Task</h3>
               <p className="text-sm text-gray-500">
@@ -1307,7 +1298,7 @@ const Approvals = () => {
                 >
                   {reassigning ? (
                     <>
-                      <RefreshCw size={18} className="animate-spin" />
+                      <RefreshCw className="tm-icon animate-spin" />
                       Processing...
                     </>
                   ) : (

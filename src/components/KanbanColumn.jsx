@@ -5,7 +5,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import KanbanCard from './KanbanCard';
-import { Plus, MoreHorizontal } from 'lucide-react';
+import * as Icons from '../icons';
 
 const KanbanColumn = ({ id, title, tasks, onTaskClick, userRole, reassignmentRequests = {}, onAddTask }) => {
   const { setNodeRef, isOver } = useDroppable({
@@ -98,11 +98,11 @@ const KanbanColumn = ({ id, title, tasks, onTaskClick, userRole, reassignmentReq
                 className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-colors group"
                 title="Add task"
               >
-                <Plus size={16} className="text-white group-hover:scale-110 transition-transform" />
+                <Icons.Plus className="tm-icon text-white group-hover:scale-110 transition-transform" />
               </button>
             )}
             <button className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-colors">
-              <MoreHorizontal size={16} className="text-white" />
+              <Icons.MoreVertical className="tm-icon text-white" />
             </button>
           </div>
         </div>
@@ -153,7 +153,7 @@ const KanbanColumn = ({ id, title, tasks, onTaskClick, userRole, reassignmentReq
         {tasks.length === 0 && (
           <div className="flex flex-col items-center justify-center h-32 text-center">
             <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
-              <Plus size={20} className="text-slate-400" />
+              <Icons.Plus className="tm-icon text-slate-400" />
             </div>
             <p className="text-caption text-slate-500 mb-1">No tasks yet</p>
             <p className="text-meta text-slate-400">Drop tasks here or create new ones</p>

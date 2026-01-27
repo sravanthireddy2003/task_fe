@@ -4,23 +4,9 @@ import { selectUser } from '../redux/slices/authSlice';
 import fetchWithTenant from '../utils/fetchWithTenant';
 import { httpGetService, httpPostService } from '../App/httpHandler';
 import { toast } from 'sonner';
-import {
-  FileText,
-  Upload,
-  Download,
-  Eye,
-  Plus,
-  Search,
-  Filter,
-  X,
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  User,
-  Calendar,
-  File,
-  Shield
-} from 'lucide-react';
+import * as Icons from '../icons';
+
+const { FileText, Upload, Download, Eye, Plus, Search, Filter, X, AlertCircle, CheckCircle, Clock, User, Calendar, File, Shield } = Icons;
 
 const Documents = () => {
   const user = useSelector(selectUser);

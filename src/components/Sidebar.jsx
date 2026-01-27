@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from "react-redux";
 import clsx from "clsx";
 import { MODULE_MAP } from "../App/moduleMap.jsx";
 import { setSidebarCollapsed } from "../redux/slices/authSlice";
-import { Menu } from "lucide-react";
+import * as Icons from "../icons";
 
 const Sidebar = () => {
   const dispatch = useDispatch();
@@ -32,7 +32,7 @@ const Sidebar = () => {
           className="p-2 rounded-lg hover:bg-gray-700 transition-colors text-gray-400 hover:text-white"
           title={isSidebarCollapsed ? "Expand" : "Collapse"}
         >
-          <Menu size={20} />
+          <Icons.Menu className="tm-icon" />
         </button>
       </div>
 

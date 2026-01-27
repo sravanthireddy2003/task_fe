@@ -177,12 +177,12 @@ const WorkflowKanban = ({ selectedWorkflow, onBack }) => {
         <div>
           <button
             onClick={onBack}
-            className="text-link flex items-center gap-2 mb-2"
+            className="text-sm font-medium text-primary-600 hover:text-primary-700 flex items-center gap-2 mb-2 transition-colors"
           >
-            ← Back to Workflows
+            Back to Workflows
           </button>
-          <h2 className="text-h2 font-semibold text-slate-900">{selectedWorkflow.name} - Kanban Board</h2>
-          <p className="text-caption text-slate-500">{selectedWorkflow.description}</p>
+          <h2 className="text-heading-3 font-semibold text-gray-900">{selectedWorkflow.name} - Kanban Board</h2>
+          <p className="text-caption text-gray-500">{selectedWorkflow.description}</p>
         </div>
 
         <div className="flex items-center gap-3">

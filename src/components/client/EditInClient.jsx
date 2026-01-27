@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { IoSwapVertical, IoCreateOutline, IoTrashOutline } from "react-icons/io5";
+import * as Icons from "../../icons";
 
 const Table = ({ clients, onEdit, onRowClick, onDelete }) => {
   const [sortField, setSortField] = useState("");
@@ -94,7 +94,7 @@ const Table = ({ clients, onEdit, onRowClick, onDelete }) => {
                   className="flex items-center gap-2 text-xs font-semibold text-gray-700 hover:text-gray-900 transition-colors"
                 >
                   Ref
-                  <IoSwapVertical className="w-3 h-3" />
+                    <Icons.RefreshCcw className="tm-icon" />
                 </button>
               </th>
               <th className="px-4 py-3 text-left">
@@ -103,7 +103,7 @@ const Table = ({ clients, onEdit, onRowClick, onDelete }) => {
                   className="flex items-center gap-2 text-xs font-semibold text-gray-700 hover:text-gray-900 transition-colors"
                 >
                   Company
-                  <IoSwapVertical className="w-3 h-3" />
+                    <Icons.RefreshCcw className="tm-icon" />
                 </button>
               </th>
               <th className="px-4 py-3 text-left">
@@ -112,7 +112,7 @@ const Table = ({ clients, onEdit, onRowClick, onDelete }) => {
                   className="flex items-center gap-2 text-xs font-semibold text-gray-700 hover:text-gray-900 transition-colors"
                 >
                   Name
-                  <IoSwapVertical className="w-3 h-3" />
+                    <Icons.RefreshCcw className="tm-icon" />
                 </button>
               </th>
               <th className="px-4 py-3 text-left">
@@ -121,7 +121,7 @@ const Table = ({ clients, onEdit, onRowClick, onDelete }) => {
                   className="flex items-center gap-2 text-xs font-semibold text-gray-700 hover:text-gray-900 transition-colors"
                 >
                   Manager
-                  <IoSwapVertical className="w-3 h-3" />
+                    <Icons.RefreshCcw className="tm-icon" />
                 </button>
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Email</th>
@@ -163,20 +163,20 @@ const Table = ({ clients, onEdit, onRowClick, onDelete }) => {
                           e.stopPropagation();
                           onEdit(client);
                         }}
-                        className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors icon-center"
                         title="Edit"
                       >
-                        <IoCreateOutline className="w-4 h-4" />
+                        <Icons.Pencil className="tm-icon" />
                       </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           onDelete(client.id);
                         }}
-                        className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors icon-center"
                         title="Delete"
                       >
-                        <IoTrashOutline className="w-4 h-4" />
+                        <Icons.Trash2 className="tm-icon" />
                       </button>
                     </div>
                   </td>

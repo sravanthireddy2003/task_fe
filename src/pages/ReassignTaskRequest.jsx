@@ -1,5 +1,7 @@
   import React, { useState, useEffect } from 'react';
-import { X, Lock, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import * as Icons from '../icons';
+
+const { X, Lock, Clock, CheckCircle, AlertCircle } = Icons;
 import { toast } from 'sonner';
 import fetchWithTenant from '../utils/fetchWithTenant';
 

@@ -1,95 +1,100 @@
-// moduleMap.js - ✅ Pure JavaScript (no JSX)
 import React from "react";
-import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
-import GroupsRoundedIcon from "@mui/icons-material/GroupsRounded";
-import BusinessCenterRoundedIcon from "@mui/icons-material/BusinessCenterRounded";
-import ApartmentRoundedIcon from "@mui/icons-material/ApartmentRounded";
-import WorkOutlineRoundedIcon from "@mui/icons-material/WorkOutlineRounded";
-import ChecklistRoundedIcon from "@mui/icons-material/ChecklistRounded";
-import InsightsRoundedIcon from "@mui/icons-material/InsightsRounded";
-import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
-import ChatBubbleRoundedIcon from "@mui/icons-material/ChatBubbleRounded";
-import NotificationsRoundedIcon from "@mui/icons-material/NotificationsRounded";
-import AutoGraphRoundedIcon from "@mui/icons-material/AutoGraphRounded";
-import ApprovalRoundedIcon from "@mui/icons-material/ApprovalRounded";
+import * as Icons from "../icons";
 
-// ✅ Factory function creates JSX elements
-const createIcon = (IconComponent) => <IconComponent />;
+const {
+  LayoutDashboard,
+  Users,
+  BriefcaseBusiness,
+  Building2,
+  FolderKanban,
+  CheckSquare,
+  BarChart3,
+  FileText,
+  Settings,
+  MessageSquare,
+  Workflow,
+  Bell,
+  RefreshCw,
+} = Icons;
+
+// Factory function creates JSX elements with consistent size/style
+const createIcon = (IconComponent) => <IconComponent className="tm-icon" strokeWidth={1.8} />;
 
 export const MODULE_MAP = {
   "Dashboard": { 
     label: "Dashboard", 
     link: "/dashboard", 
-    icon: createIcon(DashboardRoundedIcon)
+    icon: createIcon(LayoutDashboard)
   },
   "User Management": { 
     label: "Users & Teams", 
     link: "/users", 
-    icon: createIcon(GroupsRoundedIcon)
+    icon: createIcon(Users)
   },
   "Clients": { 
     label: "Clients", 
     link: "/clients", 
-    icon: createIcon(BusinessCenterRoundedIcon)
+    icon: createIcon(BriefcaseBusiness)
   },
   "Departments": { 
     label: "Departments", 
     link: "/departments", 
-    icon: createIcon(ApartmentRoundedIcon)
+    icon: createIcon(Building2)
   },
   "Projects": { 
     label: "Projects", 
     link: "/projects", 
-    icon: createIcon(WorkOutlineRoundedIcon)
+    icon: createIcon(FolderKanban)
   },
   "Tasks": { 
     label: "Tasks", 
     link: "/tasks", 
-    icon: createIcon(ChecklistRoundedIcon)
+    icon: createIcon(CheckSquare)
   },
   "Reports & Analytics": { 
     label: "Analytics", 
     link: "/reports", 
-    icon: createIcon(InsightsRoundedIcon)
+    icon: createIcon(BarChart3)
   },
   "Document & File Management": { 
     label: "Documents", 
     link: "/documents", 
-    icon: createIcon(ChecklistRoundedIcon)
+    icon: createIcon(FileText)
   },
   "Assigned Tasks": {
     label: "Assigned Tasks",
     link: "/tasks",
-    icon: createIcon(ChecklistRoundedIcon)
+    icon: createIcon(CheckSquare)
   },
   "Settings & Master Configuration": { 
     label: "Settings", 
     link: "/settings", 
-    icon: createIcon(SettingsRoundedIcon)
+    icon: createIcon(Settings)
   },
   "Chat / Real-Time Collaboration": { 
     label: "Chat", 
     link: "/chat", 
-    icon: createIcon(ChatBubbleRoundedIcon)
+    icon: createIcon(MessageSquare)
   },
   "Workflow (Project & Task Flow)": { 
     label: "Workflow", 
     link: "/workflow", 
-    icon: createIcon(AutoGraphRoundedIcon)
+    icon: createIcon(Workflow)
   },
   "Notifications": { 
     label: "Notifications", 
     link: "/notifications", 
-    icon: createIcon(NotificationsRoundedIcon)
+    icon: createIcon(Bell)
   },
   "Approval Workflows": { 
     label: "Approvals", 
     link: "/approvals", 
-    icon: createIcon(ApprovalRoundedIcon)
+    icon: createIcon(CheckSquare)
   },
-    "Task Reassignment Requests": {
-    icon: "RefreshCw",
+  "Task Reassignment Requests": {
+    label: "Reassignment",
     link: "/task-reassignment-requests",
-    description: "Manage employee requests to reassign tasks"
+    icon: createIcon(RefreshCw),
+    description: "Manage employee requests to reassign tasks",
   },
 };

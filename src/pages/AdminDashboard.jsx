@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Users, ClipboardList, Clock, AlertCircle,
-  CheckCircle, Briefcase, ChevronRight, 
-  MoreVertical, Search, Download, Bell, Settings
-} from 'lucide-react';
+import * as Icons from '../icons';
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, 
   Tooltip, ResponsiveContainer, CartesianGrid, Legend, LineChart, Line
@@ -89,8 +85,33 @@ const STATIC_DATA = {
 };
 
 import { httpGetService } from '../App/httpHandler';
+import GridCard from "../components/ui/GridCard";
+import ListItem from "../components/ui/ListItem";
 
 const Dashboard = () => {
+  React.useEffect(() => {
+    console.log('admin icons:', {
+      Search: Icons.Search,
+      Bell: Icons.Bell,
+      Settings: Icons.Settings,
+      Users: Icons.Users,
+      ClipboardList: Icons.ClipboardList,
+      Clock: Icons.Clock,
+      AlertCircle: Icons.AlertCircle,
+      CheckCircle: Icons.CheckCircle,
+      Briefcase: Icons.Briefcase,
+      MoreVertical: Icons.MoreVertical,
+      ChevronRight: Icons.ChevronRight,
+    });
+    // Diagnostics for undefined components/imports
+    console.log('admin components:', { GridCard, ListItem });
+    console.log('recharts types:', {
+      PieChart: typeof PieChart,
+      Pie: typeof Pie,
+      BarChart: typeof BarChart,
+      ResponsiveContainer: typeof ResponsiveContainer,
+    });
+  }, []);
   const [metrics, setMetrics] = useState(STATIC_DATA.dashboardMetrics);
   const [taskDistribution, setTaskDistribution] = useState(STATIC_DATA.taskDistribution);
   const [weeklyTrends, setWeeklyTrends] = useState(STATIC_DATA.weeklyTrends);
@@ -139,7 +160,7 @@ const Dashboard = () => {
           </div>
           <div className="flex items-center gap-3">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+              {Icons.Search && <Icons.Search className="tm-icon absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />}
               <input 
                 type="text" 
                 placeholder="Search..." 
@@ -147,51 +168,57 @@ const Dashboard = () => {
               />
             </div>
             <button className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">
-              <Bell size={20} className="text-gray-600" />
+              {Icons.Bell && <Icons.Bell className="tm-icon text-gray-600" />}
             </button>
             <button className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">
-              <Settings size={20} className="text-gray-600" />
+              {Icons.Settings && <Icons.Settings className="tm-icon text-gray-600" />}
             </button>
           </div>
         </div>
 
         {/* Metrics Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          <MetricCard 
+          <GridCard
             title="Total Clients"
             value={metrics.totalClients}
-            icon={<Users className="text-blue-600" size={20} />}
-            color="blue"
+            tone="primary"
+            icon={Icons.Users ? <Icons.Users className="tm-icon text-blue-600" /> : null}
+            footer={<span className="text-gray-500">All active client accounts</span>}
           />
-          <MetricCard 
+          <GridCard
             title="Total Tasks"
             value={metrics.totalTasks}
-            icon={<ClipboardList className="text-purple-600" size={20} />}
-            color="purple"
+            tone="primary"
+            icon={Icons.ClipboardList ? <Icons.ClipboardList className="tm-icon text-purple-600" /> : null}
+            footer={<span className="text-gray-500">Tasks across all projects</span>}
           />
-          <MetricCard 
+          <GridCard
             title="Pending Tasks"
             value={metrics.pendingTasks}
-            icon={<Clock className="text-amber-600" size={20} />}
-            color="amber"
+            tone="warning"
+            icon={Icons.Clock ? <Icons.Clock className="tm-icon text-amber-600" /> : null}
+            footer={<span className="text-gray-500">Awaiting completion</span>}
           />
-          <MetricCard 
+          <GridCard
             title="Overdue Tasks"
             value={metrics.overdueTasks}
-            icon={<AlertCircle className="text-red-600" size={20} />}
-            color="red"
+            tone="danger"
+            icon={Icons.AlertCircle ? <Icons.AlertCircle className="tm-icon text-red-600" /> : null}
+            footer={<span className="text-gray-500">Past due date</span>}
           />
-          <MetricCard 
+          <GridCard
             title="Completed Today"
             value={metrics.completedToday}
-            icon={<CheckCircle className="text-emerald-600" size={20} />}
-            color="emerald"
+            tone="success"
+            icon={Icons.CheckCircle ? <Icons.CheckCircle className="tm-icon text-emerald-600" /> : null}
+            footer={<span className="text-gray-500">Finished in the last 24h</span>}
           />
-          <MetricCard 
+          <GridCard
             title="Active Projects"
             value={metrics.activeProjects}
-            icon={<Briefcase className="text-indigo-600" size={20} />}
-            color="indigo"
+            tone="primary"
+            icon={Icons.Briefcase ? <Icons.Briefcase className="tm-icon text-indigo-600" /> : null}
+            footer={<span className="text-gray-500">Currently in progress</span>}
           />
         </div>
 
@@ -201,8 +228,8 @@ const Dashboard = () => {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-gray-900">Task Distribution</h2>
-              <button className="p-1 hover:bg-gray-100 rounded">
-                <MoreVertical size={18} className="text-gray-500" />
+              <button className="p-1 hover:bg-gray-100 rounded icon-center">
+                {Icons.MoreVertical && <Icons.MoreVertical className="tm-icon text-gray-500" />}
               </button>
             </div>
             <div className="h-64">
@@ -227,8 +254,8 @@ const Dashboard = () => {
               </ResponsiveContainer>
             </div>
             <div className="flex flex-wrap justify-center gap-4 mt-4">
-              {taskDistribution.map((item) => (
-                <div key={item.name} className="flex items-center gap-2">
+              {taskDistribution.map((item, idx) => (
+                <div key={item.name + '-' + idx} className="flex items-center gap-2">
                   <div 
                     className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: item.color }}
@@ -243,8 +270,8 @@ const Dashboard = () => {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-gray-900">Weekly Task Trends</h2>
-              <button className="p-1 hover:bg-gray-100 rounded">
-                <MoreVertical size={18} className="text-gray-500" />
+              <button className="p-1 hover:bg-gray-100 rounded icon-center">
+                {Icons.MoreVertical && <Icons.MoreVertical className="tm-icon text-gray-500" />}
               </button>
             </div>
             <div className="h-64">
@@ -267,8 +294,8 @@ const Dashboard = () => {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-gray-900">Top Performing Employees</h2>
-              <button className="p-1 hover:bg-gray-100 rounded">
-                <MoreVertical size={18} className="text-gray-500" />
+              <button className="p-1 hover:bg-gray-100 rounded icon-center">
+                {Icons.MoreVertical && <Icons.MoreVertical className="tm-icon text-gray-500" />}
               </button>
             </div>
             <div className="h-64">
@@ -293,8 +320,8 @@ const Dashboard = () => {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-gray-900">Client-wise Workload</h2>
-              <button className="p-1 hover:bg-gray-100 rounded">
-                <MoreVertical size={18} className="text-gray-500" />
+              <button className="p-1 hover:bg-gray-100 rounded icon-center">
+                {Icons.MoreVertical && <Icons.MoreVertical className="tm-icon text-gray-500" />}
               </button>
             </div>
             <div className="h-64">
@@ -321,38 +348,45 @@ const Dashboard = () => {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
               <button className="text-blue-600 text-sm font-medium flex items-center gap-1 hover:text-blue-700">
-                View all <ChevronRight size={16} />
+                View all {Icons.ChevronRight && <Icons.ChevronRight className="tm-icon" />}
               </button>
             </div>
-            <div className="space-y-4">
+            <div className="border border-gray-200 rounded-lg divide-y divide-gray-100">
               {recentActivities.map((activity) => (
-                <div key={activity.id} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-medium text-gray-900">{activity.title}</h3>
-                      <div className="flex items-center gap-4 mt-2">
-                        <span className={clsx(
-                          "px-2 py-1 rounded text-xs font-medium",
-                          activity.status === 'In Progress' ? "bg-blue-100 text-blue-800" :
-                          "bg-gray-100 text-gray-800"
-                        )}>
-                          {activity.status}
-                        </span>
-                        <span className={clsx(
-                          "px-2 py-1 rounded text-xs font-medium",
-                          activity.priority === 'Critical' ? "bg-red-100 text-red-800" :
-                          "bg-amber-100 text-amber-800"
-                        )}>
-                          {activity.priority}
-                        </span>
-                      </div>
+                <ListItem
+                  key={activity.id}
+                  title={activity.title}
+                  subtitle={
+                    <div className="flex items-center gap-3 mt-1">
+                      <span
+                        className={clsx(
+                          "px-2 py-0.5 rounded text-xs font-medium",
+                          activity.status === "In Progress"
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-gray-100 text-gray-800",
+                        )}
+                      >
+                        {activity.status}
+                      </span>
+                      <span
+                        className={clsx(
+                          "px-2 py-0.5 rounded text-xs font-medium",
+                          activity.priority === "Critical"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-amber-100 text-amber-800",
+                        )}
+                      >
+                        {activity.priority}
+                      </span>
                     </div>
+                  }
+                  meta={
                     <div className="text-right">
-                      <div className="text-sm text-gray-600">Due:</div>
-                      <div className="font-medium">{activity.dueDate}</div>
+                      <div className="text-xs text-gray-500">Due</div>
+                      <div className="text-sm font-medium">{activity.dueDate}</div>
                     </div>
-                  </div>
-                </div>
+                  }
+                />
               ))}
             </div>
           </div>
@@ -362,7 +396,7 @@ const Dashboard = () => {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-gray-900">Active Projects</h2>
               <button className="text-blue-600 text-sm font-medium flex items-center gap-1 hover:text-blue-700">
-                View all <ChevronRight size={16} />
+                View all {Icons.ChevronRight && <Icons.ChevronRight className="tm-icon" />}
               </button>
             </div>
             <div className="space-y-6">
@@ -371,7 +405,7 @@ const Dashboard = () => {
                   <div className="flex justify-between items-start mb-4">
                     <h3 className="font-medium text-gray-900">{project.name}</h3>
                     <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Users size={16} />
+                      {Icons.Users && <Icons.Users className="tm-icon" />}
                       <span>{project.members} members</span>
                     </div>
                   </div>
@@ -403,32 +437,6 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-    </div>
-  );
-};
-
-const MetricCard = ({ title, value, icon, color }) => {
-  const colorClasses = {
-    blue: 'bg-blue-50',
-    purple: 'bg-purple-50',
-    amber: 'bg-amber-50',
-    red: 'bg-red-50',
-    emerald: 'bg-emerald-50',
-    indigo: 'bg-indigo-50'
-  };
-
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-      <div className="flex items-center justify-between mb-4">
-        <div className={`p-2 rounded-lg ${colorClasses[color]}`}>
-          {icon}
-        </div>
-        <button className="p-1 hover:bg-gray-100 rounded">
-          <MoreVertical size={16} className="text-gray-500" />
-        </button>
-      </div>
-      <div className="text-2xl font-bold text-gray-900 mb-1">{value}</div>
-      <div className="text-sm text-gray-600">{title}</div>
     </div>
   );
 };

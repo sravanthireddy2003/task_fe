@@ -3,8 +3,7 @@ import { useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import taskManagerLogo from "../assets/task1.png";
-import { Eye, EyeOff } from "lucide-react"; // Import eye icons
-
+import * as Icons from "../icons";
 import Textbox from "../components/Textbox";
 import Button from "../components/Button";
 
@@ -166,9 +165,9 @@ const Login = () => {
                   showPassword={showPassword}
                   onPasswordToggle={() => setShowPassword(!showPassword)}
                   rightIcon={showPassword ? (
-                    <EyeOff className="h-5 w-5" />
+                    <Icons.EyeOff className="h-5 w-5" />
                   ) : (
-                    <Eye className="h-5 w-5" />
+                    <Icons.Eye className="h-5 w-5" />
                   )}
                   className="h-14 text-base rounded-xl"
                 />

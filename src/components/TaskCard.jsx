@@ -1,21 +1,14 @@
 import React, { useState, useEffect } from "react";
 import clsx from "clsx";
-import {
-  MdAttachFile,
-  MdKeyboardArrowDown,
-  MdKeyboardArrowUp,
-  MdKeyboardDoubleArrowUp,
-} from "react-icons/md";
 import { useSelector, useDispatch } from "react-redux";
-import { BiMessageAltDetail } from "react-icons/bi";
-import { FaList } from "react-icons/fa";
 import moment from "moment";
 import TaskDialog from "./task/TaskDialog";
 import UserInfo from "./UserInfo";
-import { IoMdAdd } from "react-icons/io";
 import AddSubTask from "./task/AddSubTask";
 import UpdateTaskStatus from "./task/UpdateTaskStatus";
 import { BGS, PRIOTITYSTYELS, TASK_TYPE } from "../utils";
+import Button from "./Button";
+import * as Icons from "../icons";
 import {
   getSubTask,
   selectSubTasks,
@@ -24,9 +17,9 @@ import {
 } from "../redux/slices/taskSlice";
 
 const ICONS = {
-  HIGH: <MdKeyboardDoubleArrowUp />,
-  MEDIUM: <MdKeyboardArrowUp />,
-  LOW: <MdKeyboardArrowDown />,
+  HIGH: <Icons.ChevronsUp className="w-4 h-4" />,
+  MEDIUM: <Icons.ChevronUp className="w-4 h-4" />,
+  LOW: <Icons.ChevronDown className="w-4 h-4" />,
 };
 
 const TaskCard = ({ taskId }) => {
@@ -101,7 +94,7 @@ const TaskCard = ({ taskId }) => {
 
   if (!task) {
     return (
-      <div className="w-full h-fit bg-white shadow-sm border border-gray-200 p-4 rounded-lg">
+      <div className="w-full h-fit card">
         Task not found.
       </div>
     );
@@ -109,7 +102,7 @@ const TaskCard = ({ taskId }) => {
 
   return (
     <>
-      <div className="w-full h-fit bg-white shadow-sm border border-gray-200 p-4 rounded-lg hover:shadow-md transition-shadow cursor-pointer">
+      <div className="w-full h-fit card cursor-pointer">
         <div className="w-full flex justify-between items-start mb-3">
           <div className="flex items-center gap-2">
             <span className={clsx("px-2 py-1 text-xs font-medium rounded-full border", getStatusColor(localTask?.stage))}>
@@ -149,15 +142,15 @@ const TaskCard = ({ taskId }) => {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-4 text-sm text-gray-600">
             <div className="flex items-center gap-1">
-              <BiMessageAltDetail size={16} />
+              <Icons.MessageSquare className="w-4 h-4" />
               <span>{localTask?.activities?.length || 0}</span>
             </div>
             <div className="flex items-center gap-1">
-              <MdAttachFile size={16} />
+              <Icons.Paperclip className="w-4 h-4" />
               <span>{localTask?.assets?.length || 0}</span>
             </div>
             <div className="flex items-center gap-1">
-              <FaList size={16} />
+              <Icons.ListChecks className="w-4 h-4" />
               <span>0/{subtasks?.length || 0}</span>
             </div>
           </div>
@@ -183,20 +176,22 @@ const TaskCard = ({ taskId }) => {
         </div>
 
         <div className="flex gap-2">
-          <button
+          <Button
             onClick={() => setOpen(true)}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <IoMdAdd size={16} />
-            <span>Add Subtask</span>
-          </button>
+            variant="secondary"
+            size="sm"
+            icon={Icons.Plus}
+            label="Add Subtask"
+            className="flex-1"
+          />
 
-          <button
+          <Button
             onClick={() => setOpenStage(true)}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <span>Update Status</span>
-          </button>
+            variant="secondary"
+            size="sm"
+            label="Update Status"
+            className="flex-1"
+          />
         </div>
       </div>
 

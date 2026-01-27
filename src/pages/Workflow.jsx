@@ -1,16 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  Plus,
-  Edit2,
-  Trash2,
-  Eye,
-  Search as SearchIcon,
-  ArrowRight,
-  X,
-  LayoutGrid,
-  List,
-  KanbanSquare,
-} from "lucide-react";
+import * as Icons from "../icons";
 import WorkflowKanban from "../components/WorkflowKanban";
 
 // ---------------- STATIC SAMPLE DATA ---------------- //
@@ -67,7 +56,7 @@ export default function Workflow() {
   const [loading, setLoading] = useState(true);
 
   // UI states
-  const [viewMode, setViewMode] = useState("cards"); // cards | table | kanban
+  const [viewMode, setViewMode] = useState("table"); // cards | table | kanban (list/table as default)
   const [showModal, setShowModal] = useState(false);
   const [editingFlow, setEditingFlow] = useState(null);
   const [previewFlow, setPreviewFlow] = useState(null); // drawer
@@ -187,49 +176,49 @@ export default function Workflow() {
         </div>
 
         <div className="flex gap-3">
-          {/* VIEW MODE TOGGLE */}
+          {/* VIEW MODE TOGGLE: List (table) default, then Grid (cards), then Kanban */}
           <button
-            onClick={() => setViewMode("cards")}
-            className={`p-2 rounded-lg border ${
-              viewMode === "cards" ? "bg-blue-600 text-white" : "bg-white"
+            onClick={() => setViewMode("table")}
+            className={`flex items-center justify-center p-2 rounded-lg border ${
+              viewMode === "table" ? "bg-blue-600 text-white" : "bg-white"
             }`}
-            title="Card View"
+            title="List View"
           >
-            <LayoutGrid size={18} />
+            <Icons.Rows4 className="tm-icon" />
           </button>
 
           <button
-            onClick={() => setViewMode("table")}
-            className={`p-2 rounded-lg border ${
-              viewMode === "table" ? "bg-blue-600 text-white" : "bg-white"
+            onClick={() => setViewMode("cards")}
+            className={`flex items-center justify-center p-2 rounded-lg border ${
+              viewMode === "cards" ? "bg-blue-600 text-white" : "bg-white"
             }`}
-            title="Table View"
+            title="Grid View"
           >
-            <List size={18} />
+            <Icons.LayoutGrid className="tm-icon" />
           </button>
 
           <button
             onClick={() => setViewMode("kanban")}
-            className={`p-2 rounded-lg border ${
+            className={`flex items-center justify-center p-2 rounded-lg border ${
               viewMode === "kanban" ? "bg-blue-600 text-white" : "bg-white"
             }`}
             title="Kanban View"
           >
-            <KanbanSquare size={18} />
+            <Icons.KanbanSquare className="tm-icon" />
           </button>
 
           <button
             onClick={openCreate}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
           >
-            <Plus size={16} /> Add Workflow
+            <Icons.Plus className="tm-icon" /> Add Workflow
           </button>
         </div>
       </div>
 
       {/* SEARCH */}
       <div className="relative w-80">
-        <SearchIcon className="absolute left-3 top-3 text-gray-400" />
+            <Icons.Search className="tm-icon absolute left-3 top-3 text-gray-400" />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -250,7 +239,7 @@ export default function Workflow() {
             );
 
             return (
-              <div key={flow.id} className="border rounded-xl p-4 shadow-sm bg-white">
+              <div key={flow.id} className="tm-card-shell">
                 <div className="flex justify-between">
                   <div>
                     <h3 className="font-semibold text-lg">{flow.name}</h3>
@@ -273,7 +262,7 @@ export default function Workflow() {
                       onClick={() => setPreviewFlow(flow)}
                       title="View Details"
                     >
-                      <Eye size={16} />
+                      <Icons.Eye className="tm-icon" />
                     </button>
                     <button
                       className="p-2 text-blue-500"
@@ -283,17 +272,17 @@ export default function Workflow() {
                       }}
                       title="View Kanban"
                     >
-                      <KanbanSquare size={16} />
+                      <Icons.KanbanSquare className="tm-icon" />
                     </button>
                     <button className="p-2" onClick={() => openEdit(flow)} title="Edit">
-                      <Edit2 size={16} />
+                      <Icons.Edit2 className="tm-icon" />
                     </button>
                     <button
                       className="p-2 text-red-500"
                       onClick={() => handleDelete(flow)}
                       title="Delete"
                     >
-                      <Trash2 size={16} />
+                      <Icons.Trash2 className="tm-icon" />
                     </button>
                   </div>
                 </div>
@@ -306,7 +295,7 @@ export default function Workflow() {
                         {s.name}
                       </div>
                       {i < flow.steps.length - 1 && (
-                        <ArrowRight size={14} className="text-gray-300" />
+                        <Icons.ArrowRight className="tm-icon text-gray-300" />
                       )}
                     </div>
                   ))}
@@ -327,7 +316,7 @@ export default function Workflow() {
             />
           ) : (
             <div className="text-center py-12">
-              <KanbanSquare size={48} className="mx-auto text-gray-400 mb-4" />
+              <Icons.KanbanSquare className="tm-icon-hero mx-auto text-gray-400 mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">Select a Workflow for Kanban</h3>
               <p className="text-gray-500 mb-6">Choose a workflow from the cards below to view its kanban board</p>
 
@@ -345,7 +334,7 @@ export default function Workflow() {
                           <h4 className="font-medium text-gray-900">{flow.name}</h4>
                           <p className="text-sm text-gray-500">{flow.description}</p>
                         </div>
-                        <KanbanSquare size={20} className="text-blue-500" />
+                        <Icons.KanbanSquare className="tm-icon text-blue-500" />
                       </div>
 
                       <div className="flex items-center gap-2 mb-3">
@@ -436,7 +425,7 @@ export default function Workflow() {
                         className="p-2"
                         title="View Details"
                       >
-                        <Eye size={16} />
+                        <Icons.Eye className="tm-icon" />
                       </button>
                       <button
                         onClick={() => {
@@ -446,21 +435,21 @@ export default function Workflow() {
                         className="p-2 text-blue-500"
                         title="View Kanban"
                       >
-                        <KanbanSquare size={16} />
+                        <Icons.KanbanSquare className="tm-icon" />
                       </button>
                       <button
                         onClick={() => openEdit(flow)}
                         className="p-2"
                         title="Edit"
                       >
-                        <Edit2 size={16} />
+                        <Icons.Edit2 className="tm-icon" />
                       </button>
                       <button
                         onClick={() => handleDelete(flow)}
                         className="p-2 text-red-500"
                         title="Delete"
                       >
-                        <Trash2 size={16} />
+                        <Icons.Trash2 className="tm-icon" />
                       </button>
                     </td>
                   </tr>
@@ -482,7 +471,7 @@ export default function Workflow() {
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-semibold">{previewFlow.name}</h3>
               <button onClick={() => setPreviewFlow(null)}>
-                <X size={20} />
+                <Icons.X className="tm-icon" />
               </button>
             </div>
 
@@ -545,7 +534,7 @@ export default function Workflow() {
                 {editingFlow ? "Edit Workflow" : "Add Workflow"}
               </h3>
               <button onClick={closeModal} type="button">
-                <X size={20} />
+                <Icons.X className="tm-icon" />
               </button>
             </div>
 
@@ -648,7 +637,7 @@ export default function Workflow() {
                       onClick={() => handleRemoveStep(i)}
                       className="text-red-500"
                     >
-                      <X size={16} />
+                      <Icons.X className="tm-icon" />
                     </button>
                   </div>
                 ))}

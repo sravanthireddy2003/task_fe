@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { Loader } from 'lucide-react';
+import * as Icons from '../icons';
+
+const { Loader } = Icons;
 import { toast } from 'sonner';
 import ChatInterface from '../components/ChatInterface';
 import { httpGetService } from '../App/httpHandler';
@@ -123,7 +125,7 @@ const EmployeeChat = () => {
             </svg>
           </div>
           <div>
-            <h2 className="text-h2 font-semibold text-slate-900">No projects assigned</h2>
+            <h2 className="text-heading-3 font-semibold text-gray-900">No projects assigned</h2>
             <p className="text-body text-slate-600 mt-2">
               You haven't been assigned to any projects yet. Once tasks are assigned to you, you'll be able to communicate with your team here.
             </p>
@@ -148,8 +150,8 @@ const EmployeeChat = () => {
       <div className="bg-white border-b border-slate-200 px-6 py-4 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-h2 font-semibold text-slate-900">Team Communication</h1>
-            <p className="text-caption text-slate-500 mt-1">
+            <h1 className="text-heading-3 font-semibold text-gray-900">Team Communication</h1>
+            <p className="text-caption text-gray-500 mt-1">
               Collaborate with your team on {projects.length} project{projects.length !== 1 ? 's' : ''}
             </p>
           </div>

@@ -28,7 +28,7 @@ const Textbox = React.forwardRef(
         {label && (
           <label
             htmlFor={name}
-            className="text-caption font-medium text-slate-700 flex items-center gap-1"
+            className="text-caption font-medium text-gray-700 flex items-center gap-1"
           >
             {label}
             {required && <span className="text-red-500">*</span>}
@@ -37,7 +37,7 @@ const Textbox = React.forwardRef(
 
         <div className="relative">
           {icon && (
-            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400">
+            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
               {icon}
             </div>
           )}
@@ -46,7 +46,7 @@ const Textbox = React.forwardRef(
             <button
               type="button"
               onClick={onPasswordToggle}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 transition-colors"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 transition-colors"
               disabled={disabled}
               tabIndex="-1"
             >
@@ -63,12 +63,12 @@ const Textbox = React.forwardRef(
             disabled={disabled}
             aria-invalid={error ? "true" : "false"}
             className={clsx(
-              "w-full bg-white px-4 py-3 border border-slate-200 rounded-xl placeholder-slate-400 text-body text-slate-900 outline-none transition-all duration-200 shadow-sm",
+              "w-full bg-white px-4 py-3 border border-gray-200 rounded-lg placeholder-gray-400 text-body text-gray-900 outline-none transition-all duration-200 shadow-sm",
               "focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:shadow-md",
-              "hover:border-slate-300 hover:shadow-sm",
+              "hover:border-gray-300 hover:shadow-sm",
               icon && "pl-11",
               rightIcon && "pr-12", // Extra padding for right icon
-              disabled && "bg-slate-50 cursor-not-allowed opacity-60 border-slate-200",
+              disabled && "bg-gray-50 cursor-not-allowed opacity-60 border-gray-200",
               error && "border-red-300 focus:ring-red-500 focus:border-red-500",
               className
             )}
@@ -77,7 +77,7 @@ const Textbox = React.forwardRef(
 
         {/* Helper Text */}
         {helperText && !error && (
-          <p className="text-meta text-slate-500">{helperText}</p>
+          <p className="text-meta text-gray-500">{helperText}</p>
         )}
 
         {/* Error Message */}

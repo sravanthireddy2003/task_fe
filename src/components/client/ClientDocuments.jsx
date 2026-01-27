@@ -1,9 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { getAccessToken } from "../../utils/tokenService";
 import { useDispatch } from "react-redux";
-import { IoMdAdd, IoMdDownload, IoMdEye, IoMdTrash } from "react-icons/io";
-import { MdFileUpload } from "react-icons/md";
-import { FaFile, FaFilePdf, FaFileImage, FaFileWord, FaFileExcel } from "react-icons/fa";
+import * as Icons from "../../icons";
 import Button from "../Button";
 import { attachDocument, deleteDocument } from "../../redux/slices/clientSlice";
 
@@ -15,13 +13,13 @@ const ClientDocuments = ({ client }) => {
   const documents = client?.documents || [];
 
   const getFileIcon = (mimeType) => {
-    if (!mimeType) return <FaFile className="text-gray-400" size={24} />;
+    if (!mimeType) return <Icons.FileText className="tm-icon text-gray-400" />;
     const type = mimeType.toLowerCase();
-    if (type.includes('pdf')) return <FaFilePdf className="text-red-500" size={24} />;
-    if (type.includes('image')) return <FaFileImage className="text-green-500" size={24} />;
-    if (type.includes('word') || type.includes('doc')) return <FaFileWord className="text-blue-500" size={24} />;
-    if (type.includes('excel') || type.includes('xls')) return <FaFileExcel className="text-green-600" size={24} />;
-    return <FaFile className="text-gray-400" size={24} />;
+    if (type.includes('pdf')) return <Icons.FileText className="tm-icon text-red-500" />;
+    if (type.includes('image')) return <Icons.FileImage className="tm-icon text-green-500" />;
+    if (type.includes('word') || type.includes('doc')) return <Icons.FileChartPie className="tm-icon text-blue-500" />;
+    if (type.includes('excel') || type.includes('xls')) return <Icons.FileSpreadsheet className="tm-icon text-green-600" />;
+    return <Icons.FileText className="tm-icon text-gray-400" />;
   };
 
   const formatFileSize = (bytes) => {
@@ -160,7 +158,7 @@ const ClientDocuments = ({ client }) => {
           />
           <Button
             label={uploading ? "Uploading..." : "Upload Documents"}
-            icon={<MdFileUpload />}
+            icon={<Icons.UploadCloud />}
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg disabled:opacity-50"
@@ -172,7 +170,7 @@ const ClientDocuments = ({ client }) => {
       <div className="space-y-4">
         {documents.length === 0 ? (
           <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-            <MdFileUpload size={48} className="mx-auto mb-4 text-gray-300" />
+            <Icons.UploadCloud className="tm-icon mx-auto mb-4 text-gray-300" />
             <p className="text-lg mb-2">No documents uploaded yet</p>
             <p className="text-sm">Click "Upload Documents" to add files</p>
           </div>
@@ -200,24 +198,24 @@ const ClientDocuments = ({ client }) => {
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => handleView(document)}
-                  className="text-blue-500 hover:text-blue-600 p-2"
+                  className="text-blue-500 hover:text-blue-600 p-2 icon-center"
                   title="View document"
                 >
-                  <IoMdEye size={20} />
+                  <Icons.Eye className="tm-icon" />
                 </button>
                 <button
                   onClick={() => handleDownload(document)}
-                  className="text-green-500 hover:text-green-600 p-2"
+                  className="text-green-500 hover:text-green-600 p-2 icon-center"
                   title="Download document"
                 >
-                  <IoMdDownload size={20} />
+                  <Icons.Download className="tm-icon" />
                 </button>
                 <button
                   onClick={() => handleDelete(document.id || document.documentId || document._id)}
-                  className="text-red-500 hover:text-red-600 p-2"
+                  className="text-red-500 hover:text-red-600 p-2 icon-center"
                   title="Delete document"
                 >
-                  <IoMdTrash size={20} />
+                  <Icons.Trash2 className="tm-icon" />
                 </button>
               </div>
             </div>

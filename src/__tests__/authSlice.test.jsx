@@ -1,5 +1,26 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import authReducer, { setCredentials, logout } from '../redux/slices/authSlice';
+
+// Simple localStorage mock for Node/Vitest environment
+beforeAll(() => {
+  global.localStorage = {
+    _store: {},
+    getItem(key) {
+      return Object.prototype.hasOwnProperty.call(this._store, key)
+        ? this._store[key]
+        : null;
+    },
+    setItem(key, value) {
+      this._store[key] = value;
+    },
+    removeItem(key) {
+      delete this._store[key];
+    },
+    clear() {
+      this._store = {};
+    },
+  };
+});
 
 describe('authSlice reducers', () => {
   const initialState = {

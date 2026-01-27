@@ -1,6 +1,8 @@
 import { Dialog } from "@headlessui/react";
 import clsx from "clsx";
-import { FaQuestion } from "react-icons/fa";
+import * as Icons from "../icons";
+
+const { HelpCircle } = Icons;
 import ModalWrapper from "./ModalWrapper";
 import Button from "./Button";
 
@@ -32,7 +34,7 @@ export default function ConfirmatioDialog({
                   : "text-red-600 bg-red-200"
               )}
             >
-              <FaQuestion size={60} />
+              <HelpCircle className="tm-icon-hero" />
             </p>
           </Dialog.Title>
 
@@ -77,7 +79,7 @@ export function UserAction({ open, setOpen, onClick = () => {} }) {
         <div className='py-4 w-full flex flex-col gap-4 items-center justify-center'>
           <Dialog.Title as='h3' className=''>
             <p className={clsx("p-3 rounded-full ", "text-red-600 bg-red-200")}>
-              <FaQuestion size={60} />
+              <HelpCircle className="tm-icon-hero" />
             </p>
           </Dialog.Title>
 

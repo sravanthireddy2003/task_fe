@@ -6,24 +6,25 @@ import { httpGetService } from '../App/httpHandler';
 import { getAccessToken, getRefreshToken } from '../utils/tokenService';
 import { setAuthToken } from '../App/httpHandler';
 import { refreshToken as refreshTokenThunk } from '../redux/slices/authSlice';
-import { 
-  FaCog, 
-  FaDatabase, 
-  FaShieldAlt, 
-  FaBell, 
-  FaGlobe, 
-  FaKey, 
-  FaUserShield,
-  FaSave,
-  FaSpinner,
-  FaCheckCircle,
-  FaTimesCircle,
-  FaQrcode,
-  FaMobileAlt,
-  FaExclamationTriangle,
-  FaHistory,
-  FaCopy
-} from 'react-icons/fa';
+import * as Icons from '../icons';
+
+const {
+  Settings: SettingsIcon,
+  Database,
+  ShieldCheck,
+  Bell,
+  Globe2,
+  KeyRound,
+  Save,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  QrCode,
+  Smartphone,
+  AlertTriangle,
+  History,
+  Copy,
+} = Icons;
 import { toast } from 'sonner';
 
 // 2FA Component
@@ -136,9 +137,9 @@ const TwoFactorAuth = () => {
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
-        <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3">
           <div className="p-3 bg-blue-50 rounded-lg">
-            <FaKey className="w-6 h-6 text-blue-600" />
+            <KeyRound className="w-6 h-6 text-blue-600" />
           </div>
           <div>
             <h3 className="text-xl font-semibold text-gray-900">Two-Factor Authentication (2FA)</h3>
@@ -160,8 +161,8 @@ const TwoFactorAuth = () => {
         <div className="space-y-6">
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
             <div className="flex items-start gap-4">
-              <div className="p-3 bg-white rounded-lg shadow-sm">
-                <FaShieldAlt className="w-8 h-8 text-blue-600" />
+                <div className="p-3 bg-white rounded-lg shadow-sm">
+                <ShieldCheck className="w-8 h-8 text-blue-600" />
               </div>
               <div className="flex-1">
                 <h4 className="font-semibold text-gray-900 mb-2">Enhanced Account Security</h4>
@@ -171,7 +172,7 @@ const TwoFactorAuth = () => {
                   an authenticator app when signing in.
                 </p>
                 <div className="flex items-center gap-3 text-sm text-gray-600">
-                  <FaExclamationTriangle className="text-yellow-500" />
+                  <AlertTriangle className="text-yellow-500" />
                   <span>Recommended for all accounts with sensitive data</span>
                 </div>
               </div>
@@ -182,7 +183,7 @@ const TwoFactorAuth = () => {
             <div className="p-5 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all">
               <div className="flex items-center gap-3 mb-3">
                 <div className="p-2 bg-blue-50 rounded">
-                  <FaMobileAlt className="w-5 h-5 text-blue-600" />
+                  <Smartphone className="w-5 h-5 text-blue-600" />
                 </div>
                 <h5 className="font-semibold text-gray-900">Authenticator Apps</h5>
               </div>
@@ -193,8 +194,8 @@ const TwoFactorAuth = () => {
             
             <div className="p-5 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all">
               <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 bg-green-50 rounded">
-                  <FaCheckCircle className="w-5 h-5 text-green-600" />
+                  <div className="p-2 bg-green-50 rounded">
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
                 </div>
                 <h5 className="font-semibold text-gray-900">How It Works</h5>
               </div>
@@ -208,7 +209,7 @@ const TwoFactorAuth = () => {
             <div className="p-5 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all">
               <div className="flex items-center gap-3 mb-3">
                 <div className="p-2 bg-purple-50 rounded">
-                  <FaQrcode className="w-5 h-5 text-purple-600" />
+                  <QrCode className="w-5 h-5 text-purple-600" />
                 </div>
                 <h5 className="font-semibold text-gray-900">Always Available</h5>
               </div>
@@ -227,12 +228,12 @@ const TwoFactorAuth = () => {
               >
                 {loading ? (
                   <>
-                    <FaSpinner className="animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin" />
                     Setting up...
                   </>
                 ) : (
                   <>
-                    <FaKey />
+                    <KeyRound className="w-4 h-4" />
                     Enable 2FA
                   </>
                 )}
@@ -245,7 +246,7 @@ const TwoFactorAuth = () => {
               >
                 {loading ? (
                   <>
-                    <FaSpinner className="animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin" />
                     Disabling...
                   </>
                 ) : (
@@ -266,7 +267,7 @@ const TwoFactorAuth = () => {
         <div className="space-y-6">
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
             <div className="flex items-start gap-3">
-              <FaExclamationTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
+              <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
               <div>
                 <p className="font-medium text-yellow-800">Complete setup within 5 minutes</p>
                 <p className="text-sm text-yellow-700 mt-1">
@@ -290,7 +291,7 @@ const TwoFactorAuth = () => {
                     />
                   ) : (
                     <div className="w-64 h-64 bg-gray-100 rounded flex items-center justify-center">
-                      <FaSpinner className="w-8 h-8 text-gray-400 animate-spin" />
+                      <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
                     </div>
                   )}
                 </div>
@@ -314,20 +315,20 @@ const TwoFactorAuth = () => {
               </div>
 
               <div className="flex items-center gap-3">
-                <button
-                  onClick={handleVerify2FA}
-                  disabled={loading || verificationCode.length !== 6}
-                  className="flex-1 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? (
-                    <>
-                      <FaSpinner className="animate-spin inline mr-2" />
-                      Verifying...
-                    </>
-                  ) : (
-                    'Verify and Enable'
-                  )}
-                </button>
+                  <button
+                    onClick={handleVerify2FA}
+                    disabled={loading || verificationCode.length !== 6}
+                    className="flex-1 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
+                        Verifying...
+                      </>
+                    ) : (
+                      'Verify and Enable'
+                    )}
+                  </button>
                 <button
                   onClick={() => setStep('initial')}
                   className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
@@ -405,7 +406,7 @@ const TwoFactorAuth = () => {
                     className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
                     title="Copy secret key"
                   >
-                    <FaCopy />
+                    <Copy />
                   </button>
                 </div>
               </div>
@@ -419,7 +420,7 @@ const TwoFactorAuth = () => {
         <div className="space-y-6">
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
             <div className="flex items-start gap-3">
-              <FaCheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+              <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
               <div>
                 <p className="font-medium text-green-800">Two-Factor Authentication Enabled Successfully!</p>
                 <p className="text-sm text-green-700 mt-1">
@@ -441,7 +442,7 @@ const TwoFactorAuth = () => {
                 onClick={downloadBackupCodes}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
               >
-                <FaCopy />
+                <Copy />
                 Download Codes
               </button>
             </div>
@@ -459,7 +460,7 @@ const TwoFactorAuth = () => {
 
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
               <div className="flex items-start gap-3">
-                <FaExclamationTriangle className="w-5 h-5 text-red-600 mt-0.5" />
+                <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
                 <div>
                   <p className="font-medium text-red-800">Important Security Notice</p>
                   <ul className="text-sm text-red-700 mt-1 list-disc list-inside space-y-1">
@@ -477,7 +478,7 @@ const TwoFactorAuth = () => {
                 onClick={() => copyToClipboard(backupCodes.join('\n'))}
                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
               >
-                <FaCopy />
+                <Copy />
                 Copy All Codes
               </button>
               <button
@@ -697,7 +698,7 @@ const Settings = () => {
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white p-8 flex items-center justify-center">
         <div className="max-w-md text-center">
           <div className="bg-red-50 border border-red-200 rounded-xl p-8">
-            <FaTimesCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
+            <XCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-red-800 mb-2">Error Loading Settings</h3>
             <p className="text-red-600">{error}</p>
             <button
@@ -719,7 +720,7 @@ const Settings = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-              <FaCog className="text-blue-600" />
+              <SettingsIcon className="w-7 h-7 text-blue-600" />
               System Settings
             </h1>
             <p className="text-gray-600 mt-2">Configure your system preferences and security settings</p>
@@ -771,13 +772,13 @@ const Settings = () => {
           <div className="flex items-center gap-3">
             {saveStatus === 'success' && (
               <div className="flex items-center gap-2 text-green-600">
-                <FaCheckCircle />
+                <CheckCircle2 className="w-4 h-4" />
                 <span>Saved!</span>
               </div>
             )}
             {saveStatus === 'error' && (
               <div className="flex items-center gap-2 text-red-600">
-                <FaTimesCircle />
+                <XCircle className="w-4 h-4" />
                 <span>Failed to save</span>
               </div>
             )}
@@ -788,12 +789,12 @@ const Settings = () => {
             >
               {saving ? (
                 <>
-                  <FaSpinner className="animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                   Saving...
                 </>
               ) : (
                 <>
-                  <FaSave />
+                  <Save className="w-4 h-4" />
                   Save Changes
                 </>
               )}
@@ -812,11 +813,11 @@ const Settings = () => {
               <h3 className="font-semibold text-gray-900 mb-4">Settings Sections</h3>
               <nav className="space-y-2">
                 {[
-                  { key: 'general', label: 'General Settings', icon: FaCog },
-                  { key: 'database', label: 'Database Config', icon: FaDatabase },
-                  { key: 'security', label: 'Security', icon: FaShieldAlt },
-                  { key: 'notifications', label: 'Notifications', icon: FaBell },
-                  { key: 'api', label: 'API Settings', icon: FaGlobe },
+                  { key: 'general', label: 'General Settings', icon: SettingsIcon },
+                  { key: 'database', label: 'Database Config', icon: Database },
+                  { key: 'security', label: 'Security', icon: ShieldCheck },
+                  { key: 'notifications', label: 'Notifications', icon: Bell },
+                  { key: 'api', label: 'API Settings', icon: Globe2 },
                 ].map((item) => (
                   <button
                     key={item.key}
@@ -835,7 +836,7 @@ const Settings = () => {
               
               <div className="mt-8 pt-6 border-t border-gray-200">
                 <div className="flex items-center gap-3 text-gray-600">
-                  <FaUserShield />
+                  <ShieldCheck className="w-4 h-4" />
                   <div>
                     <p className="font-medium">Settings Version</p>
                     <p className="text-sm">v{settings?.version || '1.0.0'}</p>
@@ -848,7 +849,7 @@ const Settings = () => {
           {/* Right Column - Settings Content */}
           <div className="lg:col-span-2">
             {/* General Settings */}
-            <SettingCard title="General Settings" icon={FaCog} sectionKey="general">
+            <SettingCard title="General Settings" icon={SettingsIcon} sectionKey="general">
               <div className="space-y-1">
                 {Object.entries(settings?.general || {}).map(([key, value]) => (
                   <InputField
@@ -862,7 +863,7 @@ const Settings = () => {
             </SettingCard>
 
             {/* Database Configuration */}
-            <SettingCard title="Database Configuration" icon={FaDatabase} sectionKey="database">
+            <SettingCard title="Database Configuration" icon={Database} sectionKey="database">
               <div className="space-y-1">
                 {Object.entries(settings?.database || {}).map(([key, value]) => (
                   <div key={key} className="py-4 border-b border-gray-100 last:border-b-0">
@@ -885,7 +886,7 @@ const Settings = () => {
             </SettingCard>
 
             {/* Security Settings */}
-            <SettingCard title="Security Settings" icon={FaShieldAlt} sectionKey="security">
+            <SettingCard title="Security Settings" icon={ShieldCheck} sectionKey="security">
               <div className="space-y-1">
                 <ToggleSwitch
                   checked={settings?.security?.password_expiry || false}
@@ -909,7 +910,7 @@ const Settings = () => {
             </SettingCard>
 
             {/* Notification Settings */}
-            <SettingCard title="Notification Settings" icon={FaBell} sectionKey="notifications">
+            <SettingCard title="Notification Settings" icon={Bell} sectionKey="notifications">
               <div className="space-y-1">
                 {Object.entries(settings?.notifications || {}).map(([key, value]) => (
                   <ToggleSwitch
@@ -923,7 +924,7 @@ const Settings = () => {
             </SettingCard>
 
             {/* API Settings */}
-            <SettingCard title="API Settings" icon={FaGlobe} sectionKey="api">
+            <SettingCard title="API Settings" icon={Globe2} sectionKey="api">
               <div className="space-y-4">
                 {Object.entries(settings?.api || {}).map(([key, value]) => (
                   <InputField
@@ -938,11 +939,11 @@ const Settings = () => {
             </SettingCard>
 
             {/* Audit Logs */}
-            <SettingCard title="Audit Logs" icon={FaHistory} sectionKey="auditLogs">
+            <SettingCard title="Audit Logs" icon={History} sectionKey="auditLogs">
               <div className="space-y-3">
                 {auditLoading ? (
                   <div className="flex items-center gap-3 text-sm text-gray-600">
-                    <FaSpinner className="animate-spin" />
+                    <Loader2 className="animate-spin" />
                     Loading audit logs...
                   </div>
                 ) : auditError ? (

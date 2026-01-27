@@ -2,22 +2,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import moment from "moment";
-import {
-  FaShieldAlt,
-  FaUsers,
-  FaUserCheck,
-  FaTasks,
-  FaExclamationTriangle,
-  FaChartBar,
-  FaCog,
-  FaEllipsisV,
-  FaDatabase,
-  FaServer,
-  FaFileExport,
-  FaSearch,
-  FaCrown,
-  FaUserPlus
-} from "react-icons/fa";
+import * as Icons from "../icons";
 import { fetchUsers, selectUsers } from "../redux/slices/userSlice";
 import { fetchTasks, selectTasks } from "../redux/slices/taskSlice";
  
@@ -83,7 +68,7 @@ const Header = ({ timeFilter, onFilterChange, onSearch, systemStatus }) => (
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <div className="p-3.5 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-lg border border-white/50">
-            <FaShieldAlt className="w-6 h-6 text-white" />
+            <Icons.ShieldCheck className="w-6 h-6 text-white" />
           </div>
           <div>
             <h1 className="text-3xl font-bold text-gray-900 tracking-tight leading-tight">Admin Dashboard</h1>
@@ -102,7 +87,7 @@ const Header = ({ timeFilter, onFilterChange, onSearch, systemStatus }) => (
           </div>
          
           <div className="relative flex-1 max-w-md">
-            <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 z-10" />
+            <Icons.Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 z-10" />
             <input
               type="text"
               placeholder="Search users, tasks, reports..."
@@ -139,10 +124,10 @@ const MetricsGrid = ({ users, tasks }) => {
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        <KPI label="Total Users" value={totalUsers.toLocaleString()} icon={FaUsers} trend={5} />
-        <KPI label="Active Users" value={activeUsers.toLocaleString()} icon={FaUserCheck} variant="success" trend={8} />
-        <KPI label="Pending Tasks" value={pendingTasks.toLocaleString()} icon={FaTasks} trend={-2} variant="warning" />
-        <KPI label="Overdue Tasks" value={overdueCount.toLocaleString()} icon={FaExclamationTriangle} variant="critical" trend={3} />
+        <KPI label="Total Users" value={totalUsers.toLocaleString()} icon={Icons.Users} trend={5} />
+        <KPI label="Active Users" value={activeUsers.toLocaleString()} icon={Icons.UserCheck} variant="success" trend={8} />
+        <KPI label="Pending Tasks" value={pendingTasks.toLocaleString()} icon={Icons.ListChecks} trend={-2} variant="warning" />
+        <KPI label="Overdue Tasks" value={overdueCount.toLocaleString()} icon={Icons.AlertTriangle} variant="critical" trend={3} />
       </div>
     </div>
   );
@@ -154,25 +139,25 @@ const ControlPanel = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {[
         {
-          IconComponent: FaDatabase,
+          IconComponent: Icons.Database,
           label: 'Database Backup',
           desc: 'Create full system backup',
           color: 'bg-gradient-to-br from-emerald-500 to-emerald-600'
         },
         {
-          IconComponent: FaServer,
+          IconComponent: Icons.Server,
           label: 'System Restart',
           desc: 'Restart all services safely',
           color: 'bg-gradient-to-br from-blue-500 to-blue-600'
         },
         {
-          IconComponent: FaFileExport,
+          IconComponent: Icons.FileDown,
           label: 'Export Reports',
           desc: 'Generate CSV & PDF files',
           color: 'bg-gradient-to-br from-purple-500 to-purple-600'
         },
         {
-          IconComponent: FaUserPlus,
+          IconComponent: Icons.UserPlus,
           label: 'Bulk Import',
           desc: 'Import users & tasks data',
           color: 'bg-gradient-to-br from-indigo-500 to-indigo-600'
@@ -267,10 +252,10 @@ const UsersTable = ({ users }) => (
               <td className="px-8 py-6">
                 <div className="flex items-center space-x-2">
                   <button className="p-2.5 hover:bg-gray-100 rounded-xl transition-all shadow-sm group-hover:shadow-md flex-shrink-0">
-                    <FaCog className="w-4 h-4 text-gray-600 group-hover:text-blue-600" />
+                    <Settings className="w-4 h-4 text-gray-600 group-hover:text-blue-600" />
                   </button>
                   <button className="p-2.5 hover:bg-gray-100 rounded-xl transition-all shadow-sm group-hover:shadow-md flex-shrink-0">
-                    <FaEllipsisV className="w-4 h-4 text-gray-600 group-hover:text-gray-800" />
+                    <MoreVertical className="w-4 h-4 text-gray-600 group-hover:text-gray-800" />
                   </button>
                 </div>
               </td>
@@ -301,14 +286,14 @@ const TaskAnalytics = ({ tasks }) => {
           <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Task Analytics</h2>
           <p className="text-sm text-gray-600 mt-1 font-medium">System-wide task performance</p>
         </div>
-        <FaChartBar className="w-8 h-8 text-gray-400" />
+        <BarChart3 className="w-8 h-8 text-gray-400" />
       </div>
      
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-        <KPI label="Total Tasks" value={stats.total.toLocaleString()} icon={FaTasks} />
-        <KPI label="Completed" value={stats.completed.toLocaleString()} icon={FaTasks} variant="success" />
-        <KPI label="Overdue" value={stats.overdue.toLocaleString()} icon={FaExclamationTriangle} variant="critical" />
-        <KPI label="High Priority" value={stats.highPriority.toLocaleString()} icon={FaTasks} variant="warning" />
+        <KPI label="Total Tasks" value={stats.total.toLocaleString()} icon={ListChecks} />
+        <KPI label="Completed" value={stats.completed.toLocaleString()} icon={ListChecks} variant="success" />
+        <KPI label="Overdue" value={stats.overdue.toLocaleString()} icon={AlertTriangle} variant="critical" />
+        <KPI label="High Priority" value={stats.highPriority.toLocaleString()} icon={ListChecks} variant="warning" />
       </div>
     </div>
   );
@@ -364,11 +349,11 @@ const Dashboard = () => {
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
               <div className="flex flex-wrap items-center gap-6 text-sm text-gray-600">
                 <div className="flex items-center gap-2.5 bg-emerald-50 px-4 py-2.5 rounded-xl border-2 border-emerald-200 shadow-sm">
-                  <FaCrown className="w-4 h-4 text-yellow-600" />
+                  <Crown className="w-4 h-4 text-yellow-600" />
                   <span className="font-bold text-emerald-800">Admin Session Active</span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-700 font-medium">
-                  <FaDatabase className="w-4 h-4 text-blue-600" />
+                  <Database className="w-4 h-4 text-blue-600" />
                   <span>{tasks.length.toLocaleString()} tasks • {users.length.toLocaleString()} users</span>
                 </div>
               </div>

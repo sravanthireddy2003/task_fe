@@ -1,6 +1,6 @@
 import { Fragment, useState, useEffect } from "react";
 import { Popover, Transition } from "@headlessui/react";
-import { Bell, Check, Trash2, Clock, AlertCircle } from "lucide-react";
+import * as Icons from "../icons";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
@@ -107,7 +107,7 @@ const NotificationPanel = () => {
     <Popover className="relative">
       <Popover.Button className="inline-flex items-center outline-none">
         <div className="w-8 h-8 flex items-center justify-center text-gray-800 relative hover:text-blue-600 transition-colors">
-          <Bell className="w-6 h-6" />
+          <Icons.Bell className="tm-icon" />
           {unreadCount > 0 && (
             <span className="absolute text-center top-0 right-0 text-xs text-white font-bold w-5 h-5 rounded-full bg-red-600 flex items-center justify-center">
               {unreadCount > 9 ? "9+" : unreadCount}
@@ -131,7 +131,7 @@ const NotificationPanel = () => {
               {/* Header */}
               <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-blue-50 to-white">
                 <div className="flex items-center gap-2">
-                  <Bell className="w-5 h-5 text-blue-600" />
+                  <Icons.Bell className="tm-icon text-blue-600" />
                   <h3 className="font-semibold text-gray-900">Notifications</h3>
                 </div>
                 {unreadCount > 0 && (
@@ -188,7 +188,7 @@ const NotificationPanel = () => {
                                 </span>
                               )}
                               <div className="flex items-center gap-1 text-gray-500">
-                                <Clock className="w-3 h-3" />
+                                <Icons.Clock className="tm-icon" />
                                 <span>
                                   {formatDate(notif.createdAt || notif.created_at)}
                                 </span>
@@ -203,20 +203,20 @@ const NotificationPanel = () => {
                                 onClick={(e) =>
                                   handleMarkAsRead(notif.id || notif._id, e)
                                 }
-                                className="p-1 text-blue-600 hover:bg-blue-100 rounded transition-colors"
+                                className="p-1 text-blue-600 hover:bg-blue-100 rounded transition-colors icon-center"
                                 title="Mark as read"
                               >
-                                <Check className="w-4 h-4" />
+                                <Icons.Check className="tm-icon" />
                               </button>
                             )}
                             <button
                               onClick={(e) =>
                                 handleDelete(notif.id || notif._id, e)
                               }
-                              className="p-1 text-red-600 hover:bg-red-100 rounded transition-colors"
+                              className="p-1 text-red-600 hover:bg-red-100 rounded transition-colors icon-center"
                               title="Delete"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Icons.Trash2 className="tm-icon" />
                             </button>
                           </div>
                         </div>
