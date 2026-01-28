@@ -2,8 +2,12 @@ import React, { useState, useEffect } from 'react';
 import * as Icons from '../icons';
 import { toast } from 'sonner';
 import TimeTracker from './TimeTracker';
+import { useDispatch, useSelector } from 'react-redux';
+import { requestTransition } from '../redux/slices/workflowSlice';
 
 const TaskModal = ({ task, onClose, onUpdate, userRole, projectId }) => {
+  const dispatch = useDispatch();
+  const authUser = useSelector((s) => s.auth?.user);
   const [isEditing, setIsEditing] = useState(false);
   const [editedTask, setEditedTask] = useState({ ...task });
   const [comments, setComments] = useState([]);
@@ -39,10 +43,34 @@ const TaskModal = ({ task, onClose, onUpdate, userRole, projectId }) => {
   const handleStatusChange = async (newStatus) => {
     try {
       const taskId = task.id || task._id || task.public_id;
-      await onUpdate(taskId, { status: newStatus });
-      toast.success(`Task marked as ${newStatus}`);
+      const tenantId = Number(localStorage.getItem('tenantId') || import.meta.env.VITE_TENANT_ID || 1);
+
+      // Use workflow API for state transitions instead of direct status update
+      const payload = {
+        tenantId,
+        entityType: 'TASK',
+        entityId: taskId,
+        toState: newStatus,
+        meta: {
+          reason: `Status changed to ${newStatus} by ${userRole || 'user'}`
+        }
+      };
+
+      console.debug('[TaskModal] Requesting workflow transition:', payload);
+      const result = await dispatch(requestTransition(payload)).unwrap();
+
+      if (result.status === 'APPLIED') {
+        toast.success(`Task transitioned to ${newStatus}`);
+        // Refresh the task data
+        if (onUpdate) {
+          await onUpdate(taskId, { status: newStatus });
+        }
+      } else if (result.status === 'PENDING_APPROVAL') {
+        toast.success(`Transition to ${newStatus} submitted for approval`);
+      }
     } catch (error) {
-      toast.error('Failed to update status');
+      console.error('Workflow transition error:', error);
+      toast.error('Failed to request status change');
     }
   };
 

@@ -12,6 +12,7 @@ import chatReducer from "./slices/chatSlice";
 import reportsReducer from "./slices/reportsSlice";
 import workflowReducer from "./slices/workflowSlice";
 import approvalReducer from "./slices/approvalSlice";
+import historyReducer from "./slices/historySlice";
 
 const store = configureStore({
   reducer: {
@@ -25,6 +26,7 @@ const store = configureStore({
     reports: reportsReducer,
     workflow: workflowReducer,
     approval: approvalReducer,
+    history: historyReducer,
     subtasks: subtaskReducer,
     notifications: notificationReducer,
     chat: chatReducer,

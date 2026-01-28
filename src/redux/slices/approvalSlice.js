@@ -1,35 +1,50 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { httpGetService, httpPostService } from '../../App/httpHandler';
+import workflowApi from '../../api/workflowApi';
 
+// Load pending workflow approval requests for MANAGER role
 export const fetchQueue = createAsyncThunk('approval/fetchQueue', async (_, { rejectWithValue }) => {
   try {
-    console.debug('[approvalSlice] fetchQueue -> calling httpGetService');
-    const resp = await httpGetService('api/manager/workflows/queue');
-    return Array.isArray(resp) ? resp : resp?.data ?? resp;
+    console.debug('[approvalSlice] fetchQueue -> workflowApi.getPending(MANAGER)');
+    const resp = await workflowApi.getPending('MANAGER');
+    // Response format: { success: true, data: [...] }
+    const list = Array.isArray(resp) ? resp : resp?.data ?? [];
+    return Array.isArray(list) ? list : [];
   } catch (err) {
     return rejectWithValue(err.message || err || 'Failed to fetch queue');
   }
 });
 
-export const approveInstance = createAsyncThunk('approval/approveInstance', async ({ instanceId, body }, { rejectWithValue }) => {
-  try {
-    console.debug('[approvalSlice] approveInstance ->', instanceId, body);
-    const resp = await httpPostService(`api/manager/workflows/${instanceId}/approve`, body || {});
-    return { instanceId, data: resp?.data ?? resp };
-  } catch (err) {
-    return rejectWithValue(err.message || err || 'Approve failed');
+// Approve a pending workflow request
+export const approveInstance = createAsyncThunk(
+  'approval/approveInstance',
+  async ({ requestId, reason }, { rejectWithValue }) => {
+    try {
+      console.debug('[approvalSlice] approveInstance ->', { requestId, reason });
+      const data = await workflowApi.approveOrReject({ requestId, approved: true, reason });
+      // refresh queue after approving
+      try { await thunkAPI.dispatch(fetchQueue()).unwrap(); } catch (e) { console.debug('fetchQueue refresh after approve failed', e); }
+      return { requestId, data };
+    } catch (err) {
+      return rejectWithValue(err.message || err || 'Approve failed');
+    }
   }
-});
+);
 
-export const rejectInstance = createAsyncThunk('approval/rejectInstance', async ({ instanceId, body }, { rejectWithValue }) => {
-  try {
-    console.debug('[approvalSlice] rejectInstance ->', instanceId, body);
-    const resp = await httpPostService(`api/manager/workflows/${instanceId}/reject`, body || {});
-    return { instanceId, data: resp?.data ?? resp };
-  } catch (err) {
-    return rejectWithValue(err.message || err || 'Reject failed');
+// Reject a pending workflow request
+export const rejectInstance = createAsyncThunk(
+  'approval/rejectInstance',
+  async ({ requestId, reason }, { rejectWithValue }) => {
+    try {
+      console.debug('[approvalSlice] rejectInstance ->', { requestId, reason });
+      const data = await workflowApi.approveOrReject({ requestId, approved: false, reason });
+      // refresh queue after rejecting
+      try { await thunkAPI.dispatch(fetchQueue()).unwrap(); } catch (e) { console.debug('fetchQueue refresh after reject failed', e); }
+      return { requestId, data };
+    } catch (err) {
+      return rejectWithValue(err.message || err || 'Reject failed');
+    }
   }
-});
+);
 
 const initialState = {
   queue: [],
@@ -52,14 +67,14 @@ const approvalSlice = createSlice({
       .addCase(approveInstance.pending, (state) => { state.loading = true; })
       .addCase(approveInstance.fulfilled, (state, action) => {
         state.loading = false;
-        state.queue = state.queue.filter(i => (i.id || i._id || i.instanceId) !== action.payload.instanceId);
+        state.queue = state.queue.filter(i => (i.id || i._id || i.requestId) !== action.payload.requestId);
       })
       .addCase(approveInstance.rejected, (state, action) => { state.loading = false; state.error = action.payload; })
 
       .addCase(rejectInstance.pending, (state) => { state.loading = true; })
       .addCase(rejectInstance.fulfilled, (state, action) => {
         state.loading = false;
-        state.queue = state.queue.filter(i => (i.id || i._id || i.instanceId) !== action.payload.instanceId);
+        state.queue = state.queue.filter(i => (i.id || i._id || i.requestId) !== action.payload.requestId);
       })
       .addCase(rejectInstance.rejected, (state, action) => { state.loading = false; state.error = action.payload; });
   }

@@ -1,45 +1,86 @@
 import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import WorkflowCanvas from '../components/WorkflowCanvas';
-import { fetchTemplates, createTemplate, addStep, reorderSteps, updateTemplateSteps } from '../redux/slices/workflowSlice';
 import { toast } from 'sonner';
 
 const WorkflowBuilder = () => {
-  const dispatch = useDispatch();
-  const { templates, loading } = useSelector((s) => s.workflow || { templates: [], loading: false });
+  const [templates, setTemplates] = useState([]);
+  const [loading] = useState(false);
+  const authUser = useSelector((s) => s.auth?.user);
+  const projectsState = useSelector((s) => s.projects || {});
+  const departmentsState = useSelector((s) => s.departments || {});
   const [selected, setSelected] = useState(null);
 
-  useEffect(() => { dispatch(fetchTemplates()); }, [dispatch]);
-
   const handleCreate = async () => {
-    const payload = { tenant_id: localStorage.tenantId || 1, name: 'New Template', trigger_event: 'TASK_CREATED', active: true };
-    await dispatch(createTemplate(payload));
-    dispatch(fetchTemplates());
+    const tenantId = Number(localStorage.getItem('tenantId') || import.meta.env.VITE_TENANT_ID || 1);
+    const createdBy = authUser?.id || authUser?._id || 1;
+
+    const projectFromState = projectsState.currentProject || (projectsState.projects && projectsState.projects[0]);
+    const deptFromState = (departmentsState.departments && departmentsState.departments[0]) || null;
+
+    const department_id = deptFromState?._id || deptFromState?.id || null;
+    const department_name = deptFromState?.name || null;
+    const project_id = projectFromState?._id || projectFromState?.id || null;
+    const project_name = projectFromState?.name || projectFromState?.project_name || null;
+
+    const payload = {
+      tenant_id: tenantId,
+      name: 'HR Payroll Task Approval',
+      trigger_event: 'TASK_REVIEW',
+      department_id,
+      department_name,
+      project_id,
+      project_name,
+      active: true,
+      created_by: createdBy,
+    };
+    const newTemplate = {
+      id: Date.now(),
+      ...payload,
+      steps: [],
+    };
+    setTemplates((prev) => [...prev, newTemplate]);
+    setSelected(newTemplate);
+    toast.success('Template created (local only)');
   };
 
   const handleAddStep = async () => {
     if (!selected) return;
-    await dispatch(addStep({ template_id: selected.id || selected._id, step_order: (selected.steps?.length||0)+1, role: 'Manager', action: 'REVIEW' }));
-    await dispatch(fetchTemplates());
-    toast.success('Step added');
+    const nextStep = {
+      id: Date.now(),
+      step_order: (selected.steps?.length || 0) + 1,
+      role: 'MANAGER',
+      action: 'REVIEW',
+      rule_id: 5,
+      sla_hours: 4,
+      notify: ['MANAGER'],
+    };
+
+    const updatedTemplate = {
+      ...selected,
+      steps: [...(selected.steps || []), nextStep],
+    };
+
+    setTemplates((prev) =>
+      prev.map((t) =>
+        (t.id || t._id) === (selected.id || selected._id) ? updatedTemplate : t
+      )
+    );
+    setSelected(updatedTemplate);
+    toast.success('Step added (local only)');
   };
 
   const handleSaveSteps = async (newSteps) => {
     if (!selected) return toast.error('No template selected');
 
-    // Optimistic update: apply new order locally first
-    dispatch(updateTemplateSteps({ template_id: selected.id || selected._id, steps: newSteps }));
-
-    try {
-      await dispatch(reorderSteps({ template_id: selected.id || selected._id, steps: newSteps })).unwrap();
-      await dispatch(fetchTemplates());
-      toast.success('Workflow order saved');
-    } catch (err) {
-      // Revert by reloading from server
-      await dispatch(fetchTemplates());
-      toast.error('Save failed on server; reverted to server state');
-      console.warn('reorderSteps error:', err);
-    }
+    const updatedTemplate = { ...selected, steps: newSteps };
+    setTemplates((prev) =>
+      prev.map((t) =>
+        (t.id || t._id) === (selected.id || selected._id) ? updatedTemplate : t
+      )
+    );
+    setSelected(updatedTemplate);
+    toast.success('Workflow order updated (local only)');
   };
 
   return (

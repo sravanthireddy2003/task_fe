@@ -5,8 +5,8 @@ export const DEV_SEED = {
   user: {
     id: "ac510b2dd0e311f088c200155daedf50",
     email: "korapatiashwini@gmail.com",
-    name: "Admin User",
-    role: "Admin",
+    name: "Employee User",
+    role: "Employee",
     modules: [
       { moduleId: "c22786746f3072d6", name: "User Management", access: "full" },
       { moduleId: "6a2ef6584bce3025", name: "Dashboard", access: "full" },

@@ -312,7 +312,8 @@ const Dashboard = () => {
     const loadData = async () => {
       try {
         await dispatch(fetchUsers());
-        await dispatch(fetchTasks());
+        // TODO: Fetch tasks from a specific project or implement all-tasks endpoint
+        // await dispatch(fetchTasks());
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
         setSystemStatus('alert');

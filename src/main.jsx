@@ -6,10 +6,11 @@ import App from "./App.jsx";
 import "./index.css";
  
 import store from "./redux/store";
-import { initWorkflowSocket } from "./socket/initWorkflowSocket";
-import { setTokens, getAccessToken, getRefreshToken } from "./utils/tokenService";
-import { setAuthToken } from "./App/httpHandler";
-import { refreshToken } from "./redux/slices/authSlice";
+import { DEV_SEED } from "./dev/dev_token";
+import { getAccessToken, getRefreshToken, setTokens } from './utils/tokenService';
+import { setAuthToken } from './App/httpHandler';
+import { refreshToken } from './redux/slices/authSlice';
+import { initWorkflowSocket } from './socket/initWorkflowSocket';
  
 // Ensure tenantId default from environment is persisted for API calls
 try {
@@ -46,9 +47,20 @@ async function boot() {
     } catch (e) {
       console.warn('Could not patch global fetch to auto-attach tokens', e);
     }
-    // ✅ STEP 1: ONLY load existing tokens from localStorage (NO dev seed)
-    const access = getAccessToken();
-    const refresh = getRefreshToken();
+    // ✅ STEP 1: Load existing tokens OR use dev seed for development
+    let access = getAccessToken();
+    let refresh = getRefreshToken();
+    
+    // Use dev seed if no existing tokens (development convenience)
+    if (!access && DEV_SEED) {
+      console.log('🔧 Using dev seed token for development');
+      access = DEV_SEED.token;
+      refresh = DEV_SEED.refreshToken;
+      setTokens(access, refresh, 'local');
+      
+      // Also set user info in localStorage
+      localStorage.setItem('userInfo', JSON.stringify(DEV_SEED.user));
+    }
    
     if (access) {
       setAuthToken(access, refresh || null, "local");

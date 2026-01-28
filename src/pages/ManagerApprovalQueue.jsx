@@ -48,11 +48,11 @@ const ManagerApprovalQueue = () => {
   }, [dispatch]);
 
   const handleApprove = (id) => {
-    dispatch(approveInstance({ instanceId: id, body: { comment: 'Approved via UI' } }));
+    dispatch(approveInstance({ requestId: id, reason: 'Approved via UI' }));
   };
 
-  const handleReject = (id) => {
-    dispatch(rejectInstance({ instanceId: id, body: { comment: 'Rejected via UI' } }));
+  const handleReject = (id, reason) => {
+    dispatch(rejectInstance({ requestId: id, reason: reason || 'Rejected via UI' }));
   };
 
   return (
