@@ -32,26 +32,50 @@ export const fetchTasks = createAsyncThunk(
   'tasks/fetchTasks',
   async (params = {}, thunkAPI) => {
     try {
-      // Support query params from callers. Backend expects `project_id` (snake_case)
+      console.log('fetchTasks called with params:', params);
+      // Support query params from callers. Backend expects `project_id` (snake_case) or projectPublicId
       const query = {};
       if (params.project_id) query.project_id = params.project_id;
       if (params.projectId) query.project_id = params.projectId;
+      if (params.projectPublicId) query.projectPublicId = params.projectPublicId;
       if (params.client_id) query.client_id = params.client_id;
       if (params.clientId) query.client_id = params.clientId;
       if (params.departmentId) query.departmentId = params.departmentId;
 
       const qs = new URLSearchParams(query).toString();
       const url = qs ? `api/projects/tasks?${qs}` : `api/projects/tasks`;
+      console.log('fetchTasks calling URL:', url);
 
       const res = await httpGetService(url);
+      console.log('fetchTasks response:', res);
+
+      // Handle API response structure: { success: true, data: [...] } or { success: false, error: "message" }
+      if (res?.success === false) {
+        return thunkAPI.rejectWithValue(res.error || 'Failed to fetch tasks');
+      }
+
       // Normalize response shapes: prefer `res.data` when server returns { success:true, data: [...] }
-      const data = res && (Array.isArray(res) ? res : res.data ?? (res.success ? res.data : null)) ;
+      const data = res?.data || res || [];
+      console.log('fetchTasks normalized data:', data);
       if (Array.isArray(data)) return data;
       // Fallbacks: server may return array directly or wrap in .tasks
       if (Array.isArray(res)) return res;
       if (Array.isArray(res?.tasks)) return res.tasks;
       return Array.isArray(res?.data) ? res.data : [];
     } catch (err) {
+      console.error('fetchTasks error:', err);
+      // Handle HTTP errors consistently
+      if (err.response) {
+        const status = err.response.status;
+        const errorData = err.response.data;
+        if (status === 400 && errorData?.error) {
+          return thunkAPI.rejectWithValue(errorData.error);
+        } else if (status === 403) {
+          return thunkAPI.rejectWithValue('Access denied');
+        } else if (status === 404) {
+          return thunkAPI.rejectWithValue('Tasks not found');
+        }
+      }
       return thunkAPI.rejectWithValue(formatRejectValue(err));
     }
   }
@@ -130,7 +154,8 @@ export const createTask = createAsyncThunk(
       if (payload.estimated_hours && !body.estimatedHours) body.estimatedHours = payload.estimated_hours;
       if (payload.time_alloted && !body.timeAlloted) body.timeAlloted = payload.time_alloted;
 
-      const res = await httpPostService('api/tasks', body);
+      // Use correct endpoint from Postman collection: POST /api/projects/tasks
+      const res = await httpPostService('api/projects/tasks', body);
       
       // ✅ NEW: Refresh notifications after successful task creation
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -148,7 +173,8 @@ export const updateTask = createAsyncThunk(
   'tasks/updateTask',
   async ({ taskId, data }, thunkAPI) => {
     try {
-      const res = await httpPutService(`api/tasks/${taskId}`, data);
+      // Use correct endpoint from Postman collection: PUT /api/projects/tasks/{{taskId}}
+      const res = await httpPutService(`api/projects/tasks/${taskId}`, data);
       
       // ✅ NEW: Refresh notifications after successful task update
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -207,6 +233,85 @@ export const pauseTask = createAsyncThunk(
   }
 );
 
+export const resumeTask = createAsyncThunk(
+  'tasks/resumeTask',
+  async (taskId, thunkAPI) => {
+    try {
+      const res = await httpPostService(`api/tasks/${taskId}/resume`);
+      // API returns { success: true, message: "...", data: {...} }
+      return res?.success ? res.data : res?.data || res || {};
+    } catch (err) {
+      return thunkAPI.rejectWithValue(formatRejectValue(err));
+    }
+  }
+);
+
+export const requestTaskCompletion = createAsyncThunk(
+  'tasks/requestTaskCompletion',
+  async ({ taskId, projectId }, thunkAPI) => {
+    try {
+      // Use PATCH /api/tasks/{{taskId}}/status with status: "Review"
+      const res = await httpPatchService(`api/tasks/${taskId}/status`, {
+        status: "Review",
+        projectId: projectId
+      });
+      // API returns { success: true, message: "...", data: {...} }
+      return res?.success ? res.data : res?.data || res || {};
+    } catch (err) {
+      return thunkAPI.rejectWithValue(formatRejectValue(err));
+    }
+  }
+);
+
+// Update task status with strict transition validation
+export const updateTaskStatus = createAsyncThunk(
+  'tasks/updateTaskStatus',
+  async ({ taskId, status, projectId }, thunkAPI) => {
+    try {
+      const res = await httpPatchService(`api/tasks/${taskId}/status`, {
+        status: status,
+        projectId: projectId
+      });
+      // API returns { success: true, message: "...", data: {...} } or { success: false, error: "message" }
+      if (res?.success === false) {
+        return thunkAPI.rejectWithValue(res.error || 'Failed to update task status');
+      }
+      return res?.success ? res.data : res?.data || res || {};
+    } catch (err) {
+      // Handle HTTP errors consistently
+      if (err.response) {
+        const statusCode = err.response.status;
+        const errorData = err.response.data;
+        if (statusCode === 400 && errorData?.error) {
+          return thunkAPI.rejectWithValue(errorData.error);
+        } else if (statusCode === 403) {
+          return thunkAPI.rejectWithValue('Access denied - you cannot change this task status');
+        } else if (statusCode === 404) {
+          return thunkAPI.rejectWithValue('Task not found');
+        }
+      }
+      return thunkAPI.rejectWithValue(formatRejectValue(err));
+    }
+  }
+);
+
+export const logWorkingHours = createAsyncThunk(
+  'tasks/logWorkingHours',
+  async ({ task_id, hours, description }, thunkAPI) => {
+    try {
+      const res = await httpPostService('api/tasks/working-hours', {
+        task_id,
+        hours,
+        description
+      });
+      // API returns { success: true, message: "...", data: {...} }
+      return res?.success ? res.data : res?.data || res || {};
+    } catch (err) {
+      return thunkAPI.rejectWithValue(formatRejectValue(err));
+    }
+  }
+);
+
 export const completeTask = createAsyncThunk(
   'tasks/completeTask',
   async (taskId, thunkAPI) => {
@@ -225,9 +330,53 @@ export const getTaskTimeline = createAsyncThunk(
   async (taskId, thunkAPI) => {
     try {
       const res = await httpGetService(`api/tasks/${taskId}/timeline`);
-      // API returns { success: true, data: {...} }
+      // API returns { success: true, data: {...} } or { success: false, error: "message" }
+      if (res?.success === false) {
+        return thunkAPI.rejectWithValue(res.error || 'Failed to fetch timeline');
+      }
       return res?.success ? res.data : res?.data || res || [];
     } catch (err) {
+      // Handle HTTP errors consistently
+      if (err.response) {
+        const status = err.response.status;
+        const errorData = err.response.data;
+        if (status === 403) {
+          return thunkAPI.rejectWithValue('Access denied');
+        } else if (status === 404) {
+          return thunkAPI.rejectWithValue('Timeline not found');
+        }
+      }
+      return thunkAPI.rejectWithValue(formatRejectValue(err));
+    }
+  }
+);
+
+// Request task reassignment (Employee only)
+export const requestTaskReassignment = createAsyncThunk(
+  'tasks/requestTaskReassignment',
+  async ({ taskId, reason }, thunkAPI) => {
+    try {
+      const res = await httpPostService(`api/tasks/${taskId}/request-reassignment`, {
+        reason: reason
+      });
+      // API returns { success: true, message: "...", data: {...} } or { success: false, error: "message" }
+      if (res?.success === false) {
+        return thunkAPI.rejectWithValue(res.error || 'Failed to request reassignment');
+      }
+      return res?.success ? res.data : res?.data || res || {};
+    } catch (err) {
+      // Handle HTTP errors consistently
+      if (err.response) {
+        const status = err.response.status;
+        const errorData = err.response.data;
+        if (status === 400 && errorData?.error) {
+          return thunkAPI.rejectWithValue(errorData.error);
+        } else if (status === 403) {
+          return thunkAPI.rejectWithValue('Access denied');
+        } else if (status === 404) {
+          return thunkAPI.rejectWithValue('Task not found');
+        }
+      }
       return thunkAPI.rejectWithValue(formatRejectValue(err));
     }
   }

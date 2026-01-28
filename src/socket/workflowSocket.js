@@ -18,15 +18,11 @@ export function initWorkflowSocket(store) {
   });
 
   socket.on('workflow:created', (data) => {
-    try { store.dispatch({ type: 'workflow/fetchTemplates/pending' }); store.dispatch({ type: 'workflow/fetchTemplates' }); } catch (e) {}
     try { store.dispatch({ type: 'approval/fetchQueue' }); } catch (e) {}
   });
 
   socket.on('workflow:updated', (payload) => {
     try { store.dispatch({ type: 'approval/fetchQueue' }); } catch (e) {}
-    if (payload && payload.instanceId) {
-      try { store.dispatch({ type: 'workflow/getHistory', payload: payload.instanceId }); } catch (e) {}
-    }
   });
 
   socket.on('workflow:escalated', (data) => {

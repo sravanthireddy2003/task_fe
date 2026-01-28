@@ -302,6 +302,7 @@ import KanbanColumn from './KanbanColumn';
 import KanbanCard from './KanbanCard';
 import TaskModal from './TaskModal';
 import { toast } from 'sonner';
+import { httpPatchService, httpPostService } from '../App/httpHandler';
 
 // Helper function to normalize ID
 const normalizeId = (entity) => {
@@ -316,9 +317,22 @@ const normalizeId = (entity) => {
   return '';
 };
 
-// Helper to get task ID for API calls
+// Helper to get task ID for API calls - ensure integer ID
 const getTaskIdForApi = (task) => {
-  return task?.id || task?.public_id || task?.internal_id;
+  const id = task?.id || task?.public_id || task?.internal_id;
+  // Convert to integer if it's a string number
+  if (typeof id === 'string' && /^\d+$/.test(id)) {
+    return parseInt(id, 10);
+  }
+  return id;
+};
+
+// Helper to get project ID for API calls - ensure integer ID
+const getProjectIdForApi = (projectId) => {
+  if (typeof projectId === 'string' && /^\d+$/.test(projectId)) {
+    return parseInt(projectId, 10);
+  }
+  return projectId;
 };
 
 const KanbanBoard = ({
@@ -371,10 +385,11 @@ const KanbanBoard = ({
   const columns = useMemo(() => {
     console.log('KanbanBoard columns useMemo:', { kanbanData, tasks });
     
-    // Define the standard columns from the guide
+    // Define the standard columns from the guide - including Review
     const standardColumns = {
       'To Do': [],
       'In Progress': [],
+      'Review': [],
       'On Hold': [],
       'Completed': []
     };
@@ -397,6 +412,9 @@ const KanbanBoard = ({
           case 'IN PROGRESS':
           case 'IN_PROGRESS':
             columnName = 'In Progress';
+            break;
+          case 'REVIEW':
+            columnName = 'Review';
             break;
           case 'ON HOLD':
           case 'ON_HOLD':
@@ -429,6 +447,10 @@ const KanbanBoard = ({
         'In Progress': tasks.filter(task => {
           const s = (task.status || task.stage || '').toUpperCase();
           return s === 'IN_PROGRESS' || s === 'IN PROGRESS';
+        }),
+        'Review': tasks.filter(task => {
+          const s = (task.status || task.stage || '').toUpperCase();
+          return s === 'REVIEW';
         }),
         'On Hold': tasks.filter(task => {
           const s = (task.status || task.stage || '').toUpperCase();
@@ -560,6 +582,7 @@ const KanbanBoard = ({
     
     console.log('Drag operation:', {
       taskId,
+      task,
       currentStatus,
       targetColumn,
       taskTitle: task.title
@@ -602,8 +625,18 @@ const KanbanBoard = ({
           toast.error(`Cannot move from ${currentStatus} to On Hold`);
           return;
         }
-      } else if (targetColumn === 'Completed') {
+      } else if (targetColumn === 'Review') {
         if (currentStatus === 'in_progress' || currentStatus === 'in progress') {
+          // Move to Review - use status update API as per Postman collection
+          await updateTaskStatus(taskId, 'Review');
+          toast.success('Review requested — sent for manager approval');
+        } else {
+          toast.error(`Cannot move from ${currentStatus} to Review`);
+          return;
+        }
+      } else if (targetColumn === 'Completed') {
+        if (currentStatus === 'in_progress' || currentStatus === 'in progress' ||
+            (currentStatus === 'review' && (userRole === 'manager' || userRole === 'admin'))) {
           // Complete task
           if (onCompleteTask) {
             await onCompleteTask(task);
@@ -645,20 +678,21 @@ const KanbanBoard = ({
   // Fallback function for updating task status
   const updateTaskStatus = async (taskId, status) => {
     try {
-      const response = await fetch(`/api/tasks/${taskId}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status, projectId })
+      console.log('updateTaskStatus called with:', { taskId, status, projectId });
+      
+      const res = await httpPatchService(`api/tasks/${taskId}/status`, {
+        taskId: taskId,  // Include taskId in body as well
+        status: status,
+        projectId: getProjectIdForApi(projectId)
       });
       
-      if (!response.ok) {
-        throw new Error('Failed to update task status');
+      if (res?.success === false) {
+        throw new Error(res.error || 'Failed to update task status');
       }
       
-      return await response.json();
+      return res;
     } catch (error) {
+      console.error('updateTaskStatus error:', error);
       throw error;
     }
   };
@@ -676,7 +710,7 @@ const KanbanBoard = ({
     setIsDragging(false);
   };
 
-  const columnOrder = ['To Do', 'In Progress', 'On Hold', 'Completed'];
+  const columnOrder = ['To Do', 'In Progress', 'Review', 'On Hold', 'Completed'];
 
   // Get all task IDs for SortableContext
   const allTaskIds = useMemo(() => {

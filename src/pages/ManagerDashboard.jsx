@@ -1,32 +1,10 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { httpGetService } from '../App/httpHandler';
 import { toast } from 'sonner';
+import { httpGetService, httpPatchService, httpPostService } from '../App/httpHandler';
 import * as Icons from '../icons';
-import { Chart } from '../components/Chart';
-import RefreshButton from '../components/RefreshButton';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, XAxis, YAxis, CartesianGrid, Bar } from 'recharts';
 
-const { 
-  ArrowUpRight, 
-  TrendingUp, 
-  Users, 
-  Briefcase, 
-  CheckSquare, 
-  Target, 
-  BarChart3, 
-  Calendar, 
-  ChevronRight, 
-  List, 
-  Grid,
-  Filter,
-  Download,
-  MoreVertical,
-  AlertCircle,
-  RefreshCw,
-  CheckCircle,
-  Clock: ClockIcon,
-  AlertTriangle
-} = Icons;
+const { ArrowUpRight, TrendingUp, Users, Briefcase, CheckSquare, Target, BarChart3, Calendar, Clock, ChevronRight } = Icons;
 
 const normalizeList = (payload) => {
   if (!payload) return [];

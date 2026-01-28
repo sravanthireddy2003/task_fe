@@ -1,9 +1,21 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'sonner';
 import fetchWithTenant from '../utils/fetchWithTenant';
+import { httpGetService } from '../App/httpHandler';
 import { selectUser } from '../redux/slices/authSlice';
+import { 
+  fetchTasks,
+  startTask, 
+  pauseTask, 
+  resumeTask, 
+  requestTaskCompletion,
+  logWorkingHours,
+  getTaskTimeline,
+  updateTaskStatus,
+  requestTaskReassignment
+} from '../redux/slices/taskSlice';
 import * as Icons from '../icons';
 
 const { AlertCircle, CheckCircle, XCircle, Play, Pause, RotateCcw, Check, Clock, Kanban, List, CheckSquare, MessageSquare, Plus, Send, User, Calendar, RefreshCw, Eye, Filter, ChevronDown } = Icons;
@@ -52,9 +64,22 @@ const normalizeId = (entity) => {
   return '';
 };
 
-// Updated getTaskId for API calls
+// Updated getTaskId for API calls - ensure integer ID
 const getTaskIdForApi = (task) => {
-  return task?.id || task?.public_id || task?.internal_id;
+  const id = task?.id || task?.public_id || task?.internal_id;
+  // Convert to integer if it's a string number
+  if (typeof id === 'string' && /^\d+$/.test(id)) {
+    return parseInt(id, 10);
+  }
+  return id;
+};
+
+// Helper to get project ID for API calls - ensure integer ID
+const getProjectIdForApi = (projectId) => {
+  if (typeof projectId === 'string' && /^\d+$/.test(projectId)) {
+    return parseInt(projectId, 10);
+  }
+  return projectId;
 };
 
 // Status text mapping - updated with your API status values
@@ -130,8 +155,10 @@ const isTaskLocked = (task) => {
 
 const EmployeeTasks = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const user = useSelector(selectUser);
   const userRole = user?.role?.toLowerCase();
+  console.log('EmployeeTasks component rendered, user:', user, 'userRole:', userRole);
   const [projects, setProjects] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState('');
   const [tasks, setTasks] = useState([]);
@@ -161,17 +188,161 @@ const EmployeeTasks = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [forceRefresh, setForceRefresh] = useState(0);
 
+  // Time tracking states
+  const [activeTimers, setActiveTimers] = useState({});
+  const [liveTimers, setLiveTimers] = useState({});
+
   // Status options for filter - updated based on API
   const statusOptions = ['all', 'PENDING', 'IN_PROGRESS', 'COMPLETED', 'ON_HOLD', 'TO DO', 'REVIEW'];
 
-  const loadProjects = async () => {
+  // Live timer effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLiveTimers(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(taskId => {
+          if (updated[taskId]) {
+            updated[taskId] = updated[taskId] + 1;
+          }
+        });
+        return updated;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Helper function to format time display
+  const formatTimeDisplay = (totalSeconds, liveSeconds = 0) => {
+    const total = totalSeconds + liveSeconds;
+    const hours = Math.floor(total / 3600);
+    const minutes = Math.floor((total % 3600) / 60);
+    const seconds = total % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  // Helper function to get total tracked time
+  const getTotalTrackedTime = (task) => {
+    const totalHours = task?.total_time_hours || 0;
+    const totalHHMMSS = task?.total_time_hhmmss || '00:00:00';
+    
+    // Convert HH:MM:SS to seconds
+    const [hours, minutes, seconds] = totalHHMMSS.split(':').map(Number);
+    return (hours * 3600) + (minutes * 60) + seconds + (totalHours * 3600);
+  };
+
+  // Validate status transitions for employees
+  const validateStatusTransition = (currentStatus, newStatus, task) => {
+    if (!task) return { valid: false, error: 'Task not found' };
+
+    const normalizedCurrent = (currentStatus || '').toUpperCase();
+    const normalizedNew = newStatus.toUpperCase();
+
+    // Check if user is assigned to task
+    const isAssigned = task.assignedUsers?.some(user => 
+      user.id === user?.id || user._id === user?._id || user.public_id === user?.public_id
+    );
+    if (!isAssigned && userRole === 'employee') {
+      return { valid: false, error: 'You are not assigned to this task' };
+    }
+
+    // Check if task is read-only
+    if (task.readOnly || task.is_locked) {
+      return { valid: false, error: 'Task is locked and cannot be modified' };
+    }
+
+    // Allowed transitions for employees
+    const allowedTransitions = {
+      'PENDING': ['TO DO', 'IN PROGRESS'],
+      'TO DO': ['IN PROGRESS'],
+      'IN PROGRESS': ['ON HOLD', 'REVIEW'],
+      'ON HOLD': ['IN PROGRESS'],
+      'REVIEW': userRole === 'manager' || userRole === 'admin' ? ['COMPLETED'] : [] // Only manager can complete from review
+    };
+
+    const currentAllowed = allowedTransitions[normalizedCurrent] || [];
+    if (!currentAllowed.includes(normalizedNew)) {
+      return { 
+        valid: false, 
+        error: `Cannot change status from ${normalizedCurrent} to ${normalizedNew}` 
+      };
+    }
+
+    return { valid: true };
+  };
+
+  // Handle status change with validation
+  const handleStatusChange = async (task, newStatus) => {
+    const validation = validateStatusTransition(task.status || task.stage, newStatus, task);
+    if (!validation.valid) {
+      toast.error(validation.error);
+      return;
+    }
+
     try {
-      const response = await fetchWithTenant('/api/projects');
+      const taskId = getTaskIdForApi(task);
+      const result = await dispatch(updateTaskStatus({ 
+        taskId, 
+        status: newStatus, 
+        projectId: getProjectIdForApi(selectedProjectId) 
+      })).unwrap();
+
+      toast.success(`Task status updated to ${newStatus}`);
+
+      // Update local state
+      updateLocalTaskState(normalizeId(task), { status: newStatus });
+
+      // Refresh tasks
+      setTimeout(() => refreshAllTasks(), 500);
+    } catch (error) {
+      toast.error(error?.message || 'Failed to update task status');
+      console.error('Status change error:', error);
+    }
+  };
+
+  // Handle task reassignment request
+  const handleRequestReassignment = async (task, reason) => {
+    if (!reason || reason.trim() === '') {
+      toast.error('Please provide a reason for reassignment');
+      return;
+    }
+
+    try {
+      const taskId = getTaskIdForApi(task);
+      const result = await dispatch(requestTaskReassignment({ 
+        taskId, 
+        reason: reason.trim() 
+      })).unwrap();
+
+      toast.success('Reassignment request submitted. Task is now on hold.');
+
+      // Update local state - task should be locked/on hold
+      updateLocalTaskState(normalizeId(task), { 
+        status: 'ON_HOLD', 
+        is_locked: true 
+      });
+
+      // Refresh tasks
+      setTimeout(() => refreshAllTasks(), 500);
+    } catch (error) {
+      toast.error(error?.message || 'Failed to request reassignment');
+      console.error('Reassignment request error:', error);
+    }
+  };
+
+  const loadProjects = async () => {
+    console.log('Loading projects...');
+    try {
+      const response = await fetchWithTenant('/api/projects?dropdown=1');
+      console.log('Projects response:', response);
       const data = response?.data || response || [];
+      console.log('Projects data:', data);
       if (Array.isArray(data)) {
         setProjects(data);
         if (data.length > 0 && !selectedProjectId) {
-          setSelectedProjectId(data[0].id || data[0]._id || data[0].public_id);
+          const firstProjectId = data[0].projectId || data[0].id || data[0]._id || data[0].public_id;
+          console.log('Setting selectedProjectId to:', firstProjectId);
+          setSelectedProjectId(firstProjectId);
         }
       }
     } catch (err) {
@@ -180,22 +351,23 @@ const EmployeeTasks = () => {
   };
 
   const loadTasks = async (projectId) => {
+    console.log('loadTasks called with projectId:', projectId);
+    if (!projectId) {
+      console.log('No projectId provided, returning');
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     try {
-      let response;
-      if (userRole === 'employee') {
-        response = await fetchWithTenant('/api/employee/my-tasks');
-      } else {
-        if (!projectId) return;
-        response = await fetchWithTenant('/api/projects/' + projectId + '/tasks');
-      }
+      console.log('Calling fetchTasks with project_id:', projectId);
+      const result = await dispatch(fetchTasks({ project_id: projectId })).unwrap();
       
-      console.log('API Response:', response);
+      console.log('Tasks loaded:', result);
       
-      // Handle the response structure from your API
-      const data = response?.data || [];
-      const kanbanList = response?.kanban || [];
+      // Handle the response structure
+      const data = Array.isArray(result) ? result : result?.data || [];
+      const kanbanList = result?.kanban || [];
       
       if (Array.isArray(data)) {
         setTasks(data);
@@ -281,12 +453,12 @@ const EmployeeTasks = () => {
         return;
       }
       
-      const response = await fetchWithTenant(`/api/tasks/${taskId}/timeline`);
-      if (response?.success && response.data) {
+      const result = await dispatch(getTaskTimeline(taskId)).unwrap();
+      if (result) {
         const normalizedId = normalizeId(task);
         setTaskTimelines(prev => ({
           ...prev,
-          [normalizedId]: response.data
+          [normalizedId]: result
         }));
       }
     } catch (error) {
@@ -305,6 +477,7 @@ const EmployeeTasks = () => {
   };
 
   useEffect(() => {
+    console.log('First useEffect triggered, userRole:', userRole);
     loadProjects();
     if (userRole !== 'employee') {
       loadEmployees();
@@ -312,10 +485,9 @@ const EmployeeTasks = () => {
   }, []);
 
   useEffect(() => {
-    if (userRole === 'employee') {
-      loadTasks();
-    } else if (selectedProjectId) {
-      loadTasks(selectedProjectId);
+    console.log('EmployeeTasks useEffect triggered, selectedProjectId:', selectedProjectId);
+    if (selectedProjectId) {
+      loadTasks(getProjectIdForApi(selectedProjectId));
     }
   }, [selectedProjectId, userRole, forceRefresh]);
 
@@ -456,31 +628,30 @@ const EmployeeTasks = () => {
         toast.error('Task not found');
         return;
       }
-      
-      const resp = await fetchWithTenant(`/api/tasks/${taskId}/start`, {
-        method: 'POST'
-      });
-      
-      if (resp?.success) {
-        toast.success(resp?.message || 'Task started');
-        
-        const updateData = {
-          status: 'IN_PROGRESS',
-          started_at: resp.data?.started_at || new Date().toISOString(),
-          is_locked: false
-        };
-        
-        // Update local state immediately
-        updateLocalTaskState(normalizeId(task), updateData);
-        
-        // Load timeline
-        loadTaskTimeline(task);
-        
-        // Refresh to get latest data
-        setTimeout(() => refreshAllTasks(), 500);
-      } else {
-        toast.error(resp?.message || 'Failed to start task');
-      }
+
+      const result = await dispatch(startTask(taskId)).unwrap();
+
+      toast.success('Task started');
+
+      // Update status to In Progress and start live timer
+      const updateData = {
+        status: 'IN_PROGRESS',
+        started_at: result?.started_at || new Date().toISOString(),
+        is_locked: false
+      };
+
+      // Start live timer for this task
+      setActiveTimers(prev => ({ ...prev, [taskId]: true }));
+      setLiveTimers(prev => ({ ...prev, [taskId]: 0 }));
+
+      // Update local state immediately
+      updateLocalTaskState(normalizeId(task), updateData);
+
+      // Load timeline
+      loadTaskTimeline(task);
+
+      // Refresh to get latest data
+      setTimeout(() => refreshAllTasks(), 500);
     } catch (error) {
       toast.error(error?.message || 'Failed to start task');
       console.error('Start task error:', error);
@@ -495,31 +666,33 @@ const EmployeeTasks = () => {
         return;
       }
       
-      const resp = await fetchWithTenant(`/api/tasks/${taskId}/pause`, {
-        method: 'POST'
+      const result = await dispatch(pauseTask(taskId)).unwrap();
+      
+      toast.success('Task paused');
+      
+      // Stop timer and accumulate time
+      setActiveTimers(prev => ({ ...prev, [taskId]: false }));
+      setLiveTimers(prev => {
+        const updated = { ...prev };
+        delete updated[taskId];
+        return updated;
       });
       
-      if (resp?.success) {
-        toast.success(resp?.message || 'Task paused');
-        
-        const updateData = {
-          status: 'ON_HOLD',
-          is_locked: false
-        };
-        
-        // Update local state immediately
-        updateLocalTaskState(normalizeId(task), updateData);
-        
-        // Load timeline
-        loadTaskTimeline(task);
-        
-        // Refresh to get latest data
-        setTimeout(() => refreshAllTasks(), 500);
-      } else {
-        toast.error(resp?.message || 'Failed to pause task');
-      }
+      const updateData = {
+        status: 'ON_HOLD',
+        is_locked: false
+      };
+      
+      // Update local state immediately
+      updateLocalTaskState(normalizeId(task), updateData);
+      
+      // Load timeline
+      loadTaskTimeline(task);
+      
+      // Refresh to get latest data
+      setTimeout(() => refreshAllTasks(), 500);
     } catch (error) {
-      toast.error('Failed to pause task');
+      toast.error(error?.message || 'Failed to pause task');
       console.error('Pause task error:', error);
     }
   };
@@ -532,31 +705,29 @@ const EmployeeTasks = () => {
         return;
       }
       
-      const resp = await fetchWithTenant(`/api/tasks/${taskId}/resume`, {
-        method: 'POST'
-      });
+      const result = await dispatch(resumeTask(taskId)).unwrap();
       
-      if (resp?.success) {
-        toast.success(resp?.message || 'Task resumed');
-        
-        const updateData = {
-          status: 'IN_PROGRESS',
-          is_locked: false
-        };
-        
-        // Update local state immediately
-        updateLocalTaskState(normalizeId(task), updateData);
-        
-        // Load timeline
-        loadTaskTimeline(task);
-        
-        // Refresh to get latest data
-        setTimeout(() => refreshAllTasks(), 500);
-      } else {
-        toast.error(resp?.message || 'Failed to resume task');
-      }
+      toast.success('Task resumed');
+      
+      // Restart live timer
+      setActiveTimers(prev => ({ ...prev, [taskId]: true }));
+      setLiveTimers(prev => ({ ...prev, [taskId]: 0 }));
+      
+      const updateData = {
+        status: 'IN_PROGRESS',
+        is_locked: false
+      };
+      
+      // Update local state immediately
+      updateLocalTaskState(normalizeId(task), updateData);
+      
+      // Load timeline
+      loadTaskTimeline(task);
+      
+      // Refresh to get latest data
+      setTimeout(() => refreshAllTasks(), 500);
     } catch (error) {
-      toast.error('Failed to resume task');
+      toast.error(error?.message || 'Failed to resume task');
       console.error('Resume task error:', error);
     }
   };
@@ -569,42 +740,37 @@ const EmployeeTasks = () => {
         return;
       }
       
-      const resp = await fetchWithTenant(`/api/tasks/${taskId}/complete`, {
-        method: 'POST'
-      });
+      // Get the project ID for the request
+      const projectId = getProjectIdForApi(task.projectId || task.project_id || selectedProjectId);
       
-      if (resp?.success) {
-        toast.success(resp?.message || 'Task completed');
-        
-        const updateData = {
-          status: 'COMPLETED',
-          total_duration: resp.data?.total_time_seconds || task.total_time_seconds,
-          total_time_hhmmss: resp.data?.total_time_hhmmss || task.total_time_hhmmss,
-          is_locked: false
-        };
-        
-        // Update local state immediately
-        updateLocalTaskState(normalizeId(task), updateData);
-        
-        // Also update selectedTask if it's the same task
-        if (selectedTask && normalizeId(selectedTask) === normalizeId(task)) {
-          setSelectedTask(prev => ({
-            ...prev,
-            ...updateData
-          }));
-        }
-        
-        // Load timeline
-        loadTaskTimeline(task);
-        
-        // Refresh to get latest data
-        setTimeout(() => refreshAllTasks(), 500);
-      } else {
-        toast.error(resp?.message || 'Failed to complete task');
+      const result = await dispatch(requestTaskCompletion({ taskId, projectId })).unwrap();
+      
+      toast.success('Review requested — sent for manager approval');
+      
+      const updateData = {
+        status: 'REVIEW',
+        is_locked: false
+      };
+      
+      // Update local state immediately
+      updateLocalTaskState(normalizeId(task), updateData);
+      
+      // Also update selectedTask if it's the same task
+      if (selectedTask && normalizeId(selectedTask) === normalizeId(task)) {
+        setSelectedTask(prev => ({
+          ...prev,
+          ...updateData
+        }));
       }
+      
+      // Load timeline
+      loadTaskTimeline(task);
+      
+      // Refresh to get latest data
+      setTimeout(() => refreshAllTasks(), 500);
     } catch (error) {
-      toast.error(error?.message || 'Failed to complete task');
-      console.error('Complete task error:', error);
+      toast.error(error?.message || 'Failed to request task completion');
+      console.error('Request task completion error:', error);
     }
   };
 
@@ -616,20 +782,15 @@ const EmployeeTasks = () => {
         return;
       }
       
-      const resp = await fetchWithTenant(`/api/tasks/${taskId}/status`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          status: 'Review',
-          taskId: taskId
-        })
-      });
-      
-      if (resp?.success) {
+      const projectId = getProjectIdForApi(task.projectId || task.project_id || selectedProjectId);
+      const result = await dispatch(requestTaskCompletion({ taskId, projectId })).unwrap();
+
+      if (result) {
         toast.success('Task moved to review');
         updateLocalTaskState(normalizeId(task), { status: 'REVIEW' });
         setTimeout(() => refreshAllTasks(), 500);
       } else {
-        toast.error(resp?.message || 'Failed to move task to review');
+        toast.error('Failed to move task to review');
       }
     } catch (error) {
       toast.error('Failed to move task to review');
@@ -638,31 +799,28 @@ const EmployeeTasks = () => {
   };
 
   const handleUpdateTask = async (task, updates) => {
+    // If this is a status update, use the validated status change function
+    if (updates.status) {
+      await handleStatusChange(task, updates.status);
+      return;
+    }
+
+    // For other updates (admin/manager only)
     try {
       const taskId = getTaskIdForApi(task);
       if (!taskId) {
         toast.error('Task not found');
         return;
       }
-      
-      const response = await fetchWithTenant(`/api/tasks/${taskId}/status`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          ...updates,
-          taskId: taskId
-        })
-      });
 
-      if (response?.success) {
-        updateLocalTaskState(normalizeId(task), updates);
-        toast.success(`Task status updated to ${updates.status}`);
-        loadTaskTimeline(task);
-        setTimeout(() => refreshAllTasks(), 500);
-      } else {
-        toast.error(response?.message || 'Failed to update task status');
-      }
+      const result = await dispatch(updateTask({ taskId, data: updates })).unwrap();
+
+      updateLocalTaskState(normalizeId(task), updates);
+      toast.success('Task updated successfully');
+      loadTaskTimeline(task);
+      setTimeout(() => refreshAllTasks(), 500);
     } catch (error) {
-      toast.error('Failed to update task status');
+      toast.error(error?.message || 'Failed to update task');
       console.error('Update task error:', error);
     }
   };
@@ -1164,6 +1322,7 @@ const EmployeeTasks = () => {
           onCompleteTask={handleCompleteTask}
           onLoadTasks={refreshAllTasks}
           userRole={userRole}
+          projectId={selectedProjectId}
           reassignmentRequests={reassignmentRequests}
           taskTimelines={taskTimelines}
         />
@@ -1230,23 +1389,46 @@ const EmployeeTasks = () => {
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-base font-semibold text-gray-900">{task.title || 'Untitled task'}</p>
-                          {task.project?.name && (
-                            <p className="text-xs text-gray-500">Project: {task.project.name}</p>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-base font-semibold text-gray-900 truncate">{task.title || 'Untitled task'}</p>
+                          {task.description && (
+                            <p className="text-sm text-gray-600 mt-1 line-clamp-2">{task.description}</p>
+                          )}
+                          <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
+                            <span>Priority: <span className={`font-medium ${getPriorityClasses(task.priority)}`}>{task.priority || 'Medium'}</span></span>
+                            <span>•</span>
+                            <span>Status: <span className={`font-medium ${getStatusClasses(task.status || task.stage)}`}>{getStatusText(task.status || task.stage)}</span></span>
+                          </div>
+                          {task.taskDate && (
+                            <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
+                              <Calendar className="w-3 h-3" />
+                              <span>{formatDateString(task.taskDate)} ({task.dayName || 'Unknown day'})</span>
+                            </div>
                           )}
                         </div>
-                        <div className="text-right text-xs text-gray-500">
-                          {isCompleted ? (
-                            <div className="text-green-600 font-semibold">
-                              <p>✓ Completed</p>
-                              <p>Total: {task.total_time_hhmmss || '0h 0m'}</p>
+                        <div className="text-right text-xs text-gray-500 flex flex-col gap-1">
+                          {task.assignedUsers && task.assignedUsers.length > 0 && (
+                            <div className="flex items-center gap-1">
+                              <User className="w-3 h-3" />
+                              <span>{task.assignedUsers.map(u => u.name || u.email).join(', ')}</span>
                             </div>
-                          ) : (
-                            <>
-                              <p>Due {formatDateString(task.taskDate || task.dueDate)}</p>
-                              <p>Priority: {task.priority || 'Medium'}</p>
-                            </>
+                          )}
+                          {task.client && (
+                            <div className="flex items-center gap-1">
+                              <span>Client: {task.client.name || task.client.company}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            <span>Est: {task.timeAlloted || task.estimatedHours || 0}h</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span>Actual: {formatTimeDisplay(getTotalTrackedTime(task), liveTimers[taskId] || 0)}</span>
+                          </div>
+                          {task.summary?.dueStatus && (
+                            <div className={`text-xs font-medium ${task.summary.dueStatus === 'overdue' ? 'text-red-600' : 'text-orange-600'}`}>
+                              {task.summary.dueStatus === 'overdue' ? 'Overdue' : 'Due Soon'}
+                            </div>
                           )}
                         </div>
                       </div>
