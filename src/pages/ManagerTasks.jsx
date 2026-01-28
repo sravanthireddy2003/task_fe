@@ -5,6 +5,7 @@ import fetchWithTenant from '../utils/fetchWithTenant';
 import { selectUser } from '../redux/slices/authSlice';
 import * as Icons from '../icons';
 import ViewToggle from '../components/ViewToggle';
+import RefreshButton from '../components/RefreshButton';
 
 const { RefreshCw, AlertCircle, Calendar, Clock, User, Plus, CheckSquare, Check, Eye, Filter, Lock, UserCheck, Clock: ClockIcon, AlertTriangle } = Icons;
 
@@ -38,6 +39,7 @@ const ManagerTasks = () => {
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState('all');
   const [viewMode, setViewMode] = useState('list');
+  const [detailLoading, setDetailLoading] = useState(false);
   
   // New state for project details
   const [projectDetails, setProjectDetails] = useState(null);
@@ -471,9 +473,40 @@ const ManagerTasks = () => {
     setShowCreateTaskModal(true);
   };
 
-  // Handle row click
-  const handleRowClick = (task) => {
-    setSelectedTask(task);
+  // Handle row click - fetch selected task details from API
+  const handleRowClick = async (task) => {
+    if (!task) return;
+    const id = task.id || task.public_id || task._id || task.internalId;
+    if (!id) {
+      setSelectedTask(task);
+      return;
+    }
+
+    setDetailLoading(true);
+    try {
+      const resp = await fetchWithTenant('/api/tasks/selected-details', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ taskIds: [id] }),
+      });
+
+      if (resp && resp.error) {
+        throw new Error(resp.error || 'Failed to fetch task details');
+      }
+
+      const payload = resp?.data ?? resp;
+      const details = Array.isArray(payload) ? payload[0] : payload;
+      setSelectedTask(details || task);
+    } catch (err) {
+      console.error('Failed to load task details:', err);
+      toast.error(err?.message || 'Failed to load task details');
+      // fallback: set the minimal task so UI still shows something
+      setSelectedTask(task);
+    } finally {
+      setDetailLoading(false);
+    }
   };
 
   return (
@@ -514,17 +547,7 @@ const ManagerTasks = () => {
           </div>
 
           {/* Refresh Button */}
-          <button
-            onClick={() => selectedProjectId && loadTasks(selectedProjectId)}
-            disabled={!selectedProjectId || loading}
-            className={`p-2 rounded-lg border ${!selectedProjectId || loading
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-blue-600 hover:bg-blue-50 border-blue-200'
-              }`}
-            title="Refresh tasks"
-          >
-            <RefreshCw className={`tm-icon ${loading ? 'animate-spin' : ''} text-blue-600`} />
-          </button>
+          <RefreshButton onClick={() => selectedProjectId && loadTasks(selectedProjectId)} loading={!selectedProjectId || loading} />
 
           {/* View Toggle */}
           <ViewToggle
@@ -627,14 +650,7 @@ const ManagerTasks = () => {
                 <Plus className="tm-icon" />
                 Add New Task
               </button>
-              <button
-                onClick={() => loadTasks(selectedProjectId)}
-                disabled={loading}
-                className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
-              >
-                <RefreshCw className={`tm-icon ${loading ? 'animate-spin' : ''}`} />
-                Refresh Tasks
-              </button>
+              <RefreshButton onClick={() => loadTasks(selectedProjectId)} loading={loading} className="px-4 py-3" />
             </div>
           </div>
         </div>
@@ -710,7 +726,7 @@ const ManagerTasks = () => {
                   onClick={openCreateTaskModal}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
-                  ➕ Create First Task
+                  Create First Task
                 </button>
                 <button
                   onClick={() => loadTasks(selectedProjectId)}
@@ -908,117 +924,86 @@ const ManagerTasks = () => {
           )}
         </div>
 
-        {/* TASK DETAILS & ACTIONS */}
+        {/* TASK DETAILS & ACTIONS (modal popup) */}
         {selectedTask && (
-          <div className="lg:w-2/5">
-            <div className="bg-white border rounded-xl p-6">
-              <div className="space-y-6">
-                {/* Task Header */}
-                <div className="flex items-start justify-between pb-4 border-b">
-                  <div className="flex-1">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">{selectedTask.title}</h2>
-                    <p className="text-gray-600">
-                      {selectedTask.client?.name || projectDetails?.client?.name || 'Client'}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setSelectedTask(null);
-                    }}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    ✕
-                  </button>
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedTask(null)}>
+            <div className="bg-white rounded-xl max-w-4xl w-full p-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              {detailLoading ? (
+                <div className="flex items-center justify-center p-6">
+                  <RefreshCw className="tm-icon mr-2 animate-spin text-blue-600" />
+                  <span className="text-blue-600 font-medium">Loading details...</span>
                 </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Task Header */}
+                  <div className="flex items-start justify-between pb-4 border-b">
+                    <div className="flex-1">
+                      <h2 className="text-2xl font-bold text-gray-900 mb-2">{selectedTask.title}</h2>
+                      <p className="text-gray-600">{selectedTask.client?.name || projectDetails?.client?.name || 'Client'}</p>
+                    </div>
+                    <button onClick={() => setSelectedTask(null)} className="text-gray-400 hover:text-gray-600">✕</button>
+                  </div>
 
-                {/* Quick Info */}
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Project Information */}
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <div className="text-xs uppercase text-gray-500 font-medium mb-1">Project</div>
-                    <div className="font-semibold text-gray-900">
-                      {projectDetails ? getProjectDisplayName(projectDetails) : 'Loading...'}
+                  {/* Quick Info */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <div className="text-xs uppercase text-gray-500 font-medium mb-1">Project</div>
+                      <div className="font-semibold text-gray-900">{projectDetails ? getProjectDisplayName(projectDetails) : getProjectName(selectedTask.projectId || selectedTask.project_id || selectedTask.projectPublicId)}</div>
                     </div>
-                  </div>
-                  
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <div className="text-xs uppercase text-gray-500 font-medium mb-1">Assigned To</div>
-                    <div className="font-semibold text-gray-900">{getAssignedUsers(selectedTask)}</div>
-                  </div>
-                  
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <div className="text-xs uppercase text-gray-500 font-medium mb-1">Priority</div>
-                    <div className="font-semibold text-gray-900">{selectedTask.priority || 'MEDIUM'}</div>
-                  </div>
-                  
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <div className="text-xs uppercase text-gray-500 font-medium mb-1">Due Date</div>
-                    <div className="font-semibold text-gray-900">{formatDate(selectedTask.taskDate)}</div>
-                  </div>
-                  
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <div className="text-xs uppercase text-gray-500 font-medium mb-1">Estimated Hours</div>
-                    <div className="font-semibold text-gray-900">{selectedTask.timeAlloted ?? '—'}h</div>
-                  </div>
-                  
-                  <div className={`p-3 rounded-lg ${getTaskStatus(selectedTask) === 'COMPLETED' || getTaskStatus(selectedTask) === 'Completed'
-                      ? 'bg-green-50'
-                      : selectedTask.summary?.dueStatus === 'Overdue'
-                        ? 'bg-red-50'
-                        : 'bg-gray-50'
-                    }`}>
-                    <div className="text-xs uppercase text-gray-500 font-medium mb-1">Total Hours Worked</div>
-                    <div className={`font-semibold ${getTaskStatus(selectedTask) === 'COMPLETED' || getTaskStatus(selectedTask) === 'Completed'
-                        ? 'text-green-800'
-                        : selectedTask.summary?.dueStatus === 'Overdue'
-                          ? 'text-red-800'
-                          : 'text-gray-900'
-                      }`}>
-                      {selectedTask.total_time_hhmmss || '0h 0m'}
-                    </div>
-                  </div>
-                  
-                  <div className={`p-3 rounded-lg ${selectedTask.summary?.dueStatus === 'Overdue'
-                      ? 'bg-red-50'
-                      : 'bg-green-50'
-                    }`}>
-                    <div className="text-xs uppercase text-gray-500 font-medium mb-1">Due Status</div>
-                    <div className="flex items-center gap-2">
-                      {selectedTask.summary?.dueStatus === 'Overdue' ? (
-                        <>
-                          <span className="w-2 h-2 bg-red-600 rounded-full"></span>
-                          <span className="font-semibold text-red-800">{selectedTask.summary.dueStatus}</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="w-2 h-2 bg-green-600 rounded-full"></span>
-                          <span className="font-semibold text-green-800">{selectedTask.summary?.dueStatus || 'On Time'}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
 
-                {/* Checklist */}
-                {selectedTask.checklist?.length > 0 && (
-                  <div className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <CheckSquare className="tm-icon text-gray-600" />
-                      <span className="font-medium text-gray-700">Checklist</span>
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <div className="text-xs uppercase text-gray-500 font-medium mb-1">Assigned To</div>
+                      <div className="font-semibold text-gray-900">{getAssignedUsers(selectedTask)}</div>
                     </div>
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {selectedTask.checklist.map((item, index) => (
-                        <div key={item.id || index} className="flex items-center gap-3 p-2 bg-white border rounded">
-                          <div className="w-5 h-5 bg-emerald-100 rounded flex items-center justify-center flex-shrink-0">
-                                <Check className="tm-icon text-emerald-600" />
+
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <div className="text-xs uppercase text-gray-500 font-medium mb-1">Priority</div>
+                      <div className="font-semibold text-gray-900">{selectedTask.priority || 'MEDIUM'}</div>
+                    </div>
+
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <div className="text-xs uppercase text-gray-500 font-medium mb-1">Due Date</div>
+                      <div className="font-semibold text-gray-900">{formatDate(selectedTask.taskDate)}</div>
+                    </div>
+
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <div className="text-xs uppercase text-gray-500 font-medium mb-1">Estimated Hours</div>
+                      <div className="font-semibold text-gray-900">{selectedTask.timeAlloted ?? '—'}h</div>
+                    </div>
+
+                    <div className={`p-3 rounded-lg ${getTaskStatus(selectedTask) === 'COMPLETED' || getTaskStatus(selectedTask) === 'Completed' ? 'bg-green-50' : selectedTask.summary?.dueStatus === 'Overdue' ? 'bg-red-50' : 'bg-gray-50'}`}>
+                      <div className="text-xs uppercase text-gray-500 font-medium mb-1">Total Hours Worked</div>
+                      <div className={`font-semibold ${getTaskStatus(selectedTask) === 'COMPLETED' || getTaskStatus(selectedTask) === 'Completed' ? 'text-green-800' : selectedTask.summary?.dueStatus === 'Overdue' ? 'text-red-800' : 'text-gray-900'}`}>{selectedTask.total_time_hhmmss || '0h 0m'}</div>
+                    </div>
+
+                    <div className={`p-3 rounded-lg ${selectedTask.summary?.dueStatus === 'Overdue' ? 'bg-red-50' : 'bg-green-50'}`}>
+                      <div className="text-xs uppercase text-gray-500 font-medium mb-1">Due Status</div>
+                      <div className="flex items-center gap-2">
+                        {selectedTask.summary?.dueStatus === 'Overdue' ? (
+                          <><span className="w-2 h-2 bg-red-600 rounded-full"></span><span className="font-semibold text-red-800">{selectedTask.summary.dueStatus}</span></>
+                        ) : (
+                          <><span className="w-2 h-2 bg-green-600 rounded-full"></span><span className="font-semibold text-green-800">{selectedTask.summary?.dueStatus || 'On Time'}</span></>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Checklist */}
+                  {selectedTask.checklist?.length > 0 ? (
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-3"><CheckSquare className="tm-icon text-gray-600" /><span className="font-medium text-gray-700">Checklist</span></div>
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {selectedTask.checklist.map((item, index) => (
+                          <div key={item.id || index} className="flex items-center gap-3 p-2 bg-white border rounded">
+                            <div className="w-5 h-5 bg-emerald-100 rounded flex items-center justify-center flex-shrink-0"><Check className="tm-icon text-emerald-600" /></div>
+                            <span className="text-sm">{item.title}</span>
                           </div>
-                          <span className="text-sm">{item.title}</span>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  ) : null}
+                </div>
+              )}
             </div>
           </div>
         )}

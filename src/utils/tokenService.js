@@ -38,15 +38,12 @@ export function setTokens(accessToken, refreshToken, storage = 'local') {
     if (accessToken) {
       storageObj.setItem(ACCESS_KEY, accessToken);
       storageObj.setItem(LEGACY_ACCESS_KEY, accessToken);
-      console.log('✅ Stored access token:', accessToken.substring(0, 30) + '...');
     }
     
     if (refreshToken && refreshToken !== accessToken) {
       storageObj.setItem(REFRESH_KEY, refreshToken);
       storageObj.setItem(LEGACY_REFRESH_KEY, refreshToken);
-      console.log('✅ Stored refresh token:', refreshToken.substring(0, 30) + '...');
     } else if (refreshToken === accessToken) {
-      console.error('❌ ERROR: refreshToken equals accessToken! Not storing refresh token.');
       // Don't store it - it's wrong!
     }
     

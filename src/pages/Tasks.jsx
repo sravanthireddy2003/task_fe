@@ -1238,6 +1238,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import * as Icons from '../icons';
 import ViewToggle from '../components/ViewToggle';
+import fetchWithTenant from '../utils/fetchWithTenant';
 
 const { Plus, Edit2, Trash2, AlertCircle, Filter, List, Grid, Calendar, Clock, User, RefreshCw, GitBranch, Search, ChevronDown, MoreVertical, CheckCircle, XCircle, PlayCircle, PauseCircle, Eye, LayoutGrid, Clock4, Folder, ClipboardList, CheckSquare, Pause, Play } = Icons;
 import { useDispatch, useSelector } from 'react-redux';
@@ -1272,6 +1273,7 @@ export default function Tasks() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [selectedTaskDetails, setSelectedTaskDetails] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState('all');
   const [formData, setFormData] = useState({
     name: '',
@@ -1295,6 +1297,27 @@ export default function Tasks() {
   const priorityOptions = ['low', 'medium', 'high'];
 
   const isLoading = status === 'loading';
+
+  // Derived detail helpers for the task popup UI (UI-only, no API/state changes)
+  const detailChecklistItems =
+    (selectedTaskDetails?.checklist ||
+      selectedTaskDetails?.check_lists ||
+      selectedTaskDetails?.check_items ||
+      []);
+
+  const detailChecklistCompleted = detailChecklistItems.filter((c) => c && c.completed).length;
+
+  const detailActivities =
+    (selectedTaskDetails?.activities ||
+      selectedTaskDetails?.activity ||
+      selectedTaskDetails?.activity_log ||
+      []);
+
+  const detailAttachments =
+    (selectedTaskDetails?.attachments ||
+      selectedTaskDetails?.files ||
+      selectedTaskDetails?.documents ||
+      []);
 
   // Fetch projects and users on initial load
   useEffect(() => {
@@ -1517,13 +1540,26 @@ export default function Tasks() {
   const handleOpenTaskDetails = async (task) => {
     const taskId = task.id || task._id || task.public_id || task.task_id;
     if (!taskId) return;
+
+    setDetailLoading(true);
     try {
-      const resp = await dispatch(fetchSelectedTaskDetails([taskId])).unwrap();
-      const details = Array.isArray(resp) && resp.length ? resp[0] : resp;
+      const resp = await fetchWithTenant('/api/tasks/selected-details', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskIds: [taskId] }),
+      });
+
+      if (resp && resp.error) throw new Error(resp.error || 'Failed to fetch task details');
+
+      const payload = resp?.data ?? resp;
+      const details = Array.isArray(payload) ? payload[0] : payload;
       setSelectedTaskDetails(details || null);
     } catch (err) {
       console.error('Failed to fetch task details:', err);
       toast.error(err?.message || 'Failed to load task details');
+      setSelectedTaskDetails(task);
+    } finally {
+      setDetailLoading(false);
     }
   };
 
@@ -1578,13 +1614,29 @@ export default function Tasks() {
     return matchesSearch && matchesStatus && matchesPriority;
   });
 
-  // Group tasks for Kanban view
+  // Normalize backend status/stage into a Kanban column key
+  const getStatusKey = (task) => {
+    const rawStatus = (task.status || '').toString().toLowerCase();
+    const rawStage = (task.stage || '').toString().toLowerCase();
+    const src = rawStatus || rawStage;
+
+    if (!src) return 'pending';
+    if (src.includes('completed')) return 'completed';
+    if (src.includes('in_progress') || src.includes('in progress') || src.includes('in-progress')) return 'in_progress';
+    if (src.includes('review')) return 'review';
+    if (src.includes('on_hold') || src.includes('on hold') || src.includes('blocked')) return 'on_hold';
+    if (src.includes('request')) return 'review';
+    if (src.includes('pending')) return 'pending';
+    return 'pending';
+  };
+
+  // Group tasks for Kanban view based on normalized status
   const kanbanColumns = {
-    pending: filteredTasks.filter(task => (task.status || task.stage || 'pending').toLowerCase() === 'pending'),
-    in_progress: filteredTasks.filter(task => (task.status || task.stage || 'pending').toLowerCase() === 'in_progress'),
-    review: filteredTasks.filter(task => (task.status || task.stage || 'pending').toLowerCase() === 'review'),
-    completed: filteredTasks.filter(task => (task.status || task.stage || 'pending').toLowerCase() === 'completed'),
-    on_hold: filteredTasks.filter(task => (task.status || task.stage || 'pending').toLowerCase() === 'on_hold'),
+    pending: filteredTasks.filter((task) => getStatusKey(task) === 'pending'),
+    in_progress: filteredTasks.filter((task) => getStatusKey(task) === 'in_progress'),
+    review: filteredTasks.filter((task) => getStatusKey(task) === 'review'),
+    completed: filteredTasks.filter((task) => getStatusKey(task) === 'completed'),
+    on_hold: filteredTasks.filter((task) => getStatusKey(task) === 'on_hold'),
   };
 
   // Get status text for display
@@ -1798,10 +1850,15 @@ export default function Tasks() {
         return (
           <div className="flex gap-4 overflow-x-auto pb-4">
             {Object.entries(kanbanColumns).map(([columnId, columnTasks]) => (
-              <div key={columnId} className={`flex-shrink-0 w-80 ${columnColors[columnId]} rounded-lg p-4`}>
+              <div
+                key={columnId}
+                className={`flex-shrink-0 w-80 ${columnColors[columnId]} rounded-lg p-4`}
+              >
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-gray-900">{getColumnTitle(columnId)}</h3>
+                    <h3 className="font-semibold text-gray-900">
+                      {getColumnTitle(columnId)}
+                    </h3>
                     <span className="bg-white px-2 py-1 rounded-full text-xs font-medium">
                       {columnTasks.length}
                     </span>
@@ -1810,36 +1867,56 @@ export default function Tasks() {
                     <MoreVertical className="w-4 h-4" />
                   </button>
                 </div>
+
                 <div className="space-y-3">
                   {columnTasks.map((task) => (
-                    <div 
-                      key={task.id} 
+                    <div
+                      key={task.id || task._id || task.public_id}
                       className="tm-card-shell cursor-pointer"
                       onClick={() => handleOpenTaskDetails(task)}
                     >
                       <div className="flex items-start justify-between mb-2">
-                        <h4 className="font-medium text-gray-900">{task.title || task.name}</h4>
-                        <span className={`px-2 py-1 rounded text-xs ${priorityColors[(task.priority || 'MEDIUM').toLowerCase()]}`}>
+                        <h4 className="font-medium text-gray-900">
+                          {task.title || task.name}
+                        </h4>
+                        <span
+                          className={`px-2 py-1 rounded text-xs ${
+                            priorityColors[(task.priority || 'MEDIUM').toLowerCase()]
+                          }`}
+                        >
                           {(task.priority || 'MEDIUM').toUpperCase()}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">{task.description}</p>
+
+                      {task.description && (
+                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                          {task.description}
+                        </p>
+                      )}
+
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <User className="tm-icon text-gray-400" />
-                          <span className="text-xs text-gray-600">{getAssignedUsers(task)}</span>
+                          <span className="text-xs text-gray-600">
+                            {getAssignedUsers(task)}
+                          </span>
                         </div>
-                        <div className="text-xs text-gray-500">{formatDate(task.dueDate || task.taskDate)}</div>
+                        <div className="text-xs text-gray-500">
+                          {formatDate(task.dueDate || task.taskDate)}
+                        </div>
+                      </div>
+
+                      <div className="mt-3 flex items-start justify-between">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            statusColors[getStatusKey(task)]
+                          }`}
+                        >
+                          {getStatusText(task.status || task.stage || 'pending')}
+                        </span>
                       </div>
                     </div>
                   ))}
-                  <button 
-                    onClick={() => openModal()}
-                    className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:text-gray-700 hover:border-gray-400 flex items-center justify-center gap-2"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add Task
-                  </button>
                 </div>
               </div>
             ))}
@@ -2234,6 +2311,318 @@ export default function Tasks() {
 
       {/* RENDER THE SELECTED VIEW */}
       {selectedProjectId !== 'all' && !isFetching && tasks.length > 0 && renderView()}
+
+      {/* DETAILS PANEL (modal popup) */}
+      {selectedTaskDetails && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={closeDetails}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-4xl w-full p-6 md:p-8 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            {detailLoading ? (
+              <div className="flex items-center justify-center p-6">
+                <RefreshCw className="tm-icon mr-2 animate-spin text-blue-600" />
+                <span className="text-blue-600 font-medium">Loading details...</span>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Header / Summary */}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-3">
+                    <h2 className="text-lg md:text-xl font-semibold text-gray-900">Workflow Management</h2>
+                    <div className="text-sm text-gray-500">
+                      {selectedTaskDetails.title || selectedTaskDetails.name || 'Untitled Task'}
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs md:text-sm">
+                      <div>
+                        <div className="text-gray-500 uppercase tracking-wide mb-1">Department</div>
+                        <div className="font-medium text-gray-900">
+                          {selectedTaskDetails.department ||
+                            selectedTaskDetails.summary?.department ||
+                            selectedTaskDetails.client?.department ||
+                            '-'}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-gray-500 uppercase tracking-wide mb-1">Project</div>
+                        <div className="font-medium text-gray-900">{getProjectName(selectedProjectId)}</div>
+                      </div>
+                      <div>
+                        <div className="text-gray-500 uppercase tracking-wide mb-1">Priority</div>
+                        <div className="font-semibold">
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs md:text-[11px] inline-flex items-center justify-center ${
+                              String(selectedTaskDetails.priority || '')
+                                .toLowerCase() === 'high'
+                                ? 'bg-red-50 text-red-600 border border-red-100'
+                                : String(selectedTaskDetails.priority || '')
+                                    .toLowerCase() === 'medium'
+                                ? 'bg-blue-50 text-blue-600 border border-blue-100'
+                                : 'bg-gray-50 text-gray-700 border border-gray-200'
+                            }`}
+                          >
+                            {(selectedTaskDetails.priority || '').toString().toUpperCase() || 'NA'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-end gap-3">
+                    <button
+                      onClick={closeDetails}
+                      className="text-gray-400 hover:text-gray-600 text-sm"
+                    >
+                      ✕
+                    </button>
+                    <div className="flex flex-col items-end gap-2">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 text-red-600 text-xs font-semibold">
+                        <Clock4 className="tm-icon w-4 h-4 text-red-500" />
+                        <span>
+                          {selectedTaskDetails.summary?.sla ||
+                            selectedTaskDetails.sla ||
+                            selectedTaskDetails.summary?.remainingTime ||
+                            '--:--'}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-500 text-right">
+                        <div>
+                          Created {formatDate(selectedTaskDetails.createdAt || selectedTaskDetails.created_at)}
+                        </div>
+                        <div>
+                          Due {formatDate(selectedTaskDetails.summary?.dueDate || selectedTaskDetails.taskDate || selectedTaskDetails.dueDate)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Workflow progress */}
+                <div className="bg-gray-50 border border-gray-100 rounded-2xl p-4 md:p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                      <GitBranch className="tm-icon w-4 h-4 text-blue-500" />
+                      Workflow Progress
+                    </h3>
+                    <button
+                      type="button"
+                      className="text-xs font-medium text-blue-600 hover:text-blue-700 inline-flex items-center gap-1"
+                    >
+                      <Clock className="tm-icon w-3 h-3" />
+                      View History
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1 grid grid-cols-2 gap-3 md:gap-4">
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-full flex items-center justify-center">
+                          <div className="w-full rounded-full bg-blue-100 text-blue-700 text-xs font-semibold py-2 text-center">
+                            MANAGER REVIEW
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-full flex items-center justify-center">
+                          <div className="w-full rounded-full bg-gray-100 text-gray-500 text-xs font-semibold py-2 text-center">
+                            ADMIN APPROVE
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Main content */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Left column: Checklist & Attachments */}
+                  <div className="lg:col-span-2 space-y-4">
+                    {/* Checklist */}
+                    <div className="bg-white border border-gray-100 rounded-2xl p-4 md:p-5">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                          <CheckSquare className="tm-icon w-4 h-4 text-gray-500" />
+                          Checklist
+                          <span className="text-xs font-normal text-gray-500">
+                            ({detailChecklistCompleted}/{detailChecklistItems.length})
+                          </span>
+                        </h4>
+                      </div>
+
+                      {detailChecklistItems.length ? (
+                        <ul className="space-y-2 text-sm text-gray-700">
+                          {detailChecklistItems.map((item, idx) => (
+                            <li
+                              key={item?.id || item?._id || idx}
+                              className="flex items-start gap-3 rounded-lg px-2 py-1 hover:bg-gray-50"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={!!item?.completed}
+                                readOnly
+                                className="mt-1 w-4 h-4 rounded border-gray-300 text-blue-600"
+                              />
+                              <div>
+                                <div className="font-medium text-gray-900">
+                                  {item?.title || item?.name || item?.text || 'Checklist item'}
+                                </div>
+                                {item?.description && (
+                                  <div className="text-xs text-gray-500">{item.description}</div>
+                                )}
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <div className="text-sm text-gray-500">No checklist items</div>
+                      )}
+                    </div>
+
+                    {/* Attachments */}
+                    <div className="bg-white border border-gray-100 rounded-2xl p-4 md:p-5">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                          <Folder className="tm-icon w-4 h-4 text-gray-500" />
+                          Attachments
+                        </h4>
+                      </div>
+                      {detailAttachments.length ? (
+                        <div className="space-y-2 text-sm text-gray-700">
+                          {detailAttachments.map((file, idx) => (
+                            <div
+                              key={file?.id || file?._id || file?.name || idx}
+                              className="flex items-center justify-between gap-3 rounded-lg border border-gray-100 px-3 py-2 bg-gray-50"
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <ClipboardList className="tm-icon w-4 h-4 text-gray-400" />
+                                <span className="truncate">
+                                  {file?.name || file?.fileName || file?.title || 'Attachment'}
+                                </span>
+                              </div>
+                              {file?.size && (
+                                <span className="text-xs text-gray-400 whitespace-nowrap">{file.size}</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-gray-500">No attachments</div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right column: Comments / Activity & details */}
+                  <div className="space-y-4">
+                    {/* Comments (using activity stream) */}
+                    <div className="bg-white border border-gray-100 rounded-2xl p-4 md:p-5">
+                      <h4 className="text-sm font-semibold text-gray-900 mb-3">Comments</h4>
+                      <div className="space-y-3 max-h-64 overflow-y-auto">
+                        {detailActivities.length ? (
+                          detailActivities.map((a, i) => (
+                            <div
+                              key={a?.id || a?._id || i}
+                              className="flex items-start gap-3 rounded-lg"
+                            >
+                              <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-semibold">
+                                {String(a?.userName || a?.user || a?.by || 'U')
+                                  .split(' ')
+                                  .map((n) => n[0])
+                                  .join('')
+                                  .slice(0, 2)
+                                  .toUpperCase()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {a?.userName || a?.user || a?.by || 'User'}
+                                  </div>
+                                  <div className="text-xs text-gray-400 whitespace-nowrap">
+                                    {a?.time || a?.createdAt || a?.timestamp
+                                      ? new Date(a.time || a.createdAt || a.timestamp).toLocaleString()
+                                      : ''}
+                                  </div>
+                                </div>
+                                <div className="text-sm text-gray-700 mt-1">
+                                  {a?.text || a?.message || a?.summary || a?.title || 'Comment'}
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-sm text-gray-500">No comments yet</div>
+                        )}
+                      </div>
+
+                      {/* Comment input (UI only) */}
+                      <div className="mt-4 border-t pt-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-700">
+                            {(selectedTaskDetails.currentUserInitials || 'U')
+                              .toString()
+                              .slice(0, 2)
+                              .toUpperCase()}
+                          </div>
+                          <div className="flex-1 flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-full px-3 py-1.5">
+                            <input
+                              type="text"
+                              placeholder="Add a comment..."
+                              className="flex-1 bg-transparent text-xs md:text-sm outline-none placeholder:text-gray-400"
+                              readOnly
+                            />
+                            <button
+                              type="button"
+                              className="px-3 py-1 rounded-full bg-blue-600 text-white text-xs font-medium cursor-default opacity-60"
+                            >
+                              Send
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Key details */}
+                    <div className="bg-white border border-gray-100 rounded-2xl p-4 md:p-5">
+                      <h4 className="text-sm font-semibold text-gray-900 mb-3">Details</h4>
+                      <div className="space-y-2 text-xs md:text-sm text-gray-700">
+                        <div className="flex justify-between gap-3">
+                          <span className="text-gray-500">Status</span>
+                          <span className="font-medium">
+                            {getStatusText(selectedTaskDetails.status || selectedTaskDetails.stage || '')}
+                          </span>
+                        </div>
+                        <div className="flex justify-between gap-3">
+                          <span className="text-gray-500">Client</span>
+                          <span className="font-medium">
+                            {selectedTaskDetails.client?.name || selectedTaskDetails.client || '-'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between gap-3">
+                          <span className="text-gray-500">Assigned</span>
+                          <span className="font-medium text-right">
+                            {(selectedTaskDetails.assignedUsers || selectedTaskDetails.assigned_users || [])
+                              .map((u) => u.name)
+                              .join(', ') || 'Unassigned'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between gap-3">
+                          <span className="text-gray-500">Estimated</span>
+                          <span className="font-medium">
+                            {selectedTaskDetails.estimatedHours ?? selectedTaskDetails.timeAlloted ?? 0} hrs
+                          </span>
+                        </div>
+                        <div className="flex justify-between gap-3">
+                          <span className="text-gray-500">Total Hours</span>
+                          <span className="font-medium">
+                            {selectedTaskDetails.totalHours ?? selectedTaskDetails.total_hours ?? '--'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* MODAL */}
       {isModalOpen && (

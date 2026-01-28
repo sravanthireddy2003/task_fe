@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import * as Icons from '../icons';
 
-const { Loader } = Icons;
+const { Loader, MessageCircle } = Icons;
 import { toast } from 'sonner';
 import ChatInterface from '../components/ChatInterface';
 import { httpGetService } from '../App/httpHandler';
+import ChatPageLayout from '../components/ChatPageLayout';
 
 const ManagerChat = () => {
   const { user } = useSelector((state) => state.auth);
@@ -14,40 +15,41 @@ const ManagerChat = () => {
   const [loading, setLoading] = useState(true);
 
   // ✅ Fetch projects managed by this manager
-  useEffect(() => {
-    const fetchManagedProjects = async () => {
-      try {
-        setLoading(true);
-        // Fetch projects managed by this manager
-        const res = await httpGetService('api/projects?manager_id=' + user?.id);
-        if (res?.success) {
-          const managedProjects = res.data || [];
-          setProjects(managedProjects);
-          if (managedProjects.length > 0) {
-            setSelectedProjectId(managedProjects[0]._id || managedProjects[0].id);
-          }
-        } else {
-          toast.error('Failed to load projects');
+  const fetchManagedProjects = useCallback(async () => {
+    try {
+      setLoading(true);
+      // Fetch projects managed by this manager
+      const res = await httpGetService('api/projects?manager_id=' + user?.id);
+      if (res?.success) {
+        const managedProjects = res.data || [];
+        setProjects(managedProjects);
+        if (managedProjects.length > 0) {
+          setSelectedProjectId(managedProjects[0]._id || managedProjects[0].id);
         }
-      } catch (err) {
-        console.error('Error fetching projects:', err);
-        toast.error(err?.message || 'Failed to load projects');
-      } finally {
-        setLoading(false);
+      } else {
+        toast.error('Failed to load projects');
       }
-    };
-
-    if (user?.id) {
-      fetchManagedProjects();
+    } catch (err) {
+      console.error('Error fetching projects:', err);
+      toast.error(err?.message || 'Failed to load projects');
+    } finally {
+      setLoading(false);
     }
   }, [user?.id]);
 
+  useEffect(() => {
+    if (user?.id) fetchManagedProjects();
+  }, [user?.id, fetchManagedProjects]);
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-screen bg-gray-50">
         <div className="text-center">
-          <Loader className="animate-spin w-12 h-12 text-blue-600 mx-auto mb-3" />
-          <p className="text-gray-600">Loading your projects...</p>
+          <div className="relative">
+            <div className="w-12 h-12 border-3 border-gray-200 border-t-blue-600 rounded-full animate-spin mb-3"></div>
+            <MessageCircle className="w-5 h-5 text-blue-600 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+          </div>
+          <p className="text-gray-600 text-sm mt-3">Loading conversations...</p>
         </div>
       </div>
     );
@@ -56,9 +58,12 @@ const ManagerChat = () => {
   if (!projects.length) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="text-center">
-          <p className="text-gray-500 text-lg">No projects to chat about</p>
-          <p className="text-gray-400 text-sm">Create a project to start collaborating</p>
+        <div className="text-center max-w-sm p-6">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100">
+            <MessageCircle className="w-8 h-8 text-blue-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">No projects found</h3>
+          <p className="text-gray-500 text-sm mb-4">Create a project to start team collaboration</p>
         </div>
       </div>
     );
@@ -69,31 +74,15 @@ const ManagerChat = () => {
   );
 
   return (
-    <div className="h-screen flex flex-col gap-4 bg-gray-50 p-4">
-      {/* ===== PROJECT SELECTOR ===== */}
-      <div className="flex items-center gap-4 bg-white p-4 rounded-lg shadow border border-gray-200">
-        <label htmlFor="project-select" className="font-semibold text-gray-700">
-          Your Projects:
-        </label>
-        <select
-          id="project-select"
-          value={selectedProjectId || ''}
-          onChange={(e) => setSelectedProjectId(e.target.value)}
-          className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          {projects.map((project) => (
-            <option key={project._id || project.id} value={project._id || project.id}>
-              {project.name || project.title}
-            </option>
-          ))}
-        </select>
-        <div className="text-sm text-gray-600 font-medium">
-          {projects.length} project{projects.length !== 1 ? 's' : ''}
-        </div>
-      </div>
-
-      {/* ===== CHAT INTERFACE ===== */}
-      {selectedProject && (
+    <ChatPageLayout
+      title="Team Chat"
+      projects={projects}
+      selectedProjectId={selectedProjectId}
+      onSelectProject={setSelectedProjectId}
+      onRefresh={fetchManagedProjects}
+      user={user}
+    >
+      {selectedProject ? (
         <ChatInterface
           projectId={selectedProjectId}
           projectName={selectedProject.name || selectedProject.title}
@@ -101,8 +90,15 @@ const ManagerChat = () => {
           currentUserId={user?._id || user?.id}
           currentUserName={user?.name}
         />
+      ) : (
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <MessageCircle className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+            <p className="text-gray-500">Select a project to start chatting</p>
+          </div>
+        </div>
       )}
-    </div>
+    </ChatPageLayout>
   );
 };
 
