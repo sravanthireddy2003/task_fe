@@ -153,6 +153,19 @@ const isTaskLocked = (task) => {
   return task?.is_locked || task?.lock_info?.is_locked || false;
 };
 
+// Check if task is in review state
+const isTaskInReview = (task) => {
+  if (!task) return false;
+  const s = (task.status || task.stage || task.task_status?.current_status || '').toString().toLowerCase();
+  return s === 'review' || s === 'in_review' || s.includes('review');
+};
+
+// Task should be read-only when in review (UI-level helper)
+const isTaskReadOnly = (task) => {
+  if (!task) return false;
+  return isTaskInReview(task) || isTaskLocked(task) || getReassignmentState(task) === 'pending';
+};
+
 const EmployeeTasks = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -304,6 +317,16 @@ const EmployeeTasks = () => {
   const handleRequestReassignment = async (task, reason) => {
     if (!reason || reason.trim() === '') {
       toast.error('Please provide a reason for reassignment');
+      return;
+    }
+
+    // Prevent duplicate or forbidden reassignment requests
+    if (isTaskReadOnly(task)) {
+      toast.error('Task is under review. No actions are allowed.');
+      return;
+    }
+    if (getReassignmentState(task) === 'pending') {
+      toast.error('A reassignment request is already pending for this task');
       return;
     }
 
@@ -476,6 +499,65 @@ const EmployeeTasks = () => {
     }
   };
 
+  // Fetch employee-specific tasks
+  const fetchEmployeeTasks = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resp = await fetchWithTenant('/api/employee/my-tasks');
+      const respBody = resp || {};
+
+      // `data` may be at resp.data (common) or resp itself may be the array
+      const data = Array.isArray(respBody.data)
+        ? respBody.data
+        : Array.isArray(respBody)
+        ? respBody
+        : [];
+
+      // kanban comes from the top-level response in this API
+      const kanbanList = Array.isArray(respBody.kanban) ? respBody.kanban : [];
+
+      if (Array.isArray(data)) {
+        setTasks(data);
+        setKanbanData(kanbanList);
+
+        const checklistsMap = {};
+        data.forEach((task) => {
+          const taskId = normalizeId(task);
+          if (taskId && Array.isArray(task.checklist) && task.checklist.length > 0) {
+            checklistsMap[taskId] = task.checklist;
+          }
+        });
+        setChecklists(checklistsMap);
+
+        const requestsMap = {};
+        data.forEach((task) => {
+          const taskId = normalizeId(task);
+          const lock = task.lock_info || task.task_status || {};
+          if (taskId && (lock.is_locked || task.is_locked)) {
+            requestsMap[taskId] = {
+              id: lock.request_id || lock.requestId || null,
+              taskId: task.id || task.internal_id || task.public_id || task._id || task.internalId,
+              status: lock.request_status || lock.status || 'PENDING',
+              requested_at: lock.requested_at || lock.requestedAt || null,
+              responded_at: lock.responded_at || lock.respondedAt || null,
+              requester_name: lock.requester_name || lock.requesterName || null,
+            };
+          }
+        });
+        setReassignmentRequests(requestsMap);
+      } else {
+        setTasks([]);
+        setKanbanData([]);
+      }
+    } catch (err) {
+      setError(err?.message || 'Failed to load tasks');
+      setTasks([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     console.log('First useEffect triggered, userRole:', userRole);
     loadProjects();
@@ -485,10 +567,19 @@ const EmployeeTasks = () => {
   }, []);
 
   useEffect(() => {
-    console.log('EmployeeTasks useEffect triggered, selectedProjectId:', selectedProjectId);
-    if (selectedProjectId) {
-      loadTasks(getProjectIdForApi(selectedProjectId));
-    }
+    console.log('EmployeeTasks useEffect triggered, selectedProjectId:', selectedProjectId, 'userRole:', userRole);
+    const timer = setTimeout(() => {
+      if (userRole === 'employee') {
+        fetchEmployeeTasks();
+        return;
+      }
+
+      if (selectedProjectId) {
+        loadTasks(getProjectIdForApi(selectedProjectId));
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, [selectedProjectId, userRole, forceRefresh]);
 
   // Filter tasks based on status - updated to handle both status and stage fields
@@ -733,7 +824,20 @@ const EmployeeTasks = () => {
   };
 
   const handleCompleteTask = async (task) => {
+    // Block any write actions if the task is read-only (review/locked/reassignment)
+    if (isTaskReadOnly(task)) {
+      toast.error('Task is under review. No actions are allowed.');
+      return;
+    }
+
     try {
+      // Prevent completing a task that is already in review
+      const currentStatus = (task.status || task.stage || '').toString().toUpperCase();
+      if (currentStatus === 'REVIEW') {
+        toast.error('Task is in review and cannot be completed directly');
+        return;
+      }
+
       const taskId = getTaskIdForApi(task);
       if (!taskId) {
         toast.error('Task not found');
@@ -749,7 +853,12 @@ const EmployeeTasks = () => {
       
       const updateData = {
         status: 'REVIEW',
-        is_locked: false
+        // Do not mark the task as fully locked here; managers will control locking.
+        is_locked: false,
+        lock_info: {
+          is_locked: false,
+          request_status: 'PENDING'
+        }
       };
       
       // Update local state immediately
@@ -775,6 +884,12 @@ const EmployeeTasks = () => {
   };
 
   const handleMoveToReview = async (task) => {
+    // Block moving if task is read-only
+    if (isTaskReadOnly(task)) {
+      toast.error('Task is under review. No actions are allowed.');
+      return;
+    }
+
     try {
       const taskId = getTaskIdForApi(task);
       if (!taskId) {
@@ -787,7 +902,11 @@ const EmployeeTasks = () => {
 
       if (result) {
         toast.success('Task moved to review');
-        updateLocalTaskState(normalizeId(task), { status: 'REVIEW' });
+        const lockUpdate = { status: 'REVIEW', is_locked: false, lock_info: { is_locked: false, request_status: 'PENDING' } };
+        updateLocalTaskState(normalizeId(task), lockUpdate);
+        if (selectedTask && normalizeId(selectedTask) === normalizeId(task)) {
+          setSelectedTask(prev => ({ ...prev, ...lockUpdate }));
+        }
         setTimeout(() => refreshAllTasks(), 500);
       } else {
         toast.error('Failed to move task to review');
@@ -1040,6 +1159,10 @@ const EmployeeTasks = () => {
   const handleReassignTask = async () => {
     // API: POST /api/tasks/:id/request-reassignment
     if (!selectedTaskForReassignment) return;
+    if (isTaskReadOnly(selectedTaskForReassignment)) {
+      toast.error('Task is under review. No actions are allowed.');
+      return;
+    }
     setReassigning(true);
     try {
       const taskId = getTaskIdForApi(selectedTaskForReassignment);
@@ -1376,7 +1499,7 @@ const EmployeeTasks = () => {
                     <button
                       key={taskId || task.title}
                       type="button"
-                      disabled={hasPending || isCompleted}
+                      disabled={hasPending || isCompleted || isTaskLocked(task)}
                       onClick={() => setSelectedTask(task)}
                       className={`w-full rounded-2xl border px-4 py-3 text-left shadow-sm transition ${
                         isCompleted
@@ -1532,6 +1655,14 @@ const EmployeeTasks = () => {
                   return null;
                 })()}
 
+                {/* Review helper: when a task is in review show strict read-only notice */}
+                {isTaskInReview(selectedTask) && (
+                  <div className="rounded-lg border border-purple-200 bg-purple-50 p-3 text-sm text-purple-700 mt-3">
+                    <p className="font-semibold">🔎 Task Under Review</p>
+                    <p className="text-xs">Task is under review. No actions are allowed.</p>
+                  </div>
+                )}
+
                 {/* Refresh task button */}
                 <div className="flex items-center gap-2">
                   <button
@@ -1550,7 +1681,7 @@ const EmployeeTasks = () => {
                     {selectedTask.status === 'Pending' || selectedTask.status === 'To Do' || selectedTask.stage === 'PENDING' ? (
                       <button
                         onClick={() => handleStartTask(selectedTask)}
-                        disabled={getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask)}
+                        disabled={isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask) || isTaskLocked(selectedTask)}
                         className="rounded-full border border-green-200 px-3 py-1 text-green-600 hover:bg-green-50 flex items-center gap-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Play className="w-3 h-3" />
@@ -1562,7 +1693,7 @@ const EmployeeTasks = () => {
                       <>
                         <button
                           onClick={() => handlePauseTask(selectedTask)}
-                          disabled={getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask)}
+                          disabled={isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask) || isTaskLocked(selectedTask)}
                           className="rounded-full border border-orange-200 px-3 py-1 text-orange-600 hover:bg-orange-50 flex items-center gap-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Pause className="w-3 h-3" />
@@ -1570,7 +1701,7 @@ const EmployeeTasks = () => {
                         </button>
                         <button
                           onClick={() => handleMoveToReview(selectedTask)}
-                          disabled={isTaskCompleted(selectedTask)}
+                          disabled={isTaskReadOnly(selectedTask) || isTaskCompleted(selectedTask) || isTaskLocked(selectedTask)}
                           className="rounded-full border border-purple-200 px-3 py-1 text-purple-600 hover:bg-purple-50 flex items-center gap-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Check className="w-3 h-3" />
@@ -1582,7 +1713,7 @@ const EmployeeTasks = () => {
                     {selectedTask.status === 'ON_HOLD' || selectedTask.status === 'On Hold' ? (
                       <button
                         onClick={() => handleResumeTask(selectedTask)}
-                        disabled={getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask)}
+                        disabled={isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask) || isTaskLocked(selectedTask)}
                         className="rounded-full border border-blue-200 px-3 py-1 text-blue-600 hover:bg-blue-50 flex items-center gap-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <RotateCcw className="w-3 h-3" />
@@ -1593,7 +1724,7 @@ const EmployeeTasks = () => {
                     {(selectedTask.status === 'IN_PROGRESS' || selectedTask.status === 'In Progress') && (
                       <button
                         onClick={() => handleCompleteTask(selectedTask)}
-                        disabled={getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask)}
+                        disabled={isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask) || isTaskLocked(selectedTask) || isTaskInReview(selectedTask)}
                         className="rounded-full border border-green-200 px-3 py-1 text-green-600 hover:bg-green-50 flex items-center gap-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <CheckCircle className="w-3 h-3" />
@@ -1603,7 +1734,7 @@ const EmployeeTasks = () => {
 
                     <button
                       onClick={() => handleOpenTimeline(selectedTask)}
-                        disabled={getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask)}
+                        disabled={isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask)}
                       className="rounded-full border border-indigo-200 px-3 py-1 text-indigo-600 hover:bg-indigo-50 flex items-center gap-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Clock className="w-3 h-3" />
@@ -1631,7 +1762,7 @@ const EmployeeTasks = () => {
                       <select
                         value={selectedAssignee}
                         onChange={(e) => setSelectedAssignee(e.target.value)}
-                        disabled={employees.length === 0}
+                        disabled={employees.length === 0 || isTaskReadOnly(selectedTask)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm"
                       >
                         <option value="">Select employee</option>
@@ -1646,7 +1777,7 @@ const EmployeeTasks = () => {
                       </select>
                       <button
                         onClick={handleReassignTask}
-                        disabled={reassigning || !selectedAssignee || employees.length === 0}
+                        disabled={reassigning || !selectedAssignee || employees.length === 0 || isTaskReadOnly(selectedTask)}
                         className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm ${
                           reassigning || !selectedAssignee || employees.length === 0
                             ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
@@ -1668,10 +1799,10 @@ const EmployeeTasks = () => {
 
                 {/* Employee Reassign Request */}
                 {userRole === 'employee' && (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTaskForReassignment(selectedTask)}
-                      disabled={getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask)}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTaskForReassignment(selectedTask)}
+                        disabled={isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask)}
                     className="mt-2 rounded-full border border-yellow-300 px-3 py-1 text-yellow-600 hover:bg-yellow-50 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Request Reassignment
@@ -1779,22 +1910,24 @@ const EmployeeTasks = () => {
                                   <button
                                     type="button"
                                     onClick={() => startEditingChecklist(item)}
-                                    className="rounded-full border border-gray-200 px-3 py-1 hover:border-blue-300 hover:text-blue-600 text-xs"
+                                    disabled={isTaskReadOnly(selectedTask)}
+                                    className="rounded-full border border-gray-200 px-3 py-1 hover:border-blue-300 hover:text-blue-600 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                                   >
                                     Edit
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => handleCompleteChecklist(item)}
-                                    disabled={actionRunning}
-                                    className="rounded-full border border-emerald-200 px-3 py-1 text-emerald-600 text-xs"
+                                    disabled={isTaskReadOnly(selectedTask) || actionRunning}
+                                    className="rounded-full border border-emerald-200 px-3 py-1 text-emerald-600 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                                   >
                                     Mark complete
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => handleDeleteChecklist(item)}
-                                    className="rounded-full border border-rose-200 px-3 py-1 text-rose-600 text-xs"
+                                    disabled={isTaskReadOnly(selectedTask)}
+                                    className="rounded-full border border-rose-200 px-3 py-1 text-rose-600 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                                   >
                                     Delete
                                   </button>
@@ -1814,19 +1947,19 @@ const EmployeeTasks = () => {
                       value={checklistForm.title}
                       onChange={(e) => setChecklistForm((prev) => ({ ...prev, title: e.target.value }))}
                       placeholder="New checklist item"
-                      disabled={isTaskCompleted(selectedTask)}
+                      disabled={isTaskCompleted(selectedTask) || isTaskReadOnly(selectedTask)}
                       className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
                     />
                     <input
                       type="date"
                       value={checklistForm.dueDate}
                       onChange={(e) => setChecklistForm((prev) => ({ ...prev, dueDate: e.target.value }))}
-                      disabled={isTaskCompleted(selectedTask)}
+                      disabled={isTaskCompleted(selectedTask) || isTaskReadOnly(selectedTask)}
                       className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
                     />
                     <button
                       type="submit"
-                      disabled={actionRunning || isTaskCompleted(selectedTask)}
+                      disabled={actionRunning || isTaskCompleted(selectedTask) || isTaskReadOnly(selectedTask)}
                       className="rounded-full bg-indigo-600 px-4 py-2 text-white disabled:opacity-60 disabled:cursor-not-allowed text-sm"
                     >
                       {actionRunning ? 'Adding…' : isTaskCompleted(selectedTask) ? 'Task Completed - Cannot Add Items' : 'Add checklist'}

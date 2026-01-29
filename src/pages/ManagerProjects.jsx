@@ -3,6 +3,8 @@ import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
 import * as Icons from '../icons';
 import ViewToggle from "../components/ViewToggle";
+import PageHeader from '../components/PageHeader';
+import Card from "../components/Card";
 
 const { FolderKanban, List, Grid } = Icons;
 import fetchWithTenant from '../utils/fetchWithTenant';
@@ -130,12 +132,16 @@ const ManagerProjects = () => {
 
   return (
     <div className="w-full p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Manager Projects</h1>
-        <p className="mt-2 text-gray-600">
-          Overview of projects assigned to your clients.
-        </p>
-      </div>
+      <PageHeader
+        title="Manager Projects"
+        subtitle="Overview of projects assigned to your clients."
+        onRefresh={() => {
+          loadProjects();
+          loadClients();
+          loadProjectStats();
+        }}
+        refreshing={projectsLoading || clientsLoading}
+      />
 
       {/* PROJECT STATS DASHBOARD */}
       {projectStats && (
@@ -311,7 +317,7 @@ const ManagerProjects = () => {
           {view === "card" && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredProjects.map((project) => (
-                <div key={project.id || project._id} className="tm-card-shell">
+                <Card key={project.id || project._id}>
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -354,7 +360,7 @@ const ManagerProjects = () => {
                       View Summary
                     </button>
                   </div>
-                </div>
+                </Card>
               ))}
             </div>
           )}

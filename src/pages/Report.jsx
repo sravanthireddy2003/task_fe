@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import moment from 'moment';
 import html2canvas from 'html2canvas';
@@ -6,6 +6,7 @@ import jsPDF from 'jspdf';
 import ProjectDropdown from '../components/ProjectDropdown';
 import DatePicker from '../components/DatePicker';
 import { Chart } from '../components/Chart';
+import PageHeader from '../components/PageHeader';
 import { fetchProjects } from '../redux/slices/reportsSlice';
 import { httpGetService, httpPostService } from '../App/httpHandler';
 
@@ -30,27 +31,26 @@ const ReportPage = () => {
     dispatch(fetchProjects());
   }, [dispatch]);
 
+  const loadOverview = useCallback(async () => {
+    setOverviewLoading(true);
+    setOverviewError(null);
+    try {
+      const qs = `?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`;
+      const resp = await httpGetService(`/api/reports/overview${qs}`);
+      const data = (resp && resp.data) ? resp.data : resp;
+      setOverview(data || null);
+    } catch (err) {
+      setOverviewError(err?.message || 'Failed to load overview');
+      setOverview(null);
+    } finally {
+      setOverviewLoading(false);
+    }
+  }, [startDate, endDate]);
+
   useEffect(() => {
     // load overview on mount or when date range changes
-    const loadOverview = async () => {
-      setOverviewLoading(true);
-      setOverviewError(null);
-      try {
-        const qs = `?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`;
-        const resp = await httpGetService(`/api/reports/overview${qs}`);
-        // resp may have shape { success, data }
-        const data = (resp && resp.data) ? resp.data : resp;
-        setOverview(data || null);
-      } catch (err) {
-        setOverviewError(err?.message || 'Failed to load overview');
-        setOverview(null);
-      } finally {
-        setOverviewLoading(false);
-      }
-    };
-
     loadOverview();
-  }, [startDate, endDate, dispatch]);
+  }, [loadOverview]);
 
   const handleReset = () => {
     setProjectId('');
@@ -60,8 +60,7 @@ const ReportPage = () => {
     setError(null);
   };
 
-  const handleGenerate = async (e) => {
-    e.preventDefault();
+  const generateReport = useCallback(async () => {
     if (!projectId || !startDate || !endDate) return;
     setLoading(true);
     setError(null);
@@ -75,6 +74,19 @@ const ReportPage = () => {
       setError(err?.message || 'Failed to generate report');
     } finally {
       setLoading(false);
+    }
+  }, [projectId, startDate, endDate]);
+
+  const handleGenerate = async (e) => {
+    e.preventDefault();
+    await generateReport();
+  };
+
+  const handleRefresh = async () => {
+    if (projectId && startDate && endDate) {
+      await generateReport();
+    } else {
+      await loadOverview();
     }
   };
 
@@ -131,20 +143,15 @@ const ReportPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-6">
-        {/* HEADER */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800">
-              Project Reports
-            </h1>
-            <p className="text-sm text-gray-500">
-              Generate productivity and task insights by project and date range
-            </p>
-          </div>
+        <PageHeader
+          title="Project Reports"
+          subtitle="Generate productivity and task insights by project and date range"
+          onRefresh={handleRefresh}
+        >
           <div className="text-sm text-gray-400 mt-2 md:mt-0">
             {moment().format('dddd, MMMM Do YYYY')}
           </div>
-        </div>
+        </PageHeader>
 
         {/* FILTER BAR */}
         <form

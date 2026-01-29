@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { selectUser } from "../redux/slices/authSlice";
+import PageHeader from "../components/PageHeader";
 
 const ClientViewerHome = () => {
   const user = useSelector(selectUser);
@@ -18,11 +19,11 @@ const ClientViewerHome = () => {
 
   return (
     <div className="space-y-8">
-      <header className="space-y-2">
-        <p className="text-sm font-semibold uppercase tracking-[0.3em] text-blue-500">Client experience</p>
-        <h1 className="text-3xl font-semibold text-gray-900">Hello, {user.name || "Client"}.</h1>
-        <p className="text-sm text-gray-500 max-w-3xl">This view shows client-facing data: read-only tasks, projects and reports for your account.</p>
-      </header>
+      <PageHeader
+        title={`Hello, ${user.name || "Client"}.`}
+        subtitle="This view shows client-facing data: read-only tasks, projects and reports for your account."
+        align="center"
+      />
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">

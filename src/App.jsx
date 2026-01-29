@@ -19,6 +19,7 @@ import { fetchNotifications } from "./redux/slices/notificationSlice";
 
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
+import PageWrapper from "./components/PageWrapper";
 
 import Login from "./pages/Login";
 import VerifyOTP from "./pages/VerifyOTP";
@@ -130,9 +131,9 @@ function Layout() {
 
         {/* Content */}
         <div className="flex-1 bg-gray-50 overflow-y-auto">
-          <div className="min-h-full p-6 lg:p-8 xl:p-10 max-w-full">
+          <PageWrapper>
             <Outlet />
-          </div>
+          </PageWrapper>
         </div>
       </div>
     </div>

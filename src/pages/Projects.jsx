@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import * as Icons from "../icons";
 import ViewToggle from "../components/ViewToggle";
+import PageHeader from "../components/PageHeader";
+import Card from "../components/Card";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchProjects,
@@ -151,6 +153,14 @@ export default function Projects() {
 
   // Fetch projects, departments, clients, and users on mount
   useEffect(() => {
+    dispatch(fetchProjects());
+    dispatch(fetchDepartments());
+    dispatch(fetchClients());
+    dispatch(fetchUsers());
+    dispatch(getProjectsStats());
+  }, [dispatch]);
+
+  const handleRefresh = useCallback(() => {
     dispatch(fetchProjects());
     dispatch(fetchDepartments());
     dispatch(fetchClients());
@@ -334,12 +344,11 @@ export default function Projects() {
   }
   return (
     <div className="p-8">
-      {/* HEADER */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-gray-900 mb-2">Projects</h1>
-          <p className="text-gray-600">Manage and track all your projects</p>
-        </div>
+      <PageHeader
+        title="Projects"
+        subtitle="Manage and track all your projects"
+        onRefresh={handleRefresh}
+      >
         <div className="flex items-center gap-3">
           <ViewToggle
             mode={view === "list" ? "list" : "grid"}
@@ -353,11 +362,11 @@ export default function Projects() {
             Add Project
           </button>
         </div>
-      </div>
+      </PageHeader>
 
       {/* PROJECT STATS DASHBOARD */}
       {projectStats && (
-        <div className="tm-card-shell mb-6">
+        <Card className="mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Project Statistics</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
             <div className="text-center">
@@ -397,7 +406,7 @@ export default function Projects() {
               ))}
             </div>
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Status Summary */}

@@ -1,10 +1,12 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import fetchWithTenant from '../utils/fetchWithTenant';
 import { selectUser } from '../redux/slices/authSlice';
 import { MODULE_MAP } from '../App/moduleMap.jsx';
 import Icon from '../components/Icon';
+import PageHeader from '../components/PageHeader';
+import GridCard from "../components/ui/GridCard";
 
 // Bar Chart Component
 const BarChart = ({ title, data, colors = [], showValues = true, horizontal = false }) => {
@@ -245,35 +247,38 @@ const StackedBarChart = ({ title, data, colors = [] }) => {
   );
 };
 
-// Mini Stats Card
+// Mini Stats Card using shared GridCard
 const StatsCard = ({ title, subtitle, value, icon, color, trend }) => {
-  const colorClasses = {
-    blue: 'bg-blue-50 border-blue-200 text-blue-700',
-    green: 'bg-green-50 border-green-200 text-green-700',
-    amber: 'bg-amber-50 border-amber-200 text-amber-700',
-    red: 'bg-red-50 border-red-200 text-red-700',
-    purple: 'bg-purple-50 border-purple-200 text-purple-700',
-    gray: 'bg-gray-50 border-gray-200 text-gray-700'
+  const toneByColor = {
+    blue: 'primary',
+    green: 'success',
+    amber: 'warning',
+    red: 'danger',
+    purple: 'primary',
+    gray: 'default',
   };
 
+  const tone = toneByColor[color] || 'default';
+  const trendNode =
+    trend && (
+      <span className={`font-medium ${trend.value > 0 ? 'text-green-600' : 'text-red-600'}`}>
+        {trend.value > 0 ? '↗' : '↘'} {Math.abs(trend.value)}% {trend.label}
+      </span>
+    );
+
+  const resolvedIcon =
+    typeof icon === 'string' ? <Icon name={icon} className="w-6 h-6" /> : icon;
+
   return (
-    <div className={`rounded-xl border p-4 ${colorClasses[color]}`}>
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium opacity-80">{title}</p>
-          {subtitle && <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>}
-          <p className="text-2xl font-bold mt-1">{value}</p>
-        </div>
-        <div className="text-2xl">
-          {typeof icon === 'string' ? <Icon name={icon} className="w-6 h-6" /> : icon}
-        </div>
-      </div>
-      {trend && (
-        <div className={`text-xs font-medium mt-2 ${trend.value > 0 ? 'text-green-600' : 'text-red-600'}`}>
-          {trend.value > 0 ? '↗' : '↘'} {Math.abs(trend.value)}% {trend.label}
-        </div>
-      )}
-    </div>
+    <GridCard
+      title={title}
+      subtitle={subtitle}
+      value={value}
+      icon={resolvedIcon}
+      tone={tone}
+      footer={trendNode}
+      className="p-4"
+    />
   );
 };
 
@@ -326,39 +331,39 @@ const EmployeeDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const loadDashboard = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const [tasksOverviewResponse, myTasksResponse] = await Promise.all([
-          fetchWithTenant('/api/employee/tasks-overview'),
-          fetchWithTenant('/api/employee/my-tasks'),
-        ]);
+  const loadDashboard = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [tasksOverviewResponse, myTasksResponse] = await Promise.all([
+        fetchWithTenant('/api/employee/tasks-overview'),
+        fetchWithTenant('/api/employee/my-tasks'),
+      ]);
 
-        const overviewPayload = tasksOverviewResponse?.data || tasksOverviewResponse || {};
-        const boardPayload = myTasksResponse || {};
-        
-        const boardTasks = Array.isArray(boardPayload.data)
-          ? boardPayload.data
-          : Array.isArray(boardPayload)
-          ? boardPayload
-          : [];
-        
-        const boardKanban = boardPayload.kanban || [];
+      const overviewPayload = tasksOverviewResponse?.data || tasksOverviewResponse || {};
+      const boardPayload = myTasksResponse || {};
+      
+      const boardTasks = Array.isArray(boardPayload.data)
+        ? boardPayload.data
+        : Array.isArray(boardPayload)
+        ? boardPayload
+        : [];
+      
+      const boardKanban = boardPayload.kanban || [];
 
-        setTasks(Array.isArray(boardTasks) ? boardTasks : []);
-        setKanban(Array.isArray(boardKanban) ? boardKanban : []);
-      } catch (err) {
-        const message = err?.message || err?.data?.message || 'Unable to load dashboard';
-        setError(message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadDashboard();
+      setTasks(Array.isArray(boardTasks) ? boardTasks : []);
+      setKanban(Array.isArray(boardKanban) ? boardKanban : []);
+    } catch (err) {
+      const message = err?.message || err?.data?.message || 'Unable to load dashboard';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
 
   // Calculate all metrics and chart data
   const metrics = useMemo(() => {
@@ -574,13 +579,12 @@ const EmployeeDashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Task Analytics Dashboard</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Comprehensive visual analysis of your tasks, progress, and performance
-        </p>
-      </div>
+      <PageHeader
+        title="Task Analytics Dashboard"
+        subtitle="Comprehensive visual analysis of your tasks, progress, and performance"
+        onRefresh={loadDashboard}
+        refreshing={loading}
+      />
 
       {/* Stats Overview */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">

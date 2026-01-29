@@ -5,6 +5,7 @@ import { Navigate } from "react-router-dom";
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchDepartments, selectDepartments } from '../redux/slices/departmentSlice';
 import { fetchProjects, selectProjects, selectCurrentProject } from '../redux/slices/projectSlice';
+import PageHeader from "../components/PageHeader";
 
 export default function Workflow() {
   const dispatch = useDispatch();
@@ -231,11 +232,14 @@ export default function Workflow() {
       <div className="min-h-screen bg-gray-50 p-6">
         {/* Header Section */}
         <div className="mb-8">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Workflow Management</h1>
-              <p className="text-gray-600 mt-2">Design, automate, and monitor approval workflows across your organization</p>
-            </div>
+          <PageHeader
+            title="Workflow Management"
+            subtitle="Design, automate, and monitor approval workflows across your organization"
+            onRefresh={() => {
+              dispatch(fetchDepartments()).catch((e) => console.warn('[Workflow page] fetchDepartments error', e));
+              dispatch(fetchProjects()).catch((e) => console.warn('[Workflow page] fetchProjects error', e));
+            }}
+          >
             <button
               onClick={openCreate}
               className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-xl font-medium flex items-center gap-2 shadow-lg hover:shadow-xl transition-all duration-200"
@@ -243,7 +247,7 @@ export default function Workflow() {
               <Icons.Plus className="w-5 h-5" />
               Create Workflow
             </button>
-          </div>
+          </PageHeader>
         </div>
 
         {/* Stats Cards */}

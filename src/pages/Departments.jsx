@@ -12,9 +12,10 @@ import {
 import { fetchUsers, selectUsers } from '../redux/slices/userSlice';
 import { toast } from 'sonner';
 import * as Icons from '../icons';
-import Title from '../components/Title';
 import Button from '../components/Button';
 import ViewToggle from "../components/ViewToggle";
+import PageHeader from "../components/PageHeader";
+import Card from "../components/Card";
 import clsx from 'clsx';
 
 function DepartmentsModal({ show, onClose, form, setForm, onSubmit, editing, managers = [] }) {
@@ -203,6 +204,11 @@ const handleSubmit = async (e) => {
     setShowModal(true);
   };
 
+  const handleRefresh = () => {
+    dispatch(fetchDepartments());
+    dispatch(fetchUsers());
+  };
+
   // Loading state
   if (status === 'loading') {
     return (
@@ -223,10 +229,7 @@ const handleSubmit = async (e) => {
         <p className="text-red-600 mb-6">{error || 'An error occurred'}</p>
         <Button
           label="Try Again"
-          onClick={() => {
-            dispatch(fetchDepartments());
-            dispatch(fetchUsers());
-          }}
+          onClick={handleRefresh}
           className="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-xl font-semibold"
         />
       </div>
@@ -236,28 +239,14 @@ const handleSubmit = async (e) => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <Title title="Department Management" />
-            <p className="text-gray-600 text-sm mt-1">Organize and manage your company departments</p>
-            <p className="text-xs text-gray-500 mt-1">Managers found: {managers.length}</p>
-          </div>
-          
+        <PageHeader
+          title="Department Management"
+          subtitle="Organize and manage your company departments"
+          onRefresh={handleRefresh}
+        >
           <div className="flex items-center gap-3">
-            <Button
-              onClick={() => {
-                dispatch(fetchDepartments());
-                dispatch(fetchUsers());
-              }}
-              icon={Icons.RefreshCcw}
-              label=""
-              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 h-10 w-10 flex items-center justify-center"
-              title="Refresh departments"
-            />
-
+            <p className="text-xs text-gray-500 mr-2">Managers found: {managers.length}</p>
             <ViewToggle mode={viewMode} onChange={setViewMode} />
-
             <Button
               label="Add Department"
               icon={<Icons.Plus className="ml-2" />}
@@ -265,7 +254,7 @@ const handleSubmit = async (e) => {
               className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 font-semibold text-sm"
             />
           </div>
-        </div>
+        </PageHeader>
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -355,11 +344,11 @@ const handleSubmit = async (e) => {
 
         {/* Main Content */}
         {filteredDepartments.length === 0 ? (
-            <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-2xl p-12 text-center">
+          <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-2xl p-12 text-center">
             <Icons.Building2 className="w-16 h-16 text-gray-400 mx-auto mb-6" />
             <h3 className="text-lg font-bold text-gray-900 mb-3">No departments found</h3>
             <p className="text-gray-600 mb-8 max-w-md mx-auto text-sm">
-              {searchQuery 
+              {searchQuery
                 ? "No departments match your search. Try different keywords."
                 : "Your department list is empty. Create your first department to get started."}
             </p>
@@ -372,10 +361,10 @@ const handleSubmit = async (e) => {
         ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredDepartments.map((d) => (
-              <div key={d.actualId} className="tm-card-shell">
+              <Card key={d.actualId}>
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div 
+                    <div
                       className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-sm"
                       style={{ backgroundColor: d.color }}
                     >
@@ -386,27 +375,27 @@ const handleSubmit = async (e) => {
                       <div className="text-xs text-gray-500">ID: {d.displayId}</div>
                     </div>
                   </div>
-                  <span className={clsx(
-                    "px-3 py-1 rounded-full text-xs font-semibold",
-                    d.managerName === 'Unassigned' 
-                      ? "bg-gray-100 text-gray-800" 
-                      : "bg-emerald-100 text-emerald-800"
-                  )}>
+                  <span
+                    className={clsx(
+                      "px-3 py-1 rounded-full text-xs font-semibold",
+                      d.managerName === 'Unassigned'
+                        ? "bg-gray-100 text-gray-800"
+                        : "bg-emerald-100 text-emerald-800"
+                    )}
+                  >
                     {d.managerName === 'Unassigned' ? 'No Manager' : 'Has Manager'}
                   </span>
                 </div>
 
                 <div className="space-y-2 mb-6">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Icons.User2 className="tm-icon text-gray-400" />
                     <span>Manager: {d.managerName}</span>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                  <div className="text-xs text-gray-500">
-                    Created: {d.createdAt}
-                  </div>
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                  <div className="text-xs text-gray-500">Created: {d.createdAt}</div>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => openEdit(d)}
@@ -424,15 +413,15 @@ const handleSubmit = async (e) => {
                     </button>
                   </div>
                 </div>
-              </div>
+              </Card>
             ))}
-            
-            <div 
+
+            <div
               onClick={handleCreate}
               className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center hover:border-blue-300 hover:bg-blue-50 transition-all duration-300 cursor-pointer flex flex-col items-center justify-center min-h-[280px]"
             >
               <div className="w-12 h-12 rounded-full bg-white border-2 border-dashed border-gray-300 flex items-center justify-center mb-4 shadow-sm">
-            <Icons.Plus className="tm-icon text-gray-400" />
+                <Icons.Plus className="tm-icon text-gray-400" />
               </div>
               <h3 className="text-base font-bold text-gray-900 mb-2">Add New Department</h3>
               <p className="text-gray-600 text-sm">Create a new department</p>
@@ -452,17 +441,20 @@ const handleSubmit = async (e) => {
                 </thead>
                 <tbody>
                   {filteredDepartments.map((d) => (
-                    <tr key={d.actualId} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                    <tr
+                      key={d.actualId}
+                      className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                    >
                       <td className="py-4 pl-6 pr-4">
                         <div className="flex items-center gap-3">
-                          <div 
+                          <div
                             className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-sm"
                             style={{ backgroundColor: d.color }}
                           >
                             {d.name.charAt(0)}
                           </div>
                           <div>
-                            <div className="font-medium text-gray-900 text-sm">{d.name}</div>
+                            <div className="font-semibold text-gray-900 text-sm">{d.name}</div>
                             <div className="text-xs text-gray-500">ID: {d.displayId}</div>
                           </div>
                         </div>
@@ -502,8 +494,8 @@ const handleSubmit = async (e) => {
                 </tbody>
               </table>
             </div>
-            
-            <div 
+
+            <div
               onClick={handleCreate}
               className="border-t border-gray-100 p-6 text-center hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
             >

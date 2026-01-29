@@ -2,6 +2,7 @@
 // import { Plus, Edit2, Trash2, AlertCircle, Filter, List, Grid, Calendar, Clock, User, RefreshCw } from 'lucide-react';
 // import { useDispatch, useSelector } from 'react-redux';
 // import { toast } from 'sonner';
+import Card from "../components/Card";
  
 // import {
 //   fetchTasks,
@@ -1870,9 +1871,9 @@ export default function Tasks() {
 
                 <div className="space-y-3">
                   {columnTasks.map((task) => (
-                    <div
+                    <Card
                       key={task.id || task._id || task.public_id}
-                      className="tm-card-shell cursor-pointer"
+                      className="cursor-pointer"
                       onClick={() => handleOpenTaskDetails(task)}
                     >
                       <div className="flex items-start justify-between mb-2">
@@ -1915,7 +1916,7 @@ export default function Tasks() {
                           {getStatusText(task.status || task.stage || 'pending')}
                         </span>
                       </div>
-                    </div>
+                    </Card>
                   ))}
                 </div>
               </div>

@@ -1,10 +1,13 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { httpGetService } from '../App/httpHandler';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { httpGetService, httpPatchService, httpPostService } from '../App/httpHandler';
 import * as Icons from '../icons';
+import RefreshButton from '../components/RefreshButton';
+import PageHeader from '../components/PageHeader';
+import GridCard from "../components/ui/GridCard";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, XAxis, YAxis, CartesianGrid, Bar } from 'recharts';
 
-const { ArrowUpRight, TrendingUp, Users, Briefcase, CheckSquare, Target, BarChart3, Calendar, Clock, ChevronRight } = Icons;
+const { ArrowUpRight, TrendingUp, Users, Briefcase, CheckSquare, Target, BarChart3, Calendar, Clock: ClockIcon, ChevronRight, AlertTriangle, MoreVertical, AlertCircle, List, Grid, CheckCircle } = Icons;
 
 const normalizeList = (payload) => {
   if (!payload) return [];
@@ -213,19 +216,12 @@ const ManagerDashboard = () => {
       <div className="max-w-[1800px] mx-auto">
         {/* Header */}
         <div className="mb-8">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                Dashboard Overview
-              </h1>
-              <p className="text-gray-600 mt-2">
-                Welcome back! Here's what's happening with your projects today.
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <RefreshButton onClick={fetchDashboard} loading={loading} />
-            </div>
-          </div>
+          <PageHeader
+            title="Dashboard Overview"
+            subtitle="Welcome back! Here's what's happening with your projects today."
+            onRefresh={fetchDashboard}
+            refreshing={loading}
+          />
         </div>
 
         {/* Error Alert */}
@@ -243,76 +239,34 @@ const ManagerDashboard = () => {
 
         {/* Metric Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {/* Total Projects Card */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Briefcase className="w-6 h-6 text-blue-600" />
-              </div>
-              <span className="flex items-center gap-1 text-sm font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">
-                <TrendingUp className="w-3 h-3" />
-                +12%
-              </span>
-            </div>
-            <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Projects</h3>
-            <div className="text-3xl font-bold text-gray-900 mt-2">
-              {loading ? '...' : metrics.projectCount}
-            </div>
-            <p className="text-sm text-gray-600 mt-2">Active projects under management</p>
-          </div>
-
-          {/* Active Tasks Card */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <CheckSquare className="w-6 h-6 text-green-600" />
-              </div>
-              <span className="flex items-center gap-1 text-sm font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">
-                <TrendingUp className="w-3 h-3" />
-                +8%
-              </span>
-            </div>
-            <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">Active Tasks</h3>
-            <div className="text-3xl font-bold text-gray-900 mt-2">
-              {loading ? '...' : metrics.activeTasks || metrics.taskCount}
-            </div>
-            <p className="text-sm text-gray-600 mt-2">Tasks in progress</p>
-          </div>
-
-          {/* Total Clients Card */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <Users className="w-6 h-6 text-purple-600" />
-              </div>
-              <span className="flex items-center gap-1 text-sm font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">
-                <TrendingUp className="w-3 h-3" />
-                +5%
-              </span>
-            </div>
-            <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Clients</h3>
-            <div className="text-3xl font-bold text-gray-900 mt-2">
-              {loading ? '...' : metrics.clientCount}
-            </div>
-            <p className="text-sm text-gray-600 mt-2">Clients managed by team</p>
-          </div>
-
-          {/* Overdue Tasks Card */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                <AlertTriangle className="w-6 h-6 text-red-600" />
-              </div>
-              <span className="flex items-center gap-1 text-sm font-medium text-red-600 bg-red-50 px-2 py-1 rounded-full">
-                +{metrics.overdueTasks || 0}
-              </span>
-            </div>
-            <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">Overdue Tasks</h3>
-            <div className="text-3xl font-bold text-gray-900 mt-2">
-              {loading ? '...' : metrics.overdueTasks || 0}
-            </div>
-            <p className="text-sm text-gray-600 mt-2">Tasks past due date</p>
-          </div>
+          <GridCard
+            title="Total Projects"
+            subtitle="Active projects under management"
+            value={loading ? '...' : metrics.projectCount}
+            tone="primary"
+            icon={<Briefcase className="w-6 h-6 text-blue-600" />}
+          />
+          <GridCard
+            title="Active Tasks"
+            subtitle="Tasks in progress"
+            value={loading ? '...' : (metrics.activeTasks || metrics.taskCount)}
+            tone="success"
+            icon={<CheckSquare className="w-6 h-6 text-green-600" />}
+          />
+          <GridCard
+            title="Total Clients"
+            subtitle="Clients managed by team"
+            value={loading ? '...' : metrics.clientCount}
+            tone="primary"
+            icon={<Users className="w-6 h-6 text-purple-600" />}
+          />
+          <GridCard
+            title="Overdue Tasks"
+            subtitle="Tasks past due date"
+            value={loading ? '...' : (metrics.overdueTasks || 0)}
+            tone="danger"
+            icon={<AlertTriangle className="w-6 h-6 text-red-600" />}
+          />
         </div>
 
         {/* Charts Section */}

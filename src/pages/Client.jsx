@@ -5,6 +5,8 @@ import Table from "../components/client/EditInClient";
 import ClientForm from "../components/client/ClientForm";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Link } from "react-router-dom";
+import PageHeader from "../components/PageHeader";
+import Card from "../components/Card";
 import {
   fetchClients,
   deleteClient,
@@ -91,7 +93,7 @@ const Clients = () => {
 
   // Client Card Component for Grid View
   const ClientCard = ({ client }) => (
-    <div className="tm-card-shell">
+    <Card>
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
           <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -170,7 +172,7 @@ const Clients = () => {
           </div>
         </div>
       </div>
-    </div>
+    </Card>
   );
 
   if (status === "loading" && !isRefreshing) {
@@ -223,40 +225,26 @@ const Clients = () => {
   return (
     <div className="p-4">
       <div className="max-w-7xl mx-auto space-y-4">
-        
-        {/* Header with Actions */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-          <div>
-            <h1 className="text-xl font-semibold text-gray-900">Clients</h1>
-            <p className="text-sm text-gray-500">Manage your client portfolio</p>
-          </div>
-          
-            <div className="flex items-center gap-2">
-            {/* View Toggle */}
+        <PageHeader
+          title="Clients"
+          subtitle="Manage your client portfolio"
+          onRefresh={loadData}
+          refreshing={isRefreshing}
+        >
+          <div className="flex items-center gap-2">
             <ViewToggle mode={viewMode} onChange={setViewMode} />
-            
-            {/* Refresh Button */}
-            <button
-              onClick={loadData}
-              disabled={isRefreshing}
-              className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
-              title="Refresh"
-            >
-              <Icons.RefreshCcw className={clsx("tm-icon", isRefreshing && "animate-spin")} />
-            </button>
-            
-            {/* Add Client Button */}
             <button
               onClick={() => {
                 setSelectedClient(null);
                 setOpenClientForm(true);
               }}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5">
+              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5"
+            >
               <Icons.Plus className="tm-icon" />
               Add Client
             </button>
           </div>
-        </div>
+        </PageHeader>
 
         {/* Stats Row */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { httpGetService } from "../App/httpHandler";
 import { toast } from "sonner";
 import * as Icons from "../icons";
-import Title from "../components/Title";
+import PageHeader from "../components/PageHeader";
 
 const normalizeEmployees = (payload) => {
   if (!payload) return [];
@@ -48,11 +48,12 @@ const ManagerUsers = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Title
-          title="Manager Team"
-          subtitle="See the employees assigned to your account"
-        />
+      <PageHeader
+        title="Manager Team"
+        subtitle="See the employees assigned to your account"
+        onRefresh={loadEmployees}
+        refreshing={loading}
+      >
         <div className="flex flex-wrap gap-3 text-sm text-gray-600">
           <div className="flex items-center gap-1">
             <Icons.Users className="h-4 w-4 text-gray-400" />
@@ -63,7 +64,7 @@ const ManagerUsers = () => {
             <span>{activeCount} active</span>
           </div>
         </div>
-      </div>
+      </PageHeader>
 
       {loading && (
         <div className="min-h-[260px] flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-gray-200 bg-white">

@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 
 import { MODULE_MAP } from "../App/moduleMap.jsx";
 import { selectUser } from "../redux/slices/authSlice";
+import PageHeader from "../components/PageHeader";
 
 const statCardVariants = [
   { key: "assigned", label: "Assigned to me", helper: "Tasks waiting on you" },
@@ -85,13 +86,14 @@ const EmployeeHome = () => {
 
   return (
     <div className="space-y-8">
-      <header className="space-y-2">
+      <div className="space-y-2">
         <p className="text-sm font-semibold uppercase tracking-[0.3em] text-blue-500">Employee experience</p>
-        <h1 className="text-3xl font-semibold text-gray-900">Hello, {user.name || "there"}.</h1>
-        <p className="text-sm text-gray-500 max-w-3xl">
-          This space gathers the things your role needs: your tasks, your modules, and quick links to keep your day moving.
-        </p>
-      </header>
+        <PageHeader
+          title={`Hello, ${user.name || "there"}.`}
+          subtitle="This space gathers the things your role needs: your tasks, your modules, and quick links to keep your day moving."
+          onRefresh={() => window.location.reload()}
+        />
+      </div>
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         {statCardVariants.map((stat) => (

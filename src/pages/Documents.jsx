@@ -5,6 +5,7 @@ import fetchWithTenant from '../utils/fetchWithTenant';
 import { httpGetService, httpPostService } from '../App/httpHandler';
 import { toast } from 'sonner';
 import * as Icons from '../icons';
+import PageHeader from '../components/PageHeader';
 
 const { FileText, Upload, Download, Eye, Plus, Search, Filter, X, AlertCircle, CheckCircle, Clock, User, Calendar, File, Shield } = Icons;
 
@@ -679,15 +680,11 @@ const Documents = () => {
   // Main component return
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Documents</h1>
-          <p className="text-gray-600 mt-2">
-            Manage and organize project documents, files, and resources
-          </p>
-        </div>
-
+      <PageHeader
+        title="Documents"
+        subtitle="Manage and organize project documents, files, and resources"
+        onRefresh={() => loadDocuments(selectedProjectId, 1, 25)}
+      >
         {canUpload() && (
           <button
             onClick={() => setShowUploadModal(true)}
@@ -697,7 +694,7 @@ const Documents = () => {
             Upload Document
           </button>
         )}
-      </div>
+      </PageHeader>
 
       {/* Search and Filter Bar */}
       <div className="bg-white rounded-xl border p-6 mb-8">

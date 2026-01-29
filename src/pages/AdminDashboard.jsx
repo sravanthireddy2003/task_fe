@@ -87,6 +87,7 @@ const STATIC_DATA = {
 import { httpGetService } from '../App/httpHandler';
 import GridCard from "../components/ui/GridCard";
 import ListItem from "../components/ui/ListItem";
+import PageHeader from "../components/PageHeader";
 
 const Dashboard = () => {
   React.useEffect(() => {
@@ -122,29 +123,29 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const loadDashboard = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resp = await httpGetService('/api/admin/dashboard');
+      const payload = resp && resp.data ? resp.data : resp;
+
+      // Map response fields with sensible fallbacks
+      if (payload.dashboardMetrics) setMetrics(payload.dashboardMetrics);
+      if (payload.taskDistribution) setTaskDistribution(payload.taskDistribution);
+      if (payload.weeklyTrends) setWeeklyTrends(payload.weeklyTrends);
+      if (payload.topEmployees) setTopEmployees(payload.topEmployees);
+      if (payload.clientWorkload) setClientWorkload(payload.clientWorkload);
+      if (payload.recentActivities) setRecentActivities(payload.recentActivities);
+      if (payload.activeProjects) setActiveProjects(payload.activeProjects);
+    } catch (err) {
+      setError(err?.message || 'Failed to load dashboard');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadDashboard = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const resp = await httpGetService('/api/admin/dashboard');
-        const payload = resp && resp.data ? resp.data : resp;
-
-        // Map response fields with sensible fallbacks
-        if (payload.dashboardMetrics) setMetrics(payload.dashboardMetrics);
-        if (payload.taskDistribution) setTaskDistribution(payload.taskDistribution);
-        if (payload.weeklyTrends) setWeeklyTrends(payload.weeklyTrends);
-        if (payload.topEmployees) setTopEmployees(payload.topEmployees);
-        if (payload.clientWorkload) setClientWorkload(payload.clientWorkload);
-        if (payload.recentActivities) setRecentActivities(payload.recentActivities);
-        if (payload.activeProjects) setActiveProjects(payload.activeProjects);
-      } catch (err) {
-        setError(err?.message || 'Failed to load dashboard');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadDashboard();
   }, []);
 
@@ -153,11 +154,12 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto space-y-6">
         
         {/* Header */}
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-gray-600 mt-1">Welcome back, John Admin! Here's what's happening today.</p>
-          </div>
+        <PageHeader
+          title="Dashboard"
+          subtitle="Welcome back, John Admin! Here's what's happening today."
+          onRefresh={loadDashboard}
+          refreshing={loading}
+        >
           <div className="flex items-center gap-3">
             <div className="relative">
               {Icons.Search && <Icons.Search className="tm-icon absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />}
@@ -174,7 +176,7 @@ const Dashboard = () => {
               {Icons.Settings && <Icons.Settings className="tm-icon text-gray-600" />}
             </button>
           </div>
-        </div>
+        </PageHeader>
 
         {/* Metrics Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">

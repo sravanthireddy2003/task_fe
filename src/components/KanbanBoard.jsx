@@ -369,6 +369,13 @@ const KanbanBoard = ({
     return task?.is_locked || task?.lock_info?.is_locked || false;
   };
 
+  // Check if task is in review
+  const isTaskInReview = (task) => {
+    if (!task) return false;
+    const s = (task.status || task.stage || task.task_status?.current_status || '').toString().toLowerCase();
+    return s === 'review' || s === 'in_review' || s.includes('review');
+  };
+
   // Check if task has pending reassignment
   const hasPendingReassignment = (task) => {
     const taskId = normalizeId(task);
@@ -483,6 +490,13 @@ const KanbanBoard = ({
     // Block if task is locked
     if (isTaskLocked(task)) {
       toast.error('This task is locked and cannot be moved until your manager responds.');
+      event.preventDefault();
+      return;
+    }
+
+    // Block dragging review tasks for regular employees to avoid accidental moves to Completed
+    if (isTaskInReview(task) && userRole === 'employee') {
+      toast.error('Tasks in review cannot be moved. Wait for manager response.');
       event.preventDefault();
       return;
     }

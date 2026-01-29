@@ -420,8 +420,22 @@ export const fetchTasksbyId = createAsyncThunk(
   'tasks/fetchTasksbyId',
   async ({ task_id }, thunkAPI) => {
     try {
-      const res = await httpGetService(`api/projects/tasks/${task_id}`);
-      return res?.data || res || {};
+      // Try the more common singular task endpoint first
+      try {
+        const r1 = await httpGetService(`api/tasks/${task_id}`);
+        if (r1) return r1?.data || r1 || {};
+      } catch (e1) {
+        // ignore and try legacy/projects endpoint next
+        // If 404, we'll attempt fallback
+      }
+
+      // Fallback to projects-scoped task endpoint (some servers expose this)
+      try {
+        const r2 = await httpGetService(`api/projects/tasks/${task_id}`);
+        return r2?.data || r2 || {};
+      } catch (e2) {
+        return thunkAPI.rejectWithValue(formatRejectValue(e2));
+      }
     } catch (err) {
       return thunkAPI.rejectWithValue(formatRejectValue(err));
     }

@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
 import fetchWithTenant from '../utils/fetchWithTenant';
 import { selectUser } from '../redux/slices/authSlice';
+import PageHeader from "../components/PageHeader";
 
 const ManagerClients = () => {
   const user = useSelector(selectUser);
@@ -13,23 +14,25 @@ const ManagerClients = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  useEffect(() => {
-    const loadManagerClients = async () => {
-      setManagerLoading(true);
-      try {
-        const resp = await fetchWithTenant('/api/manager/clients');
-        const list = Array.isArray(resp?.data) ? resp.data : resp;
-        setManagerClients(Array.isArray(list) ? list : []);
-      } catch (err) {
-        const message = err?.message || 'Failed to load assigned clients';
-        setManagerError(message);
-        toast.error(message);
-      } finally {
-        setManagerLoading(false);
-      }
-    };
-    loadManagerClients();
+  const loadManagerClients = useCallback(async () => {
+    setManagerLoading(true);
+    try {
+      const resp = await fetchWithTenant('/api/manager/clients');
+      const list = Array.isArray(resp?.data) ? resp.data : resp;
+      setManagerClients(Array.isArray(list) ? list : []);
+      setManagerError(null);
+    } catch (err) {
+      const message = err?.message || 'Failed to load assigned clients';
+      setManagerError(message);
+      toast.error(message);
+    } finally {
+      setManagerLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadManagerClients();
+  }, [loadManagerClients]);
 
   const clientsToShow = useMemo(() => {
     const normalized = !managerLoading && managerClients.length > 0 ? managerClients : [];
@@ -54,13 +57,12 @@ const ManagerClients = () => {
 
   return (
     <div className="w-full p-4 space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Assigned Clients</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            You can only see clients assigned to you.
-          </p>
-        </div>
+      <PageHeader
+        title="Assigned Clients"
+        subtitle="You can only see clients assigned to you."
+        onRefresh={loadManagerClients}
+        refreshing={managerLoading}
+      >
         <div className="flex flex-wrap items-center gap-3">
           <input
             type="text"
@@ -79,7 +81,7 @@ const ManagerClients = () => {
             <option value="inactive">Inactive</option>
           </select>
         </div>
-      </div>
+      </PageHeader>
       {selectedClient ? (
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow">
             <div className="flex flex-wrap items-center justify-between gap-3">

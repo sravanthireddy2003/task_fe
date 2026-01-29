@@ -2,9 +2,9 @@ import clsx from "clsx";
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import * as Icons from "../icons";
-import Title from "../components/Title";
 import Button from "../components/Button";
 import ConfirmatioDialog from "../components/Dialogs";
+import PageHeader from "../components/PageHeader";
 import {
   fetchDeletedClients,
   restoreClient,
@@ -132,9 +132,12 @@ const Trash = () => {
   return (
     <>
       <div className='w-full md:px-1 px-0 mb-6'>
-        <div className='flex items-center justify-between mb-8'>
-          <Title title='Trashed Clients' />
-
+        <PageHeader
+          title="Trashed Clients"
+          subtitle="Restore or permanently delete clients removed from the system"
+          onRefresh={() => dispatch(fetchDeletedClients())}
+          refreshing={status === 'loading'}
+        >
           <div className='flex gap-2 md:gap-4 items-center'>
             <Button
               label='Restore All'
@@ -151,7 +154,7 @@ const Trash = () => {
               disabled={deletedClients.length === 0}
             />
           </div>
-        </div>
+        </PageHeader>
 
         {status === 'loading' ? (
           <div className='text-center py-8'>Loading...</div>

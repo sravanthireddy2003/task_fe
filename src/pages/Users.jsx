@@ -5,6 +5,8 @@ import ViewToggle from "../components/ViewToggle";
 import GridCard from "../components/ui/GridCard";
 import ConfirmationDialog from "../components/Dialogs";
 import AddUser from "../components/AddUser";
+import PageHeader from "../components/PageHeader";
+import Card from "../components/Card";
 import { toast } from "sonner";
 import {
   fetchUsers,
@@ -82,10 +84,7 @@ const UserAvatar = ({ user, size = "md" }) => {
 // Clean Card View (No overlapping data)
 const UserCard = ({ user, onClick }) => {
   return (
-    <div
-      className="tm-card-shell cursor-pointer"
-      onClick={() => onClick(user)}
-    >
+    <Card className="cursor-pointer" onClick={() => onClick(user)}>
       <div className="flex items-start justify-between mb-4">
         <UserAvatar user={user} size="md" />
         <button className="p-1 hover:bg-gray-100 rounded icon-center">
@@ -133,7 +132,7 @@ const UserCard = ({ user, onClick }) => {
           </div>
         </div>
       </div>
-    </div>
+    </Card>
   );
 };
 
@@ -537,23 +536,13 @@ const Users = () => {
     <div className="min-h-screen bg-[var(--bg-app)]">
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Team Members</h1>
-              <p className="text-gray-600 mt-1">
-                Manage your team members and their permissions
-              </p>
-            </div>
+          <PageHeader
+            title="Team Members"
+            subtitle="Manage your team members and their permissions"
+            onRefresh={loadUsers}
+          >
             <div className="flex items-center gap-3">
-              <Button
-                onClick={loadUsers}
-                icon={Icons.RefreshCcw}
-                label=""
-                className="bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-300 h-10 px-4"
-              />
-
               <ViewToggle mode={viewMode} onChange={setViewMode} />
-
               <Button
                 onClick={() => {
                   setSelectedUser(null);
@@ -564,7 +553,7 @@ const Users = () => {
                 className="bg-blue-600 hover:bg-blue-700 text-white border-transparent"
               />
             </div>
-          </div>
+          </PageHeader>
         </div>
       </div>
 

@@ -6,6 +6,8 @@ import { selectUser } from '../redux/slices/authSlice';
 import * as Icons from '../icons';
 import ViewToggle from '../components/ViewToggle';
 import RefreshButton from '../components/RefreshButton';
+import PageHeader from '../components/PageHeader';
+import Card from "../components/Card";
 
 const { RefreshCw, AlertCircle, Calendar, Clock, User, Plus, CheckSquare, Check, Eye, Filter, Lock, UserCheck, Clock: ClockIcon, AlertTriangle } = Icons;
 
@@ -511,13 +513,12 @@ const ManagerTasks = () => {
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
-      {/* HEADER */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-heading-2 mb-2">Tasks</h1>
-          <p className="text-body text-gray-600">Manage and track all your tasks</p>
-        </div>
-
+      <PageHeader
+        title="Tasks"
+        subtitle="Manage and track all your tasks"
+        onRefresh={() => selectedProjectId && loadTasks(selectedProjectId)}
+        refreshing={loading}
+      >
         <div className="flex items-center gap-3">
           {/* Project Selector */}
           <div className="relative">
@@ -546,9 +547,6 @@ const ManagerTasks = () => {
             </div>
           </div>
 
-          {/* Refresh Button */}
-          <RefreshButton onClick={() => selectedProjectId && loadTasks(selectedProjectId)} loading={!selectedProjectId || loading} />
-
           {/* View Toggle */}
           <ViewToggle
             mode={viewMode}
@@ -569,7 +567,7 @@ const ManagerTasks = () => {
             Add Task
           </button>
         </div>
-      </div>
+      </PageHeader>
 
       {/* Loading Indicator for tasks */}
       {loading && selectedProjectId && (
@@ -847,20 +845,20 @@ const ManagerTasks = () => {
           {selectedProjectId && !loading && tasks.length > 0 && viewMode === 'grid' && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredTasks.length === 0 ? (
-                <div className="col-span-full tm-card-shell text-center">
+                <Card className="col-span-full text-center">
                   <AlertCircle className="tm-icon-xl mx-auto mb-3 opacity-50" />
                   <p className="text-gray-500">No tasks found for the selected filters</p>
-                </div>
+                </Card>
               ) : (
                 filteredTasks.map((task) => {
                   const taskStatus = getTaskStatus(task);
 
                   return (
-                    <div
+                    <Card
                       key={task.id || task.public_id || task._id || task.internalId}
                       onClick={() => handleRowClick(task)}
                       role="button"
-                      className="tm-card-shell cursor-pointer"
+                      className="cursor-pointer"
                     >
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
@@ -916,100 +914,15 @@ const ManagerTasks = () => {
                           <span>{task.estimatedHours || task.timeAlloted || 0} hours estimated</span>
                         </div>
                       </div>
-                    </div>
+                    </Card>
                   );
                 })
               )}
             </div>
           )}
         </div>
-
-        {/* TASK DETAILS & ACTIONS (modal popup) */}
-        {selectedTask && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedTask(null)}>
-            <div className="bg-white rounded-xl max-w-4xl w-full p-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-              {detailLoading ? (
-                <div className="flex items-center justify-center p-6">
-                  <RefreshCw className="tm-icon mr-2 animate-spin text-blue-600" />
-                  <span className="text-blue-600 font-medium">Loading details...</span>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {/* Task Header */}
-                  <div className="flex items-start justify-between pb-4 border-b">
-                    <div className="flex-1">
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">{selectedTask.title}</h2>
-                      <p className="text-gray-600">{selectedTask.client?.name || projectDetails?.client?.name || 'Client'}</p>
-                    </div>
-                    <button onClick={() => setSelectedTask(null)} className="text-gray-400 hover:text-gray-600">✕</button>
-                  </div>
-
-                  {/* Quick Info */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <div className="text-xs uppercase text-gray-500 font-medium mb-1">Project</div>
-                      <div className="font-semibold text-gray-900">{projectDetails ? getProjectDisplayName(projectDetails) : getProjectName(selectedTask.projectId || selectedTask.project_id || selectedTask.projectPublicId)}</div>
-                    </div>
-
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <div className="text-xs uppercase text-gray-500 font-medium mb-1">Assigned To</div>
-                      <div className="font-semibold text-gray-900">{getAssignedUsers(selectedTask)}</div>
-                    </div>
-
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <div className="text-xs uppercase text-gray-500 font-medium mb-1">Priority</div>
-                      <div className="font-semibold text-gray-900">{selectedTask.priority || 'MEDIUM'}</div>
-                    </div>
-
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <div className="text-xs uppercase text-gray-500 font-medium mb-1">Due Date</div>
-                      <div className="font-semibold text-gray-900">{formatDate(selectedTask.taskDate)}</div>
-                    </div>
-
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <div className="text-xs uppercase text-gray-500 font-medium mb-1">Estimated Hours</div>
-                      <div className="font-semibold text-gray-900">{selectedTask.timeAlloted ?? '—'}h</div>
-                    </div>
-
-                    <div className={`p-3 rounded-lg ${getTaskStatus(selectedTask) === 'COMPLETED' || getTaskStatus(selectedTask) === 'Completed' ? 'bg-green-50' : selectedTask.summary?.dueStatus === 'Overdue' ? 'bg-red-50' : 'bg-gray-50'}`}>
-                      <div className="text-xs uppercase text-gray-500 font-medium mb-1">Total Hours Worked</div>
-                      <div className={`font-semibold ${getTaskStatus(selectedTask) === 'COMPLETED' || getTaskStatus(selectedTask) === 'Completed' ? 'text-green-800' : selectedTask.summary?.dueStatus === 'Overdue' ? 'text-red-800' : 'text-gray-900'}`}>{selectedTask.total_time_hhmmss || '0h 0m'}</div>
-                    </div>
-
-                    <div className={`p-3 rounded-lg ${selectedTask.summary?.dueStatus === 'Overdue' ? 'bg-red-50' : 'bg-green-50'}`}>
-                      <div className="text-xs uppercase text-gray-500 font-medium mb-1">Due Status</div>
-                      <div className="flex items-center gap-2">
-                        {selectedTask.summary?.dueStatus === 'Overdue' ? (
-                          <><span className="w-2 h-2 bg-red-600 rounded-full"></span><span className="font-semibold text-red-800">{selectedTask.summary.dueStatus}</span></>
-                        ) : (
-                          <><span className="w-2 h-2 bg-green-600 rounded-full"></span><span className="font-semibold text-green-800">{selectedTask.summary?.dueStatus || 'On Time'}</span></>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Checklist */}
-                  {selectedTask.checklist?.length > 0 ? (
-                    <div className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-3"><CheckSquare className="tm-icon text-gray-600" /><span className="font-medium text-gray-700">Checklist</span></div>
-                      <div className="space-y-2 max-h-48 overflow-y-auto">
-                        {selectedTask.checklist.map((item, index) => (
-                          <div key={item.id || index} className="flex items-center gap-3 p-2 bg-white border rounded">
-                            <div className="w-5 h-5 bg-emerald-100 rounded flex items-center justify-center flex-shrink-0"><Check className="tm-icon text-emerald-600" /></div>
-                            <span className="text-sm">{item.title}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* CREATE TASK MODAL */}
       {showCreateTaskModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">

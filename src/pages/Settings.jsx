@@ -7,6 +7,7 @@ import { getAccessToken, getRefreshToken } from '../utils/tokenService';
 import { setAuthToken } from '../App/httpHandler';
 import { refreshToken as refreshTokenThunk } from '../redux/slices/authSlice';
 import * as Icons from '../icons';
+import PageHeader from '../components/PageHeader';
 
 const {
   Settings: SettingsIcon,
@@ -525,25 +526,27 @@ const Settings = () => {
   const [auditError, setAuditError] = useState(null);
   const dispatch = useDispatch();
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        const role = (user?.role || '').toString().toLowerCase();
-        let settingsEndpoint = '/api/admin/settings';
-        if (role.includes('manager')) settingsEndpoint = '/api/manager/settings';
-        else if (role.includes('employee')) settingsEndpoint = '/api/employee/settings';
-        else if (role.includes('client')) settingsEndpoint = '/api/client/settings';
+  const loadSettings = async () => {
+    try {
+      setLoading(true);
+      const role = (user?.role || '').toString().toLowerCase();
+      let settingsEndpoint = '/api/admin/settings';
+      if (role.includes('manager')) settingsEndpoint = '/api/manager/settings';
+      else if (role.includes('employee')) settingsEndpoint = '/api/employee/settings';
+      else if (role.includes('client')) settingsEndpoint = '/api/client/settings';
 
-        const res = await fetchWithTenant(settingsEndpoint, { method: 'GET' });
-        setSettings(res?.data || res || {});
-      } catch (err) {
-        setError(err.message || 'Failed to load settings');
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+      const res = await fetchWithTenant(settingsEndpoint, { method: 'GET' });
+      setSettings(res?.data || res || {});
+      setError(null);
+    } catch (err) {
+      setError(err.message || 'Failed to load settings');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSettings();
   }, []);
 
   const fetchAuditLogs = async () => {
@@ -716,22 +719,22 @@ const Settings = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-              <SettingsIcon className="w-7 h-7 text-blue-600" />
-              System Settings
-            </h1>
-            <p className="text-gray-600 mt-2">Configure your system preferences and security settings</p>
-          </div>
-            {/* Token Diagnostic Panel */}
-            <div className="text-sm text-gray-600">
+        <PageHeader
+          title="System Settings"
+          subtitle="Configure your system preferences and security settings"
+          onRefresh={() => {
+            loadSettings();
+            fetchAuditLogs();
+          }}
+          refreshing={loading || auditLoading}
+        >
+          <div className="flex flex-col items-end gap-3 text-sm text-gray-600">
+            <div>
               <div className="mb-2">Token status: <strong>{getAccessToken() ? 'Present' : 'Missing'}</strong></div>
               {getAccessToken() && (
                 <div className="mb-2 text-xs text-gray-500">Token: {showToken ? getAccessToken() : (getAccessToken() ? `${getAccessToken().slice(0,8)}...${getAccessToken().slice(-6)}` : '')}</div>
               )}
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 mt-1">
                 <button
                   onClick={() => {
                     const access = getAccessToken();
@@ -769,38 +772,39 @@ const Settings = () => {
                 </button>
               </div>
             </div>
-          <div className="flex items-center gap-3">
-            {saveStatus === 'success' && (
-              <div className="flex items-center gap-2 text-green-600">
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Saved!</span>
-              </div>
-            )}
-            {saveStatus === 'error' && (
-              <div className="flex items-center gap-2 text-red-600">
-                <XCircle className="w-4 h-4" />
-                <span>Failed to save</span>
-              </div>
-            )}
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {saving ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4" />
-                  Save Changes
-                </>
+            <div className="flex items-center gap-3">
+              {saveStatus === 'success' && (
+                <div className="flex items-center gap-2 text-green-600">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Saved!</span>
+                </div>
               )}
-            </button>
+              {saveStatus === 'error' && (
+                <div className="flex items-center gap-2 text-red-600">
+                  <XCircle className="w-4 h-4" />
+                  <span>Failed to save</span>
+                </div>
+              )}
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    Save Changes
+                  </>
+                )}
+              </button>
+            </div>
           </div>
-        </div>
+        </PageHeader>
 
         {/* 2FA Component - Placed prominently */}
         <TwoFactorAuth />

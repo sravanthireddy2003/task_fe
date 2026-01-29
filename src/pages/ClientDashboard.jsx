@@ -229,6 +229,7 @@ import { getClient } from "../redux/slices/clientSlice";
 import ClientContacts from "../components/client/ClientContacts";
 import ClientDocuments from "../components/client/ClientDocuments";
 import ClientAnalytics from "../components/client/ClientAnalytics";
+import PageHeader from "../components/PageHeader";
  
 const TABS = {
   OVERVIEW: "overview",
@@ -367,13 +368,21 @@ const ClientDashboard = () => {
   if (clientStatus === "failed") {
     return <div>Error: {clientError || "Failed to load dashboard"}</div>;
   }
+
+  const handleRefresh = () => {
+    if (clientIdParam) {
+      dispatch(getClient(clientIdParam));
+    }
+  };
  
   return (
     <div className="h-full py-4">
-      <div className="w-full flex justify-between items-center py-4">
-        <h1 className="text-2xl font-bold text-black">
-          {`Client: ${client?.name || "..."}`}
-        </h1>
+      <PageHeader
+        title={`Client: ${client?.name || "..."}`}
+        subtitle="Client workspace overview"
+        onRefresh={handleRefresh}
+        refreshing={clientStatus === "loading"}
+      >
         <div className="flex items-center gap-4">
           <button
             onClick={() => setActiveTab(TABS.OVERVIEW)}
@@ -416,7 +425,7 @@ const ClientDashboard = () => {
             Analytics
           </button>
         </div>
-      </div>
+      </PageHeader>
       {renderContent()}
     </div>
   );

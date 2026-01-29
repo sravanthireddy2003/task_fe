@@ -13,7 +13,9 @@ import {
   selectNotificationStatus,
   selectNotificationError,
   selectUnreadCount,
+  fetchNotifications,
 } from '../redux/slices/notificationSlice';
+import PageHeader from '../components/PageHeader';
 
 export default function Notifications() {
   const dispatch = useDispatch();
@@ -129,38 +131,22 @@ export default function Notifications() {
 
   return (
     <div className="p-8">
-      {/* HEADER */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-2">
+      <PageHeader
+        title={
+          <span className="inline-flex items-center gap-2">
             <Bell className="w-6 h-6 text-blue-600" />
             Notifications
-          </h1>
-          <p className="text-gray-600">
-            {unreadCount > 0
-              ? `You have ${unreadCount} unread notification${unreadCount !== 1 ? 's' : ''}`
-              : 'All notifications read'}
-          </p>
-        </div>
-
+          </span>
+        }
+        subtitle={
+          unreadCount > 0
+            ? `You have ${unreadCount} unread notification${unreadCount !== 1 ? 's' : ''}`
+            : 'All notifications read'
+        }
+        onRefresh={handleRefresh}
+        refreshing={isLoading || isLoadingStatus}
+      >
         <div className="flex items-center gap-3">
-          {/* Refresh Button */}
-          <button
-            onClick={handleRefresh}
-            disabled={isLoading || isLoadingStatus}
-            className={`p-2 rounded-lg border ${
-              isLoading || isLoadingStatus
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-blue-600 hover:bg-blue-50 border-blue-200'
-            }`}
-            title="Refresh notifications"
-          >
-            <RefreshCw
-              className={`w-5 h-5 ${isLoading || isLoadingStatus ? 'animate-spin' : ''}`}
-            />
-          </button>
-
-          {/* Mark All as Read Button */}
           {unreadCount > 0 && (
             <button
               onClick={handleMarkAllAsRead}
@@ -172,7 +158,7 @@ export default function Notifications() {
             </button>
           )}
         </div>
-      </div>
+      </PageHeader>
 
       {/* Loading Indicator */}
       {isLoadingStatus && (
