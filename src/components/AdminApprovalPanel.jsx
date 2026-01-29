@@ -702,49 +702,58 @@ const AdminApprovalPanel = () => {
                       </div>
 
                       <div className="flex gap-3 ml-6">
-                        <button
-                          onClick={() => handleApprove(request.id)}
-                          disabled={processingId === request.id || isClosed || isApproved}
-                          className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${
-                            isClosed
-                              ? 'bg-blue-500 cursor-not-allowed'
-                              : isApproved
-                              ? 'bg-green-500 cursor-not-allowed'
-                              : 'bg-green-600 hover:bg-green-700 disabled:bg-green-400'
-                          }`}
-                          title={isClosed ? "Project is already closed" : isApproved ? "Already approved" : "Approve project closure"}
-                        >
-                          {isClosed ? (
-                            <>
-                              <Check className="w-4 h-4" />
-                              Closed
-                            </>
-                          ) : isApproved ? (
-                            <>
-                              <Check className="w-4 h-4" />
-                              Approved
-                            </>
-                          ) : processingId === request.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Check className="w-4 h-4" />
-                          )}
-                          {isClosed || isApproved ? '' : 'Approve Closure'}
-                        </button>
+                        {request.status === 'PENDING' ? (
+                          <>
+                            <button
+                              onClick={() => handleApprove(request.id)}
+                              disabled={processingId === request.id || isClosed || isApproved}
+                              className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${
+                                isClosed
+                                  ? 'bg-blue-500 cursor-not-allowed'
+                                  : isApproved
+                                  ? 'bg-green-500 cursor-not-allowed'
+                                  : 'bg-green-600 hover:bg-green-700 disabled:bg-green-400'
+                              }`}
+                              title={isClosed ? "Project is already closed" : isApproved ? "Already approved" : "Approve project closure"}
+                            >
+                              {isClosed ? (
+                                <>
+                                  <Check className="w-4 h-4" />
+                                  Closed
+                                </>
+                              ) : isApproved ? (
+                                <>
+                                  <Check className="w-4 h-4" />
+                                  Approved
+                                </>
+                              ) : processingId === request.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Check className="w-4 h-4" />
+                              )}
+                              {isClosed || isApproved ? '' : 'Approve Closure'}
+                            </button>
 
-                        <button
-                          onClick={() => openRejectModal(request)}
-                          disabled={processingId === request.id || isClosed || isApproved}
-                          className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${
-                            isClosed || isApproved
-                              ? 'bg-gray-400 cursor-not-allowed'
-                              : 'bg-red-600 hover:bg-red-700 disabled:bg-red-400'
-                          }`}
-                          title={isClosed ? "Project is closed" : isApproved ? "Already approved" : "Reject project closure"}
-                        >
-                          <X className="w-4 h-4" />
-                          {isClosed || isApproved ? 'Closed' : 'Reject'}
-                        </button>
+                            <button
+                              onClick={() => openRejectModal(request)}
+                              disabled={processingId === request.id || isClosed || isApproved}
+                              className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${
+                                isClosed || isApproved
+                                  ? 'bg-gray-400 cursor-not-allowed'
+                                  : 'bg-red-600 hover:bg-red-700 disabled:bg-red-400'
+                              }`}
+                              title={isClosed ? "Project is closed" : isApproved ? "Already approved" : "Reject project closure"}
+                            >
+                              <X className="w-4 h-4" />
+                              {isClosed || isApproved ? 'Closed' : 'Reject'}
+                            </button>
+                          </>
+                        ) : (
+                          <div className="flex items-center gap-2 px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
+                            <Check className="w-4 h-4" />
+                            {status === 'APPROVED' ? 'Approved' : status}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -754,6 +763,34 @@ const AdminApprovalPanel = () => {
                     <div className="p-6 bg-gray-50 border-b border-gray-200">
                       <h4 className="text-sm font-semibold text-gray-700 mb-2">Closure Reason</h4>
                       <p className="text-sm text-gray-600 bg-white p-3 rounded-lg border">{request.reason}</p>
+                    </div>
+                  )}
+
+                  {/* Project Workflow Closed Details - Show when APPROVED */}
+                  {status === 'APPROVED' && (
+                    <div className="p-6 bg-green-50 border-b border-green-200">
+                      <div className="flex items-center gap-3 mb-4">
+                        <CheckCircle className="w-6 h-6 text-green-600" />
+                        <h4 className="text-lg font-semibold text-green-900">Project Workflow Closed</h4>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-white/60 rounded-lg p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Check className="w-4 h-4 text-green-600" />
+                            <span className="text-sm font-medium text-gray-700">Approval Status</span>
+                          </div>
+                          <p className="text-sm text-green-800 font-semibold">Approved</p>
+                          <p className="text-xs text-gray-600">Project closure request has been approved</p>
+                        </div>
+                        <div className="bg-white/60 rounded-lg p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Lock className="w-4 h-4 text-blue-600" />
+                            <span className="text-sm font-medium text-gray-700">Project Status</span>
+                          </div>
+                          <p className="text-sm text-blue-800 font-semibold">Closed</p>
+                          <p className="text-xs text-gray-600">All project tasks have been completed</p>
+                        </div>
+                      </div>
                     </div>
                   )}
 
