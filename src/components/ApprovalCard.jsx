@@ -1,21 +1,29 @@
 import React, { useEffect, useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { fetchTasksbyId } from '../redux/slices/taskSlice';
+import { fetchHistoryByInstance, selectHistoryItems, selectHistoryLoading } from '../redux/slices/historySlice';
+import ModalWrapper from './ModalWrapper';
 
 const ApprovalCard = ({ item, onApprove, onReject, onEscalate }) => {
   const dispatch = useDispatch();
   const [taskDetails, setTaskDetails] = useState(null);
   const [showRejectInput, setShowRejectInput] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
 
   const id = item?.id || item?._id || item?.instanceId;
   const entityType = item?.entity_type || item?.entityType;
   const entityId = item?.entity_id || item?.entityId;
   const fromState = item?.from_state || item?.fromState;
   const toState = item?.to_state || item?.toState;
-  const requestedBy = item?.requested_by || item?.requestedBy;
-  const reason = item?.reason;
-  const createdAt = item?.created_at || item?.createdAt;
+  const requestedBy =
+    item?.requestedByName ||
+    item?.requested_by_name ||
+    (item?.requested_by && (item.requested_by.name || item.requested_by)) ||
+    (item?.requestedBy && (item.requestedBy.name || item.requestedBy)) ||
+    null;
+  const historyItems = useSelector((state) => selectHistoryItems(state, entityType, entityId));
+  const historyLoading = useSelector((state) => selectHistoryLoading(state, entityType, entityId));
 
   // Fetch task details if this is a TASK workflow request
   useEffect(() => {
@@ -61,6 +69,15 @@ const ApprovalCard = ({ item, onApprove, onReject, onEscalate }) => {
       )}
 
       <div className="mt-4 flex gap-2">
+        <button
+          onClick={() => {
+            setShowHistoryModal(true);
+            dispatch(fetchHistoryByInstance({ entityType, entityId }));
+          }}
+          className="px-3 py-1 rounded-lg bg-blue-500 text-white text-sm hover:bg-blue-600"
+        >
+          View History
+        </button>
         {isPending ? (
           <>
             <button
@@ -121,6 +138,33 @@ const ApprovalCard = ({ item, onApprove, onReject, onEscalate }) => {
           <div className="px-3 py-1 rounded-lg bg-gray-100 text-sm text-gray-700">Status: {item?.status || item?.currentStatus || 'Unknown'}</div>
         )}
       </div>
+
+      {/* History Modal */}
+      <ModalWrapper open={showHistoryModal} setOpen={setShowHistoryModal}>
+        <div>
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Workflow History - {entityType} {entityId}</h3>
+          <div className="max-h-96 overflow-y-auto">
+            {historyLoading ? (
+              <div className="text-center py-4">Loading history...</div>
+            ) : historyItems && historyItems.length > 0 ? (
+              <div className="space-y-3">
+                {historyItems.map((hist, idx) => (
+                  <div key={idx} className="border rounded-lg p-3 bg-gray-50">
+                    <div className="text-sm font-medium">{hist.action || hist.event || 'Event'}</div>
+                    <div className="text-xs text-gray-600">
+                      {hist.timestamp && new Date(hist.timestamp).toLocaleString()}
+                    </div>
+                    {hist.details && <div className="text-xs text-gray-700 mt-1">{JSON.stringify(hist.details)}</div>}
+                    {hist.user && <div className="text-xs text-gray-500">By: {hist.user.name || hist.user}</div>}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-4 text-gray-500">No history available</div>
+            )}
+          </div>
+        </div>
+      </ModalWrapper>
     </div>
   );
 };

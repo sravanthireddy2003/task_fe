@@ -13,7 +13,7 @@ const formatRejectValue = (err) => {
   if (typeof err === 'string') return err;
   if (err?.message) return err.message;
   try {
-    return JSON.stringify(serr);
+    return JSON.stringify(err);
   } catch (e) {
     return String(err);
   }
@@ -248,14 +248,18 @@ export const resumeTask = createAsyncThunk(
 
 export const requestTaskCompletion = createAsyncThunk(
   'tasks/requestTaskCompletion',
-  async ({ taskId, projectId }, thunkAPI) => {
+  async ({ taskId, projectId, meta }, thunkAPI) => {
     try {
-      // Use PATCH /api/tasks/{{taskId}}/status with status: "Review"
-      const res = await httpPatchService(`api/tasks/${taskId}/status`, {
-        status: "Review",
-        projectId: projectId
-      });
-      // API returns { success: true, message: "...", data: {...} }
+      // Use workflow API to request completion
+      const payload = {
+        entityType: 'TASK',
+        entityId: taskId,
+        projectId,
+        toState: 'COMPLETED',
+        meta: meta || {}
+      };
+      const res = await httpPostService('api/workflow/request', payload);
+      // API returns { success: true, data: { requestId, taskStatus } }
       return res?.success ? res.data : res?.data || res || {};
     } catch (err) {
       return thunkAPI.rejectWithValue(formatRejectValue(err));
@@ -357,6 +361,7 @@ export const requestTaskReassignment = createAsyncThunk(
   async ({ taskId, reason }, thunkAPI) => {
     try {
       const res = await httpPostService(`api/tasks/${taskId}/request-reassignment`, {
+        taskId: taskId,
         reason: reason
       });
       // API returns { success: true, message: "...", data: {...} } or { success: false, error: "message" }
@@ -597,6 +602,27 @@ const taskSlice = createSlice({
         }
       })
       .addCase(pauseTask.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload || action.error?.message;
+      })
+
+      // Resume Task
+      .addCase(resumeTask.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(resumeTask.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        const taskId = action.meta.arg;
+        const taskIndex = state.tasks.findIndex(t => (t.id || t._id) === taskId);
+        if (taskIndex >= 0) {
+          state.tasks[taskIndex] = { ...state.tasks[taskIndex], ...action.payload };
+        }
+        if (state.currentTask && (state.currentTask.id || state.currentTask._id) === taskId) {
+          state.currentTask = { ...state.currentTask, ...action.payload };
+        }
+      })
+      .addCase(resumeTask.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.payload || action.error?.message;
       })

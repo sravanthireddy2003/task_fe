@@ -37,9 +37,19 @@ const workflowApi = {
   },
 
   // Approve or reject a pending request
-  // Payload: { requestId, approved, reason }
-  approveOrReject: async ({ requestId, approved, reason }) => {
-    const body = { requestId, approved, reason };
+  // Accepts either: { requestId, action: 'APPROVE'|'REJECT', reason }
+  // or legacy: { requestId, approved: true|false, reason }
+  approveOrReject: async ({ requestId, approved, action, reason }) => {
+    let body;
+    if (action) {
+      body = { requestId, action, reason };
+    } else if (typeof approved === 'boolean') {
+      body = { requestId, action: approved ? 'APPROVE' : 'REJECT', reason };
+    } else {
+      // default to approve if caller omitted explicit action/approved
+      body = { requestId, action: 'APPROVE', reason };
+    }
+
     console.debug('[workflowApi] approveOrReject', body);
     const resp = await httpPostService('api/workflow/approve', body);
     // Response format: { success: true, data: { status: 'APPROVED' | 'REJECTED' } }
@@ -53,6 +63,23 @@ const workflowApi = {
     console.debug('[workflowApi] getHistory', { entityType: type, entityId });
     const resp = await httpGetService(`api/workflow/history/${encodeURIComponent(type)}/${encodeURIComponent(entityId)}`);
     // Response format: { success: true, data: [...] }
+    return resp?.data ?? resp;
+  },
+
+  // Alias for getPending - fetch pending approvals for a role
+  getPendingApprovals: async (role) => {
+    return workflowApi.getPending(role);
+  },
+
+  // Alias for approveOrReject - approve or reject a workflow request
+  approveRequest: async (requestId, action, reason) => {
+    return workflowApi.approveOrReject({ requestId, action, reason });
+  },
+
+  // Request project closure (Manager → Admin)
+  requestProjectClosure: async (payload) => {
+    console.debug('[workflowApi] requestProjectClosure', payload);
+    const resp = await httpPostService('api/workflow/project/close-request', payload);
     return resp?.data ?? resp;
   },
 };

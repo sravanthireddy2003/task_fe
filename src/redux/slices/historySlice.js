@@ -4,13 +4,13 @@ import workflowApi from '../../api/workflowApi';
 // Fetch full workflow history timeline for a workflow instance
 export const fetchHistoryByInstance = createAsyncThunk(
   'history/fetchByInstance',
-  async (instanceId, { rejectWithValue }) => {
-    if (!instanceId) return rejectWithValue('Missing entity id');
+  async ({ entityType, entityId }, { rejectWithValue }) => {
+    if (!entityType || !entityId) return rejectWithValue('Missing entity type or id');
     try {
-      const resp = await workflowApi.getHistory({ entityType: 'TASK', entityId: instanceId });
+      const resp = await workflowApi.getHistory({ entityType, entityId });
       // Response format: { success: true, data: [...] }
       const data = resp?.data ?? resp ?? [];
-      return { instanceId, items: Array.isArray(data) ? data : data.items || [] };
+      return { entityType, entityId, items: Array.isArray(data) ? data : data.items || [] };
     } catch (err) {
       return rejectWithValue(err?.message || 'Failed to fetch workflow history');
     }
@@ -18,9 +18,9 @@ export const fetchHistoryByInstance = createAsyncThunk(
 );
 
 const initialState = {
-  itemsByInstanceId: {},
-  loadingByInstanceId: {},
-  errorByInstanceId: {},
+  itemsByKey: {},
+  loadingByKey: {},
+  errorByKey: {},
 };
 
 const historySlice = createSlice({
@@ -28,28 +28,30 @@ const historySlice = createSlice({
   initialState,
   reducers: {
     clearHistory(state) {
-      state.itemsByInstanceId = {};
-      state.loadingByInstanceId = {};
-      state.errorByInstanceId = {};
+      state.itemsByKey = {};
+      state.loadingByKey = {};
+      state.errorByKey = {};
     },
   },
   extraReducers: (builder) => {
     builder
       .addCase(fetchHistoryByInstance.pending, (state, action) => {
-        const id = action.meta.arg;
-        state.loadingByInstanceId[id] = true;
-        state.errorByInstanceId[id] = null;
+        const { entityType, entityId } = action.meta.arg || {};
+        const key = `${entityType}_${entityId}`;
+        state.loadingByKey[key] = true;
+        state.errorByKey[key] = null;
       })
       .addCase(fetchHistoryByInstance.fulfilled, (state, action) => {
-        const { instanceId, items } = action.payload || {};
-        if (!instanceId) return;
-        state.loadingByInstanceId[instanceId] = false;
-        state.itemsByInstanceId[instanceId] = items || [];
+        const { entityType, entityId, items } = action.payload || {};
+        const key = `${entityType}_${entityId}`;
+        state.loadingByKey[key] = false;
+        state.itemsByKey[key] = items || [];
       })
       .addCase(fetchHistoryByInstance.rejected, (state, action) => {
-        const id = action.meta.arg;
-        state.loadingByInstanceId[id] = false;
-        state.errorByInstanceId[id] = action.payload || action.error?.message || 'Failed to fetch history';
+        const { entityType, entityId } = action.meta.arg || {};
+        const key = `${entityType}_${entityId}`;
+        state.loadingByKey[key] = false;
+        state.errorByKey[key] = action.payload || action.error?.message || 'Failed to fetch history';
       });
   },
 });
@@ -57,13 +59,19 @@ const historySlice = createSlice({
 export const { clearHistory } = historySlice.actions;
 
 // Selector helpers
-export const selectHistoryItems = (state, instanceId) =>
-  state.history?.itemsByInstanceId?.[instanceId] || [];
+export const selectHistoryItems = (state, entityType, entityId) => {
+  const key = `${entityType}_${entityId}`;
+  return state.history?.itemsByKey?.[key] || [];
+};
 
-export const selectHistoryLoading = (state, instanceId) =>
-  !!state.history?.loadingByInstanceId?.[instanceId];
+export const selectHistoryLoading = (state, entityType, entityId) => {
+  const key = `${entityType}_${entityId}`;
+  return !!state.history?.loadingByKey?.[key];
+};
 
-export const selectHistoryError = (state, instanceId) =>
-  state.history?.errorByInstanceId?.[instanceId] || null;
+export const selectHistoryError = (state, entityType, entityId) => {
+  const key = `${entityType}_${entityId}`;
+  return state.history?.errorByKey?.[key] || null;
+};
 
 export default historySlice.reducer;

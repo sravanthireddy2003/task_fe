@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from "react";
 import * as Icons from "../icons";
 import WorkflowKanban from "../components/WorkflowKanban";
+import ManagerApprovalPanel from "../components/ManagerApprovalPanel";
+import AdminApprovalPanel from "../components/AdminApprovalPanel";
 import { Navigate } from "react-router-dom";
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchDepartments, selectDepartments } from '../redux/slices/departmentSlice';
-import { fetchProjects, selectProjects, selectCurrentProject } from '../redux/slices/projectSlice';
+import { selectDepartments } from '../redux/slices/departmentSlice';
+import { selectProjects, selectCurrentProject, setCurrentProject, fetchProjects } from '../redux/slices/projectSlice';
+import { fetchQueue } from '../redux/slices/approvalSlice';
+import { requestProjectClosure } from '../redux/slices/workflowSlice';
 import PageHeader from "../components/PageHeader";
 
 export default function Workflow() {
@@ -28,6 +32,12 @@ export default function Workflow() {
     department: "all"
   });
 
+  // Project closure states
+  const [showClosureModal, setShowClosureModal] = useState(false);
+  const [closureReason, setClosureReason] = useState("");
+  const [closureLoading, setClosureLoading] = useState(false);
+  const [closureError, setClosureError] = useState("");
+
   const role = authUser?.role;
   const isAdmin = role === 'Admin';
   const isManager = role === 'Manager';
@@ -50,13 +60,21 @@ export default function Workflow() {
   // NOTE: Previous admin workflow-templates API has been removed.
   // This page now works purely with local state for admin-designed flows.
 
-  // Load supporting data for admin (departments, projects)
+  // For admin workflow page: load admin workflow queue instead of departments/projects
   useEffect(() => {
     if (isAdmin) {
-      dispatch(fetchDepartments()).catch((e) => console.warn('[Workflow page] fetchDepartments error', e));
-      dispatch(fetchProjects()).catch((e) => console.warn('[Workflow page] fetchProjects error', e));
+      // Do not trigger departments/projects network calls from this page.
+      // Instead, fetch admin workflow queue (pending admin-level requests)
+      dispatch(fetchQueue('ADMIN')).catch((e) => console.warn('[Workflow page] fetchQueue(ADMIN) error', e));
     }
   }, [dispatch, isAdmin]);
+
+  // For manager workflow page: load projects for closure requests
+  useEffect(() => {
+    if (isManager) {
+      dispatch(fetchProjects()).catch((e) => console.warn('[Workflow page] fetchProjects error', e));
+    }
+  }, [dispatch, isManager]);
 
   // -------- Modal & CRUD Handlers --------
 
@@ -165,6 +183,60 @@ export default function Workflow() {
     closeModal();
   };
 
+  // Project closure handler
+  const handleProjectClosureRequest = async () => {
+    if (!closureReason.trim()) {
+      setClosureError('Please provide a reason for project closure');
+      return;
+    }
+
+    if (!currentProject) {
+      setClosureError('No project selected');
+      return;
+    }
+
+    if (currentProject.status?.toUpperCase() !== 'ACTIVE') {
+      setClosureError('Only active projects can be closed. Please select an active project.');
+      return;
+    }
+
+    setClosureLoading(true);
+    setClosureError(''); // Clear any previous errors
+
+    try {
+      const payload = {
+        projectId: currentProject.id || currentProject._id,
+        projectPublicId: currentProject.public_id || currentProject.id || currentProject._id,
+        reason: closureReason.trim(),
+        attachments: [],
+        notify: true
+      };
+
+      await dispatch(requestProjectClosure(payload)).unwrap();
+      alert('Project closure request submitted successfully');
+      setShowClosureModal(false);
+      setClosureReason('');
+      setClosureError('');
+    } catch (error) {
+      // Handle specific error messages
+      let errorMessage = 'Failed to request project closure';
+      
+      if (error?.message) {
+        if (error.message.includes('All tasks must be COMPLETED')) {
+          errorMessage = 'Cannot close project: All tasks must be completed first. Please ensure all project tasks are marked as completed before requesting closure.';
+        } else if (error.message.includes('Project must be ACTIVE')) {
+          errorMessage = 'Only active projects can be closed. Please select an active project.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      setClosureError(errorMessage);
+    } finally {
+      setClosureLoading(false);
+    }
+  };
+
   // Filter workflows based on search and active filters
   const filtered = flows.filter((flow) => {
     const matchesSearch = flow.name.toLowerCase().includes(query.toLowerCase()) || 
@@ -236,8 +308,8 @@ export default function Workflow() {
             title="Workflow Management"
             subtitle="Design, automate, and monitor approval workflows across your organization"
             onRefresh={() => {
-              dispatch(fetchDepartments()).catch((e) => console.warn('[Workflow page] fetchDepartments error', e));
-              dispatch(fetchProjects()).catch((e) => console.warn('[Workflow page] fetchProjects error', e));
+              // Refresh admin workflow queue instead of triggering departments/projects API calls
+              dispatch(fetchQueue('ADMIN')).catch((e) => console.warn('[Workflow page] fetchQueue(ADMIN) error', e));
             }}
           >
             <button
@@ -759,14 +831,212 @@ export default function Workflow() {
             </form>
           </div>
         )}
+
+        {/* Admin Approvals Section */}
+        <div className="mt-8">
+          <AdminApprovalPanel />
+        </div>
       </div>
     );
   }
 
-  // Manager: redirect to dedicated approval queue page that
-  // uses manager workflow APIs (queue/approve/reject/escalate)
+  // Manager View - Project Closure Requests
   if (isManager) {
-    return <Navigate to="/manager/workflows/queue" replace />;
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        {/* Header Section */}
+        <div className="mb-8">
+          <PageHeader
+            title="Project Management"
+            subtitle="Request project closures and manage workflow approvals"
+            onRefresh={() => {
+              // Refresh manager workflow queue
+              dispatch(fetchQueue('MANAGER')).catch((e) => console.warn('[Workflow page] fetchQueue(MANAGER) error', e));
+            }}
+          />
+        </div>
+
+        {/* Project Closure Section */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900">Project Closure Requests</h3>
+              <p className="text-gray-600 mt-1">Request closure for completed projects requiring admin approval</p>
+            </div>
+            <button
+              onClick={() => {
+                setShowClosureModal(true);
+                setClosureError(''); // Clear any previous errors
+              }}
+              disabled={closureLoading || !currentProject}
+              className="bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 disabled:from-gray-400 disabled:to-gray-500 text-white px-6 py-3 rounded-xl font-medium flex items-center gap-2 shadow-lg hover:shadow-xl disabled:shadow-none transition-all duration-200"
+            >
+              {closureLoading ? (
+                <Icons.Loader className="w-5 h-5 animate-spin" />
+              ) : (
+                <Icons.Archive className="w-5 h-5" />
+              )}
+              Request Project Closure
+            </button>
+          </div>
+
+          {/* Project Selection */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select Project to Close *
+            </label>
+            <select
+              value={currentProject?.id || currentProject?._id || ''}
+              onChange={(e) => {
+                const selectedProject = projects.find(p => 
+                  (p.id || p._id) === e.target.value
+                );
+                if (selectedProject) {
+                  dispatch(setCurrentProject(selectedProject));
+                }
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            >
+              <option value="">Choose a project...</option>
+              {projects
+                .filter(project => project.status?.toUpperCase() === 'ACTIVE')
+                .map((project) => (
+                <option key={project.id || project._id} value={project.id || project._id}>
+                  {project.name || project.title || `Project ${project.id || project._id}`} 
+                  {project.status && `(${project.status})`}
+                </option>
+              ))}
+            </select>
+            {projects.filter(project => project.status?.toUpperCase() === 'ACTIVE').length === 0 && (
+              <p className="text-sm text-gray-500 mt-1">No active projects available for closure. Please contact admin if you believe this is an error.</p>
+            )}
+          </div>
+
+          {/* Project Selection Info */}
+          {currentProject && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Icons.Info className="w-5 h-5 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-800">Selected Project:</span>
+                  <span className="text-sm text-blue-700">{currentProject.name || currentProject.title}</span>
+                </div>
+                <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                  currentProject.status?.toUpperCase() === 'ACTIVE' 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-gray-100 text-gray-800'
+                }`}>
+                  {currentProject.status || 'Unknown Status'}
+                </span>
+              </div>
+              <p className="text-xs text-blue-600 mt-1">
+                Closure requests will be submitted for the selected project.
+              </p>
+            </div>
+          )}
+
+          {/* Recent Closure Requests or Status */}
+          <div className="text-center py-8 text-gray-500">
+            <Icons.Archive className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+            <p>Project closure requests will appear here once submitted</p>
+          </div>
+        </div>
+
+        {/* Approval Queue Section */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="p-6 border-b border-gray-100">
+            <h3 className="text-xl font-semibold text-gray-900">Task Approval Queue</h3>
+            <p className="text-gray-600 mt-1">Review pending task completion requests from your team</p>
+          </div>
+          <div className="p-6">
+            <ManagerApprovalPanel />
+          </div>
+        </div>
+
+        {/* Project Closure Modal */}
+        {showClosureModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Request Project Closure</h3>
+                <button
+                  onClick={() => setShowClosureModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <Icons.X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {!currentProject ? (
+                  <div className="text-center py-6">
+                    <Icons.AlertTriangle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
+                    <p className="text-gray-700 mb-4">No project is currently selected.</p>
+                    <p className="text-sm text-gray-500">Please select a project first to request its closure.</p>
+                    <button
+                      onClick={() => setShowClosureModal(false)}
+                      className="mt-4 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors"
+                    >
+                      Close
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="text-sm font-medium text-gray-700">Project to Close:</p>
+                      <p className="text-sm text-gray-900 mt-1">{currentProject.name || currentProject.title}</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Reason for Closure *
+                      </label>
+                      <textarea
+                        value={closureReason}
+                        onChange={(e) => {
+                          setClosureReason(e.target.value);
+                          if (closureError) setClosureError(''); // Clear error when user starts typing
+                        }}
+                        placeholder="Provide details about why this project should be closed..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                        rows={4}
+                        required
+                      />
+                    </div>
+
+                    {/* Error Message */}
+                    {closureError && (
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                        <div className="flex items-start gap-2">
+                          <Icons.AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                          <p className="text-sm text-red-800">{closureError}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex gap-3 pt-4">
+                      <button
+                        onClick={() => setShowClosureModal(false)}
+                        className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleProjectClosureRequest}
+                        disabled={!closureReason.trim() || closureLoading}
+                        className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg font-medium transition-colors disabled:cursor-not-allowed"
+                      >
+                        {closureLoading ? 'Submitting...' : 'Submit Request'}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
   }
 
   // Other non-admin roles: simple access restricted message

@@ -116,7 +116,10 @@ const ReassignTaskRequestModal = ({ selectedTask, onClose, onSuccess }) => {
       
       const resp = await fetchWithTenant(`/api/tasks/${publicId}/request-reassignment`, {
         method: 'POST',
-        body: JSON.stringify({ reason: reason.trim() }),
+        body: JSON.stringify({ 
+          taskId: publicId,
+          reason: reason.trim() 
+        }),
       });
 
       if (resp.success) {

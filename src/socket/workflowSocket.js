@@ -18,15 +18,25 @@ export function initWorkflowSocket(store) {
   });
 
   socket.on('workflow:created', (data) => {
-    try { store.dispatch({ type: 'approval/fetchQueue' }); } catch (e) {}
+    try {
+      // refresh both manager and admin queues when a workflow is created
+      store.dispatch({ type: 'approval/fetchQueue', payload: 'MANAGER' });
+      store.dispatch({ type: 'approval/fetchQueue', payload: 'ADMIN' });
+    } catch (e) {}
   });
 
   socket.on('workflow:updated', (payload) => {
-    try { store.dispatch({ type: 'approval/fetchQueue' }); } catch (e) {}
+    try {
+      store.dispatch({ type: 'approval/fetchQueue', payload: 'MANAGER' });
+      store.dispatch({ type: 'approval/fetchQueue', payload: 'ADMIN' });
+    } catch (e) {}
   });
 
   socket.on('workflow:escalated', (data) => {
-    try { store.dispatch({ type: 'approval/fetchQueue' }); } catch (e) {}
+    try {
+      store.dispatch({ type: 'approval/fetchQueue', payload: 'MANAGER' });
+      store.dispatch({ type: 'approval/fetchQueue', payload: 'ADMIN' });
+    } catch (e) {}
   });
 
   socket.on('disconnect', () => console.info('workflow socket disconnected'));

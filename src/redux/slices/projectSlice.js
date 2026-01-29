@@ -153,7 +153,14 @@ const initialState = {
 const projectSlice = createSlice({
   name: 'projects',
   initialState,
-  reducers: {},
+  reducers: {
+    setCurrentProject: (state, action) => {
+      state.currentProject = action.payload;
+    },
+    clearCurrentProject: (state) => {
+      state.currentProject = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
       // Fetch Projects
@@ -304,5 +311,7 @@ export const selectProjectError = (state) => state.projects.error;
 export const selectCurrentProject = (state) => state.projects.currentProject;
 export const selectProjectStats = (state) => state.projects.stats;
 export const selectProjectSummary = (state) => state.projects.summary;
+
+export const { setCurrentProject, clearCurrentProject } = projectSlice.actions;
 
 export default projectSlice.reducer;

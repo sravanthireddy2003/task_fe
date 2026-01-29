@@ -16,12 +16,12 @@ export function initWorkflowSocket(store) {
 
   socket.on('workflow:created', () => {
     // New workflow template or instance created – refresh core views
-    store.dispatch(fetchQueue());
+    store.dispatch(fetchQueue('MANAGER'));
   });
 
   // Transition event for instance moving between steps/states
   socket.on('workflow:transition', (payload) => {
-    store.dispatch(fetchQueue());
+    store.dispatch(fetchQueue('MANAGER'));
     if (payload && payload.instanceId) {
       store.dispatch(fetchHistoryByInstance(payload.instanceId));
     }
@@ -29,14 +29,14 @@ export function initWorkflowSocket(store) {
 
   // Backwards compatibility: some servers may still emit `workflow:updated`
   socket.on('workflow:updated', (payload) => {
-    store.dispatch(fetchQueue());
+    store.dispatch(fetchQueue('MANAGER'));
     if (payload && payload.instanceId) {
       store.dispatch(fetchHistoryByInstance(payload.instanceId));
     }
   });
 
   socket.on('workflow:escalated', (payload) => {
-    store.dispatch(fetchQueue());
+    store.dispatch(fetchQueue('MANAGER'));
     if (payload && payload.instanceId) {
       store.dispatch(fetchHistoryByInstance(payload.instanceId));
     }
@@ -44,7 +44,7 @@ export function initWorkflowSocket(store) {
 
   socket.on('workflow:closed', (payload) => {
     // Closed instances should disappear from manager queue but remain in history
-    store.dispatch(fetchQueue());
+    store.dispatch(fetchQueue('MANAGER'));
     if (payload && payload.instanceId) {
       store.dispatch(fetchHistoryByInstance(payload.instanceId));
     }

@@ -1,8 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import * as Icons from "../icons";
 import ViewToggle from "../components/ViewToggle";
 import PageHeader from "../components/PageHeader";
 import Card from "../components/Card";
+import ProjectClosureRequestButton from "../components/ProjectClosureRequestButton";
+import ProjectLockBanner from "../components/ProjectLockBanner";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchProjects,
@@ -479,55 +481,62 @@ export default function Projects() {
 
             <tbody>
               {filteredProjects.map((project) => (
-                <tr key={project.id || project._id} className="border-b hover:bg-gray-50">
-                  <td className="p-3 font-medium">{project.name}</td>
-                  <td className="p-3 text-sm">{getDepartmentName(project.departments)}</td>
-                  <td className="p-3 text-sm text-gray-600">{getClientName(project.client || project.client_id)}</td>
-                  <td className="p-3">
-                    {activeStatusEdit === (project.id || project._id) ? (
-                      <select
-                        value={project.status}
-                        onChange={(e) => updateStatusInline(project, e.target.value)}
-                        className="border rounded-lg px-2 py-1 text-sm"
-                      >
-                        {statusOptions.map((s) => (
-                          <option key={s} value={s}>{s}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <span
-                        onClick={() => setActiveStatusEdit(project.id || project._id)}
-                        className={`px-3 py-1 rounded-full cursor-pointer text-sm font-medium ${statusColors[project.status]}`}
-                      >
-                        {project.status}
-                      </span>
-                    )}
-                  </td>
-                  <td className="p-3 text-sm text-gray-600">{formatDate(project.start_date)} → {formatDate(project.end_date)}</td>
-                  <td className="p-3 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => handleViewSummary(project)}
-                        className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg"
-                        title="View Summary"
-                      >
-                        📊
-                      </button>
-                      <button
-                        onClick={() => openModal(project)}
-                        className="p-2 text-gray-600 hover:bg-gray-200 rounded-lg"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(project)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                      >
-                        <Trash2 className="tm-icon" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                <React.Fragment key={project.id || project._id}>
+                  <ProjectLockBanner project={project} />
+                  <tr className="border-b hover:bg-gray-50">
+                    <td className="p-3 font-medium">{project.name}</td>
+                    <td className="p-3 text-sm">{getDepartmentName(project.departments)}</td>
+                    <td className="p-3 text-sm text-gray-600">{getClientName(project.client || project.client_id)}</td>
+                    <td className="p-3">
+                      {activeStatusEdit === (project.id || project._id) ? (
+                        <select
+                          value={project.status}
+                          onChange={(e) => updateStatusInline(project, e.target.value)}
+                          className="border rounded-lg px-2 py-1 text-sm"
+                        >
+                          {statusOptions.map((s) => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span
+                          onClick={() => setActiveStatusEdit(project.id || project._id)}
+                          className={`px-3 py-1 rounded-full cursor-pointer text-sm font-medium ${statusColors[project.status]}`}
+                        >
+                          {project.status}
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-3 text-sm text-gray-600">{formatDate(project.start_date)} → {formatDate(project.end_date)}</td>
+                    <td className="p-3 text-right">
+                      <div className="flex justify-end gap-2 items-center">
+                        <ProjectClosureRequestButton
+                          project={project}
+                          taskSummary={projectSummary?.[project.id || project._id]?.tasks}
+                        />
+                        <button
+                          onClick={() => handleViewSummary(project)}
+                          className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg"
+                          title="View Summary"
+                        >
+                          📊
+                        </button>
+                        <button
+                          onClick={() => openModal(project)}
+                          className="p-2 text-gray-600 hover:bg-gray-200 rounded-lg"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(project)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                        >
+                          <Trash2 className="tm-icon" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </React.Fragment>
               ))}
             </tbody>
           </table>
@@ -545,12 +554,17 @@ export default function Projects() {
           ) : (
             filteredProjects.map((project) => (
               <div key={project.id || project._id} className="bg-white border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                <ProjectLockBanner project={project} />
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <h3 className="text-lg font-bold text-gray-900">{project.name}</h3>
                     <p className="text-sm text-gray-600 mt-1 line-clamp-2">{project.description || "No description"}</p>
                   </div>
                   <div className="flex gap-2">
+                    <ProjectClosureRequestButton
+                      project={project}
+                      taskSummary={projectSummary?.[project.id || project._id]?.tasks}
+                    />
                     <button
                       onClick={() => handleViewSummary(project)}
                       className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"

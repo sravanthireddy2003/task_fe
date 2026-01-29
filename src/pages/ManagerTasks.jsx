@@ -9,7 +9,7 @@ import RefreshButton from '../components/RefreshButton';
 import PageHeader from '../components/PageHeader';
 import Card from "../components/Card";
 
-const { RefreshCw, AlertCircle, Calendar, Clock, User, Plus, CheckSquare, Check, Eye, Filter, Lock, UserCheck, Clock: ClockIcon, AlertTriangle } = Icons;
+const { RefreshCw, AlertCircle, Calendar, Clock, User, Plus, CheckSquare, Check, Eye, Filter, Lock, UserCheck, Clock: ClockIcon, AlertTriangle, CheckCircle } = Icons;
 
 const ManagerTasks = () => {
   const user = useSelector(selectUser);
@@ -511,6 +511,61 @@ const ManagerTasks = () => {
     }
   };
 
+  // Handle task reassignment
+  const handleReassignTask = async () => {
+    if (!selectedTask || !selectedAssignee) return;
+
+    const taskId = selectedTask.id || selectedTask.public_id || selectedTask._id;
+    if (!taskId) {
+      toast.error('Task ID not found');
+      return;
+    }
+
+    setReassigning(true);
+    try {
+      const resp = await fetchWithTenant(`/api/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          assigned_to: selectedAssignee,
+        }),
+      });
+
+      if (resp && resp.error) {
+        throw new Error(resp.error || 'Failed to reassign task');
+      }
+
+      toast.success('Task reassigned successfully');
+
+      // Update the task in local state
+      setTasks(prevTasks => prevTasks.map(task =>
+        (task.id || task.public_id || task._id) === taskId
+          ? { ...task, assigned_to: [selectedAssignee] }
+          : task
+      ));
+
+      // Update selected task if it's the one being reassigned
+      if (selectedTask && (selectedTask.id || selectedTask.public_id || selectedTask._id) === taskId) {
+        setSelectedTask(prev => prev ? { ...prev, assigned_to: [selectedAssignee] } : null);
+      }
+
+      // Clear the selected assignee
+      setSelectedAssignee('');
+
+      // Refresh tasks to get updated data
+      if (selectedProjectId) {
+        loadTasks(selectedProjectId);
+      }
+    } catch (err) {
+      console.error('Failed to reassign task:', err);
+      toast.error(err?.message || 'Failed to reassign task');
+    } finally {
+      setReassigning(false);
+    }
+  };
+
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
       <PageHeader
@@ -921,6 +976,231 @@ const ManagerTasks = () => {
             </div>
           )}
         </div>
+
+        {/* TASK DETAILS PANEL - Right Column */}
+        {selectedTask && (
+          <div className="lg:w-2/5">
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sticky top-6">
+              <div className="space-y-4">
+                {/* Task header */}
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-xl font-semibold text-gray-900">{selectedTask.title}</h2>
+                  <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+                    getTaskStatus(selectedTask) === 'LOCKED'
+                      ? 'bg-red-100 text-red-800 border-red-200'
+                      : getTaskStatus(selectedTask) === 'COMPLETED' || getTaskStatus(selectedTask) === 'Completed'
+                        ? 'bg-green-100 text-green-800 border-green-200'
+                        : getTaskStatus(selectedTask) === 'IN_PROGRESS' || getTaskStatus(selectedTask) === 'In Progress'
+                          ? 'bg-blue-100 text-blue-800 border-blue-200'
+                          : getTaskStatus(selectedTask) === 'ON_HOLD' || getTaskStatus(selectedTask) === 'On Hold'
+                            ? 'bg-red-100 text-red-800 border-red-200'
+                            : getTaskStatus(selectedTask) === 'Request Approved'
+                              ? 'bg-purple-100 text-purple-800 border-purple-200'
+                              : 'bg-yellow-100 text-yellow-800 border-yellow-200'
+                  }`}>
+                    {getStatusText(getTaskStatus(selectedTask))}
+                  </span>
+                </div>
+
+                <p className="text-sm text-gray-500">
+                  {selectedTask.project?.name && `Project: ${selectedTask.project.name}`}
+                </p>
+
+                {/* Task completion alert */}
+                {(getTaskStatus(selectedTask) === 'COMPLETED' || getTaskStatus(selectedTask) === 'Completed') && (
+                  <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+                    <p className="font-semibold">✓ Task Completed</p>
+                    <p className="text-xs mt-1">
+                      Total working hours: <span className="font-bold">{selectedTask.total_time_hhmmss || '0h 0m'}</span>
+                    </p>
+                    <p className="text-xs mt-1">This task is locked and cannot be modified further.</p>
+                  </div>
+                )}
+
+                {/* Locked task alert */}
+                {getTaskStatus(selectedTask) === 'LOCKED' && (
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                    <p className="font-semibold">🔒 Task Locked - Pending Approval</p>
+                    <p className="text-xs">Task is locked pending manager approval for reassignment request.</p>
+                  </div>
+                )}
+
+                {/* Request approved alert */}
+                {getTaskStatus(selectedTask) === 'Request Approved' && (
+                  <div className="rounded-lg border border-purple-200 bg-purple-50 p-3 text-sm text-purple-700">
+                    <p className="font-semibold">✅ Reassignment Approved</p>
+                    <p className="text-xs">Employee reassignment request has been approved.</p>
+                  </div>
+                )}
+
+                <p className="text-xs text-gray-400">
+                  Due {formatDate(selectedTask.taskDate || selectedTask.dueDate)}
+                </p>
+
+                {/* Refresh task button */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleRowClick(selectedTask)}
+                    disabled={detailLoading}
+                    className="flex items-center gap-2 px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${detailLoading ? 'animate-spin' : ''}`} />
+                    Refresh Task
+                  </button>
+                </div>
+
+                {/* Description */}
+                {selectedTask.description && (
+                  <div>
+                    <p className="text-xs uppercase text-gray-500">Description</p>
+                    <p className="mt-1 text-sm text-gray-700">{selectedTask.description}</p>
+                  </div>
+                )}
+
+                {/* Assigned Users */}
+                {selectedTask.assignedUsers && selectedTask.assignedUsers.length > 0 && (
+                  <div>
+                    <p className="text-xs uppercase text-gray-500">Assigned To</p>
+                    <div className="mt-2 space-y-2">
+                      {selectedTask.assignedUsers.map((user, index) => (
+                        <div key={user.id || user.public_id || index} className="flex items-center gap-2">
+                          <User className="w-4 h-4 text-gray-400" />
+                          <span className="text-sm text-gray-700">{user.name || user.email || 'Unknown User'}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Reassign Section */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <RefreshCw className="w-5 h-5 text-blue-600" />
+                    <span className="font-medium text-blue-800">Reassign Task</span>
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    <select
+                      value={selectedAssignee}
+                      onChange={(e) => setSelectedAssignee(e.target.value)}
+                      disabled={employees.length === 0 || getTaskStatus(selectedTask) === 'COMPLETED' || getTaskStatus(selectedTask) === 'LOCKED'}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm"
+                    >
+                      <option value="">Select employee</option>
+                      {employees.map((employee) => {
+                        const key = employee.internalId || employee.id || employee.public_id || employee._id;
+                        return (
+                          <option key={key} value={key}>
+                            {employee.name || employee.email || 'Unnamed'}
+                          </option>
+                        );
+                      })}
+                    </select>
+                    <button
+                      onClick={handleReassignTask}
+                      disabled={reassigning || !selectedAssignee || employees.length === 0 || getTaskStatus(selectedTask) === 'COMPLETED' || getTaskStatus(selectedTask) === 'LOCKED'}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm ${
+                        reassigning || !selectedAssignee || employees.length === 0
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
+                    >
+                      {reassigning ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          Reassigning...
+                        </>
+                      ) : (
+                        'Reassign Task'
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Checklist Section */}
+                {selectedTask.checklist && selectedTask.checklist.length > 0 && (
+                  <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4 text-sm">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-xs uppercase text-gray-500">Checklist</p>
+                      <span className="text-xs text-gray-500">
+                        {selectedTask.checklist.filter(item => item.status === 'Completed').length} / {selectedTask.checklist.length} completed
+                      </span>
+                    </div>
+                    <ul className="space-y-3">
+                      {selectedTask.checklist.map((item, index) => {
+                        const itemId = item.id || item.public_id || `${index}`;
+                        const isCompleted = item.status === 'Completed';
+
+                        return (
+                          <li key={itemId} className="rounded-2xl border border-gray-200 bg-white p-3">
+                            <div className="flex items-center justify-between gap-3 text-sm">
+                              <div className="flex items-center gap-2">
+                                {isCompleted ? (
+                                  <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                                ) : (
+                                  <div className="w-4 h-4 rounded-full border border-gray-300 flex-shrink-0" />
+                                )}
+                                <div>
+                                  <p className={`font-medium ${isCompleted ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
+                                    {item.title || 'Untitled item'}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    Due {formatDate(item.dueDate)}
+                                  </p>
+                                  {item.completedAt && (
+                                    <p className="text-[10px] text-emerald-600">
+                                      Completed {formatDate(item.completedAt)}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Activities/Timeline */}
+                {selectedTask.activities && selectedTask.activities.length > 0 && (
+                  <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4 text-sm">
+                    <p className="text-xs uppercase text-gray-500 mb-3">Recent Activity</p>
+                    <div className="space-y-3">
+                      {selectedTask.activities.slice(0, 5).map((activity, index) => (
+                        <div key={activity.id || index} className="flex items-start gap-3">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                          <div className="flex-1">
+                            <p className="text-sm text-gray-700">{activity.description || activity.action}</p>
+                            <p className="text-xs text-gray-500">
+                              {formatDateTime(activity.createdAt || activity.timestamp)}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Time Tracking Summary */}
+                {selectedTask.time_tracking && (
+                  <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4 text-sm">
+                    <p className="text-xs uppercase text-gray-500 mb-3">Time Tracking</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-500">Estimated</p>
+                        <p className="text-sm font-medium">{selectedTask.estimatedHours || selectedTask.timeAlloted || 0}h</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Total Worked</p>
+                        <p className="text-sm font-medium">{selectedTask.total_time_hhmmss || '0h 0m'}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {showCreateTaskModal && (

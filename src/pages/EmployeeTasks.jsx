@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'sonner';
@@ -21,6 +21,21 @@ import * as Icons from '../icons';
 const { AlertCircle, CheckCircle, XCircle, Play, Pause, RotateCcw, Check, Clock, Kanban, List, CheckSquare, MessageSquare, Plus, Send, User, Calendar, RefreshCw, Eye, Filter, ChevronDown } = Icons;
 import KanbanBoard from '../components/KanbanBoard';
 import ReassignTaskRequestModal from './ReassignTaskRequest';
+import TaskRequestButton from '../components/TaskRequestButton';
+
+// Updated normalizeId to handle your API response
+const normalizeId = (entity) => {
+  if (!entity) return '';
+  if (typeof entity === 'string' || typeof entity === 'number') {
+    return String(entity);
+  }
+  // Try multiple ID fields in order of preference
+  const id = entity.id || entity.public_id || entity.internal_id || entity.internalId || entity._id;
+  if (id !== undefined && id !== null) {
+    return String(id);
+  }
+  return '';
+};
 
 const formatDateString = (value) => {
   if (!value) return '—';
@@ -48,20 +63,6 @@ const formatDuration = (seconds) => {
     return `${hours}h ${minutes}m`;
   }
   return `${minutes}m`;
-};
-
-// Updated normalizeId to handle your API response
-const normalizeId = (entity) => {
-  if (!entity) return '';
-  if (typeof entity === 'string' || typeof entity === 'number') {
-    return String(entity);
-  }
-  // Try multiple ID fields in order of preference
-  const id = entity.id || entity.public_id || entity.internal_id || entity.internalId || entity._id;
-  if (id !== undefined && id !== null) {
-    return String(id);
-  }
-  return '';
 };
 
 // Updated getTaskId for API calls - ensure integer ID
@@ -160,12 +161,7 @@ const isTaskInReview = (task) => {
   return s === 'review' || s === 'in_review' || s.includes('review');
 };
 
-// Task should be read-only when in review (UI-level helper)
-const isTaskReadOnly = (task) => {
-  if (!task) return false;
-  return isTaskInReview(task) || isTaskLocked(task) || getReassignmentState(task) === 'pending';
-};
-
+// Task should be read-only when in review, locked, or user has readonly access
 const EmployeeTasks = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -173,6 +169,26 @@ const EmployeeTasks = () => {
   const userRole = user?.role?.toLowerCase();
   console.log('EmployeeTasks component rendered, user:', user, 'userRole:', userRole);
   const [projects, setProjects] = useState([]);
+
+  // Task should be read-only when in review, locked, or user has readonly access
+  const isTaskReadOnly = useCallback((task) => {
+    if (!task) return false;
+
+    // Check if current user has readonly access
+    if (task.assignedUsers && Array.isArray(task.assignedUsers)) {
+      const currentUserAssignment = task.assignedUsers.find(assignedUser =>
+        assignedUser.id === user?.id ||
+        assignedUser._id === user?._id ||
+        assignedUser.public_id === user?.public_id ||
+        assignedUser.internalId === user?.internal_id
+      );
+      if (currentUserAssignment?.readOnly === true) {
+        return true;
+      }
+    }
+
+    return isTaskInReview(task) || isTaskLocked(task) || getReassignmentState(task) === 'pending';
+  }, [user]);
   const [selectedProjectId, setSelectedProjectId] = useState('');
   const [tasks, setTasks] = useState([]);
   const [kanbanData, setKanbanData] = useState([]);
@@ -187,19 +203,21 @@ const EmployeeTasks = () => {
   const [actionRunning, setActionRunning] = useState(false);
   
   // Existing states
+  const [selectedTask, setSelectedTask] = useState(null);
   const [selectedTaskForReassignment, setSelectedTaskForReassignment] = useState(null);
   const [checklists, setChecklists] = useState({});
   const [showChecklistModal, setShowChecklistModal] = useState(false);
   const [reassignmentRequests, setReassignmentRequests] = useState({});
   const [taskTimelines, setTaskTimelines] = useState({});
   const [selectedTaskForTimeline, setSelectedTaskForTimeline] = useState(null);
-  const [showTimelineModal, setShowTimelineModal] = useState(false);
-  const [selectedTask, setSelectedTask] = useState(null);
   const [employees, setEmployees] = useState([]);
   const [selectedAssignee, setSelectedAssignee] = useState('');
   const [reassigning, setReassigning] = useState(false);
   const [filterStatus, setFilterStatus] = useState('all');
   const [forceRefresh, setForceRefresh] = useState(0);
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [submitReason, setSubmitReason] = useState('');
+  const [showTimelineModal, setShowTimelineModal] = useState(false);
 
   // Time tracking states
   const [activeTimers, setActiveTimers] = useState({});
@@ -252,8 +270,11 @@ const EmployeeTasks = () => {
     const normalizedNew = newStatus.toUpperCase();
 
     // Check if user is assigned to task
-    const isAssigned = task.assignedUsers?.some(user => 
-      user.id === user?.id || user._id === user?._id || user.public_id === user?.public_id
+    const isAssigned = task.assignedUsers?.some(assignedUser => 
+      assignedUser.id === user?.id || 
+      assignedUser._id === user?._id || 
+      assignedUser.public_id === user?.public_id ||
+      assignedUser.internalId === user?.internal_id
     );
     if (!isAssigned && userRole === 'employee') {
       return { valid: false, error: 'You are not assigned to this task' };
@@ -673,30 +694,30 @@ const EmployeeTasks = () => {
   // Helper to update task state locally after an action
   const updateLocalTaskState = (taskId, updates) => {
     console.log('Updating task state:', { taskId, updates });
-    
+
     // Update main tasks array
     setTasks(prev => {
       const taskIndex = prev.findIndex(t => {
         const id = normalizeId(t);
         return id === taskId;
       });
-      
+
       if (taskIndex === -1) {
         console.log('Task not found for ID:', taskId);
         return prev;
       }
-      
+
       const oldTask = prev[taskIndex];
-      const updatedTask = { 
-        ...oldTask, 
+      const updatedTask = {
+        ...oldTask,
         ...updates,
         status: updates.status || oldTask.status || oldTask.stage,
         stage: updates.stage || oldTask.stage || oldTask.status
       };
-      
+
       const newTasks = [...prev];
       newTasks[taskIndex] = updatedTask;
-      
+
       return newTasks;
     });
 
@@ -705,16 +726,17 @@ const EmployeeTasks = () => {
       setSelectedTask(prev => ({ ...prev, ...updates }));
     }
   };
-
-  // Refresh all tasks
   const refreshAllTasks = () => {
     setForceRefresh(prev => prev + 1);
   };
 
   // Task action functions - updated for your API
-  const handleStartTask = async (task) => {
+  const handleStartTask = async (taskOrId) => {
     try {
-      const taskId = getTaskIdForApi(task);
+      // Handle both task objects and task IDs
+      const taskId = typeof taskOrId === 'object' ? getTaskIdForApi(taskOrId) : taskOrId;
+      const task = typeof taskOrId === 'object' ? taskOrId : tasks.find(t => getTaskIdForApi(t) === taskOrId);
+
       if (!taskId) {
         toast.error('Task not found');
         return;
@@ -739,7 +761,7 @@ const EmployeeTasks = () => {
       updateLocalTaskState(normalizeId(task), updateData);
 
       // Load timeline
-      loadTaskTimeline(task);
+      if (task) loadTaskTimeline(task);
 
       // Refresh to get latest data
       setTimeout(() => refreshAllTasks(), 500);
@@ -749,18 +771,21 @@ const EmployeeTasks = () => {
     }
   };
 
-  const handlePauseTask = async (task) => {
+  const handlePauseTask = async (taskOrId) => {
     try {
-      const taskId = getTaskIdForApi(task);
+      // Handle both task objects and task IDs
+      const taskId = typeof taskOrId === 'object' ? getTaskIdForApi(taskOrId) : taskOrId;
+      const task = typeof taskOrId === 'object' ? taskOrId : tasks.find(t => getTaskIdForApi(t) === taskOrId);
+
       if (!taskId) {
         toast.error('Task not found');
         return;
       }
-      
+
       const result = await dispatch(pauseTask(taskId)).unwrap();
-      
+
       toast.success('Task paused');
-      
+
       // Stop timer and accumulate time
       setActiveTimers(prev => ({ ...prev, [taskId]: false }));
       setLiveTimers(prev => {
@@ -768,18 +793,18 @@ const EmployeeTasks = () => {
         delete updated[taskId];
         return updated;
       });
-      
+
       const updateData = {
         status: 'ON_HOLD',
         is_locked: false
       };
-      
+
       // Update local state immediately
       updateLocalTaskState(normalizeId(task), updateData);
-      
+
       // Load timeline
-      loadTaskTimeline(task);
-      
+      if (task) loadTaskTimeline(task);
+
       // Refresh to get latest data
       setTimeout(() => refreshAllTasks(), 500);
     } catch (error) {
@@ -788,33 +813,36 @@ const EmployeeTasks = () => {
     }
   };
 
-  const handleResumeTask = async (task) => {
+  const handleResumeTask = async (taskOrId) => {
     try {
-      const taskId = getTaskIdForApi(task);
+      // Handle both task objects and task IDs
+      const taskId = typeof taskOrId === 'object' ? getTaskIdForApi(taskOrId) : taskOrId;
+      const task = typeof taskOrId === 'object' ? taskOrId : tasks.find(t => getTaskIdForApi(t) === taskOrId);
+
       if (!taskId) {
         toast.error('Task not found');
         return;
       }
-      
+
       const result = await dispatch(resumeTask(taskId)).unwrap();
-      
+
       toast.success('Task resumed');
-      
+
       // Restart live timer
       setActiveTimers(prev => ({ ...prev, [taskId]: true }));
       setLiveTimers(prev => ({ ...prev, [taskId]: 0 }));
-      
+
       const updateData = {
         status: 'IN_PROGRESS',
         is_locked: false
       };
-      
+
       // Update local state immediately
       updateLocalTaskState(normalizeId(task), updateData);
-      
+
       // Load timeline
-      loadTaskTimeline(task);
-      
+      if (task) loadTaskTimeline(task);
+
       // Refresh to get latest data
       setTimeout(() => refreshAllTasks(), 500);
     } catch (error) {
@@ -823,34 +851,37 @@ const EmployeeTasks = () => {
     }
   };
 
-  const handleCompleteTask = async (task) => {
+  const handleCompleteTask = async (taskOrId) => {
+    // Handle both task objects and task IDs
+    const task = typeof taskOrId === 'object' ? taskOrId : tasks.find(t => getTaskIdForApi(t) === taskOrId);
+
     // Block any write actions if the task is read-only (review/locked/reassignment)
-    if (isTaskReadOnly(task)) {
+    if (task && isTaskReadOnly(task)) {
       toast.error('Task is under review. No actions are allowed.');
       return;
     }
 
     try {
       // Prevent completing a task that is already in review
-      const currentStatus = (task.status || task.stage || '').toString().toUpperCase();
+      const currentStatus = (task?.status || task?.stage || '').toString().toUpperCase();
       if (currentStatus === 'REVIEW') {
         toast.error('Task is in review and cannot be completed directly');
         return;
       }
 
-      const taskId = getTaskIdForApi(task);
+      const taskId = typeof taskOrId === 'object' ? getTaskIdForApi(taskOrId) : taskOrId;
       if (!taskId) {
         toast.error('Task not found');
         return;
       }
-      
+
       // Get the project ID for the request
-      const projectId = getProjectIdForApi(task.projectId || task.project_id || selectedProjectId);
-      
+      const projectId = getProjectIdForApi(task?.projectId || task?.project_id || selectedProjectId);
+
       const result = await dispatch(requestTaskCompletion({ taskId, projectId })).unwrap();
-      
+
       toast.success('Review requested — sent for manager approval');
-      
+
       const updateData = {
         status: 'REVIEW',
         // Do not mark the task as fully locked here; managers will control locking.
@@ -860,10 +891,10 @@ const EmployeeTasks = () => {
           request_status: 'PENDING'
         }
       };
-      
+
       // Update local state immediately
       updateLocalTaskState(normalizeId(task), updateData);
-      
+
       // Also update selectedTask if it's the same task
       if (selectedTask && normalizeId(selectedTask) === normalizeId(task)) {
         setSelectedTask(prev => ({
@@ -883,37 +914,49 @@ const EmployeeTasks = () => {
     }
   };
 
-  const handleMoveToReview = async (task) => {
+  const handleMoveToReview = async (reason = '') => {
+    if (!selectedTask) return;
     // Block moving if task is read-only
-    if (isTaskReadOnly(task)) {
+    if (isTaskReadOnly(selectedTask)) {
       toast.error('Task is under review. No actions are allowed.');
       return;
     }
 
     try {
-      const taskId = getTaskIdForApi(task);
+      const taskId = getTaskIdForApi(selectedTask);
       if (!taskId) {
         toast.error('Task not found');
         return;
       }
       
-      const projectId = getProjectIdForApi(task.projectId || task.project_id || selectedProjectId);
-      const result = await dispatch(requestTaskCompletion({ taskId, projectId })).unwrap();
+      const projectId = getProjectIdForApi(selectedTask.projectId || selectedTask.project_id || selectedProjectId);
+      const payload = {
+        taskId,
+        projectId,
+        meta: { reason: reason || 'Task completed, ready for review' }
+      };
+      const result = await dispatch(requestTaskCompletion(payload)).unwrap();
 
       if (result) {
-        toast.success('Task moved to review');
-        const lockUpdate = { status: 'REVIEW', is_locked: false, lock_info: { is_locked: false, request_status: 'PENDING' } };
-        updateLocalTaskState(normalizeId(task), lockUpdate);
-        if (selectedTask && normalizeId(selectedTask) === normalizeId(task)) {
+        toast.success('Task submitted for review');
+        const lockUpdate = { 
+          status: 'REVIEW', 
+          is_locked: false, 
+          lock_info: { is_locked: false, request_status: 'PENDING' } 
+        };
+        updateLocalTaskState(normalizeId(selectedTask), lockUpdate);
+        if (selectedTask && normalizeId(selectedTask) === normalizeId(selectedTask)) {
           setSelectedTask(prev => ({ ...prev, ...lockUpdate }));
         }
+        setShowSubmitModal(false);
+        setSubmitReason('');
         setTimeout(() => refreshAllTasks(), 500);
       } else {
-        toast.error('Failed to move task to review');
+        toast.error('Failed to submit task for review');
       }
     } catch (error) {
-      toast.error('Failed to move task to review');
-      console.error('Move to review error:', error);
+      toast.error('Failed to submit task for review');
+      console.error('Submit for review error:', error);
     }
   };
 
@@ -932,7 +975,11 @@ const EmployeeTasks = () => {
         return;
       }
 
-      const result = await dispatch(updateTask({ taskId, data: updates })).unwrap();
+      // Note: updateTask action is not imported, so we'll use fetchWithTenant directly
+      const resp = await fetchWithTenant(`/api/tasks/${taskId}`, {
+        method: 'PUT',
+        body: JSON.stringify(updates),
+      });
 
       updateLocalTaskState(normalizeId(task), updates);
       toast.success('Task updated successfully');
@@ -1166,8 +1213,11 @@ const EmployeeTasks = () => {
     setReassigning(true);
     try {
       const taskId = getTaskIdForApi(selectedTaskForReassignment);
-      const resp = await httpPostService(`/api/tasks/${taskId}/request-reassignment`, {
-        reason: selectedTaskForReassignment.reassignReason || 'Requesting reassignment',
+      const resp = await fetchWithTenant(`/api/tasks/${taskId}/request-reassignment`, {
+        method: 'POST',
+        body: JSON.stringify({
+          reason: selectedTaskForReassignment.reassignReason || 'Requesting reassignment',
+        }),
       });
       if (resp.success) {
         toast.success(resp.message || 'Reassignment request sent');
@@ -1405,6 +1455,35 @@ const EmployeeTasks = () => {
               </option>
             ))}
           </select>
+
+          {/* View Toggle */}
+          <div className="flex items-center gap-2 ml-auto">
+            <span className="text-gray-700 font-medium text-sm">View:</span>
+            <div className="flex bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setView('list')}
+                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                  view === 'list'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <List className="w-4 h-4 inline mr-1" />
+                List
+              </button>
+              <button
+                onClick={() => setView('kanban')}
+                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                  view === 'kanban'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Kanban className="w-4 h-4 inline mr-1" />
+                Kanban
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1436,9 +1515,8 @@ const EmployeeTasks = () => {
       {/* MAIN CONTENT */}
       {view === 'kanban' ? (
         <KanbanBoard
-          tasks={tasks}
+          tasks={filteredTasks}
           kanbanData={kanbanData}
-          onUpdateTask={handleUpdateTask}
           onStartTask={handleStartTask}
           onPauseTask={handlePauseTask}
           onResumeTask={handleResumeTask}
@@ -1447,7 +1525,7 @@ const EmployeeTasks = () => {
           userRole={userRole}
           projectId={selectedProjectId}
           reassignmentRequests={reassignmentRequests}
-          taskTimelines={taskTimelines}
+          isTaskReadOnly={isTaskReadOnly}
         />
       ) : (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.8fr)_minmax(0,1.2fr)]">
@@ -1699,14 +1777,16 @@ const EmployeeTasks = () => {
                           <Pause className="w-3 h-3" />
                           Pause
                         </button>
-                        <button
-                          onClick={() => handleMoveToReview(selectedTask)}
-                          disabled={isTaskReadOnly(selectedTask) || isTaskCompleted(selectedTask) || isTaskLocked(selectedTask)}
-                          className="rounded-full border border-purple-200 px-3 py-1 text-purple-600 hover:bg-purple-50 flex items-center gap-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <Check className="w-3 h-3" />
-                          Move to Review
-                        </button>
+                        <TaskRequestButton
+                          task={selectedTask}
+                          projectId={selectedProjectId}
+                          onSuccess={(updatedTask) => {
+                            // Update the task in the local state
+                            setTasks(prev => prev.map(t =>
+                              (t.id || t._id) === (updatedTask.id || updatedTask._id) ? updatedTask : t
+                            ));
+                          }}
+                        />
                       </>
                     ) : null}
 
@@ -1734,7 +1814,7 @@ const EmployeeTasks = () => {
 
                     <button
                       onClick={() => handleOpenTimeline(selectedTask)}
-                        disabled={isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask)}
+                      disabled={isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask)}
                       className="rounded-full border border-indigo-200 px-3 py-1 text-indigo-600 hover:bg-indigo-50 flex items-center gap-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Clock className="w-3 h-3" />
@@ -1799,10 +1879,10 @@ const EmployeeTasks = () => {
 
                 {/* Employee Reassign Request */}
                 {userRole === 'employee' && (
-                    <button
-                      type="button"
-                      onClick={() => setSelectedTaskForReassignment(selectedTask)}
-                        disabled={isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask)}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTaskForReassignment(selectedTask)}
+                    disabled={isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask)}
                     className="mt-2 rounded-full border border-yellow-300 px-3 py-1 text-yellow-600 hover:bg-yellow-50 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Request Reassignment
@@ -2011,99 +2091,6 @@ const EmployeeTasks = () => {
           refreshAllTasks();
         }}
       />
-
-      <TimelineModal
-        task={selectedTaskForTimeline}
-        timeline={taskTimelines}
-        isOpen={showTimelineModal}
-        onClose={() => {
-          setShowTimelineModal(false);
-          setSelectedTaskForTimeline(null);
-        }}
-      />
-    </div>
-  );
-};
-
-const TimelineModal = ({ task, timeline, isOpen, onClose }) => {
-  if (!isOpen || !task) return null;
-
-  const taskId = normalizeId(task);
-  const timelineData = timeline?.[taskId] || [];
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl w-full max-w-2xl p-6 relative shadow-lg max-h-[80vh] overflow-y-auto">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-        >
-          <XCircle className="h-5 w-5" />
-        </button>
-
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Task Timeline</h2>
-          <p className="text-gray-600 text-sm">{task.title || task.name || 'Untitled task'}</p>
-        </div>
-
-        <div className="space-y-4">
-          {timelineData.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>No timeline events yet</p>
-              <p className="text-sm">Timeline will show when you start working on this task</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {timelineData.map((event, index) => (
-                <div key={index} className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg">
-                  <div className="flex-shrink-0">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      event.action === 'start' ? 'bg-green-100 text-green-600' :
-                      event.action === 'pause' ? 'bg-orange-100 text-orange-600' :
-                      event.action === 'resume' ? 'bg-blue-100 text-blue-600' :
-                      event.action === 'complete' ? 'bg-purple-100 text-purple-600' :
-                      'bg-gray-100 text-gray-600'
-                    }`}>
-                      {event.action === 'start' && <Play className="w-4 h-4" />}
-                      {event.action === 'pause' && <Pause className="w-4 h-4" />}
-                      {event.action === 'resume' && <RotateCcw className="w-4 h-4" />}
-                      {event.action === 'complete' && <Check className="w-4 h-4" />}
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-gray-900 capitalize">
-                        {event.action}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {formatDateString(event.timestamp)}
-                      </p>
-                    </div>
-                    <p className="text-sm text-gray-600 mt-1">
-                      by {event.user_name || 'Unknown user'}
-                    </p>
-                    {event.duration && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        Duration: {formatDuration(event.duration)}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="mt-6 pt-4 border-t flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-gray-600 hover:text-gray-800"
-          >
-            Close
-          </button>
-        </div>
-      </div>
     </div>
   );
 };
