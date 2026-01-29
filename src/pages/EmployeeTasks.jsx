@@ -160,10 +160,10 @@ const isTaskInReview = (task) => {
   return s === 'review' || s === 'in_review' || s.includes('review');
 };
 
-// Task should be read-only when in review (UI-level helper)
+// Task should be read-only when in review or locked (UI-level helper)
 const isTaskReadOnly = (task) => {
   if (!task) return false;
-  return isTaskInReview(task) || isTaskLocked(task) || getReassignmentState(task) === 'pending';
+  return isTaskInReview(task) || isTaskLocked(task);
 };
 
 const EmployeeTasks = () => {
@@ -171,6 +171,40 @@ const EmployeeTasks = () => {
   const dispatch = useDispatch();
   const user = useSelector(selectUser);
   const userRole = user?.role?.toLowerCase();
+  // Role-aware read-only check: employees should be blocked when a
+  // reassignment request has been approved for the task, but managers
+  // should still be able to act.
+  const isTaskReadOnlyForEmployee = (task) => {
+    if (!task) return false;
+    if (!task) return false;
+    const role = (userRole || '').toLowerCase();
+    if (role === 'manager' || role === 'admin' || role === 'superadmin') return false;
+
+    // If task is locked or in review, treat as read-only for employees
+    if (isTaskReadOnly(task)) return true;
+
+    // Try to find the assignee entry that corresponds to current user
+    const myIds = new Set([
+      user.id,
+      user.public_id,
+      user.internal_id,
+      user.internalId,
+      user._id
+    ].filter(Boolean).map(String));
+
+    const assignees = task.assignedUsers || [];
+    const mine = assignees.find(a => {
+      if (!a) return false;
+      // check multiple id fields
+      const aIds = [a.id, a.public_id, a.internalId, a.internal_id, a._id].filter(Boolean).map(String);
+      return aIds.some(id => myIds.has(id));
+    });
+
+    // If the current user is an assignee and marked readOnly, they should be blocked
+    if (mine) return !!mine.readOnly;
+
+    return false;
+  };
   console.log('EmployeeTasks component rendered, user:', user, 'userRole:', userRole);
   const [projects, setProjects] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState('');
@@ -393,22 +427,27 @@ const EmployeeTasks = () => {
       const kanbanList = result?.kanban || [];
       
       if (Array.isArray(data)) {
-        setTasks(data);
-        setKanbanData(kanbanList);
-        
-        // Initialize checklists
+        // Keep server tasks visible to employees even if the employee is an old/read-only assignee.
+        // Read-only enforcement is handled at the action-level by `isTaskReadOnlyForEmployee`.
+        const finalTasks = data;
+        const finalKanban = kanbanList;
+
+        setTasks(finalTasks);
+        setKanbanData(finalKanban);
+
+        // Initialize checklists from the filtered tasks
         const checklistsMap = {};
-        data.forEach(task => {
+        (finalTasks || []).forEach(task => {
           const taskId = normalizeId(task);
           if (taskId && task.checklist && task.checklist.length > 0) {
             checklistsMap[taskId] = task.checklist;
           }
         });
         setChecklists(checklistsMap);
-        
-        // Initialize reassignment requests
+
+        // Initialize reassignment requests from filtered tasks
         const requestsMap = {};
-        data.forEach(task => {
+        (finalTasks || []).forEach(task => {
           const taskId = normalizeId(task);
           if (taskId && task.lock_info && task.lock_info.is_locked) {
             requestsMap[taskId] = {
@@ -518,6 +557,8 @@ const EmployeeTasks = () => {
       const kanbanList = Array.isArray(respBody.kanban) ? respBody.kanban : [];
 
       if (Array.isArray(data)) {
+        // Keep server tasks visible to employees. Read-only enforcement is handled at the action-level
+        // by `isTaskReadOnlyForEmployee` and UI button disabling.
         setTasks(data);
         setKanbanData(kanbanList);
 
@@ -713,6 +754,12 @@ const EmployeeTasks = () => {
 
   // Task action functions - updated for your API
   const handleStartTask = async (task) => {
+    // Block start for read-only employees
+    if (userRole === 'employee' && isTaskReadOnlyForEmployee(task)) {
+      toast.error('Read-only access — action not allowed');
+      return;
+    }
+
     try {
       const taskId = getTaskIdForApi(task);
       if (!taskId) {
@@ -750,6 +797,12 @@ const EmployeeTasks = () => {
   };
 
   const handlePauseTask = async (task) => {
+    // Block pause for read-only employees
+    if (userRole === 'employee' && isTaskReadOnlyForEmployee(task)) {
+      toast.error('Read-only access — action not allowed');
+      return;
+    }
+
     try {
       const taskId = getTaskIdForApi(task);
       if (!taskId) {
@@ -789,6 +842,12 @@ const EmployeeTasks = () => {
   };
 
   const handleResumeTask = async (task) => {
+    // Block resume for read-only employees
+    if (userRole === 'employee' && isTaskReadOnlyForEmployee(task)) {
+      toast.error('Read-only access — action not allowed');
+      return;
+    }
+
     try {
       const taskId = getTaskIdForApi(task);
       if (!taskId) {
@@ -825,8 +884,8 @@ const EmployeeTasks = () => {
 
   const handleCompleteTask = async (task) => {
     // Block any write actions if the task is read-only (review/locked/reassignment)
-    if (isTaskReadOnly(task)) {
-      toast.error('Task is under review. No actions are allowed.');
+    if ((userRole === 'employee' && isTaskReadOnlyForEmployee(task)) || isTaskReadOnly(task)) {
+      toast.error('Task is under review or read-only. No actions are allowed.');
       return;
     }
 
@@ -885,8 +944,8 @@ const EmployeeTasks = () => {
 
   const handleMoveToReview = async (task) => {
     // Block moving if task is read-only
-    if (isTaskReadOnly(task)) {
-      toast.error('Task is under review. No actions are allowed.');
+    if ((userRole === 'employee' && isTaskReadOnlyForEmployee(task)) || isTaskReadOnly(task)) {
+      toast.error('Task is under review or read-only. No actions are allowed.');
       return;
     }
 
@@ -926,6 +985,11 @@ const EmployeeTasks = () => {
 
     // For other updates (admin/manager only)
     try {
+      // Block updates for read-only employees
+      if (userRole === 'employee' && isTaskReadOnlyForEmployee(task)) {
+        toast.error('Read-only access — action not allowed');
+        return;
+      }
       const taskId = getTaskIdForApi(task);
       if (!taskId) {
         toast.error('Task not found');
@@ -949,6 +1013,10 @@ const EmployeeTasks = () => {
     event.preventDefault();
     if (!selectedTask) {
       toast.error('Select a task before adding checklist items');
+      return;
+    }
+    if (userRole === 'employee' && isTaskReadOnlyForEmployee(selectedTask)) {
+      toast.error('Read-only access — cannot add checklist items');
       return;
     }
     if (!checklistForm.title.trim()) {
@@ -1017,6 +1085,11 @@ const EmployeeTasks = () => {
       return;
     }
     setActionRunning(true);
+    if (userRole === 'employee' && isTaskReadOnlyForEmployee(selectedTask)) {
+      toast.error('Read-only access — cannot update checklist');
+      setActionRunning(false);
+      return;
+    }
     try {
       const taskId = getTaskIdForApi(selectedTask);
       const payload = {
@@ -1068,6 +1141,11 @@ const EmployeeTasks = () => {
     if (!itemId || !selectedTask) return;
     if (!window.confirm('Remove this checklist item?')) return;
     setActionRunning(true);
+    if (userRole === 'employee' && isTaskReadOnlyForEmployee(selectedTask)) {
+      toast.error('Read-only access — cannot delete checklist items');
+      setActionRunning(false);
+      return;
+    }
     try {
       const resp = await fetchWithTenant(`/api/employee/subtask/${itemId}`, {
         method: 'DELETE',
@@ -1104,6 +1182,11 @@ const EmployeeTasks = () => {
     if (!itemId || !selectedTask) return;
     
     setActionRunning(true);
+    if (userRole === 'employee' && isTaskReadOnlyForEmployee(selectedTask)) {
+      toast.error('Read-only access — cannot complete checklist items');
+      setActionRunning(false);
+      return;
+    }
     try {
       const resp = await fetchWithTenant(`/api/employee/subtask/${itemId}/complete`, {
         method: 'POST',
@@ -1159,7 +1242,7 @@ const EmployeeTasks = () => {
   const handleReassignTask = async () => {
     // API: POST /api/tasks/:id/request-reassignment
     if (!selectedTaskForReassignment) return;
-    if (isTaskReadOnly(selectedTaskForReassignment)) {
+    if ((userRole === 'employee' && isTaskReadOnlyForEmployee(selectedTaskForReassignment)) || isTaskReadOnly(selectedTaskForReassignment)) {
       toast.error('Task is under review. No actions are allowed.');
       return;
     }
@@ -1186,7 +1269,10 @@ const EmployeeTasks = () => {
   // Get assigned users string
   const getAssignedUsers = (task) => {
     if (Array.isArray(task.assignedUsers) && task.assignedUsers.length) {
-      return task.assignedUsers.map(u => u.name).join(', ');
+      return task.assignedUsers.map(u => {
+        const label = (userRole && userRole !== 'employee') ? (u.readOnly ? ' (Read-only)' : ' (Active)') : '';
+        return `${u.name || u.email}${label}`;
+      }).join(', ');
     }
     
     if (Array.isArray(task.assigned_to) && task.assigned_to.length) {
@@ -1496,11 +1582,17 @@ const EmployeeTasks = () => {
                   const totalChecklistCount = task.checklist ? task.checklist.length : 0;
                   
                   return (
+                    // Disable selection for employees when the task is read-only
+                    // for them (approved reassignment) or when pending/completed.
                     <button
                       key={taskId || task.title}
                       type="button"
-                      disabled={hasPending || isCompleted || isTaskLocked(task)}
                       onClick={() => setSelectedTask(task)}
+                      disabled={
+                        userRole === 'employee'
+                          ? (isTaskReadOnlyForEmployee(task) || hasPending || isCompleted)
+                          : (hasPending || isCompleted || isTaskLocked(task))
+                      }
                       className={`w-full rounded-2xl border px-4 py-3 text-left shadow-sm transition ${
                         isCompleted
                           ? 'border-green-300 bg-green-50 opacity-75 cursor-not-allowed'
@@ -1533,7 +1625,12 @@ const EmployeeTasks = () => {
                           {task.assignedUsers && task.assignedUsers.length > 0 && (
                             <div className="flex items-center gap-1">
                               <User className="w-3 h-3" />
-                              <span>{task.assignedUsers.map(u => u.name || u.email).join(', ')}</span>
+                              <span>
+                                {task.assignedUsers.map(u => {
+                                  const label = (userRole && userRole !== 'employee') ? (u.readOnly ? ' (Read-only)' : ' (Active)') : '';
+                                  return `${u.name || u.email}${label}`;
+                                }).join(', ')}
+                              </span>
                             </div>
                           )}
                           {task.client && (
@@ -1613,7 +1710,17 @@ const EmployeeTasks = () => {
                   </span>
                 </div>
                 <p className="text-sm text-gray-500">{selectedTask.project?.name && `Project: ${selectedTask.project.name}`}</p>
-                
+                {/* Read-only and reassigned badges */}
+                {isTaskReadOnlyForEmployee(selectedTask) && (
+                  <div className="inline-flex items-center gap-2 mt-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs text-gray-700 font-semibold">
+                    🔒 Read-only access
+                  </div>
+                )}
+                {selectedTask.lock_info?.new_assignee_name && (
+                  <div className="inline-flex items-center gap-2 mt-2 rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs text-green-800 font-semibold">
+                    ✅ Reassigned to {selectedTask.lock_info.new_assignee_name}
+                  </div>
+                )}
                 {/* Completion Alert */}
                 {isTaskCompleted(selectedTask) && (
                   <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
@@ -1676,12 +1783,12 @@ const EmployeeTasks = () => {
                 </div>
 
                 {/* Employee Actions */}
-                {userRole === 'employee' && (
+                    {userRole === 'employee' && (
                   <div className="flex flex-wrap gap-2">
                     {selectedTask.status === 'Pending' || selectedTask.status === 'To Do' || selectedTask.stage === 'PENDING' ? (
                       <button
                         onClick={() => handleStartTask(selectedTask)}
-                        disabled={isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask) || isTaskLocked(selectedTask)}
+                        disabled={isTaskReadOnlyForEmployee(selectedTask) || getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask) || isTaskLocked(selectedTask)}
                         className="rounded-full border border-green-200 px-3 py-1 text-green-600 hover:bg-green-50 flex items-center gap-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Play className="w-3 h-3" />
@@ -1693,7 +1800,7 @@ const EmployeeTasks = () => {
                       <>
                         <button
                           onClick={() => handlePauseTask(selectedTask)}
-                          disabled={isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask) || isTaskLocked(selectedTask)}
+                          disabled={isTaskReadOnlyForEmployee(selectedTask) || getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask) || isTaskLocked(selectedTask)}
                           className="rounded-full border border-orange-200 px-3 py-1 text-orange-600 hover:bg-orange-50 flex items-center gap-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Pause className="w-3 h-3" />
@@ -1701,7 +1808,7 @@ const EmployeeTasks = () => {
                         </button>
                         <button
                           onClick={() => handleMoveToReview(selectedTask)}
-                          disabled={isTaskReadOnly(selectedTask) || isTaskCompleted(selectedTask) || isTaskLocked(selectedTask)}
+                          disabled={isTaskReadOnlyForEmployee(selectedTask) || isTaskCompleted(selectedTask) || isTaskLocked(selectedTask)}
                           className="rounded-full border border-purple-200 px-3 py-1 text-purple-600 hover:bg-purple-50 flex items-center gap-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Check className="w-3 h-3" />
@@ -1713,7 +1820,7 @@ const EmployeeTasks = () => {
                     {selectedTask.status === 'ON_HOLD' || selectedTask.status === 'On Hold' ? (
                       <button
                         onClick={() => handleResumeTask(selectedTask)}
-                        disabled={isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask) || isTaskLocked(selectedTask)}
+                        disabled={isTaskReadOnlyForEmployee(selectedTask) || getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask) || isTaskLocked(selectedTask)}
                         className="rounded-full border border-blue-200 px-3 py-1 text-blue-600 hover:bg-blue-50 flex items-center gap-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <RotateCcw className="w-3 h-3" />
@@ -1724,7 +1831,7 @@ const EmployeeTasks = () => {
                     {(selectedTask.status === 'IN_PROGRESS' || selectedTask.status === 'In Progress') && (
                       <button
                         onClick={() => handleCompleteTask(selectedTask)}
-                        disabled={isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask) || isTaskLocked(selectedTask) || isTaskInReview(selectedTask)}
+                        disabled={isTaskReadOnlyForEmployee(selectedTask) || getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask) || isTaskLocked(selectedTask) || isTaskInReview(selectedTask)}
                         className="rounded-full border border-green-200 px-3 py-1 text-green-600 hover:bg-green-50 flex items-center gap-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <CheckCircle className="w-3 h-3" />
@@ -1734,7 +1841,7 @@ const EmployeeTasks = () => {
 
                     <button
                       onClick={() => handleOpenTimeline(selectedTask)}
-                        disabled={isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask)}
+                        disabled={isTaskReadOnlyForEmployee(selectedTask) || getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask)}
                       className="rounded-full border border-indigo-200 px-3 py-1 text-indigo-600 hover:bg-indigo-50 flex items-center gap-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Clock className="w-3 h-3" />
@@ -1802,7 +1909,7 @@ const EmployeeTasks = () => {
                     <button
                       type="button"
                       onClick={() => setSelectedTaskForReassignment(selectedTask)}
-                        disabled={isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask)}
+                        disabled={(userRole === 'employee' && isTaskReadOnlyForEmployee(selectedTask)) || isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask)}
                     className="mt-2 rounded-full border border-yellow-300 px-3 py-1 text-yellow-600 hover:bg-yellow-50 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Request Reassignment

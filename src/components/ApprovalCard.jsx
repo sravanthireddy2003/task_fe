@@ -65,17 +65,21 @@ const ApprovalCard = ({ item, onApprove, onReject, onEscalate }) => {
           <>
             <button
               onClick={() => onApprove && onApprove(id)}
-              className="px-3 py-1 rounded-lg bg-green-500 text-white text-sm hover:bg-green-600"
+              title="Approve"
+              className="px-2 py-2 rounded-lg bg-green-500 text-white text-sm hover:bg-green-600 flex items-center justify-center"
             >
-              Approve
+              <span className="sr-only">Approve</span>
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
             </button>
             <div className="relative">
               {!showRejectInput ? (
                 <button
                   onClick={() => setShowRejectInput(true)}
-                  className="px-3 py-1 rounded-lg bg-red-500 text-white text-sm hover:bg-red-600"
+                  title="Reject"
+                  className="px-2 py-2 rounded-lg bg-red-500 text-white text-sm hover:bg-red-600 flex items-center justify-center"
                 >
-                  Reject
+                  <span className="sr-only">Reject</span>
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                 </button>
               ) : (
                 <div className="absolute right-0 top-0 z-10 w-72 bg-white p-3 rounded-lg shadow-lg border border-gray-200">

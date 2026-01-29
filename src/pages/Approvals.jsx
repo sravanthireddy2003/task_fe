@@ -808,9 +808,13 @@ const Approvals = () => {
       project: request.project_name || `Project ${request.project_id || 'Unknown'}`,
       title: `Task Reassignment: ${request.task_title || 'Unknown Task'}`,
       requester: request.requester_name || 'Unknown',
-      assignedTo: request.assignees && request.assignees.length > 0 
-        ? request.assignees.map(a => `${a.name} (${a.department})`).join(', ')
-        : 'Unassigned',
+      assignedTo: (
+        request.new_assignee_name ? request.new_assignee_name : (
+          request.assignees && request.assignees.length > 0
+            ? request.assignees.map(a => `${a.name} (${a.department})`).join(', ')
+            : 'Unassigned'
+        )
+      ),
       date: request.requested_at ? new Date(request.requested_at).toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import * as Icons from '../icons';
 
-const { X, Lock, Clock, CheckCircle, AlertCircle } = Icons;
+const { X, Lock, Clock, CheckCircle, AlertCircle, UserPlus } = Icons;
 import { toast } from 'sonner';
 import fetchWithTenant from '../utils/fetchWithTenant';
 
-const ReassignTaskRequestModal = ({ selectedTask, onClose, onSuccess }) => {
+const ReassignTaskRequestModal = ({ selectedTask, onClose, onSuccess, employees = [] }) => {
   const [reason, setReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [loadingTaskStatus, setLoadingTaskStatus] = useState(true);
@@ -114,9 +114,12 @@ const ReassignTaskRequestModal = ({ selectedTask, onClose, onSuccess }) => {
     try {
       const publicId = selectedTask.public_id || selectedTask.id || selectedTask._id;
       
+      const payload = { reason: reason.trim() };
+
       const resp = await fetchWithTenant(`/api/tasks/${publicId}/request-reassignment`, {
         method: 'POST',
-        body: JSON.stringify({ reason: reason.trim() }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
 
       if (resp.success) {

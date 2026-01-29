@@ -921,6 +921,83 @@ const ManagerTasks = () => {
             </div>
           )}
         </div>
+
+        {/* Right-side details panel when a task is selected */}
+        {selectedTask && (
+          <aside className="lg:w-2/5 bg-white rounded-xl border p-6 shadow-sm">
+            <div className="flex items-start gap-4">
+              <div className="w-14 h-14 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-lg">
+                {(selectedTask.title || selectedTask.name || '').slice(0,2).toUpperCase()
+                }
+              </div>
+              <div className="flex-1">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900">{selectedTask.title || selectedTask.name}</h3>
+                    <p className="text-sm text-gray-500 mt-1 line-clamp-2">{selectedTask.description || 'No description'}</p>
+                  </div>
+                  <div className="text-right">
+                    <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getTaskStatus(selectedTask) === 'COMPLETED' ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-700'}`}>
+                      {getStatusText(getTaskStatus(selectedTask))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-gray-600">
+                  <div>Priority:<div className="font-medium text-gray-800">{(selectedTask.priority || 'MEDIUM').toString()}</div></div>
+                  <div>Due:<div className="font-medium text-gray-800">{formatDate(selectedTask.taskDate || selectedTask.dueDate || selectedTask.day)}</div></div>
+                  <div>Client:<div className="font-medium text-gray-800">{selectedTask.client?.name || '—'}</div></div>
+                  <div>Estimated:<div className="font-medium text-gray-800">{selectedTask.estimatedHours ?? selectedTask.timeAlloted ?? 0}h</div></div>
+                </div>
+              </div>
+            </div>
+
+            <hr className="my-4" />
+
+            <div>
+              <h4 className="font-medium text-gray-900">Assigned</h4>
+              <ul className="mt-3 space-y-2 text-sm text-gray-700">
+                {(selectedTask.assignedUsers || selectedTask.assigned_users || []).map(u => (
+                  <li key={u.id || u.internalId || u.internal_id} className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-xs text-gray-700">{(u.name || '?')[0]}</div>
+                    <div>
+                      <div className="font-medium text-gray-800">{u.name || u.email || 'Unknown'}</div>
+                      <div className="text-xs text-gray-500">{u.id || u.internalId || ''}</div>
+                    </div>
+                  </li>
+                ))}
+                {((selectedTask.assignedUsers || selectedTask.assigned_users || []).length === 0) && (
+                  <div className="text-sm text-gray-500 mt-2">No assigned users.</div>
+                )}
+              </ul>
+            </div>
+
+            <hr className="my-4" />
+
+            <div>
+              <h4 className="font-medium text-gray-900">Checklist</h4>
+              {(selectedTask.checklist || []).length === 0 ? (
+                <div className="text-sm text-gray-500 mt-2">No checklist items.</div>
+              ) : (
+                <ul className="mt-3 space-y-2 text-sm text-gray-700">
+                  {(selectedTask.checklist || []).map(it => (
+                    <li key={it.id || it._id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                      <div>
+                        <div className="font-medium text-gray-800">{it.title || it.name}</div>
+                        <div className="text-xs text-gray-500">{it.status}</div>
+                      </div>
+                      <div className="text-xs text-gray-500">{formatDate(it.dueDate || it.due_date || it.updatedAt)}</div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="mt-6">
+              <button onClick={() => setSelectedTask(null)} className="px-4 py-2 border rounded-lg">Close</button>
+            </div>
+          </aside>
+        )}
       </div>
 
       {showCreateTaskModal && (
