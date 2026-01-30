@@ -961,13 +961,20 @@ const ManagerApprovalPanel = () => {
         action: 'APPROVE'
       })).unwrap();
 
-      // Handle the response
-      if (result && result.success) {
+      // Handle the response - API returns { success: true, data: { message, newStatus } }
+      // But workflowApi returns just the data object (resp.data), so result = { message, newStatus }
+      const isSuccess = result?.success === true || 
+                       result?.newStatus === 'APPROVED' || 
+                       result?.newStatus === 'COMPLETED' || 
+                       (result?.message && !result?.error);
+      
+      if (isSuccess) {
         // Mark this request as approved
         setApprovedRequests(prev => new Set([...prev, requestId]));
 
         // Show success message from response
-        toast.success(result.message || 'Task completion approved successfully');
+        const successMessage = result?.message || result?.data?.message || 'Task completion approved successfully';
+        toast.success(successMessage);
 
         // Refresh to get updated data from server
         setTimeout(() => {

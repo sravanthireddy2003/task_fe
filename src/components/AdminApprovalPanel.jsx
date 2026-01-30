@@ -708,46 +708,26 @@ const AdminApprovalPanel = () => {
                           <>
                             <button
                               onClick={() => handleApprove(request.id)}
-                              disabled={processingId === request.id || isClosed || isApproved}
-                              className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${
-                                isClosed
-                                  ? 'bg-blue-500 cursor-not-allowed'
-                                  : isApproved
-                                  ? 'bg-green-500 cursor-not-allowed'
-                                  : 'bg-green-600 hover:bg-green-700 disabled:bg-green-400'
-                              }`}
-                              title={isClosed ? "Project is already closed" : isApproved ? "Already approved" : "Approve project closure"}
+                              disabled={processingId === request.id}
+                              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors bg-green-600 hover:bg-green-700 disabled:bg-green-400"
+                              title="Approve project closure"
                             >
-                              {isClosed ? (
-                                <>
-                                  <Check className="w-4 h-4" />
-                                  Closed
-                                </>
-                              ) : isApproved ? (
-                                <>
-                                  <Check className="w-4 h-4" />
-                                  Approved
-                                </>
-                              ) : processingId === request.id ? (
+                              {processingId === request.id ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />
                               ) : (
                                 <Check className="w-4 h-4" />
                               )}
-                              {isClosed || isApproved ? '' : 'Approve Closure'}
+                              Approve Closure
                             </button>
 
                             <button
                               onClick={() => openRejectModal(request)}
-                              disabled={processingId === request.id || isClosed || isApproved}
-                              className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${
-                                isClosed || isApproved
-                                  ? 'bg-gray-400 cursor-not-allowed'
-                                  : 'bg-red-600 hover:bg-red-700 disabled:bg-red-400'
-                              }`}
-                              title={isClosed ? "Project is closed" : isApproved ? "Already approved" : "Reject project closure"}
+                              disabled={processingId === request.id}
+                              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors bg-red-600 hover:bg-red-700 disabled:bg-red-400"
+                              title="Reject project closure"
                             >
                               <X className="w-4 h-4" />
-                              {isClosed || isApproved ? 'Closed' : 'Reject'}
+                              Reject
                             </button>
                           </>
                         ) : (

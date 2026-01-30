@@ -196,11 +196,6 @@ export default function Workflow() {
       return;
     }
 
-    if (currentProject.status?.toUpperCase() !== 'ACTIVE') {
-      setClosureError('Only active projects can be closed. Please select an active project.');
-      return;
-    }
-
     setClosureLoading(true);
     setClosureError(''); // Clear any previous errors
 
@@ -236,8 +231,6 @@ export default function Workflow() {
       if (error?.message) {
         if (error.message.includes('All tasks must be COMPLETED')) {
           errorMessage = 'Cannot close project: All tasks must be completed first. Please ensure all project tasks are marked as completed before requesting closure.';
-        } else if (error.message.includes('Project must be ACTIVE')) {
-          errorMessage = 'Only active projects can be closed. Please select an active project.';
         } else {
           errorMessage = error.message;
         }
@@ -912,7 +905,10 @@ export default function Workflow() {
             >
               <option value="">Choose a project...</option>
               {projects
-                .filter(project => project.status?.toUpperCase() === 'ACTIVE')
+                .filter(project => {
+                  const status = project.status?.toUpperCase();
+                  return status === 'ACTIVE' || status === 'REVIEW' || status === 'PENDING_FINAL_APPROVAL';
+                })
                 .map((project) => (
                 <option key={project.id || project._id} value={project.id || project._id}>
                   {project.name || project.title || `Project ${project.id || project._id}`} 
@@ -920,8 +916,11 @@ export default function Workflow() {
                 </option>
               ))}
             </select>
-            {projects.filter(project => project.status?.toUpperCase() === 'ACTIVE').length === 0 && (
-              <p className="text-sm text-gray-500 mt-1">No active projects available for closure. Please contact admin if you believe this is an error.</p>
+            {projects.filter(project => {
+              const status = project.status?.toUpperCase();
+              return status === 'ACTIVE' || status === 'REVIEW' || status === 'PENDING_FINAL_APPROVAL';
+            }).length === 0 && (
+              <p className="text-sm text-gray-500 mt-1">No projects available for closure. Please contact admin if you believe this is an error.</p>
             )}
           </div>
 
