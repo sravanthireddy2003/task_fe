@@ -1,10 +1,11 @@
 import { io } from 'socket.io-client';
+import { WS_BASE_URL } from '../utils/envConfig';
 
 let socket = null;
 
 export function initWorkflowSocket(store) {
   if (socket) return socket;
-  const base = import.meta.env.VITE_WS_URL || import.meta.env.VITE_SERVERURL || '';
+  const base = WS_BASE_URL || '';
   const url = base.replace(/^http/, 'ws').replace(/\/+$/, '');
   try {
     socket = io(url, { transports: ['websocket', 'polling'] });

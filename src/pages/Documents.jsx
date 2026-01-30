@@ -142,7 +142,6 @@ const Documents = () => {
       const resp = await httpGetService('projects?dropdown=1');
       const data = Array.isArray(resp?.data) ? resp.data : (Array.isArray(resp) ? resp : resp?.data);
       const projectsArray = Array.isArray(data) ? data : [];
-      console.log('Loaded projects:', projectsArray);
       setProjects(projectsArray);
 
       // Auto-select the first project and load documents for it

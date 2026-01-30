@@ -32,7 +32,6 @@ export const fetchTasks = createAsyncThunk(
   'tasks/fetchTasks',
   async (params = {}, thunkAPI) => {
     try {
-      console.log('fetchTasks called with params:', params);
       // Support query params from callers. Backend expects `project_id` (snake_case) or projectPublicId
       const query = {};
       if (params.project_id) query.project_id = params.project_id;
@@ -44,10 +43,8 @@ export const fetchTasks = createAsyncThunk(
 
       const qs = new URLSearchParams(query).toString();
       const url = qs ? `api/projects/tasks?${qs}` : `api/projects/tasks`;
-      console.log('fetchTasks calling URL:', url);
 
       const res = await httpGetService(url);
-      console.log('fetchTasks response:', res);
 
       // Handle API response structure: { success: true, data: [...] } or { success: false, error: "message" }
       if (res?.success === false) {
@@ -56,7 +53,6 @@ export const fetchTasks = createAsyncThunk(
 
       // Normalize response shapes: prefer `res.data` when server returns { success:true, data: [...] }
       const data = res?.data || res || [];
-      console.log('fetchTasks normalized data:', data);
       if (Array.isArray(data)) return data;
       // Fallbacks: server may return array directly or wrap in .tasks
       if (Array.isArray(res)) return res;

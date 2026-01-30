@@ -11,29 +11,30 @@ import { getAccessToken, getRefreshToken, setTokens } from './utils/tokenService
 import { setAuthToken } from './App/httpHandler';
 import { refreshToken } from './redux/slices/authSlice';
 import { initWorkflowSocket } from './socket/initWorkflowSocket';
+import { API_BASE_URL, TENANT_ID_FALLBACK } from './utils/envConfig';
  
 // Ensure tenantId default from environment is persisted for API calls
 try {
-  const defaultTenant = import.meta.env.VITE_TENANT_ID || null;
+  const defaultTenant = TENANT_ID_FALLBACK || null;
   if (defaultTenant && !localStorage.getItem("tenantId")) {
     localStorage.setItem("tenantId", defaultTenant);
   }
 } catch (e) {}
  
-// ✅ FIXED: Bootstrapping sequence - NO DEV TOKEN AUTO-LOGIN
+// ✅ FIXED: Bootstrapping sequence - NO DEV TOKEN AUTO-LOGIN (gated by env flag)
 async function boot() {
   try {
     // Wrap global fetch to automatically attach Authorization and x-tenant-id for API calls
     try {
       const originalFetch = window.fetch.bind(window);
-      const baseURL = import.meta.env.VITE_SERVERURL || '';
+      const baseURL = API_BASE_URL || '';
       window.fetch = async (input, init = {}) => {
         try {
           let url = typeof input === 'string' ? input : input.url;
           const isApiCall = url && (url.startsWith(baseURL) || url.startsWith('/api') || url.includes('/api/'));
           const headers = new Headers(init.headers || (typeof input === 'object' && input.headers) || {});
           const token = getAccessToken();
-          const tenant = localStorage.getItem('tenantId') || import.meta.env.VITE_TENANT_ID || '';
+          const tenant = localStorage.getItem('tenantId') || TENANT_ID_FALLBACK || '';
           if (isApiCall) {
             if (token && !headers.has('Authorization')) headers.set('Authorization', `Bearer ${token}`);
             if (tenant && !headers.has('x-tenant-id')) headers.set('x-tenant-id', tenant);
@@ -44,22 +45,21 @@ async function boot() {
           return await originalFetch(input, init);
         }
       };
-    } catch (e) {
-      console.warn('Could not patch global fetch to auto-attach tokens', e);
-    }
-    // ✅ STEP 1: Load existing tokens OR use dev seed for development
+    } catch (e) {}
+    // ✅ STEP 1: Load existing tokens OR use dev seed for development (only when explicitly enabled)
     let access = getAccessToken();
     let refresh = getRefreshToken();
     
-    // Use dev seed if no existing tokens (development convenience)
-    if (!access && DEV_SEED) {
-      console.log('🔧 Using dev seed token for development');
+    const isDev = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.DEV;
+    const useDevSeed = typeof import.meta !== 'undefined' && import.meta.env && (import.meta.env.VITE_USE_DEV_SEED === 'true');
+    // Use dev seed only if: no tokens, running in dev, and flag enabled
+    if (!access && isDev && useDevSeed && DEV_SEED) {
       access = DEV_SEED.token;
       refresh = DEV_SEED.refreshToken;
       setTokens(access, refresh, 'local');
-      
-      // Also set user info in localStorage
-      localStorage.setItem('userInfo', JSON.stringify(DEV_SEED.user));
+      try {
+        localStorage.setItem('userInfo', JSON.stringify(DEV_SEED.user));
+      } catch (e) {}
     }
    
     if (access) {
@@ -69,10 +69,13 @@ async function boot() {
       try {
         await store.dispatch(refreshToken()).unwrap();
       } catch (err) {
-        console.warn("Token refresh on startup failed", err);
         // ✅ Clear invalid tokens on refresh fail
         localStorage.removeItem("tm_access_token");
         localStorage.removeItem("accessToken");
+        localStorage.removeItem("tm_refresh_token");
+        localStorage.removeItem("refreshToken");
+        // Also clear any dev/user seed to avoid stale identity on reload
+        localStorage.removeItem("userInfo");
       }
     }
     // ✅ NO DEV SEED - Let user login normally
@@ -80,9 +83,7 @@ async function boot() {
     // initialize workflow socket after store is ready
     try {
       initWorkflowSocket(store);
-    } catch (e) {
-      console.warn('Could not init workflow socket', e);
-    }
+    } catch (e) {}
 
     ReactDOM.createRoot(document.getElementById("root")).render(
       <Provider store={store}>

@@ -28,6 +28,7 @@ import {
 	Users,
 	CheckCircle,
 	MoreVertical,
+	Camera,
 } from 'lucide-react';
 
 // Re-export all Lucide icons so they can be imported from here
@@ -36,5 +37,5 @@ export * from 'lucide-react';
 export const CheckCheck = Check;
 export const Clock4 = Clock3;
 // Explicit convenient re-exports used across the app
-export { RefreshCw, AlertCircle, Calendar, Clock, User, Plus, CheckSquare, Eye, Filter, Lock, UserCheck, AlertTriangle, ChevronDown, Search, Settings, MessageCircle, Users, CheckCircle, MoreVertical };
+export { RefreshCw, AlertCircle, Calendar, Clock, User, Plus, CheckSquare, Eye, Filter, Lock, UserCheck, AlertTriangle, ChevronDown, Search, Settings, MessageCircle, Users, CheckCircle, MoreVertical, Camera };
 

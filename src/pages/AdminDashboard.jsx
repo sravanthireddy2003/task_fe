@@ -90,29 +90,6 @@ import ListItem from "../components/ui/ListItem";
 import PageHeader from "../components/PageHeader";
 
 const Dashboard = () => {
-  React.useEffect(() => {
-    console.log('admin icons:', {
-      Search: Icons.Search,
-      Bell: Icons.Bell,
-      Settings: Icons.Settings,
-      Users: Icons.Users,
-      ClipboardList: Icons.ClipboardList,
-      Clock: Icons.Clock,
-      AlertCircle: Icons.AlertCircle,
-      CheckCircle: Icons.CheckCircle,
-      Briefcase: Icons.Briefcase,
-      MoreVertical: Icons.MoreVertical,
-      ChevronRight: Icons.ChevronRight,
-    });
-    // Diagnostics for undefined components/imports
-    console.log('admin components:', { GridCard, ListItem });
-    console.log('recharts types:', {
-      PieChart: typeof PieChart,
-      Pie: typeof Pie,
-      BarChart: typeof BarChart,
-      ResponsiveContainer: typeof ResponsiveContainer,
-    });
-  }, []);
   const [metrics, setMetrics] = useState(STATIC_DATA.dashboardMetrics);
   const [taskDistribution, setTaskDistribution] = useState(STATIC_DATA.taskDistribution);
   const [weeklyTrends, setWeeklyTrends] = useState(STATIC_DATA.weeklyTrends);

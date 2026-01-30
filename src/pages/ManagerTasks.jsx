@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import fetchWithTenant from '../utils/fetchWithTenant';
 import { selectUser } from '../redux/slices/authSlice';
 import * as Icons from '../icons';
+import { getStatusText, hasApprovedRequest, getManagerTaskStatus } from '../utils/taskHelpers';
 import ViewToggle from '../components/ViewToggle';
 import RefreshButton from '../components/RefreshButton';
 import PageHeader from '../components/PageHeader';
@@ -97,48 +98,7 @@ const ManagerTasks = () => {
     return { valid: true, error: null };
   };
 
-  // Utility functions
-  const getStatusText = (status) => {
-    const statusMap = {
-      'PENDING': 'Pending',
-      'IN_PROGRESS': 'In Progress',
-      'COMPLETED': 'Completed',
-      'ON_HOLD': 'On Hold',
-      'LOCKED': 'Locked - Pending Approval',
-      'pending': 'Pending',
-      'in_progress': 'In Progress',
-      'completed': 'Completed',
-      'on_hold': 'On Hold',
-      'locked': 'Locked - Pending Approval',
-      'TO DO': 'To Do',
-      'Request Approved': 'Request Approved',
-      'REQUEST APPROVED': 'Request Approved'
-    };
-    return statusMap[status] || status || 'Pending';
-  };
-
-  // Check if task has approved request
-  const hasApprovedRequest = (task) => {
-    return (task.lock_info && task.lock_info.request_status === 'APPROVE') ||
-      (task.lock_info && task.lock_info.request_status === 'APPROVED') ||
-      (task.status === 'Request Approved') ||
-      (task.task_status?.current_status === 'Request Approved') ||
-      (task.is_locked === true && task.status === 'Request Approved');
-  };
-
-  // Get task display status
-  const getTaskStatus = (task) => {
-    if (task.lock_info?.request_status === 'PENDING') {
-      return 'LOCKED';
-    }
-    if (hasApprovedRequest(task)) {
-      return 'Request Approved';
-    }
-    if (task.is_locked === true && task.status === 'Request Approved') {
-      return 'Request Approved';
-    }
-    return task.task_status?.current_status || task.status || task.stage || 'PENDING';
-  };
+  // Utility: status text / derived status come from shared helpers
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
@@ -176,7 +136,7 @@ const ManagerTasks = () => {
   const filteredTasks = useMemo(() => {
     if (filterStatus === 'all') return tasks;
     return tasks.filter(task => {
-      const taskStatus = getTaskStatus(task).toUpperCase();
+      const taskStatus = getManagerTaskStatus(task).toUpperCase();
       const filterStatusUpper = filterStatus.toUpperCase();
       return taskStatus === filterStatusUpper;
     });
@@ -194,7 +154,7 @@ const ManagerTasks = () => {
     };
 
     tasks.forEach(task => {
-      const status = getTaskStatus(task).toLowerCase();
+      const status = getManagerTaskStatus(task).toLowerCase();
       if (status === 'request approved') {
         counts['request_approved']++;
       } else if (status === 'locked') {
@@ -817,7 +777,7 @@ const ManagerTasks = () => {
                   ) : (
                     filteredTasks.map((task) => {
                       const isActive = selectedTask?.id === task.id || selectedTask?.public_id === task.public_id;
-                      const taskStatus = getTaskStatus(task);
+                      const taskStatus = getManagerTaskStatus(task);
 
                       return (
                         <tr
@@ -906,7 +866,7 @@ const ManagerTasks = () => {
                 </Card>
               ) : (
                 filteredTasks.map((task) => {
-                  const taskStatus = getTaskStatus(task);
+                  const taskStatus = getManagerTaskStatus(task);
 
                   return (
                     <Card
@@ -986,7 +946,7 @@ const ManagerTasks = () => {
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="text-xl font-semibold text-gray-900">{selectedTask.title}</h2>
                   <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${
-                    getTaskStatus(selectedTask) === 'LOCKED'
+                    getManagerTaskStatus(selectedTask) === 'LOCKED'
                       ? 'bg-red-100 text-red-800 border-red-200'
                       : getTaskStatus(selectedTask) === 'COMPLETED' || getTaskStatus(selectedTask) === 'Completed'
                         ? 'bg-green-100 text-green-800 border-green-200'
@@ -1007,7 +967,7 @@ const ManagerTasks = () => {
                 </p>
 
                 {/* Task completion alert */}
-                {(getTaskStatus(selectedTask) === 'COMPLETED' || getTaskStatus(selectedTask) === 'Completed') && (
+                {(getManagerTaskStatus(selectedTask) === 'COMPLETED' || getManagerTaskStatus(selectedTask) === 'Completed') && (
                   <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
                     <p className="font-semibold">✓ Task Completed</p>
                     <p className="text-xs mt-1">
@@ -1018,7 +978,7 @@ const ManagerTasks = () => {
                 )}
 
                 {/* Locked task alert */}
-                {getTaskStatus(selectedTask) === 'LOCKED' && (
+                {getManagerTaskStatus(selectedTask) === 'LOCKED' && (
                   <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                     <p className="font-semibold">🔒 Task Locked - Pending Approval</p>
                     <p className="text-xs">Task is locked pending manager approval for reassignment request.</p>
@@ -1026,7 +986,7 @@ const ManagerTasks = () => {
                 )}
 
                 {/* Request approved alert */}
-                {getTaskStatus(selectedTask) === 'Request Approved' && (
+                {getManagerTaskStatus(selectedTask) === 'Request Approved' && (
                   <div className="rounded-lg border border-purple-200 bg-purple-50 p-3 text-sm text-purple-700">
                     <p className="font-semibold">✅ Reassignment Approved</p>
                     <p className="text-xs">Employee reassignment request has been approved.</p>

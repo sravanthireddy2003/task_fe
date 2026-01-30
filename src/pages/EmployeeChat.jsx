@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
-import * as Icons from '../icons';
-
-const { MessageCircle } = Icons;
 import { toast } from 'sonner';
 import ChatInterface from '../components/ChatInterface';
 import { httpGetService } from '../App/httpHandler';
 import ChatPageLayout from '../components/ChatPageLayout';
+import { ChatLoadingScreen, ChatEmptyState } from '../components/ChatStates';
 
 const EmployeeChat = () => {
   const { user } = useSelector((state) => state.auth);
@@ -25,10 +23,8 @@ const EmployeeChat = () => {
         const res = await httpGetService('api/employee/my-tasks');
         if (res?.success && res?.data && res.data.length > 0) {
           userTasks = res.data;
-          console.log('Tasks fetched from: api/employee/my-tasks', userTasks.length);
         }
       } catch (e) {
-        console.log('Failed to fetch from api/employee/my-tasks, trying fallback...');
         // Fallback to the old method if needed
         const paramVariations = [
           `api/tasks?assigned_to=${user?.id}`,
@@ -44,11 +40,9 @@ const EmployeeChat = () => {
             const res = await httpGetService(param);
             if (res?.success && res?.data && res.data.length > 0) {
               userTasks = res.data;
-              console.log(`Tasks fetched from: ${param}`, userTasks.length);
               break;
             }
           } catch (e) {
-            console.log(`Failed to fetch from ${param}, trying next...`);
             continue;
           }
         }
@@ -75,8 +69,6 @@ const EmployeeChat = () => {
         });
 
         const assignedProjects = Array.from(projectMap.values());
-
-        console.log(`Projects extracted from tasks: ${assignedProjects.length}`);
         setProjects(assignedProjects);
 
         if (assignedProjects.length > 0) {
@@ -100,31 +92,16 @@ const EmployeeChat = () => {
   }, [user?.id, fetchAssignedProjects]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="text-center">
-          <div className="relative">
-            <div className="w-12 h-12 border-3 border-gray-200 border-t-blue-600 rounded-full animate-spin mb-3"></div>
-            <MessageCircle className="w-5 h-5 text-blue-600 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
-          </div>
-          <p className="text-gray-600 text-sm mt-3">Loading conversations...</p>
-        </div>
-      </div>
-    );
+    return <ChatLoadingScreen />;
   }
 
   if (!projects.length) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="text-center max-w-sm p-6">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100">
-            <MessageCircle className="w-8 h-8 text-blue-600" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">No projects found</h3>
-          <p className="text-gray-500 text-sm mb-2">You haven't been assigned to any projects yet.</p>
-          <p className="text-gray-400 text-xs">Once tasks are assigned to you, you'll see chat channels here.</p>
-        </div>
-      </div>
+      <ChatEmptyState
+        title="No projects found"
+        description="You haven't been assigned to any projects yet."
+        helperText="Once tasks are assigned to you, you'll see chat channels here."
+      />
     );
   }
 

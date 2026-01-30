@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import io from 'socket.io-client';
+import { WS_BASE_URL } from '../utils/envConfig';
 import {
   addRealtimeMessage,
   updateParticipants,
@@ -25,7 +26,7 @@ export const useChat = (projectId, authToken, callbacks = {}) => {
   useEffect(() => {
     if (!authToken) return;
 
-    const serverUrl = import.meta.env.VITE_SERVERURL || 'http://localhost:4000';
+    const serverUrl = WS_BASE_URL || undefined;
     
     // ✅ Create connection if it doesn't exist
     if (!socketRef.current) {
@@ -37,21 +38,9 @@ export const useChat = (projectId, authToken, callbacks = {}) => {
         reconnectionAttempts: 10,
         transports: ['websocket', 'polling'],
       });
-
-      // ✅ Connection established
-      socketRef.current.on('connect', () => {
-        console.log('[Chat] Socket.IO connected:', socketRef.current.id);
-      });
-
-      // ✅ Connection lost
-      socketRef.current.on('disconnect', () => {
-        console.log('[Chat] Socket.IO disconnected');
-      });
-
-      // ✅ Reconnection attempt
-      socketRef.current.on('connect_error', (error) => {
-        console.error('[Chat] Connection error:', error);
-      });
+      socketRef.current.on('connect', () => {});
+      socketRef.current.on('disconnect', () => {});
+      socketRef.current.on('connect_error', () => {});
     }
 
     return () => {
@@ -65,12 +54,10 @@ export const useChat = (projectId, authToken, callbacks = {}) => {
 
     // Leave previous room if different
     if (connectedProjectRef.current && connectedProjectRef.current !== projectId) {
-      console.log('[Chat] Leaving room:', connectedProjectRef.current);
       socketRef.current.emit('leave_project_chat', connectedProjectRef.current);
     }
 
     // Join new room
-    console.log('[Chat] Joining room:', projectId);
     socketRef.current.emit('join_project_chat', projectId);
     connectedProjectRef.current = projectId;
   }, [projectId]);
@@ -81,25 +68,19 @@ export const useChat = (projectId, authToken, callbacks = {}) => {
 
     // ✅ Listen for incoming messages - REAL-TIME (IMMEDIATE DISPATCH + FETCH)
     const handleChatMessage = (message) => {
-      console.log('[Chat] ⚡ RECEIVED MESSAGE IN REAL-TIME:', message);
       if (message && (message.id || message._id)) {
-        // ✅ IMMEDIATELY dispatch to Redux
-        console.log('[Chat] 📤 Dispatching to Redux:', message);
         dispatch(addRealtimeMessage(message));
         
-        // ✅ Trigger callback to fetch fresh messages immediately
         if (onMessageReceived) {
-          console.log('[Chat] 🔄 Triggering onMessageReceived callback');
           onMessageReceived();
         }
       } else {
-        console.warn('[Chat] ⚠️ Invalid message format:', message);
+        
       }
     };
 
     // ✅ Listen for participants update - REAL-TIME
     const handleParticipants = (participants) => {
-      console.log('[Chat] 👥 Updated participants:', participants?.length);
       if (participants && Array.isArray(participants)) {
         dispatch(updateParticipants(participants));
       }
@@ -107,7 +88,6 @@ export const useChat = (projectId, authToken, callbacks = {}) => {
 
     // ✅ Listen for user joined - REAL-TIME
     const handleUserJoined = (data) => {
-      console.log('[Chat] ✅ User joined:', data?.user_name);
       if (data?.userId) {
         dispatch(addParticipant({
           user_id: data.userId,
@@ -121,7 +101,6 @@ export const useChat = (projectId, authToken, callbacks = {}) => {
 
     // ✅ Listen for user left - REAL-TIME
     const handleUserLeft = (data) => {
-      console.log('[Chat] ❌ User left:', data?.userId);
       if (data?.userId) {
         dispatch(removeParticipant(data.userId));
       }

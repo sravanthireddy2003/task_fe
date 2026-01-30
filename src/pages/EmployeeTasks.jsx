@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'sonner';
 import fetchWithTenant from '../utils/fetchWithTenant';
 import { httpGetService } from '../App/httpHandler';
+import { getStatusText, isTaskLocked, isTaskInReview } from '../utils/taskHelpers';
 import { selectUser } from '../redux/slices/authSlice';
 import { 
   fetchTasks,
@@ -83,31 +84,6 @@ const getProjectIdForApi = (projectId) => {
   return projectId;
 };
 
-// Status text mapping - updated with your API status values
-const getStatusText = (status) => {
-  if (!status) return 'Pending';
-  
-  const statusMap = {
-    'PENDING': 'Pending',
-    'IN_PROGRESS': 'In Progress',
-    'COMPLETED': 'Completed',
-    'ON_HOLD': 'On Hold',
-    'On Hold': 'On Hold',
-    'pending': 'Pending',
-    'in_progress': 'In Progress',
-    'completed': 'Completed',
-    'on_hold': 'On Hold',
-    'To Do': 'To Do',
-    'In Progress': 'In Progress',
-    'Review': 'Review',
-    'Completed': 'Completed',
-    'TO DO': 'To Do',
-    'IN PROGRESS': 'In Progress'
-  };
-  
-  return statusMap[status] || status || 'Pending';
-};
-
 // Get status color classes - updated to match your API
 const getStatusClasses = (status) => {
   if (!status) return 'bg-gray-100 text-gray-800 border-gray-200';
@@ -149,25 +125,12 @@ const getPriorityClasses = (priority) => {
   }
 };
 
-// Check if task is locked
-const isTaskLocked = (task) => {
-  return task?.is_locked || task?.lock_info?.is_locked || false;
-};
-
-// Check if task is in review state
-const isTaskInReview = (task) => {
-  if (!task) return false;
-  const s = (task.status || task.stage || task.task_status?.current_status || '').toString().toLowerCase();
-  return s === 'review' || s === 'in_review' || s.includes('review');
-};
-
 // Task should be read-only when in review, locked, or user has readonly access
 const EmployeeTasks = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const user = useSelector(selectUser);
   const userRole = user?.role?.toLowerCase();
-  console.log('EmployeeTasks component rendered, user:', user, 'userRole:', userRole);
   const [projects, setProjects] = useState([]);
 
   // Task should be read-only when in review, locked, or user has readonly access
@@ -375,17 +338,13 @@ const EmployeeTasks = () => {
   };
 
   const loadProjects = async () => {
-    console.log('Loading projects...');
     try {
       const response = await fetchWithTenant('/api/projects?dropdown=1');
-      console.log('Projects response:', response);
       const data = response?.data || response || [];
-      console.log('Projects data:', data);
       if (Array.isArray(data)) {
         setProjects(data);
         if (data.length > 0 && !selectedProjectId) {
           const firstProjectId = data[0].projectId || data[0].id || data[0]._id || data[0].public_id;
-          console.log('Setting selectedProjectId to:', firstProjectId);
           setSelectedProjectId(firstProjectId);
         }
       }
@@ -395,19 +354,14 @@ const EmployeeTasks = () => {
   };
 
   const loadTasks = async (projectId) => {
-    console.log('loadTasks called with projectId:', projectId);
     if (!projectId) {
-      console.log('No projectId provided, returning');
       return;
     }
     
     setLoading(true);
     setError(null);
     try {
-      console.log('Calling fetchTasks with project_id:', projectId);
       const result = await dispatch(fetchTasks({ project_id: projectId })).unwrap();
-      
-      console.log('Tasks loaded:', result);
       
       // Handle the response structure
       const data = Array.isArray(result) ? result : result?.data || [];
@@ -580,7 +534,6 @@ const EmployeeTasks = () => {
   };
 
   useEffect(() => {
-    console.log('First useEffect triggered, userRole:', userRole);
     loadProjects();
     if (userRole !== 'employee') {
       loadEmployees();
@@ -588,7 +541,6 @@ const EmployeeTasks = () => {
   }, []);
 
   useEffect(() => {
-    console.log('EmployeeTasks useEffect triggered, selectedProjectId:', selectedProjectId, 'userRole:', userRole);
     const timer = setTimeout(() => {
       if (userRole === 'employee') {
         fetchEmployeeTasks();
@@ -693,8 +645,6 @@ const EmployeeTasks = () => {
 
   // Helper to update task state locally after an action
   const updateLocalTaskState = (taskId, updates) => {
-    console.log('Updating task state:', { taskId, updates });
-
     // Update main tasks array
     setTasks(prev => {
       const taskIndex = prev.findIndex(t => {
@@ -703,7 +653,6 @@ const EmployeeTasks = () => {
       });
 
       if (taskIndex === -1) {
-        console.log('Task not found for ID:', taskId);
         return prev;
       }
 

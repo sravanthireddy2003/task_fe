@@ -1,97 +1,9 @@
-// import axios from "axios";
-// import { getAccessToken, getRefreshToken, setTokens, clearTokens } from "../utils/tokenService";
-
-// const baseURL = import.meta.env.VITE_SERVERURL || "http://localhost:4000";
-
-// const api = axios.create({
-//   baseURL,
-//   headers: {
-//     "Content-Type": "application/json",
-//   },
-// });
-
-// // Attach tenant id and authorization header
-// api.interceptors.request.use((config) => {
-//   try {
-//     const tenantId = localStorage.getItem("tenantId") || import.meta.env.VITE_TENANT_ID;
-//     if (tenantId) config.headers["x-tenant-id"] = tenantId;
-//     const token = getAccessToken();
-//     if (token) config.headers["Authorization"] = `Bearer ${token}`;
-//   } catch (e) {
-//     // ignore
-//   }
-//   return config;
-// });
-
-// let isRefreshing = false;
-// let failedQueue = [];
-
-// const processQueue = (error, token = null) => {
-//   failedQueue.forEach((prom) => {
-//     if (error) prom.reject(error);
-//     else prom.resolve(token);
-//   });
-//   failedQueue = [];
-// };
-
-// api.interceptors.response.use(
-//   (response) => response,
-//   async (error) => {
-//     const originalRequest = error.config;
-//     if (error.response && error.response.status === 401 && !originalRequest._retry) {
-//       originalRequest._retry = true;
-//       if (isRefreshing) {
-//         return new Promise(function (resolve, reject) {
-//           failedQueue.push({ resolve, reject });
-//         })
-//           .then((token) => {
-//             originalRequest.headers["Authorization"] = `Bearer ${token}`;
-//             return api(originalRequest);
-//           })
-//           .catch((err) => Promise.reject(err));
-//       }
-
-//       isRefreshing = true;
-//       const refreshToken = getRefreshToken();
-//       if (!refreshToken) {
-//         clearTokens();
-//         isRefreshing = false;
-//         return Promise.reject(error);
-//       }
-
-//       try {
-//         const resp = await axios.post(
-//           `${baseURL}/api/auth/refresh`,
-//           { refreshToken },
-//           { headers: { "x-tenant-id": localStorage.getItem("tenantId") || import.meta.env.VITE_TENANT_ID } }
-//         );
-//         const { accessToken, refreshToken: newRefresh } = resp.data;
-//         setTokens(accessToken, newRefresh || refreshToken);
-//         api.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
-//         processQueue(null, accessToken);
-//         originalRequest.headers["Authorization"] = `Bearer ${accessToken}`;
-//         return api(originalRequest);
-//       } catch (err) {
-//         processQueue(err, null);
-//         clearTokens();
-//         return Promise.reject(err);
-//       } finally {
-//         isRefreshing = false;
-//       }
-//     }
-//     return Promise.reject(error);
-//   }
-// );
-
-// export default api;
-
-
 import axios from "axios";
 import { getAccessToken, getRefreshToken, setTokens, clearTokens } from "../utils/tokenService";
+import { API_BASE_URL, TENANT_ID_FALLBACK } from "../utils/envConfig";
 
-// Use import.meta.env for Vite environment variables
-const baseURL = import.meta.env.VITE_SERVERURL || "http://localhost:4000";
-const defaultTenantId = import.meta.env.VITE_TENANT_ID || null;
+const baseURL = API_BASE_URL;
+const defaultTenantId = TENANT_ID_FALLBACK || null;
 
 const api = axios.create({
   baseURL,
@@ -106,7 +18,12 @@ api.interceptors.request.use((config) => {
     const tenantId = localStorage.getItem("tenantId") || defaultTenantId;
     if (tenantId) config.headers["x-tenant-id"] = tenantId;
     const token = getAccessToken();
-    if (token) config.headers["Authorization"] = `Bearer ${token}`;
+    // Do NOT attach Authorization for refresh endpoint
+    const url = config?.url || '';
+    const isRefresh = typeof url === 'string' && /\/auth\/refresh/i.test(url);
+    if (token && !isRefresh) {
+      config.headers["Authorization"] = `Bearer ${token}`;
+    }
   } catch (e) {
     // ignore
   }
@@ -166,13 +83,16 @@ api.interceptors.response.use(
 
       try {
         const tenantId = localStorage.getItem("tenantId") || defaultTenantId;
-        const resp = await axios.post(
+        // Send refresh token in body (align with authSlice refresh flow)
+        // Use a "naked" axios instance with no default Authorization
+        const nakedAxios = axios.create();
+        const resp = await nakedAxios.post(
           `${baseURL}/api/auth/refresh`,
-          {}, // no body
+          { refreshToken },
           { 
             headers: { 
-              "x-tenant-id": tenantId,
-              "Authorization": `Bearer ${refreshToken}`
+              "Content-Type": "application/json",
+              "x-tenant-id": tenantId
             } 
           }
         );

@@ -1,7 +1,7 @@
-// App.jsx - COMPLETE FIXED (NO PAGE RELOADS, MANAGER UI PRESERVED)
+// App.jsx - COMPLETE FIXED
 import { Transition } from "@headlessui/react";
 import clsx from "clsx";
-import { Fragment, useEffect } from "react";
+import { Fragment, useEffect, lazy, Suspense } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import * as Icons from "./icons";
 
@@ -11,8 +11,8 @@ import { Toaster } from "sonner";
 
 import { 
   getProfile, 
-  selectUser, 
-  setCredentials
+  selectUser,
+  setCredentials 
 } from "./redux/slices/authSlice";
 
 import { fetchNotifications } from "./redux/slices/notificationSlice";
@@ -21,45 +21,46 @@ import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 import PageWrapper from "./components/PageWrapper";
 
-import Login from "./pages/Login";
-import VerifyOTP from "./pages/VerifyOTP";
-import TaskDetails from "./pages/TaskDetails";
-import Tasks from "./pages/Tasks";
-import EmployeeTasks from "./pages/EmployeeTasks";
-import ManagerClients from "./pages/ManagerClients";
-import ManagerProjects from "./pages/ManagerProjects";
-import ManagerTasks from "./pages/ManagerTasks";
-import Report from "./pages/Report";
-import Users from "./pages/Users";
-import Client from "./pages/Client";
-import ClientDashboard from "./pages/ClientDashboard";
-import DashboardRouter from "./components/DashboardRouter";
-import ClientForm from "./components/client/ClientForm";
-import Profile from "./pages/Profile";
-import ChangePassword from "./pages/ChangePassword";
-import Forgot from "./pages/Forgot";
-import Reset from "./pages/Reset";
+// Route components (lazy-loaded for better performance)
+const Login = lazy(() => import("./pages/Login"));
+const VerifyOTP = lazy(() => import("./pages/VerifyOTP"));
+const TaskDetails = lazy(() => import("./pages/TaskDetails"));
+const Tasks = lazy(() => import("./pages/Tasks"));
+const EmployeeTasks = lazy(() => import("./pages/EmployeeTasks"));
+const ManagerClients = lazy(() => import("./pages/ManagerClients"));
+const ManagerProjects = lazy(() => import("./pages/ManagerProjects"));
+const ManagerTasks = lazy(() => import("./pages/ManagerTasks"));
+const Report = lazy(() => import("./pages/Report"));
+const Users = lazy(() => import("./pages/Users"));
+const Client = lazy(() => import("./pages/Client"));
+const ClientDashboard = lazy(() => import("./pages/ClientDashboard"));
+const DashboardRouter = lazy(() => import("./components/DashboardRouter"));
+const ClientForm = lazy(() => import("./components/client/ClientForm"));
+const Profile = lazy(() => import("./pages/Profile"));
+const ChangePassword = lazy(() => import("./pages/ChangePassword"));
+const Forgot = lazy(() => import("./pages/Forgot"));
+const Reset = lazy(() => import("./pages/Reset"));
 import ModuleRouteGuard from "./components/ModuleRouteGuard";
 
-import PageNotFound from "./pages/PageNotFound";
-import Departments from "./pages/Departments";
-import Projects from "./pages/Projects";
-import Documents from "./pages/Documents";
-import ClientDocuments from "./pages/client/ClientDocuments";
-import ClientAssignedTasks from "./pages/client/ClientAssignedTasks";
-import Settings from "./pages/Settings";
-import Chat from "./pages/Chat";
-import ManagerChat from "./pages/ManagerChat";
-import EmployeeChat from "./pages/EmployeeChat";
-import Workflow from "./pages/Workflow";
-import Notifications from "./pages/Notifications";
-import Trash from "./pages/Trash";
-import Approvals from "./pages/Approvals";
-import LandingPage from "./Landingpage";
-import ModuleDetail from "./pages/ModuleDetail";
+const PageNotFound = lazy(() => import("./pages/PageNotFound"));
+const Departments = lazy(() => import("./pages/Departments"));
+const Projects = lazy(() => import("./pages/Projects"));
+const Documents = lazy(() => import("./pages/Documents"));
+const ClientDocuments = lazy(() => import("./pages/client/ClientDocuments"));
+const ClientAssignedTasks = lazy(() => import("./pages/client/ClientAssignedTasks"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Chat = lazy(() => import("./pages/Chat"));
+const ManagerChat = lazy(() => import("./pages/ManagerChat"));
+const EmployeeChat = lazy(() => import("./pages/EmployeeChat"));
+const Workflow = lazy(() => import("./pages/Workflow"));
+const Notifications = lazy(() => import("./pages/Notifications"));
+const Trash = lazy(() => import("./pages/Trash"));
+const Approvals = lazy(() => import("./pages/Approvals"));
+const LandingPage = lazy(() => import("./Landingpage"));
+const ModuleDetail = lazy(() => import("./pages/ModuleDetail"));
 import ProtectedRoute from "./components/ProtectedRoute";
-import WorkflowBuilder from "./pages/WorkflowBuilder";
-import ManagerApprovalQueue from "./pages/ManagerApprovalQueue";
+const WorkflowBuilder = lazy(() => import("./pages/WorkflowBuilder"));
+const ManagerApprovalQueue = lazy(() => import("./pages/ManagerApprovalQueue"));
 import { getFallbackModules, getFallbackSidebar } from "./utils/apiGuide";
 import { MODULE_MAP } from "./App/moduleMap.jsx";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -69,8 +70,7 @@ import RoleRoute from "./components/RoleRoute";
 import EmployeeHome from "./pages/EmployeeHome";
 import ClientViewerHome from "./pages/ClientViewerHome";
 import ReassignTaskRequest from "./pages/ReassignTaskRequest"; 
-import TaskDetailsWithRequests from "./pages/TaskDetailsWithRequests.jsx";
-
+const TaskDetailsWithRequests = lazy(() => import("./pages/TaskDetailsWithRequests"));
 const ROLE_PREFIXES = ["admin", "manager", "employee", "client", "client-viewer"];
 
 const MODULE_ROUTE_CONFIG = [
@@ -304,247 +304,258 @@ function App() {
 
   return (
     <main className="w-full min-h-screen bg-gray-50 relative">
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
+      <Suspense
+        fallback={
+          <div className="w-full min-h-screen flex items-center justify-center bg-gray-50">
+            <div className="flex flex-col items-center gap-3 text-gray-500">
+              <span className="h-10 w-10 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm font-medium">Loading workspace...</p>
+            </div>
+          </div>
+        }
+      >
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
 
-        <Route element={<Layout />}>
-          {MODULE_ROUTE_CONFIG.map(({ moduleName, Component }) => {
-            // Skip guarded route generation for Settings so explicit role routes handle it
-            if (moduleName === 'Settings & Master Configuration') return null;
-            const moduleMeta = MODULE_MAP[moduleName];
-            const basePath = (moduleMeta?.link || `/${slugifyModuleName(moduleName)}`).replace(/^\//, "");
+          <Route element={<Layout />}>
+            {MODULE_ROUTE_CONFIG.map(({ moduleName, Component }) => {
+              // Skip guarded route generation for Settings so explicit role routes handle it
+              if (moduleName === 'Settings & Master Configuration') return null;
+              const moduleMeta = MODULE_MAP[moduleName];
+              const basePath = (moduleMeta?.link || `/${slugifyModuleName(moduleName)}`).replace(/^\//, "");
 
-            if (moduleName === "Dashboard") {
+              if (moduleName === "Dashboard") {
+                return (
+                  <Route
+                    element={<ModuleRouteGuard moduleName={moduleName} />}
+                    key={`guard-${moduleName}`}
+                  >
+                    {ROLE_PREFIXES.map((prefix) => {
+                      const path = `/${prefix}/${basePath}`;
+                      const ComponentForRole = prefix.startsWith("client") ? ClientDashboard : DashboardRouter;
+                      return (
+                        <Route
+                          key={`${moduleName}-${path}`}
+                          path={path}
+                          element={<ComponentForRole />}
+                        />
+                      );
+                    })}
+                  </Route>
+                );
+              }
+
+              if (moduleName === "Document & File Management") {
+                return (
+                  <Route
+                    element={<ModuleRouteGuard moduleName={moduleName} />}
+                    key={`guard-${moduleName}`}
+                  >
+                    {ROLE_PREFIXES.map((prefix) => {
+                      const path = `/${prefix}/${basePath}`;
+                      const ComponentForRole = prefix.startsWith("client") ? ClientDocuments : Documents;
+                      return (
+                        <Route
+                          key={`${moduleName}-${path}`}
+                          path={path}
+                          element={<ComponentForRole />}
+                        />
+                      );
+                    })}
+                  </Route>
+                );
+              }
+
+              if (moduleName === "Tasks") {
+                return (
+                  <Route
+                    element={<ModuleRouteGuard moduleName={["Tasks", "Assigned Tasks"]} />}
+                    key={`guard-${moduleName}`}
+                  >
+                    {ROLE_PREFIXES.map((prefix) => {
+                      const path = `/${prefix}/${basePath}`;
+                      let ComponentForRole = Tasks;
+                      if (prefix === "employee") ComponentForRole = EmployeeTasks;
+                      if (prefix === "manager") ComponentForRole = ManagerTasks;
+                      if (prefix.startsWith("client")) ComponentForRole = ClientAssignedTasks;
+                      return (
+                        <Route
+                          key={`${moduleName}-${path}`}
+                          path={path}
+                          element={<ComponentForRole />}
+                        />
+                      );
+                    })}
+                    <Route path="/employee/tasks/:taskId" element={<TaskDetailsWithRequests />} />
+                  </Route>
+                );
+              }
+
+              if (moduleName === "User Management") {
+                return (
+                  <Route
+                    element={<ModuleRouteGuard moduleName={moduleName} />}
+                    key={`guard-${moduleName}`}
+                  >
+                    {ROLE_PREFIXES.map((prefix) => {
+                      const path = `/${prefix}/${basePath}`;
+                      const ComponentForRole = prefix === "manager" ? ManagerUsers : Users;
+                      return (
+                        <Route
+                          key={`${moduleName}-${path}`}
+                          path={path}
+                          element={<ComponentForRole />}
+                        />
+                      );
+                    })}
+                  </Route>
+                );
+              }
+
+              if (moduleName === "Clients") {
+                return (
+                  <Route
+                    element={<ModuleRouteGuard moduleName={moduleName} />}
+                    key={`guard-${moduleName}`}
+                  >
+                    {ROLE_PREFIXES.map((prefix) => {
+                      const path = `/${prefix}/${basePath}`;
+                      const ComponentForRole = prefix === "manager" ? ManagerClients : Client;
+                      return (
+                        <Route
+                          key={`${moduleName}-${path}`}
+                          path={path}
+                          element={<ComponentForRole />}
+                        />
+                      );
+                    })}
+                  </Route>
+                );
+              }
+
+              if (moduleName === "Projects") {
+                return (
+                  <Route
+                    element={<ModuleRouteGuard moduleName={moduleName} />}
+                    key={`guard-${moduleName}`}
+                  >
+                    {ROLE_PREFIXES.map((prefix) => {
+                      const path = `/${prefix}/${basePath}`;
+                      const ComponentForRole = prefix === "manager" ? ManagerProjects : Projects;
+                      return (
+                        <Route
+                          key={`${moduleName}-${path}`}
+                          path={path}
+                          element={<ComponentForRole />}
+                        />
+                      );
+                    })}
+                  </Route>
+                );
+              }
+
+              if (moduleName === "Chat / Real-Time Collaboration") {
+                return (
+                  <Route
+                    element={<ModuleRouteGuard moduleName={moduleName} />}
+                    key={`guard-${moduleName}`}
+                  >
+                    {ROLE_PREFIXES.map((prefix) => {
+                      const path = `/${prefix}/${basePath}`;
+                      let ComponentForRole = Chat;
+                      if (prefix === "manager") ComponentForRole = ManagerChat;
+                      if (prefix === "employee") ComponentForRole = EmployeeChat;
+                      return (
+                        <Route
+                          key={`${moduleName}-${path}`}
+                          path={path}
+                          element={<ComponentForRole />}
+                        />
+                      );
+                    })}
+                  </Route>
+                );
+              }
+
               return (
                 <Route
                   element={<ModuleRouteGuard moduleName={moduleName} />}
                   key={`guard-${moduleName}`}
                 >
-                  {ROLE_PREFIXES.map((prefix) => {
-                    const path = `/${prefix}/${basePath}`;
-                    const ComponentForRole = prefix.startsWith("client") ? ClientDashboard : DashboardRouter;
-                    return (
-                      <Route
-                        key={`${moduleName}-${path}`}
-                        path={path}
-                        element={<ComponentForRole />}
-                      />
-                    );
-                  })}
+                  {buildModulePaths(moduleName).map((path) => (
+                    <Route key={`${moduleName}-${path}`} path={path} element={<Component />} />
+                  ))}
                 </Route>
               );
-            }
+            })}
 
-            if (moduleName === "Document & File Management") {
-              return (
-                <Route
-                  element={<ModuleRouteGuard moduleName={moduleName} />}
-                  key={`guard-${moduleName}`}
-                >
-                  {ROLE_PREFIXES.map((prefix) => {
-                    const path = `/${prefix}/${basePath}`;
-                    const ComponentForRole = prefix.startsWith("client") ? ClientDocuments : Documents;
-                    return (
-                      <Route
-                        key={`${moduleName}-${path}`}
-                        path={path}
-                        element={<ComponentForRole />}
-                      />
-                    );
-                  })}
-                </Route>
-              );
-            }
-
-            if (moduleName === "Tasks") {
-              return (
-                <Route
-                  element={<ModuleRouteGuard moduleName={["Tasks", "Assigned Tasks"]} />}
-                  key={`guard-${moduleName}`}
-                >
-                  {ROLE_PREFIXES.map((prefix) => {
-                    const path = `/${prefix}/${basePath}`;
-                    let ComponentForRole = Tasks;
-                    if (prefix === "employee") ComponentForRole = EmployeeTasks;
-                    if (prefix === "manager") ComponentForRole = ManagerTasks;
-                    if (prefix.startsWith("client")) ComponentForRole = ClientAssignedTasks;
-                    return (
-                      <Route
-                        key={`${moduleName}-${path}`}
-                        path={path}
-                        element={<ComponentForRole />}
-                      />
-                    );
-                  })}
-                  <Route path="/employee/tasks/:taskId" element={<TaskDetailsWithRequests />} />
-                </Route>
-              );
-            }
-
-            if (moduleName === "User Management") {
-              return (
-                <Route
-                  element={<ModuleRouteGuard moduleName={moduleName} />}
-                  key={`guard-${moduleName}`}
-                >
-                  {ROLE_PREFIXES.map((prefix) => {
-                    const path = `/${prefix}/${basePath}`;
-                    const ComponentForRole = prefix === "manager" ? ManagerUsers : Users;
-                    return (
-                      <Route
-                        key={`${moduleName}-${path}`}
-                        path={path}
-                        element={<ComponentForRole />}
-                      />
-                    );
-                  })}
-                </Route>
-              );
-            }
-
-            if (moduleName === "Clients") {
-              return (
-                <Route
-                  element={<ModuleRouteGuard moduleName={moduleName} />}
-                  key={`guard-${moduleName}`}
-                >
-                  {ROLE_PREFIXES.map((prefix) => {
-                    const path = `/${prefix}/${basePath}`;
-                    const ComponentForRole = prefix === "manager" ? ManagerClients : Client;
-                    return (
-                      <Route
-                        key={`${moduleName}-${path}`}
-                        path={path}
-                        element={<ComponentForRole />}
-                      />
-                    );
-                  })}
-                </Route>
-              );
-            }
-
-            if (moduleName === "Projects") {
-              return (
-                <Route
-                  element={<ModuleRouteGuard moduleName={moduleName} />}
-                  key={`guard-${moduleName}`}
-                >
-                  {ROLE_PREFIXES.map((prefix) => {
-                    const path = `/${prefix}/${basePath}`;
-                    const ComponentForRole = prefix === "manager" ? ManagerProjects : Projects;
-                    return (
-                      <Route
-                        key={`${moduleName}-${path}`}
-                        path={path}
-                        element={<ComponentForRole />}
-                      />
-                    );
-                  })}
-                </Route>
-              );
-            }
-
-            if (moduleName === "Chat / Real-Time Collaboration") {
-              return (
-                <Route
-                  element={<ModuleRouteGuard moduleName={moduleName} />}
-                  key={`guard-${moduleName}`}
-                >
-                  {ROLE_PREFIXES.map((prefix) => {
-                    const path = `/${prefix}/${basePath}`;
-                    let ComponentForRole = Chat;
-                    if (prefix === "manager") ComponentForRole = ManagerChat;
-                    if (prefix === "employee") ComponentForRole = EmployeeChat;
-                    return (
-                      <Route
-                        key={`${moduleName}-${path}`}
-                        path={path}
-                        element={<ComponentForRole />}
-                      />
-                    );
-                  })}
-                </Route>
-              );
-            }
-
-            return (
+            {ROLE_PREFIXES.map((prefix) => (
               <Route
-                element={<ModuleRouteGuard moduleName={moduleName} />}
-                key={`guard-${moduleName}`}
+                element={<ModuleRouteGuard moduleName="Reports & Analytics" />}
+                key={`analytics-alias-${prefix}`}
               >
-                {buildModulePaths(moduleName).map((path) => (
-                  <Route key={`${moduleName}-${path}`} path={path} element={<Component />} />
-                ))}
+                <Route path={`/${prefix}/analytics`} element={<Report />} />
               </Route>
-            );
-          })}
+            ))}
 
-          {ROLE_PREFIXES.map((prefix) => (
-            <Route
-              element={<ModuleRouteGuard moduleName="Reports & Analytics" />}
-              key={`analytics-alias-${prefix}`}
-            >
-              <Route path={`/${prefix}/analytics`} element={<Report />} />
+            {/* ✅ NEW: Notification routes for all roles (singular & plural) */}
+            <Route element={<ModuleRouteGuard moduleName="Notifications" />}>
+              <Route path="/admin/notifications" element={<Notifications />} />
+              <Route path="/admin/notification" element={<Notifications />} />
+              <Route path="/manager/notifications" element={<Notifications />} />
+              <Route path="/manager/notification" element={<Notifications />} />
+              <Route path="/employee/notifications" element={<Notifications />} />
+              <Route path="/employee/notification" element={<Notifications />} />
             </Route>
-          ))}
 
-          {/* ✅ NEW: Notification routes for all roles (singular & plural) */}
-          <Route element={<ModuleRouteGuard moduleName="Notifications" />}>
-            <Route path="/admin/notifications" element={<Notifications />} />
-            <Route path="/admin/notification" element={<Notifications />} />
-            <Route path="/manager/notifications" element={<Notifications />} />
-            <Route path="/manager/notification" element={<Notifications />} />
-            <Route path="/employee/notifications" element={<Notifications />} />
-            <Route path="/employee/notification" element={<Notifications />} />
+            <Route element={<ModuleRouteGuard moduleName="Clients" />}>
+              <Route path="/add-client" element={<ClientForm />} />
+              <Route path="/client-dashboard/:id" element={<ClientDashboard />} />
+            </Route>
+            
+            <Route element={<ModuleRouteGuard moduleName="Tasks" />}>
+              <Route path="/task/:id" element={<TaskDetails />} />
+              <Route path="/employee/tasks/:taskId" element={<TaskDetailsWithRequests />} />
+            </Route>
+
+            {/* Protected admin workflow builder */}
+            <Route element={<ProtectedRoute allowedRoles={["Admin"]} />}>
+              <Route path="/admin/workflows/builder" element={<WorkflowBuilder />} />
+            </Route>
+
+            {/* Protected manager approval queue */}
+            <Route element={<ProtectedRoute allowedRoles={["Manager"]} />}>
+              <Route path="/manager/workflows/queue" element={<ManagerApprovalQueue />} />
+            </Route>
+
+            <Route path="/trash" element={<Trash />} />
+            <Route path="/module/:moduleId" element={<ModuleDetail />} />
+
+            <Route path="/home/admin" element={<RoleRoute role="Admin" Component={AdminDashboard} />} />
+            <Route path="/home/manager" element={<RoleRoute role="Manager" Component={ManagerDashboard} />} />
+            <Route path="/home/employee" element={<RoleRoute role="Employee" Component={EmployeeHome} />} />
+            <Route path="/home/client-viewer" element={<RoleRoute role="Client-Viewer" Component={ClientViewerHome} />} />
+
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/change-password" element={<ChangePassword />} />
+
+            {/* Explicit role-scoped settings routes to avoid 404 when modules list lacks Settings */}
+            <Route path="/admin/settings" element={<Settings />} />
+            <Route path="/manager/settings" element={<Settings />} />
+            <Route path="/employee/settings" element={<Settings />} />
           </Route>
 
-          <Route element={<ModuleRouteGuard moduleName="Clients" />}>
-            <Route path="/add-client" element={<ClientForm />} />
-            <Route path="/client-dashboard/:id" element={<ClientDashboard />} />
-          </Route>
-          
-          <Route element={<ModuleRouteGuard moduleName="Tasks" />}>
-            <Route path="/task/:id" element={<TaskDetails />} />
-            <Route path="/employee/tasks/:taskId" element={<TaskDetailsWithRequests />} />
-          </Route>
+          <Route path="/log-in" element={<Login />} />
+          <Route path="/login" element={<Navigate to="/log-in" replace />} />
+          <Route path="/verify-otp" element={<VerifyOTP />} />
+          <Route path="/forgot" element={<Forgot />} />
+          <Route path="/reset" element={<Reset />} />
+          <Route path="*" element={<PageNotFound />} />
+        </Routes>
 
-          {/* Protected admin workflow builder */}
-          <Route element={<ProtectedRoute allowedRoles={["Admin"]} />}>
-            <Route path="/admin/workflows/builder" element={<WorkflowBuilder />} />
-          </Route>
-
-          {/* Protected manager approval queue */}
-          <Route element={<ProtectedRoute allowedRoles={["Manager"]} />}>
-            <Route path="/manager/workflows/queue" element={<ManagerApprovalQueue />} />
-          </Route>
-
-          <Route path="/trash" element={<Trash />} />
-          <Route path="/module/:moduleId" element={<ModuleDetail />} />
-
-          <Route path="/home/admin" element={<RoleRoute role="Admin" Component={AdminDashboard} />} />
-          <Route path="/home/manager" element={<RoleRoute role="Manager" Component={ManagerDashboard} />} />
-          <Route path="/home/employee" element={<RoleRoute role="Employee" Component={EmployeeHome} />} />
-          <Route path="/home/client-viewer" element={<RoleRoute role="Client-Viewer" Component={ClientViewerHome} />} />
-
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/change-password" element={<ChangePassword />} />
-
-          {/* Explicit role-scoped settings routes to avoid 404 when modules list lacks Settings */}
-          <Route path="/admin/settings" element={<Settings />} />
-          <Route path="/manager/settings" element={<Settings />} />
-          <Route path="/employee/settings" element={<Settings />} />
-        </Route>
-
-        <Route path="/log-in" element={<Login />} />
-        <Route path="/login" element={<Navigate to="/log-in" replace />} />
-        <Route path="/verify-otp" element={<VerifyOTP />} />
-        <Route path="/forgot" element={<Forgot />} />
-        <Route path="/reset" element={<Reset />} />
-        <Route path="*" element={<PageNotFound />} />
-      </Routes>
-
-      <MobileSidebar />
-      <Toaster richColors />
+        <MobileSidebar />
+        <Toaster richColors />
+      </Suspense>
     </main>
   );
 }

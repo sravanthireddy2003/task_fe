@@ -5,6 +5,7 @@ import ManagerApprovalPanel from "../components/ManagerApprovalPanel";
 import AdminApprovalPanel from "../components/AdminApprovalPanel";
 import { Navigate } from "react-router-dom";
 import { useDispatch, useSelector } from 'react-redux';
+import { toast } from 'sonner';
 import { selectDepartments } from '../redux/slices/departmentSlice';
 import { selectProjects, selectCurrentProject, setCurrentProject, fetchProjects } from '../redux/slices/projectSlice';
 import { fetchQueue } from '../redux/slices/approvalSlice';
@@ -212,8 +213,19 @@ export default function Workflow() {
         notify: true
       };
 
-      await dispatch(requestProjectClosure(payload)).unwrap();
-      alert('Project closure request submitted successfully');
+      const resp = await dispatch(requestProjectClosure(payload)).unwrap();
+      // Handle API responses that return success=false without throwing
+      if (resp?.success === false || resp?.error) {
+        let apiError = resp?.error || resp?.message || 'Failed to request project closure';
+        if (typeof apiError === 'string' && apiError.includes('All tasks must be COMPLETED')) {
+          apiError = 'Cannot close project: All tasks must be completed first. Please ensure all project tasks are marked as completed before requesting closure.';
+        }
+        toast.error(apiError);
+        setClosureError(apiError);
+        return; // keep UI/modal open for correction
+      }
+
+      toast.success(resp?.message || 'Project closure request submitted successfully');
       setShowClosureModal(false);
       setClosureReason('');
       setClosureError('');
@@ -230,7 +242,8 @@ export default function Workflow() {
           errorMessage = error.message;
         }
       }
-      
+      // Show as toast and retain UI state without reload
+      toast.error(errorMessage);
       setClosureError(errorMessage);
     } finally {
       setClosureLoading(false);

@@ -242,8 +242,29 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
 
   // ✅ Handle chatbot commands
   const handleChatbotCommand = (command) => {
-    sendChatbotCommand(command);
-    setShowHelp(false);
+    const cmd = command.toLowerCase().trim();
+    switch (cmd) {
+      case '/help':
+        setShowHelp(!showHelp);
+        break;
+      case '/tasks':
+        // Could integrate with tasks API
+        sendChatbotCommand(command);
+        break;
+      case '/status':
+        setShowStats(!showStats);
+        break;
+      case '/members':
+      case '/online':
+        setShowParticipants(!showParticipants);
+        break;
+      case '/project':
+        // Could show project info
+        sendChatbotCommand(command);
+        break;
+      default:
+        sendChatbotCommand(command);
+    }
   };
 
   const formatTime = (dateString) => {
@@ -450,7 +471,10 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
           </button>
 
           <button
-            className="p-2.5 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-all duration-200"
+            onClick={() => setShowStats(!showStats)}
+            className={`p-2.5 rounded-lg transition-all duration-200 ${
+              showStats ? 'bg-blue-50 text-blue-600' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+            }`}
             title="Stats"
           >
             {Icons.BarChart3 && <Icons.BarChart3 className="tm-icon" />}
@@ -458,12 +482,15 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
 
           <div className="relative">
             <button
-              className="p-2.5 hover:bg-gray-50 text-gray-600 hover:text-gray-800 rounded-lg transition-all duration-200 relative"
+              onClick={() => setShowParticipants(!showParticipants)}
+              className={`p-2.5 rounded-lg transition-all duration-200 relative ${
+                showParticipants ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-50 text-gray-600 hover:text-gray-800'
+              }`}
               title="Online Members"
             >
               {Icons.Users && <Icons.Users className="tm-icon" />}
               {participants.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-gray-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
                   {participants.length}
                 </span>
               )}
@@ -471,14 +498,10 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
           </div>
 
           <button
-            className="p-2.5 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-all duration-200"
-            title="Participants"
-          >
-            {Icons.Users && <Icons.Users className="tm-icon" />}
-          </button>
-
-          <button
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600"
+            onClick={() => setShowHelp(!showHelp)}
+            className={`p-2 hover:bg-gray-100 rounded-lg transition-colors ${
+              showHelp ? 'bg-blue-50 text-blue-600' : 'text-gray-600'
+            }`}
             title="Help"
           >
             {Icons.HelpCircle && <Icons.HelpCircle className="tm-icon" />}
@@ -488,7 +511,14 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
 
       {/* ===== STATS PANEL ===== */}
       {showStats && stats && (
-        <div className="flex-shrink-0 bg-gray-50 border-b border-gray-200 px-6 py-5 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="flex-shrink-0 bg-gray-50 border-b border-gray-200 px-6 py-5 grid grid-cols-2 md:grid-cols-4 gap-4 relative">
+          <button
+            onClick={() => setShowStats(false)}
+            className="absolute top-2 right-2 p-1 hover:bg-gray-200 rounded"
+            title="Close"
+          >
+            ✕
+          </button>
           <div className="bg-white p-4 rounded-lg border border-gray-200">
             <p className="text-2xl font-bold text-gray-900">{stats.total_messages || 0}</p>
             <p className="text-xs font-medium text-gray-600 mt-2">Messages</p>
@@ -512,7 +542,14 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
 
       {/* ===== PARTICIPANTS PANEL ===== */}
       {showParticipants && (
-        <div className="flex-shrink-0 bg-gray-50 border-b border-gray-200 px-6 py-5 max-h-64 overflow-y-auto">
+        <div className="flex-shrink-0 bg-gray-50 border-b border-gray-200 px-6 py-5 max-h-64 overflow-y-auto relative">
+          <button
+            onClick={() => setShowParticipants(false)}
+            className="absolute top-2 right-2 p-1 hover:bg-gray-200 rounded"
+            title="Close"
+          >
+            ✕
+          </button>
           <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2 text-sm">
             <span className="text-lg">👥</span>
             Team Members ({participants.length})
@@ -545,7 +582,14 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
 
       {/* ===== CHATBOT HELP PANEL ===== */}
       {showHelp && (
-        <div className="flex-shrink-0 bg-gray-50 border-b border-gray-200 px-6 py-5 max-h-64 overflow-y-auto">
+        <div className="flex-shrink-0 bg-gray-50 border-b border-gray-200 px-6 py-5 max-h-64 overflow-y-auto relative">
+          <button
+            onClick={() => setShowHelp(false)}
+            className="absolute top-2 right-2 p-1 hover:bg-gray-200 rounded"
+            title="Close"
+          >
+            ✕
+          </button>
           <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2 text-sm">
             <span className="text-lg">💡</span>
             Quick Commands
@@ -577,6 +621,24 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
 
       {/* ===== MAIN MESSAGES AREA ===== */}
       <div ref={messagesContainerRef} className="relative flex-1 overflow-y-auto bg-gray-50">
+        {/* Chat Header */}
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 z-10">
+          <div className="max-w-5xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h2 className="text-lg font-semibold text-gray-900">{projectName}</h2>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span>{participants.length} online</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500">
+                {stats?.total_messages || 0} messages
+              </span>
+            </div>
+          </div>
+        </div>
+        
         <div className="px-4 py-6 max-w-5xl mx-auto space-y-4">
           {/* Loading state */}
           {messageLoading && (
@@ -636,7 +698,7 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
                       <div
                         className={`rounded-2xl px-4 py-3 shadow-sm transition-all ${
                           isCurrentUser
-                            ? 'bg-gray-900 text-white rounded-br-none'
+                            ? 'bg-blue-600 text-white rounded-br-none'
                             : msg.message_type === 'bot'
                             ? 'bg-gray-100 text-gray-900 rounded-bl-none border border-gray-200'
                             : 'bg-white text-gray-900 rounded-bl-none border border-gray-200'
@@ -655,7 +717,7 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
 
                         {/* YOU label for current user */}
                         {isCurrentUser && (
-                          <span className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full text-xs">YOU</span>
+                          <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-medium">YOU</span>
                         )}
 
                         {/* Delete button for current user messages */}
@@ -684,18 +746,19 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
           
           {/* Typing indicator */}
           {isTyping && (
-            <div className="flex justify-start gap-2 animate-fadeIn">
-              <div className="flex-shrink-0 w-9 h-9 rounded-full bg-gray-400 flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                ✏️
-              </div>
-              <div className="flex flex-col gap-1">
-                <div className="bg-white text-gray-900 rounded-2xl rounded-bl-none px-4 py-3 shadow-sm border border-gray-200">
+            <div className="flex justify-end gap-2 animate-fadeIn">
+              <div className="flex flex-col gap-1 items-end">
+                <div className="bg-blue-600 text-white rounded-2xl rounded-br-none px-4 py-3 shadow-sm">
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2.5 h-2.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2.5 h-2.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="w-2.5 h-2.5 bg-white rounded-full animate-bounce"></div>
+                    <div className="w-2.5 h-2.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-2.5 h-2.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   </div>
                 </div>
+                <span className="text-xs text-gray-500 px-2">Typing...</span>
+              </div>
+              <div className="flex-shrink-0 w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                {currentUserName?.charAt(0)?.toUpperCase() || 'U'}
               </div>
             </div>
           )}
@@ -765,7 +828,7 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
               value={newMessage}
               onChange={handleMessageChange}
               placeholder="Type @ to mention someone..."
-              className="flex-1 border border-gray-300 rounded-full px-5 py-3 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:border-transparent text-sm bg-white transition-all placeholder-gray-400"
+              className="flex-1 border border-gray-300 rounded-full px-5 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:border-transparent text-sm bg-white transition-all placeholder-gray-400"
               disabled={chatLoading}
             />
             
@@ -773,7 +836,7 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
             <button
               type="submit"
               disabled={!newMessage.trim() || chatLoading}
-              className="bg-gray-900 text-white p-3 rounded-full hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all min-w-[44px] min-h-[44px] flex items-center justify-center shadow-sm hover:shadow-md disabled:shadow-none"
+              className="bg-blue-600 text-white p-3 rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all min-w-[44px] min-h-[44px] flex items-center justify-center shadow-sm hover:shadow-md disabled:shadow-none"
               title="Send message"
             >
               {chatLoading ? (

@@ -212,51 +212,53 @@
 //                       </div>
 //                     </div>
 
-//                     <div className="flex gap-3 ml-6">
-//                       <button
-//                         onClick={() => handleApprove(request.id)}
-//                         disabled={processingId === request.id || approvedRequests.has(request.id) || closedProjects.has(request.id)}
-//                         className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${
-//                           closedProjects.has(request.id)
-//                             ? 'bg-blue-500 cursor-not-allowed'
-//                             : approvedRequests.has(request.id)
-//                             ? 'bg-green-500 cursor-not-allowed'
-//                             : 'bg-green-600 hover:bg-green-700 disabled:bg-green-400'
-//                         }`}
-//                       >
-//                         {closedProjects.has(request.id) ? (
-//                           <>
+//                     {request.project_status === "PENDING_FINAL_APPROVAL" && (
+//                       <div className="flex gap-3 ml-6">
+//                         <button
+//                           onClick={() => handleApprove(request.id)}
+//                           disabled={processingId === request.id || approvedRequests.has(request.id) || closedProjects.has(request.id)}
+//                           className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${
+//                             closedProjects.has(request.id)
+//                               ? 'bg-blue-500 cursor-not-allowed'
+//                               : approvedRequests.has(request.id)
+//                               ? 'bg-green-500 cursor-not-allowed'
+//                               : 'bg-green-600 hover:bg-green-700 disabled:bg-green-400'
+//                           }`}
+//                         >
+//                           {closedProjects.has(request.id) ? (
+//                             <>
+//                               <Check className="w-4 h-4" />
+//                               Closed
+//                             </>
+//                           ) : approvedRequests.has(request.id) ? (
+//                             <>
+//                               <Check className="w-4 h-4" />
+//                               Approved
+//                             </>
+//                           ) : processingId === request.id ? (
+//                             <Loader2 className="w-4 h-4 animate-spin" />
+//                           ) : (
 //                             <Check className="w-4 h-4" />
-//                             Closed
-//                           </>
-//                         ) : approvedRequests.has(request.id) ? (
-//                           <>
-//                             <Check className="w-4 h-4" />
-//                             Approved
-//                           </>
-//                         ) : processingId === request.id ? (
-//                           <Loader2 className="w-4 h-4 animate-spin" />
-//                         ) : (
-//                           <Check className="w-4 h-4" />
-//                         )}
-//                         {closedProjects.has(request.id) || approvedRequests.has(request.id) ? '' : 'Approve Closure'}
-//                       </button>
+//                           )}
+//                           {closedProjects.has(request.id) || approvedRequests.has(request.id) ? '' : 'Approve Closure'}
+//                         </button>
 
-//                       <button
-//                         onClick={() => openRejectModal(request)}
-//                         disabled={processingId === request.id || approvedRequests.has(request.id) || closedProjects.has(request.id)}
-//                         className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${
-//                           closedProjects.has(request.id)
-//                             ? 'bg-gray-400 cursor-not-allowed'
-//                             : approvedRequests.has(request.id)
-//                             ? 'bg-gray-400 cursor-not-allowed'
-//                             : 'bg-red-600 hover:bg-red-700 disabled:bg-red-400'
-//                         }`}
-//                       >
-//                         <X className="w-4 h-4" />
-//                         {closedProjects.has(request.id) ? 'Closed' : approvedRequests.has(request.id) ? 'Rejected' : 'Reject'}
-//                       </button>
-//                     </div>
+//                         <button
+//                           onClick={() => openRejectModal(request)}
+//                           disabled={processingId === request.id || approvedRequests.has(request.id) || closedProjects.has(request.id)}
+//                           className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${
+//                             closedProjects.has(request.id)
+//                               ? 'bg-gray-400 cursor-not-allowed'
+//                               : approvedRequests.has(request.id)
+//                               ? 'bg-gray-400 cursor-not-allowed'
+//                               : 'bg-red-600 hover:bg-red-700 disabled:bg-red-400'
+//                           }`}
+//                         >
+//                           <X className="w-4 h-4" />
+//                           {closedProjects.has(request.id) ? 'Closed' : approvedRequests.has(request.id) ? 'Rejected' : 'Reject'}
+//                         </button>
+//                       </div>
+//                     )}
 //                   </div>
 //                 </div>
 
@@ -702,7 +704,7 @@ const AdminApprovalPanel = () => {
                       </div>
 
                       <div className="flex gap-3 ml-6">
-                        {request.status === 'PENDING' ? (
+                        {request.project_status === "PENDING_FINAL_APPROVAL" ? (
                           <>
                             <button
                               onClick={() => handleApprove(request.id)}

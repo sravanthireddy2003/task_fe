@@ -8,6 +8,7 @@ import {
   httpGetService,
 } from "../../App/httpHandler";
 import { setTokens, clearTokens, getRefreshToken, getAccessToken } from "../../utils/tokenService";
+import fetchWithTenant from "../../utils/fetchWithTenant";
 import { setAuthToken } from "../../App/httpHandler";
 
 // ✅ Safely parse user from localStorage
@@ -92,7 +93,6 @@ export const ensureValidToken = createAsyncThunk(
             return true;
           }
         } catch (refreshError) {
-          console.warn('Token refresh failed:', refreshError);
           thunkAPI.dispatch(setTokenValidating(false));
           return false;
         }
@@ -103,7 +103,6 @@ export const ensureValidToken = createAsyncThunk(
       thunkAPI.dispatch(setTokenValidating(false));
       return !!accessToken;
     } catch (error) {
-      console.error('Token validation error:', error);
       thunkAPI.dispatch(setTokenValidating(false));
       return false;
     }
@@ -232,10 +231,6 @@ export const refreshToken = createAsyncThunk(
       const newRefresh = response?.refreshToken || response?.refresh || storedRefresh;
       
       if (newAccess) {
-        console.log('✅ Token refresh successful');
-        console.log('📝 New access token:', newAccess.substring(0, 30) + '...');
-        console.log('📝 New refresh token:', newRefresh.substring(0, 30) + '...');
-        
         setTokens(newAccess, newRefresh);
         setAuthToken(newAccess, newRefresh, 'local');
         
@@ -246,11 +241,9 @@ export const refreshToken = createAsyncThunk(
         
         return response;
       } else {
-        console.error('❌ No access token returned from refresh');
         return thunkAPI.rejectWithValue("No access token returned from refresh");
       }
     } catch (error) {
-      console.error('❌ Refresh token error:', error?.response?.data || error?.message);
       
       const status = error?.status || error?.response?.status;
       if (status === 401) {
@@ -276,8 +269,6 @@ export const getProfile = createAsyncThunk(
       
       // 🚨 FIX: Instead of rejecting, just skip or wait
       if (auth.profileLoading || auth.isProfileFetching) {
-        console.log('⏳ Profile fetch already in progress, skipping...');
-        // Option 1: Return null to skip
         return null;
         // Option 2: Wait a bit and retry (uncomment if preferred)
         // await new Promise(resolve => setTimeout(resolve, 500));
@@ -296,8 +287,6 @@ export const getProfile = createAsyncThunk(
       return response;
     } catch (error) {
       thunkAPI.dispatch(setProfileFetching(false));
-      console.warn('Profile fetch error:', error.message);
-      
       // 🚨 FIX: Don't reject with string, reject with error object
       return thunkAPI.rejectWithValue(error);
     }
@@ -322,7 +311,6 @@ export const getProfileSilently = createAsyncThunk(
       
       // 🚨 FIX: Skip if already fetching, don't reject
       if (auth.isProfileFetching || auth.profileLoading) {
-        console.log('⏳ Silent profile fetch skipped (already in progress)');
         return null;
       }
       
@@ -339,8 +327,6 @@ export const getProfileSilently = createAsyncThunk(
       return response;
     } catch (error) {
       thunkAPI.dispatch(setProfileFetching(false));
-      // Silent fail - don't trigger error state changes
-      console.log("Silent profile fetch failed:", error?.message);
       return thunkAPI.rejectWithValue(null);
     }
   }

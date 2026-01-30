@@ -223,7 +223,7 @@ const Profile = () => {
                         </div>
                       </div>
                       <label className="absolute -bottom-2 -right-2 p-2 bg-white rounded-full shadow-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                        <FaCamera className="w-4 h-4 text-blue-600" />
+                        <Camera className="w-4 h-4 text-blue-600" />
                         <input
                           type="file"
                           accept="image/*"
