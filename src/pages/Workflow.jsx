@@ -287,6 +287,7 @@ export default function Workflow() {
       default: return 'bg-gray-100 text-gray-700 border-gray-200';
     }
   };
+  
 
   // Get status badge styling
   const getStatusBadgeStyle = (active) => {
