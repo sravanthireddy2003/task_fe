@@ -6,8 +6,13 @@ const express = require('express');
 const fetch = require('node-fetch');
 const app = express();
 
-const UPSTREAM = process.env.UPSTREAM || 'http://localhost:4000';
+const UPSTREAM = process.env.UPSTREAM;
 const PORT = process.env.PORT || 5000;
+
+if (!UPSTREAM) {
+  console.error('UPSTREAM environment variable is required');
+  process.exit(1);
+}
 
 app.get('/proxy/uploads/*', async (req, res) => {
   try {

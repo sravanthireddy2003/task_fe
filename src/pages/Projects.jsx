@@ -887,7 +887,7 @@ export default function Projects() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 text-xs sm:text-sm">
-                    <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0" />
+                    <CalendarDays className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0" />
                     <div>
                       <div className="text-gray-500 font-medium text-xs sm:text-sm">STATUS</div>
                       <span className={`px-2 py-0.5 rounded text-xs font-semibold inline-flex items-center gap-1 ${projectSummary.project?.status === 'Completed' ? 'bg-green-50 text-green-700 border border-green-100' :

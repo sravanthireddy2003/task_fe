@@ -3,35 +3,41 @@ import { httpGetService, httpPostService, httpPatchService } from '../App/httpHa
 // New Workflow Module API wrapper (TASK / PROJECT state machine)
 const workflowApi = {
   // Request a state transition for an entity (TASK / PROJECT)
-  // For TASK transitions the API expects a PATCH to /api/tasks/:id/status
-  // Payload: { tenantId, entityType, entityId, toState, meta: { reason, projectId } }
+  // Workflow spec: POST /api/workflow/request
+  // Payload: { entityType, entityId, projectId, toState, meta: { reason } }
   requestTransition: async (payload) => {
     console.debug('[workflowApi] requestTransition', payload);
-    const { entityType, entityId, toState, meta } = payload || {};
+    const { entityType, entityId, toState, projectId, meta, reason } = payload || {};
 
-    // If this is a TASK state change, call the tasks status endpoint as per Postman collection
-    if ((entityType || '').toUpperCase() === 'TASK' && entityId) {
-      const body = { status: toState };
-      // include projectId when available (many endpoints expect it)
-      if (meta?.projectId) body.projectId = meta.projectId;
-      if (payload.projectId) body.projectId = payload.projectId;
-      console.debug('[workflowApi] routing TASK transition to PATCH /api/tasks/:id/status', { entityId, body });
-      const resp = await httpPatchService(`api/tasks/${encodeURIComponent(entityId)}/status`, body);
-      // Expect backend to return either the updated task or a workflow request object
-      return resp?.data ?? resp;
+    // Build request payload according to workflow specification
+    const requestBody = {
+      entityType: (entityType || 'TASK').toUpperCase(),
+      entityId,
+      toState: toState || 'COMPLETED',
+      meta: {
+        reason: meta?.reason || reason || 'Task completed, ready for review',
+        ...(projectId && { projectId })
+      }
+    };
+
+    // If projectId is at top level, include it
+    if (projectId) {
+      requestBody.projectId = projectId;
     }
 
-    // Fallback: older servers may accept a workflow request endpoint
-    const resp = await httpPostService('api/workflow/request', payload);
+    console.debug('[workflowApi] POST /api/workflow/request', requestBody);
+    const resp = await httpPostService('api/workflow/request', requestBody);
+    // Expect backend to return workflow request object
     return resp?.data ?? resp;
   },
 
-  // Get pending approval requests for a role (e.g. MANAGER)
-  // Returns: { success: true, data: [{ id, tenant_id, entity_type, entity_id, from_state, to_state, requested_by, reason, created_at }] }
-  getPending: async (role) => {
+  // Get pending approval requests for a role (e.g. MANAGER, ADMIN)
+  // Workflow spec: GET /api/workflow/pending?role={role}&status=PENDING
+  // Returns: { success: true, data: [{ id, entity_type, entity_id, status, project_status_info, ... }] }
+  getPending: async (role, status = 'PENDING') => {
     const roleParam = role || 'MANAGER';
-    console.debug('[workflowApi] getPending', roleParam);
-    const resp = await httpGetService(`api/workflow/pending?role=${encodeURIComponent(roleParam)}`);
+    console.debug('[workflowApi] getPending', { role: roleParam, status });
+    const resp = await httpGetService(`api/workflow/pending?role=${encodeURIComponent(roleParam)}&status=${encodeURIComponent(status)}`);
     // Response format: { success: true, data: [...] }
     return resp?.data ?? resp;
   },

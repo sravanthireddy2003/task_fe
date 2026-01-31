@@ -84,29 +84,53 @@ const getProjectIdForApi = (projectId) => {
   return projectId;
 };
 
-// Get status color classes - updated to match your API
+// Get status color classes - updated to match workflow specification
 const getStatusClasses = (status) => {
   if (!status) return 'bg-gray-100 text-gray-800 border-gray-200';
   
   const normalizedStatus = status.toUpperCase();
   
   switch (normalizedStatus) {
-    case 'PENDING':
-    case 'TO DO':
     case 'TODO':
+    case 'TO DO':
+    case 'PENDING':
       return 'bg-yellow-100 text-yellow-800 border-yellow-200';
     case 'IN_PROGRESS':
     case 'IN PROGRESS':
       return 'bg-blue-100 text-blue-800 border-blue-200';
+    case 'REVIEW':
+      return 'bg-purple-100 text-purple-800 border-purple-200';
     case 'COMPLETED':
       return 'bg-green-100 text-green-800 border-green-200';
     case 'ON_HOLD':
     case 'ON HOLD':
-      return 'bg-red-100 text-red-800 border-red-200';
-    case 'REVIEW':
-      return 'bg-purple-100 text-purple-800 border-purple-200';
+      return 'bg-orange-100 text-orange-800 border-orange-200';
     default:
       return 'bg-gray-100 text-gray-800 border-gray-200';
+  }
+};
+
+// Get display text for status
+const getStatusDisplayText = (status) => {
+  if (!status) return 'Unknown';
+  const normalizedStatus = status.toUpperCase();
+  switch (normalizedStatus) {
+    case 'TODO':
+    case 'TO DO':
+    case 'PENDING':
+      return 'To Do';
+    case 'IN_PROGRESS':
+    case 'IN PROGRESS':
+      return 'In Progress';
+    case 'REVIEW':
+      return 'In Review';
+    case 'COMPLETED':
+      return 'Completed';
+    case 'ON_HOLD':
+    case 'ON HOLD':
+      return 'On Hold';
+    default:
+      return status;
   }
 };
 

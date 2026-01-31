@@ -1,18 +1,21 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'sonner';
 import fetchWithTenant from '../utils/fetchWithTenant';
 import { selectUser } from '../redux/slices/authSlice';
+import { fetchPendingApprovals, approveWorkflow } from '../redux/slices/workflowSlice';
 import * as Icons from '../icons';
 import { getStatusText, hasApprovedRequest, getManagerTaskStatus } from '../utils/taskHelpers';
 import ViewToggle from '../components/ViewToggle';
 import RefreshButton from '../components/RefreshButton';
 import PageHeader from '../components/PageHeader';
 import Card from "../components/Card";
+import ApprovalCard from '../components/ApprovalCard';
 
 const { RefreshCw, AlertCircle, Calendar, Clock, User, Plus, CheckSquare, Check, Eye, Filter, Lock, UserCheck, Clock: ClockIcon, AlertTriangle, CheckCircle } = Icons;
 
 const ManagerTasks = () => {
+  const dispatch = useDispatch();
   const user = useSelector(selectUser);
   const resources = user?.resources || {};
 
@@ -22,11 +25,17 @@ const ManagerTasks = () => {
   const [error, setError] = useState(null);
   const [projects, setProjects] = useState([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
+  
+  // Approval queue states
+  const [pendingApprovals, setPendingApprovals] = useState([]);
+  const [approvalsLoading, setApprovalsLoading] = useState(false);
+  const [showApprovalsPanel, setShowApprovalsPanel] = useState(false);
+  
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     priority: 'MEDIUM',
-    stage: 'PENDING',
+    stage: 'TODO',
     taskDate: '',
     assignedUsers: [],
     projectId: '',
@@ -47,8 +56,26 @@ const ManagerTasks = () => {
   // New state for project details
   const [projectDetails, setProjectDetails] = useState(null);
 
-  // Status options
-  const statusOptions = ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'ON_HOLD'];
+  // Status options - aligned with workflow specification
+  const statusOptions = ['TODO', 'IN_PROGRESS', 'REVIEW', 'COMPLETED', 'ON_HOLD'];
+  
+  // Status display mapping
+  const statusDisplayMap = {
+    'TODO': 'To Do',
+    'IN_PROGRESS': 'In Progress',
+    'REVIEW': 'In Review',
+    'COMPLETED': 'Completed',
+    'ON_HOLD': 'On Hold'
+  };
+  
+  // Status colors aligned with workflow
+  const statusColorMap = {
+    'TODO': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+    'IN_PROGRESS': 'bg-blue-100 text-blue-800 border-blue-200',
+    'REVIEW': 'bg-purple-100 text-purple-800 border-purple-200',
+    'COMPLETED': 'bg-green-100 text-green-800 border-green-200',
+    'ON_HOLD': 'bg-orange-100 text-orange-800 border-orange-200'
+  };
 
   // Helper function to normalize project ID
   const normalizeProjectId = (project) => {
@@ -248,13 +275,75 @@ const ManagerTasks = () => {
       const resp = await fetchWithTenant('/api/manager/projects');
       const data = Array.isArray(resp?.data) ? resp.data : resp;
       const projectsArray = Array.isArray(data) ? data : [];
-      setProjects(projectsArray);
+      
+      // Filter projects to exclude those with CLOSED status
+      const filteredProjects = projectsArray.filter(project =>
+        !project.project_status_info?.is_closed
+      );
+      
+      setProjects(filteredProjects);
     } catch (err) {
       toast.error('Failed to load projects');
     } finally {
       setProjectsLoading(false);
     }
   }, []);
+
+  // Load pending approval requests (workflow specification)
+  const loadPendingApprovals = useCallback(async () => {
+    setApprovalsLoading(true);
+    try {
+      const result = await dispatch(fetchPendingApprovals('MANAGER')).unwrap();
+      const approvals = result?.approvals || result?.data || [];
+      setPendingApprovals(Array.isArray(approvals) ? approvals : []);
+    } catch (err) {
+      console.error('Failed to load pending approvals:', err);
+      setPendingApprovals([]);
+    } finally {
+      setApprovalsLoading(false);
+    }
+  }, [dispatch]);
+
+  // Handle approval of task completion request
+  const handleApproveRequest = async (requestId) => {
+    try {
+      const result = await dispatch(approveWorkflow({
+        requestId,
+        action: 'APPROVE'
+      })).unwrap();
+
+      if (result?.success) {
+        toast.success('Task approved successfully');
+        await loadPendingApprovals(); // Refresh approval queue
+        if (selectedProjectId) {
+          await loadTasks(selectedProjectId); // Refresh tasks
+        }
+      }
+    } catch (err) {
+      toast.error(err?.message || 'Failed to approve request');
+    }
+  };
+
+  // Handle rejection of task completion request
+  const handleRejectRequest = async (requestId, reason) => {
+    try {
+      const result = await dispatch(approveWorkflow({
+        requestId,
+        action: 'REJECT',
+        reason: reason || 'Task does not meet quality standards'
+      })).unwrap();
+
+      if (result?.success) {
+        toast.success('Task rejected - returned to employee');
+        await loadPendingApprovals(); // Refresh approval queue
+        if (selectedProjectId) {
+          await loadTasks(selectedProjectId); // Refresh tasks
+        }
+      }
+    } catch (err) {
+      toast.error(err?.message || 'Failed to reject request');
+    }
+  };
 
   // Get project details when project is selected
   const getProjectDetails = useCallback((projectId) => {
@@ -291,6 +380,7 @@ const ManagerTasks = () => {
 
   useEffect(() => {
     loadProjects();
+    loadPendingApprovals(); // Load approval queue on mount
   }, [loadProjects]);
 
   useEffect(() => {
@@ -948,17 +1038,17 @@ const ManagerTasks = () => {
                   <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${
                     getManagerTaskStatus(selectedTask) === 'LOCKED'
                       ? 'bg-red-100 text-red-800 border-red-200'
-                      : getTaskStatus(selectedTask) === 'COMPLETED' || getTaskStatus(selectedTask) === 'Completed'
+                      : getManagerTaskStatus(selectedTask) === 'COMPLETED' || getManagerTaskStatus(selectedTask) === 'Completed'
                         ? 'bg-green-100 text-green-800 border-green-200'
-                        : getTaskStatus(selectedTask) === 'IN_PROGRESS' || getTaskStatus(selectedTask) === 'In Progress'
+                        : getManagerTaskStatus(selectedTask) === 'IN_PROGRESS' || getManagerTaskStatus(selectedTask) === 'In Progress'
                           ? 'bg-blue-100 text-blue-800 border-blue-200'
-                          : getTaskStatus(selectedTask) === 'ON_HOLD' || getTaskStatus(selectedTask) === 'On Hold'
+                          : getManagerTaskStatus(selectedTask) === 'ON_HOLD' || getManagerTaskStatus(selectedTask) === 'On Hold'
                             ? 'bg-red-100 text-red-800 border-red-200'
-                            : getTaskStatus(selectedTask) === 'Request Approved'
+                            : getManagerTaskStatus(selectedTask) === 'Request Approved'
                               ? 'bg-purple-100 text-purple-800 border-purple-200'
                               : 'bg-yellow-100 text-yellow-800 border-yellow-200'
                   }`}>
-                    {getStatusText(getTaskStatus(selectedTask))}
+                    {getStatusText(getManagerTaskStatus(selectedTask))}
                   </span>
                 </div>
 
@@ -1042,7 +1132,7 @@ const ManagerTasks = () => {
                     <select
                       value={selectedAssignee}
                       onChange={(e) => setSelectedAssignee(e.target.value)}
-                      disabled={employees.length === 0 || getTaskStatus(selectedTask) === 'COMPLETED' || getTaskStatus(selectedTask) === 'LOCKED'}
+                      disabled={employees.length === 0 || getManagerTaskStatus(selectedTask) === 'COMPLETED' || getManagerTaskStatus(selectedTask) === 'LOCKED'}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm"
                     >
                       <option value="">Select employee</option>
@@ -1057,7 +1147,7 @@ const ManagerTasks = () => {
                     </select>
                     <button
                       onClick={handleReassignTask}
-                      disabled={reassigning || !selectedAssignee || employees.length === 0 || getTaskStatus(selectedTask) === 'COMPLETED' || getTaskStatus(selectedTask) === 'LOCKED'}
+                      disabled={reassigning || !selectedAssignee || employees.length === 0 || getManagerTaskStatus(selectedTask) === 'COMPLETED' || getManagerTaskStatus(selectedTask) === 'LOCKED'}
                       className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm ${
                         reassigning || !selectedAssignee || employees.length === 0
                           ? 'bg-gray-300 text-gray-500 cursor-not-allowed'

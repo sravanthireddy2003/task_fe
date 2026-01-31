@@ -10,8 +10,7 @@ export default defineConfig({
     // host: '0.0.0.0',  // Allows external access, listen on all network interfaces
     proxy: {
       "/api": {
-        // If VITE_SERVERURL isn't set, fall back to a local dev API.
-        target: process.env.VITE_SERVERURL || "http://localhost:4000",
+        target: process.env.VITE_SERVERURL,
         changeOrigin: true,
       },
     },

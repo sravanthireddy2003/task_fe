@@ -80,6 +80,8 @@ export const requestProjectClosure = createAsyncThunk(
 
 const initialState = {
   pendingApprovals: [],
+  readyToApprove: [],
+  alreadyApproved: [],
   lastRequest: null,
   history: {},
   loading: false,
@@ -111,7 +113,11 @@ const workflowSlice = createSlice({
       .addCase(fetchPendingApprovals.pending, (state) => { state.loading = true; state.error = null; })
       .addCase(fetchPendingApprovals.fulfilled, (state, action) => {
         state.loading = false;
-        state.pendingApprovals = action.payload.approvals || [];
+        const data = action.payload.approvals?.data || action.payload.approvals || {};
+        state.readyToApprove = data.ready_to_approve || [];
+        state.alreadyApproved = data.already_approved || [];
+        // Keep backward compatibility with old flat array format
+        state.pendingApprovals = [...(data.ready_to_approve || []), ...(data.already_approved || [])];
       })
       .addCase(fetchPendingApprovals.rejected, (state, action) => { state.loading = false; state.error = action.payload; })
 
