@@ -12,11 +12,11 @@ const { User, Mail, Phone, Camera, Save, KeyRound, QrCode, Smartphone, ShieldChe
 const Profile = () => {
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
-  const { register, handleSubmit, reset, formState: { errors } } = useForm({ 
+  const { register, handleSubmit, reset, formState: { errors } } = useForm({
     defaultValues: user || {},
     mode: 'onChange'
   });
-  
+
   const [avatarPreview, setAvatarPreview] = useState(user?.photo || null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -36,7 +36,15 @@ const Profile = () => {
       reset(user);
       setTwoFAEnabled(!!(user?.twoFactor?.enabled || user?.twoFactor?.hasSecret || user?.twoFactorEnabled || user?.twoFaEnabled || user?.is2faEnabled || user?.twoFA));
       if (user.photo) {
-        setAvatarPreview(user.photo);
+        // Fix for CORP issue - use relative path if localhost:4000
+        let safeUrl = user.photo;
+        if (safeUrl && safeUrl.includes('localhost:4000')) {
+          try {
+            const urlObj = new URL(safeUrl);
+            safeUrl = urlObj.pathname + urlObj.search;
+          } catch (e) { }
+        }
+        setAvatarPreview(safeUrl);
       }
     }
   }, [user, reset]);
@@ -79,7 +87,14 @@ const Profile = () => {
       // If API returned photo or user.photo, update preview immediately
       const returnedPhoto = resp?.photo || resp?.user?.photo || (resp?.data && resp.data.photo) || null;
       if (returnedPhoto && typeof returnedPhoto === 'string' && !returnedPhoto.includes('undefined')) {
-        setAvatarPreview(returnedPhoto);
+        let safeUrl = returnedPhoto;
+        if (safeUrl.includes('localhost:4000')) {
+          try {
+            const urlObj = new URL(safeUrl);
+            safeUrl = urlObj.pathname + urlObj.search;
+          } catch (e) { }
+        }
+        setAvatarPreview(safeUrl);
       }
       // Profile is already updated in Redux state by updateProfile thunk
     } catch (err) {
@@ -93,7 +108,7 @@ const Profile = () => {
   const handleEnable2FA = async () => {
     try {
       const res = await dispatch(enable2FA()).unwrap();
-      
+
       if (res && (res.enabled === true || (res?.success === true && res?.enabled === true))) {
         setTwoFAEnabled(true);
         toast.success(res.message || "2FA already enabled");
@@ -113,16 +128,16 @@ const Profile = () => {
       toast.error("Enter the 6-digit token from your authenticator app.");
       return;
     }
-    
+
     try {
       const res = await dispatch(verify2FA({ token: tokenValue })).unwrap();
       setShowVerify(false);
       setQrData(null);
       toast.success(res?.message || "2FA enabled successfully");
       setTwoFAEnabled(true);
-      
+
       // Simulate getting backup codes (replace with actual API call)
-      const mockBackupCodes = Array.from({length: 10}, () => 
+      const mockBackupCodes = Array.from({ length: 10 }, () =>
         Math.random().toString(36).substring(2, 8).toUpperCase()
       );
       setBackupCodes(mockBackupCodes);
@@ -136,7 +151,7 @@ const Profile = () => {
     if (!window.confirm('Are you sure you want to disable 2FA? This will reduce your account security.')) {
       return;
     }
-    
+
     try {
       const res = await dispatch(disable2FA()).unwrap();
       const wasDisabled = res && (res.success === true || res.enabled === false || res.enabled === 'false');
@@ -206,9 +221,9 @@ const Profile = () => {
                     <div className="relative">
                       <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white/30 flex items-center justify-center">
                         {avatarPreview ? (
-                          <img 
-                            src={avatarPreview} 
-                            alt="Profile" 
+                          <img
+                            src={avatarPreview}
+                            alt="Profile"
                             className="w-full h-full rounded-full object-cover"
                           />
                         ) : null}
@@ -240,7 +255,7 @@ const Profile = () => {
                       </p>
                     </div>
                   </div>
-                  
+
                   <button
                     onClick={() => setIsEditing(!isEditing)}
                     className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors backdrop-blur-sm"
@@ -261,7 +276,7 @@ const Profile = () => {
                       </label>
                       <Textbox
                         name="name"
-                        register={register('name', { 
+                        register={register('name', {
                           required: 'Name is required',
                           minLength: { value: 2, message: 'Name must be at least 2 characters' }
                         })}
@@ -279,7 +294,7 @@ const Profile = () => {
                       <Textbox
                         name="email"
                         type="email"
-                        register={register('email', { 
+                        register={register('email', {
                           required: 'Email is required',
                           pattern: {
                             value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
@@ -347,7 +362,7 @@ const Profile = () => {
                       <p className="text-gray-600">Add an extra layer of security to your account</p>
                     </div>
                   </div>
-                  
+
                   <div className={`px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2 ${get2FAStatusClass()}`}>
                     {twoFAEnabled ? (
                       <>
@@ -373,8 +388,8 @@ const Profile = () => {
                         <div className="flex-1">
                           <h4 className="font-semibold text-gray-900 mb-2">Enhanced Account Security</h4>
                           <p className="text-gray-600 mb-4">
-                            Protect your account with two-factor authentication. When enabled, 
-                            you'll need to enter both your password and a verification code from 
+                            Protect your account with two-factor authentication. When enabled,
+                            you'll need to enter both your password and a verification code from
                             your authenticator app when signing in.
                           </p>
                           <div className="flex items-center gap-3 text-sm text-gray-600">
@@ -397,7 +412,7 @@ const Profile = () => {
                           Use Google Authenticator, Authy, Microsoft Authenticator, or any TOTP app
                         </p>
                       </div>
-                      
+
                       <div className="p-5 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all">
                         <div className="flex items-center gap-3 mb-3">
                           <div className="p-2 bg-green-50 rounded">
@@ -411,7 +426,7 @@ const Profile = () => {
                           3. Save backup codes
                         </p>
                       </div>
-                      
+
                       <div className="p-5 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all">
                         <div className="flex items-center gap-3 mb-3">
                           <div className="p-2 bg-purple-50 rounded">
@@ -443,7 +458,7 @@ const Profile = () => {
                         <div>
                           <h4 className="font-semibold text-green-800">Two-Factor Authentication is Active</h4>
                           <p className="text-green-700 mt-1">
-                            Your account is protected with an extra layer of security. 
+                            Your account is protected with an extra layer of security.
                             You'll need to enter a verification code from your authenticator app when signing in.
                           </p>
                         </div>
@@ -463,7 +478,7 @@ const Profile = () => {
                           View Backup Codes
                         </button>
                       </div>
-                      
+
                       <div className="p-5 bg-gray-50 rounded-lg border border-gray-200">
                         <h5 className="font-semibold text-gray-900 mb-3">Account Security</h5>
                         <p className="text-gray-600 text-sm mb-4">
@@ -498,8 +513,8 @@ const Profile = () => {
                 <div className="flex items-center justify-between py-3 border-b border-gray-100">
                   <span className="text-gray-600">Last Login</span>
                   <span className="text-gray-900 font-medium">
-                    {new Date().toLocaleDateString('en-US', { 
-                      month: 'short', 
+                    {new Date().toLocaleDateString('en-US', {
+                      month: 'short',
                       day: 'numeric',
                       hour: '2-digit',
                       minute: '2-digit'
@@ -522,20 +537,32 @@ const Profile = () => {
             </div>
 
             {/* Quick Actions */}
+            {/* Quick Actions */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <h3 className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
               <div className="space-y-3">
-                <button className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-3">
-                  <KeyRound className="text-gray-400" />
-                  <span>Change Password</span>
+                <button
+                  onClick={() => navigate('/change-password')}
+                  className="w-full text-left px-4 py-3 bg-gray-50 hover:bg-amber-50 rounded-xl transition-all duration-200 flex items-center gap-3 border border-gray-100 ring-transparent hover:ring-2 hover:ring-amber-100 group"
+                >
+                  <div className="p-2.5 rounded-lg bg-white shadow-sm text-gray-400 group-hover:text-amber-500 transition-colors">
+                    <KeyRound className="w-5 h-5" />
+                  </div>
+                  <span className="font-medium text-gray-700 group-hover:text-amber-700">Change Password</span>
                 </button>
-                <button className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-3">
-                  <Mail className="text-gray-400" />
-                  <span>Email Preferences</span>
+
+                <button className="w-full text-left px-4 py-3 bg-gray-50 hover:bg-blue-50 rounded-xl transition-all duration-200 flex items-center gap-3 border border-gray-100 ring-transparent hover:ring-2 hover:ring-blue-100 group">
+                  <div className="p-2.5 rounded-lg bg-white shadow-sm text-gray-400 group-hover:text-blue-500 transition-colors">
+                    <Mail className="w-5 h-5" />
+                  </div>
+                  <span className="font-medium text-gray-700 group-hover:text-blue-700">Email Preferences</span>
                 </button>
-                <button className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-3">
-                  <ShieldCheck className="text-gray-400" />
-                  <span>Privacy Settings</span>
+
+                <button className="w-full text-left px-4 py-3 bg-gray-50 hover:bg-purple-50 rounded-xl transition-all duration-200 flex items-center gap-3 border border-gray-100 ring-transparent hover:ring-2 hover:ring-purple-100 group">
+                  <div className="p-2.5 rounded-lg bg-white shadow-sm text-gray-400 group-hover:text-purple-500 transition-colors">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <span className="font-medium text-gray-700 group-hover:text-purple-700">Privacy Settings</span>
                 </button>
               </div>
             </div>
@@ -578,20 +605,20 @@ const Profile = () => {
                   ✕
                 </button>
               </div>
-              
+
               <div className="space-y-6">
                 <div className="bg-gray-50 p-6 rounded-xl flex items-center justify-center">
                   {qrData.qrCode || qrData.qr ? (
-                    <img 
-                      src={qrData.qrCode || qrData.qr} 
-                      alt="QR Code" 
+                    <img
+                      src={qrData.qrCode || qrData.qr}
+                      alt="QR Code"
                       className="w-64 h-64"
                     />
                   ) : (
                     <div className="text-gray-500">QR code not available</div>
                   )}
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Enter 6-digit verification code
@@ -605,7 +632,7 @@ const Profile = () => {
                     maxLength={6}
                   />
                 </div>
-                
+
                 <div className="flex gap-3">
                   <button
                     onClick={() => setShowVerify(false)}
@@ -639,7 +666,7 @@ const Profile = () => {
                   ✕
                 </button>
               </div>
-              
+
               <div className="space-y-6">
                 <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
                   <div className="flex items-start gap-3">
@@ -652,7 +679,7 @@ const Profile = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                   {backupCodes.map((code, index) => (
                     <div
@@ -663,7 +690,7 @@ const Profile = () => {
                     </div>
                   ))}
                 </div>
-                
+
                 <div className="flex gap-3">
                   <button
                     onClick={() => copyToClipboard(backupCodes.join('\n'))}

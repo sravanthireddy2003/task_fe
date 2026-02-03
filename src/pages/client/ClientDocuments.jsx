@@ -41,12 +41,12 @@ import { useDispatch } from "react-redux";
 import * as Icons from "../../icons";
 import Button from "../../components/Button";
 import { attachDocument, deleteDocument } from "../../redux/slices/clientSlice";
- 
+
 const ClientDocuments = ({ client }) => {
   const dispatch = useDispatch();
   const fileInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
- 
+
   const documents = client?.documents || [];
 
   const getFileIcon = (mimeType) => {
@@ -58,19 +58,19 @@ const ClientDocuments = ({ client }) => {
     if (type.includes("excel") || type.includes("xls")) return <Icons.FileSpreadsheet className="tm-icon text-green-600" />;
     return <Icons.FileText className="tm-icon text-gray-400" />;
   };
- 
+
   const formatFileSize = (bytes) => {
     if (!bytes) return '';
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
     return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
   };
- 
+
   // ✅ FIXED: Upload to backend API
   const handleFileUpload = async (event) => {
     const files = Array.from(event.target.files);
     if (files.length === 0) return;
- 
+
     setUploading(true);
     try {
       for (const file of files) {
@@ -78,7 +78,7 @@ const ClientDocuments = ({ client }) => {
         formData.append('document', file);
         formData.append('entityType', 'CLIENT');
         formData.append('entityId', client.id);
- 
+
         const token = getAccessToken();
         const response = await fetch('/api/documents/upload', {
           method: 'POST',
@@ -87,13 +87,13 @@ const ClientDocuments = ({ client }) => {
           },
           body: formData
         });
- 
+
         if (!response.ok) {
           throw new Error(`Upload failed: ${response.status}`);
         }
- 
+
         const result = await response.json();
-       
+
         // ✅ Add new document with publicUrl (NOT blob URL)
         await dispatch(attachDocument({
           clientId: client.id,
@@ -117,7 +117,7 @@ const ClientDocuments = ({ client }) => {
       }
     }
   };
- 
+
   // ✅ FIXED: Use publicUrl only
   const handleDownload = async (doc) => {
     try {
@@ -144,7 +144,7 @@ const ClientDocuments = ({ client }) => {
       alert('Download failed: ' + (err.message || err));
     }
   };
- 
+
   // ✅ FIXED: Use publicUrl only
   const handleView = async (doc) => {
     try {
@@ -166,7 +166,7 @@ const ClientDocuments = ({ client }) => {
       alert('Unable to open document: ' + (err.message || err));
     }
   };
- 
+
   const handleDelete = async (documentId) => {
     if (window.confirm("Are you sure you want to delete this document?")) {
       try {
@@ -179,7 +179,7 @@ const ClientDocuments = ({ client }) => {
       }
     }
   };
- 
+
   return (
     <div className="w-full">
       <div className="flex justify-between items-center mb-6">
@@ -202,11 +202,11 @@ const ClientDocuments = ({ client }) => {
           />
         </div>
       </div>
- 
+
       {/* Documents List */}
       <div className="space-y-4">
         {documents.length === 0 ? (
-            <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+          <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
             <Icons.UploadCloud className="tm-icon text-gray-300 mx-auto mb-4" />
             <p className="text-lg mb-2">No documents uploaded yet</p>
             <p className="text-sm">Click "Upload Documents" to add files</p>
@@ -231,7 +231,7 @@ const ClientDocuments = ({ client }) => {
                   </div>
                 </div>
               </div>
- 
+
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => handleView(document)}
@@ -259,7 +259,7 @@ const ClientDocuments = ({ client }) => {
           ))
         )}
       </div>
- 
+
       {/* Upload Instructions */}
       <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
         <h3 className="font-medium text-blue-900 mb-2">Supported File Types</h3>
@@ -271,7 +271,6 @@ const ClientDocuments = ({ client }) => {
     </div>
   );
 };
- 
+
 export default ClientDocuments;
- 
- 
+

@@ -25,12 +25,12 @@ const ManagerTasks = () => {
   const [error, setError] = useState(null);
   const [projects, setProjects] = useState([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
-  
+
   // Approval queue states
   const [pendingApprovals, setPendingApprovals] = useState([]);
   const [approvalsLoading, setApprovalsLoading] = useState(false);
   const [showApprovalsPanel, setShowApprovalsPanel] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -52,13 +52,13 @@ const ManagerTasks = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [viewMode, setViewMode] = useState('list');
   const [detailLoading, setDetailLoading] = useState(false);
-  
-  // New state for project details
+
   const [projectDetails, setProjectDetails] = useState(null);
+  const [isProjectLocked, setIsProjectLocked] = useState(false);
 
   // Status options - aligned with workflow specification
   const statusOptions = ['TODO', 'IN_PROGRESS', 'REVIEW', 'COMPLETED', 'ON_HOLD'];
-  
+
   // Status display mapping
   const statusDisplayMap = {
     'TODO': 'To Do',
@@ -67,7 +67,7 @@ const ManagerTasks = () => {
     'COMPLETED': 'Completed',
     'ON_HOLD': 'On Hold'
   };
-  
+
   // Status colors aligned with workflow
   const statusColorMap = {
     'TODO': 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -199,23 +199,37 @@ const ManagerTasks = () => {
     if (!projectId) {
       setTasks([]);
       setError(null);
+      setIsProjectLocked(false);
       setLoading(false);
       return;
     }
 
     setLoading(true);
+    setIsProjectLocked(false);
+
     try {
       const resp = await fetchWithTenant(`/api/tasks?projectId=${encodeURIComponent(projectId)}`);
-      
+
+      // Handle "Project is closed" response which comes as success: false
+      if (resp && resp.success === false && resp.message) {
+        if (resp.message.includes("Project is closed") || resp.message.includes("Tasks are locked")) {
+          setIsProjectLocked(true);
+          setError(resp.message);
+          setTasks([]);
+          setSelectedTask(null);
+          return;
+        }
+      }
+
       if (resp && resp.error) {
         if (resp.error.includes('assigned_to')) {
           console.warn('Backend assignment error:', resp.error);
         }
         throw new Error(resp.error || 'Failed to load tasks');
       }
-      
+
       const tasksData = Array.isArray(resp?.data) ? resp.data : [];
-      
+
       // Find the selected project in the projects array
       const selectedProject = projects.find(p => {
         const possibleIds = [
@@ -227,7 +241,7 @@ const ManagerTasks = () => {
         ];
         return possibleIds.includes(projectId);
       });
-      
+
       // Since backend doesn't return project info with tasks, 
       // we need to add it manually
       const tasksWithProjectInfo = tasksData.map(task => {
@@ -237,7 +251,7 @@ const ManagerTasks = () => {
             ...task,
             project_id: projectId,
             projectId: projectId,
-            project: selectedProject || { 
+            project: selectedProject || {
               name: getProjectDisplayName(selectedProject),
               id: projectId
             }
@@ -250,7 +264,7 @@ const ManagerTasks = () => {
       setError(null);
     } catch (err) {
       setError(err.message || 'Failed to load tasks for the project');
-      toast.error('Failed to load tasks');
+      toast.error(err.message || 'Failed to load tasks');
     } finally {
       setLoading(false);
     }
@@ -275,12 +289,12 @@ const ManagerTasks = () => {
       const resp = await fetchWithTenant('/api/manager/projects');
       const data = Array.isArray(resp?.data) ? resp.data : resp;
       const projectsArray = Array.isArray(data) ? data : [];
-      
+
       // Filter projects to exclude those with CLOSED status
       const filteredProjects = projectsArray.filter(project =>
         !project.project_status_info?.is_closed
       );
-      
+
       setProjects(filteredProjects);
     } catch (err) {
       toast.error('Failed to load projects');
@@ -351,7 +365,7 @@ const ManagerTasks = () => {
       setProjectDetails(null);
       return;
     }
-    
+
     const foundProject = projects.find((project) => {
       const projectIds = [
         project.public_id,
@@ -360,10 +374,10 @@ const ManagerTasks = () => {
         project.internalId,
         project.project_id
       ];
-      
+
       return projectIds.some(id => id && id.toString() === projectId.toString());
     }) || null;
-    
+
     setProjectDetails(foundProject);
   }, [projects]);
 
@@ -413,20 +427,20 @@ const ManagerTasks = () => {
   // Task Actions
   const handleCreateTask = async (event) => {
     event.preventDefault();
-    
+
     // Validate required fields
     if (!formData.title || !selectedProjectId) {
       toast.error('Title and project are required');
       return;
     }
-    
+
     // Validate single user assignment
     const assignmentValidation = validateAssignment(formData.assignedUsers);
     if (!assignmentValidation.valid) {
       toast.error(assignmentValidation.error);
       return;
     }
-    
+
     setActionLoading(true);
     try {
       const selectedProject = projects.find(
@@ -441,10 +455,10 @@ const ManagerTasks = () => {
           return projectIds.includes(selectedProjectId);
         }
       );
-      
+
       // Ensure only one user ID is sent
       const assignedUserId = formData.assignedUsers[0];
-      
+
       const payload = {
         title: formData.title,
         description: formData.description,
@@ -456,7 +470,7 @@ const ManagerTasks = () => {
         client_id: selectedProject?.client?.public_id || selectedProject?.client?.id || selectedProject?.client_id,
         assigned_to: assignedUserId,
       };
-      
+
       const resp = await fetchWithTenant('api/projects/tasks', {
         method: 'POST',
         headers: {
@@ -464,7 +478,7 @@ const ManagerTasks = () => {
         },
         body: JSON.stringify(payload),
       });
-      
+
       if (resp && resp.error) {
         if (resp.error.includes('assigned_to') && resp.error.includes('exactly one')) {
           toast.error('Error: Task must be assigned to exactly one user');
@@ -472,7 +486,7 @@ const ManagerTasks = () => {
         }
         throw new Error(resp.error || 'Unable to create task');
       }
-      
+
       const successMessage = resp?.message || 'Task created successfully';
       toast.success(successMessage);
 
@@ -487,13 +501,13 @@ const ManagerTasks = () => {
         timeAlloted: 8,
         projectId: selectedProjectId
       });
-      
+
       // Close modal and refresh tasks
       setShowCreateTaskModal(false);
       loadTasks(selectedProjectId);
     } catch (err) {
       console.error('Error creating task:', err);
-      
+
       if (err.response && err.response.message && err.response.message.includes('successfully')) {
         toast.success(err.response.message || 'Task created successfully');
         setFormData({
@@ -637,7 +651,7 @@ const ManagerTasks = () => {
               {projects.map((project) => {
                 const projectId = normalizeProjectId(project);
                 const projectName = getProjectDisplayName(project);
-                
+
                 return (
                   <option key={projectId} value={projectId}>
                     {projectName}
@@ -662,14 +676,14 @@ const ManagerTasks = () => {
           {/* Add Task Button */}
           <button
             onClick={openCreateTaskModal}
-            disabled={!selectedProjectId || loading}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${!selectedProjectId || loading
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
+            disabled={!selectedProjectId || loading || isProjectLocked}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${!selectedProjectId || loading || isProjectLocked
+              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
           >
-            <Plus className="tm-icon" />
-            Add Task
+            {isProjectLocked ? <Lock className="tm-icon" /> : <Plus className="tm-icon" />}
+            {isProjectLocked ? 'Locked' : 'Add Task'}
           </button>
         </div>
       </PageHeader>
@@ -679,6 +693,22 @@ const ManagerTasks = () => {
         <div className="flex items-center justify-center p-4 mb-6 bg-blue-50 rounded-lg">
           <RefreshCw className="tm-icon mr-2 animate-spin text-blue-600" />
           <span className="text-blue-600 font-medium">Loading tasks...</span>
+        </div>
+      )}
+
+      {/* ERROR / LOCKED PROJECT BANNER */}
+      {(error || isProjectLocked) && !loading && (
+        <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-xl text-red-800 animate-fadeIn">
+          <AlertTriangle className="tm-icon-md flex-shrink-0 mt-0.5" />
+          <div>
+            <h3 className="font-semibold text-lg">{isProjectLocked ? 'Project Locked' : 'Error'}</h3>
+            <p className="text-red-700 mt-1">{error}</p>
+            {isProjectLocked && (
+              <p className="text-red-600 text-sm mt-2">
+                This project is currently closed or pending approval. Creating or modifying tasks is disabled.
+              </p>
+            )}
+          </div>
         </div>
       )}
 
@@ -705,12 +735,12 @@ const ManagerTasks = () => {
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${getProjectStatus(projectDetails) === 'Active' || getProjectStatus(projectDetails) === 'In Progress' 
-                        ? 'bg-green-500' 
+                      <div className={`w-2 h-2 rounded-full ${getProjectStatus(projectDetails) === 'Active' || getProjectStatus(projectDetails) === 'In Progress'
+                        ? 'bg-green-500'
                         : getProjectStatus(projectDetails) === 'Completed'
                           ? 'bg-blue-500'
                           : 'bg-yellow-500'
-                      }`} />
+                        }`} />
                       <span className="text-gray-700">
                         Status: <span className="font-medium">{getProjectStatus(projectDetails)}</span>
                       </span>
@@ -718,13 +748,13 @@ const ManagerTasks = () => {
                   </div>
                 </div>
               </div>
-              
+
               {projectDetails.description && (
                 <p className="text-gray-600 mb-4">
                   {projectDetails.description}
                 </p>
               )}
-              
+
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <div className="text-sm text-gray-500 mb-1">Total Tasks</div>
@@ -744,14 +774,18 @@ const ManagerTasks = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="flex flex-col gap-3 md:w-auto w-full">
               <button
                 onClick={openCreateTaskModal}
-                className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
+                disabled={isProjectLocked}
+                className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors ${isProjectLocked
+                  ? 'bg-gray-400 text-white cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
               >
-                <Plus className="tm-icon" />
-                Add New Task
+                {isProjectLocked ? <Lock className="tm-icon" /> : <Plus className="tm-icon" />}
+                {isProjectLocked ? 'Project Locked' : 'Add New Task'}
               </button>
               <RefreshButton onClick={() => loadTasks(selectedProjectId)} loading={loading} className="px-4 py-3" />
             </div>
@@ -797,7 +831,7 @@ const ManagerTasks = () => {
             {projects.slice(0, 5).map((project) => {
               const projectId = normalizeProjectId(project);
               const projectName = getProjectDisplayName(project);
-              
+
               return (
                 <button
                   key={projectId}
@@ -827,9 +861,14 @@ const ManagerTasks = () => {
               <div className="flex gap-3 justify-center">
                 <button
                   onClick={openCreateTaskModal}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  disabled={isProjectLocked}
+                  className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${isProjectLocked
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
                 >
-                  Create First Task
+                  {isProjectLocked ? <Lock className="tm-icon" /> : null}
+                  {isProjectLocked ? 'Project Locked' : 'Create First Task'}
                 </button>
                 <button
                   onClick={() => loadTasks(selectedProjectId)}
@@ -894,16 +933,16 @@ const ManagerTasks = () => {
 
                           <td className="p-4">
                             <span className={`px-3 py-1 rounded-full text-sm font-medium ${taskStatus === 'LOCKED'
-                                ? 'bg-red-100 text-red-800'
-                                : taskStatus === 'COMPLETED' || taskStatus === 'Completed'
-                                  ? 'bg-green-100 text-green-800'
-                                  : taskStatus === 'IN_PROGRESS' || taskStatus === 'In Progress'
-                                    ? 'bg-blue-100 text-blue-800'
-                                    : taskStatus === 'ON_HOLD' || taskStatus === 'On Hold'
-                                      ? 'bg-red-100 text-red-800'
-                                      : taskStatus === 'Request Approved'
-                                        ? 'bg-purple-100 text-purple-800'
-                                        : 'bg-yellow-100 text-yellow-800'
+                              ? 'bg-red-100 text-red-800'
+                              : taskStatus === 'COMPLETED' || taskStatus === 'Completed'
+                                ? 'bg-green-100 text-green-800'
+                                : taskStatus === 'IN_PROGRESS' || taskStatus === 'In Progress'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : taskStatus === 'ON_HOLD' || taskStatus === 'On Hold'
+                                    ? 'bg-red-100 text-red-800'
+                                    : taskStatus === 'Request Approved'
+                                      ? 'bg-purple-100 text-purple-800'
+                                      : 'bg-yellow-100 text-yellow-800'
                               }`}>
                               {getStatusText(taskStatus)}
                             </span>
@@ -911,10 +950,10 @@ const ManagerTasks = () => {
 
                           <td className="p-4">
                             <span className={`px-3 py-1 rounded-full text-sm font-medium ${(task.priority || 'MEDIUM').toUpperCase() === 'HIGH'
-                                ? 'bg-red-100 text-red-800'
-                                : (task.priority || 'MEDIUM').toUpperCase() === 'MEDIUM'
-                                  ? 'bg-amber-100 text-amber-800'
-                                  : 'bg-gray-100 text-gray-800'
+                              ? 'bg-red-100 text-red-800'
+                              : (task.priority || 'MEDIUM').toUpperCase() === 'MEDIUM'
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-gray-100 text-gray-800'
                               }`}>
                               {(task.priority || 'MEDIUM').toUpperCase()}
                             </span>
@@ -979,26 +1018,26 @@ const ManagerTasks = () => {
                       <div className="flex items-center gap-2 mb-3 flex-wrap">
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-medium ${taskStatus === 'LOCKED'
-                              ? 'bg-red-100 text-red-800'
-                              : taskStatus === 'COMPLETED' || taskStatus === 'Completed'
-                                ? 'bg-green-100 text-green-800'
-                                : taskStatus === 'IN_PROGRESS' || taskStatus === 'In Progress'
-                                  ? 'bg-blue-100 text-blue-800'
-                                  : taskStatus === 'ON_HOLD' || taskStatus === 'On Hold'
-                                    ? 'bg-red-100 text-red-800'
-                                    : taskStatus === 'Request Approved'
-                                      ? 'bg-purple-100 text-purple-800'
-                                      : 'bg-yellow-100 text-yellow-800'
+                            ? 'bg-red-100 text-red-800'
+                            : taskStatus === 'COMPLETED' || taskStatus === 'Completed'
+                              ? 'bg-green-100 text-green-800'
+                              : taskStatus === 'IN_PROGRESS' || taskStatus === 'In Progress'
+                                ? 'bg-blue-100 text-blue-800'
+                                : taskStatus === 'ON_HOLD' || taskStatus === 'On Hold'
+                                  ? 'bg-red-100 text-red-800'
+                                  : taskStatus === 'Request Approved'
+                                    ? 'bg-purple-100 text-purple-800'
+                                    : 'bg-yellow-100 text-yellow-800'
                             }`}
                         >
                           {getStatusText(taskStatus)}
                         </span>
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-medium ${(task.priority || 'MEDIUM').toUpperCase() === 'HIGH'
-                              ? 'bg-red-100 text-red-800'
-                              : (task.priority || 'MEDIUM').toUpperCase() === 'MEDIUM'
-                                ? 'bg-amber-100 text-amber-800'
-                                : 'bg-gray-100 text-gray-800'
+                            ? 'bg-red-100 text-red-800'
+                            : (task.priority || 'MEDIUM').toUpperCase() === 'MEDIUM'
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-gray-100 text-gray-800'
                             }`}
                         >
                           {(task.priority || 'MEDIUM').toUpperCase()}
@@ -1035,19 +1074,18 @@ const ManagerTasks = () => {
                 {/* Task header */}
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="text-xl font-semibold text-gray-900">{selectedTask.title}</h2>
-                  <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${
-                    getManagerTaskStatus(selectedTask) === 'LOCKED'
-                      ? 'bg-red-100 text-red-800 border-red-200'
-                      : getManagerTaskStatus(selectedTask) === 'COMPLETED' || getManagerTaskStatus(selectedTask) === 'Completed'
-                        ? 'bg-green-100 text-green-800 border-green-200'
-                        : getManagerTaskStatus(selectedTask) === 'IN_PROGRESS' || getManagerTaskStatus(selectedTask) === 'In Progress'
-                          ? 'bg-blue-100 text-blue-800 border-blue-200'
-                          : getManagerTaskStatus(selectedTask) === 'ON_HOLD' || getManagerTaskStatus(selectedTask) === 'On Hold'
-                            ? 'bg-red-100 text-red-800 border-red-200'
-                            : getManagerTaskStatus(selectedTask) === 'Request Approved'
-                              ? 'bg-purple-100 text-purple-800 border-purple-200'
-                              : 'bg-yellow-100 text-yellow-800 border-yellow-200'
-                  }`}>
+                  <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${getManagerTaskStatus(selectedTask) === 'LOCKED'
+                    ? 'bg-red-100 text-red-800 border-red-200'
+                    : getManagerTaskStatus(selectedTask) === 'COMPLETED' || getManagerTaskStatus(selectedTask) === 'Completed'
+                      ? 'bg-green-100 text-green-800 border-green-200'
+                      : getManagerTaskStatus(selectedTask) === 'IN_PROGRESS' || getManagerTaskStatus(selectedTask) === 'In Progress'
+                        ? 'bg-blue-100 text-blue-800 border-blue-200'
+                        : getManagerTaskStatus(selectedTask) === 'ON_HOLD' || getManagerTaskStatus(selectedTask) === 'On Hold'
+                          ? 'bg-red-100 text-red-800 border-red-200'
+                          : getManagerTaskStatus(selectedTask) === 'Request Approved'
+                            ? 'bg-purple-100 text-purple-800 border-purple-200'
+                            : 'bg-yellow-100 text-yellow-800 border-yellow-200'
+                    }`}>
                     {getStatusText(getManagerTaskStatus(selectedTask))}
                   </span>
                 </div>
@@ -1148,11 +1186,10 @@ const ManagerTasks = () => {
                     <button
                       onClick={handleReassignTask}
                       disabled={reassigning || !selectedAssignee || employees.length === 0 || getManagerTaskStatus(selectedTask) === 'COMPLETED' || getManagerTaskStatus(selectedTask) === 'LOCKED'}
-                      className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm ${
-                        reassigning || !selectedAssignee || employees.length === 0
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : 'bg-blue-600 text-white hover:bg-blue-700'
-                      }`}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm ${reassigning || !selectedAssignee || employees.length === 0
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                        }`}
                     >
                       {reassigning ? (
                         <>
@@ -1386,9 +1423,9 @@ const ManagerTasks = () => {
                     value={formData.assignedUsers[0] || ''}
                     onChange={(e) => {
                       const selectedUserId = e.target.value;
-                      setFormData({ 
-                        ...formData, 
-                        assignedUsers: selectedUserId ? [selectedUserId] : [] 
+                      setFormData({
+                        ...formData,
+                        assignedUsers: selectedUserId ? [selectedUserId] : []
                       });
                     }}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"

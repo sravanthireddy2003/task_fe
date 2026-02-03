@@ -56,7 +56,7 @@ const ClientDocuments = ({ client }) => {
         }
 
         const result = await response.json();
-        
+
         // ✅ Add new document with publicUrl (NOT blob URL)
         await dispatch(attachDocument({
           clientId: client.id,

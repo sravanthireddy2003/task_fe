@@ -1,5 +1,5 @@
 // Sidebar.jsx - Enterprise Dark Sidebar
-import { Link, useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import clsx from "clsx";
 import { MODULE_MAP } from "../App/moduleMap.jsx";
@@ -8,6 +8,7 @@ import * as Icons from "../icons";
 
 const Sidebar = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const location = useLocation();
   const { user, isSidebarCollapsed } = useSelector((state) => state.auth);
   const modules = user?.modules || [];
@@ -46,11 +47,11 @@ const Sidebar = () => {
           const isActive = location.pathname.startsWith(fullPath);
 
           return (
-            <Link
+            <div
               key={idx}
-              to={fullPath}
+              onClick={() => navigate(fullPath)}
               className={clsx(
-                "group flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-200 relative",
+                "group flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-200 relative cursor-pointer",
                 isActive
                   ? "bg-primary-600 text-white shadow-lg shadow-primary-900/30"
                   : "hover:bg-gray-800 hover:text-white text-gray-300"
@@ -65,7 +66,7 @@ const Sidebar = () => {
               {isActive && !isSidebarCollapsed && (
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full shadow-sm" />
               )}
-            </Link>
+            </div>
           );
         })}
       </nav>

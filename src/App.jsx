@@ -9,10 +9,10 @@ const { X } = Icons;
 import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { Toaster } from "sonner";
 
-import { 
-  getProfile, 
+import {
+  getProfile,
   selectUser,
-  setCredentials 
+  setCredentials
 } from "./redux/slices/authSlice";
 
 import { fetchNotifications } from "./redux/slices/notificationSlice";
@@ -69,7 +69,7 @@ import ManagerUsers from "./pages/ManagerUsers";
 import RoleRoute from "./components/RoleRoute";
 import EmployeeHome from "./pages/EmployeeHome";
 import ClientViewerHome from "./pages/ClientViewerHome";
-import ReassignTaskRequest from "./pages/ReassignTaskRequest"; 
+import ReassignTaskRequest from "./pages/ReassignTaskRequest";
 const TaskDetailsWithRequests = lazy(() => import("./pages/TaskDetailsWithRequests"));
 const ROLE_PREFIXES = ["admin", "manager", "employee", "client", "client-viewer"];
 
@@ -81,11 +81,11 @@ const MODULE_ROUTE_CONFIG = [
   { moduleName: "Tasks", Component: Tasks },
   { moduleName: "Projects", Component: Projects },
   { moduleName: "Reports & Analytics", Component: Report },
-  { moduleName: "Document & File Management", Component: Documents },  
-  { moduleName: "Chat / Real-Time Collaboration", Component: Chat },    
-  { moduleName: "Workflow (Project & Task Flow)", Component: Workflow }, 
-  { moduleName: "Notifications", Component: Notifications },           
-  { moduleName: "Approval Workflows", Component: Approvals },          
+  { moduleName: "Document & File Management", Component: Documents },
+  { moduleName: "Chat / Real-Time Collaboration", Component: Chat },
+  { moduleName: "Workflow (Project & Task Flow)", Component: Workflow },
+  { moduleName: "Notifications", Component: Notifications },
+  { moduleName: "Approval Workflows", Component: Approvals },
   { moduleName: "Settings & Master Configuration", Component: Settings },
   { moduleName: "Task Reassignment Requests", Component: ReassignTaskRequest }
 ];
@@ -100,7 +100,7 @@ const slugifyModuleName = (name = "") =>
 const buildModulePaths = (moduleName) => {
   const moduleMeta = MODULE_MAP[moduleName];
   const basePath = (moduleMeta?.link || `/${slugifyModuleName(moduleName)}`)
-    .replace(/^\//, ""); 
+    .replace(/^\//, "");
 
   return ROLE_PREFIXES.map((prefix) => `/${prefix}/${basePath}`);
 };
@@ -132,7 +132,18 @@ function Layout() {
         {/* Content */}
         <div className="flex-1 bg-gray-50 overflow-y-auto">
           <PageWrapper>
-            <Outlet />
+            <Suspense
+              fallback={
+                <div className="w-full h-full flex items-center justify-center p-10">
+                  <div className="flex flex-col items-center gap-2 text-gray-400">
+                    <span className="h-8 w-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                    <span className="text-sm">Loading...</span>
+                  </div>
+                </div>
+              }
+            >
+              <Outlet />
+            </Suspense>
           </PageWrapper>
         </div>
       </div>
@@ -165,7 +176,7 @@ const MobileSidebar = () => {
       leaveFrom="translate-x-0 opacity-100"
       leaveTo="translate-x-full opacity-0"
     >
-      <div 
+      <div
         className="md:hidden fixed inset-0 bg-black/50 z-50 flex"
         onClick={closeSidebar}
       >
@@ -180,8 +191,8 @@ const MobileSidebar = () => {
               </div>
               <span className="font-bold text-white tracking-tight text-xl">Task Manager</span>
             </div>
-            <button 
-              onClick={closeSidebar} 
+            <button
+              onClick={closeSidebar}
               className="p-2 rounded-xl hover:bg-slate-800 transition-colors text-slate-400"
             >
               <X className="w-5 h-5" />
@@ -232,9 +243,9 @@ const MobileNav = ({ onNavigate }) => {
           </button>
         );
       })}
-      
+
       <div className="p-4 border-t border-slate-800 mt-8">
-        <button 
+        <button
           onClick={() => onNavigate('/profile')}
           className={clsx(
             "w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200 group",
@@ -271,7 +282,7 @@ function App() {
     // Only apply fallback if modules/sidebar are missing AND role needs fallback
     const needsModuleFallback = !Array.isArray(user.modules) || user.modules.length === 0;
     const needsSidebarFallback = !Array.isArray(user.sidebar) || user.sidebar.length === 0;
-    
+
     const shouldApplyFallback = (role) => {
       if (!role) return false;
       const fallbackRoles = ["manager", "employee", "client", "client-viewer"];
@@ -280,16 +291,16 @@ function App() {
 
     if ((needsModuleFallback || needsSidebarFallback) && shouldApplyFallback(user.role)) {
       console.log(`[Fallback] Applying for role: ${user.role}`);
-      
+
       const fallbackModules = needsModuleFallback ? getFallbackModules(user.role) : user.modules;
       const fallbackSidebar = needsSidebarFallback ? getFallbackSidebar(user.role) : user.sidebar;
-      
+
       const updatedUser = {
         ...user, // ✅ PRESERVE original role: "Manager"
         modules: fallbackModules,
         sidebar: fallbackSidebar,
       };
-      
+
       dispatch(setCredentials(updatedUser));
     }
 
@@ -512,7 +523,7 @@ function App() {
               <Route path="/add-client" element={<ClientForm />} />
               <Route path="/client-dashboard/:id" element={<ClientDashboard />} />
             </Route>
-            
+
             <Route element={<ModuleRouteGuard moduleName="Tasks" />}>
               <Route path="/task/:id" element={<TaskDetails />} />
               <Route path="/employee/tasks/:taskId" element={<TaskDetailsWithRequests />} />

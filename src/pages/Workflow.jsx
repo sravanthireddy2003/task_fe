@@ -61,6 +61,8 @@ export default function Workflow() {
   // NOTE: Previous admin workflow-templates API has been removed.
   // This page now works purely with local state for admin-designed flows.
 
+  const approvalQueue = useSelector((s) => s.approval?.queue);
+
   // For admin workflow page: load admin workflow queue instead of departments/projects
   useEffect(() => {
     if (isAdmin) {
@@ -69,6 +71,13 @@ export default function Workflow() {
       dispatch(fetchQueue('ADMIN')).catch((e) => console.warn('[Workflow page] fetchQueue(ADMIN) error', e));
     }
   }, [dispatch, isAdmin]);
+
+  // Sync fetched queue to flows state for display
+  useEffect(() => {
+    if (isAdmin && Array.isArray(approvalQueue)) {
+      setFlows(approvalQueue);
+    }
+  }, [approvalQueue, isAdmin]);
 
   // For manager workflow page: load projects for closure requests
   useEffect(() => {
@@ -129,15 +138,15 @@ export default function Workflow() {
         prev.map((f) =>
           f.id === editingFlow.id
             ? {
-                ...f,
-                name: form.name.trim(),
-                description: form.description,
-                scope: form.scope,
-                trigger_event: form.triggerEvent,
-                active: form.active,
-                department_id: form.departmentId || null,
-                project_id: form.projectId || null,
-              }
+              ...f,
+              name: form.name.trim(),
+              description: form.description,
+              scope: form.scope,
+              trigger_event: form.triggerEvent,
+              active: form.active,
+              department_id: form.departmentId || null,
+              project_id: form.projectId || null,
+            }
             : f
         )
       );
@@ -227,7 +236,7 @@ export default function Workflow() {
     } catch (error) {
       // Handle specific error messages
       let errorMessage = 'Failed to request project closure';
-      
+
       if (error?.message) {
         if (error.message.includes('All tasks must be COMPLETED')) {
           errorMessage = 'Cannot close project: All tasks must be completed first. Please ensure all project tasks are marked as completed before requesting closure.';
@@ -245,18 +254,18 @@ export default function Workflow() {
 
   // Filter workflows based on search and active filters
   const filtered = flows.filter((flow) => {
-    const matchesSearch = flow.name.toLowerCase().includes(query.toLowerCase()) || 
-                         (flow.description || "").toLowerCase().includes(query.toLowerCase());
-    
-    const matchesScope = activeFilters.scope === "all" || 
-                        flow.scope?.toLowerCase() === activeFilters.scope.toLowerCase();
-    
-    const matchesStatus = activeFilters.status === "all" || 
-                         (activeFilters.status === "active" ? flow.active !== false : flow.active === false);
-    
-    const matchesDepartment = activeFilters.department === "all" || 
-                             (flow.department_id || flow.departmentId)?.toString() === activeFilters.department;
-    
+    const matchesSearch = flow.name.toLowerCase().includes(query.toLowerCase()) ||
+      (flow.description || "").toLowerCase().includes(query.toLowerCase());
+
+    const matchesScope = activeFilters.scope === "all" ||
+      flow.scope?.toLowerCase() === activeFilters.scope.toLowerCase();
+
+    const matchesStatus = activeFilters.status === "all" ||
+      (activeFilters.status === "active" ? flow.active !== false : flow.active === false);
+
+    const matchesDepartment = activeFilters.department === "all" ||
+      (flow.department_id || flow.departmentId)?.toString() === activeFilters.department;
+
     return matchesSearch && matchesScope && matchesStatus && matchesDepartment;
   });
 
@@ -280,18 +289,18 @@ export default function Workflow() {
 
   // Get scope badge styling
   const getScopeBadgeStyle = (scope) => {
-    switch(scope?.toUpperCase()) {
+    switch (scope?.toUpperCase()) {
       case 'PROJECT': return 'bg-blue-100 text-blue-700 border-blue-200';
       case 'DEPARTMENT': return 'bg-purple-100 text-purple-700 border-purple-200';
       case 'GLOBAL': return 'bg-gray-100 text-gray-700 border-gray-200';
       default: return 'bg-gray-100 text-gray-700 border-gray-200';
     }
   };
-  
+
 
   // Get status badge styling
   const getStatusBadgeStyle = (active) => {
-    return active !== false 
+    return active !== false
       ? 'bg-green-50 text-green-700 border-green-200'
       : 'bg-gray-50 text-gray-600 border-gray-200';
   };
@@ -381,314 +390,315 @@ export default function Workflow() {
         </div>
 
         {/* Main Content Area */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          {/* Toolbar */}
-          <div className="p-6 border-b border-gray-100">
-            <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center">
-              {/* Search */}
-              <div className="relative w-full lg:w-96">
-                <Icons.Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Search workflows by name or description..."
-                />
-              </div>
-
-              {/* View Toggle and Filters */}
-              <div className="flex flex-wrap items-center gap-3">
-                {/* View Toggle */}
-                <div className="flex bg-gray-100 p-1 rounded-xl">
-                  <button
-                    onClick={() => setViewMode("table")}
-                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${viewMode === "table" ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
-                  >
-                    <Icons.Table className="inline w-4 h-4 mr-2" />
-                    Table
-                  </button>
-                  <button
-                    onClick={() => setViewMode("cards")}
-                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${viewMode === "cards" ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
-                  >
-                    <Icons.Grid className="inline w-4 h-4 mr-2" />
-                    Cards
-                  </button>
+        {flows.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            {/* Toolbar */}
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center">
+                {/* Search */}
+                <div className="relative w-full lg:w-96">
+                  <Icons.Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Search workflows by name or description..."
+                  />
                 </div>
 
-                {/* Filter Chips */}
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => toggleFilter('scope', 'project')}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${activeFilters.scope === 'project' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}
-                  >
-                    Project Scope
-                  </button>
-                  <button
-                    onClick={() => toggleFilter('scope', 'department')}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${activeFilters.scope === 'department' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}
-                  >
-                    Department Scope
-                  </button>
-                  <button
-                    onClick={() => toggleFilter('status', 'active')}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${activeFilters.status === 'active' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}
-                  >
-                    Active Only
-                  </button>
-                  
-                  {activeFilters.scope !== 'all' || activeFilters.status !== 'all' || activeFilters.department !== 'all' ? (
+                {/* View Toggle and Filters */}
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* View Toggle */}
+                  <div className="flex bg-gray-100 p-1 rounded-xl">
                     <button
-                      onClick={clearFilters}
-                      className="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 flex items-center gap-1"
+                      onClick={() => setViewMode("table")}
+                      className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${viewMode === "table" ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
                     >
-                      <Icons.X className="w-4 h-4" />
-                      Clear Filters
+                      <Icons.Table className="inline w-4 h-4 mr-2" />
+                      Table
                     </button>
-                  ) : null}
+                    <button
+                      onClick={() => setViewMode("cards")}
+                      className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${viewMode === "cards" ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+                    >
+                      <Icons.Grid className="inline w-4 h-4 mr-2" />
+                      Cards
+                    </button>
+                  </div>
+
+                  {/* Filter Chips */}
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => toggleFilter('scope', 'project')}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${activeFilters.scope === 'project' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}
+                    >
+                      Project Scope
+                    </button>
+                    <button
+                      onClick={() => toggleFilter('scope', 'department')}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${activeFilters.scope === 'department' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}
+                    >
+                      Department Scope
+                    </button>
+                    <button
+                      onClick={() => toggleFilter('status', 'active')}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${activeFilters.status === 'active' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}
+                    >
+                      Active Only
+                    </button>
+
+                    {activeFilters.scope !== 'all' || activeFilters.status !== 'all' || activeFilters.department !== 'all' ? (
+                      <button
+                        onClick={clearFilters}
+                        className="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 flex items-center gap-1"
+                      >
+                        <Icons.X className="w-4 h-4" />
+                        Clear Filters
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Workflows Content */}
-          <div className="p-6">
-            {viewMode === "table" ? (
-              /* Table View */
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-100">
-                      <th className="text-left py-4 px-4 text-sm font-semibold text-gray-600">Workflow</th>
-                      <th className="text-left py-4 px-4 text-sm font-semibold text-gray-600">Scope</th>
-                      <th className="text-left py-4 px-4 text-sm font-semibold text-gray-600">Project / Department</th>
-                      <th className="text-left py-4 px-4 text-sm font-semibold text-gray-600">Status</th>
-                      <th className="text-left py-4 px-4 text-sm font-semibold text-gray-600">Last Updated</th>
-                      <th className="text-left py-4 px-4 text-sm font-semibold text-gray-600">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {filtered.length === 0 ? (
-                      <tr>
-                        <td colSpan="6" className="py-12 text-center">
-                          <Icons.Search className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                          <p className="text-gray-500">No workflows found. Try adjusting your filters.</p>
-                        </td>
+            {/* Workflows Content */}
+            <div className="p-6">
+              {viewMode === "table" ? (
+                /* Table View */
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-100">
+                        <th className="text-left py-4 px-4 text-sm font-semibold text-gray-600">Workflow</th>
+                        <th className="text-left py-4 px-4 text-sm font-semibold text-gray-600">Scope</th>
+                        <th className="text-left py-4 px-4 text-sm font-semibold text-gray-600">Project / Department</th>
+                        <th className="text-left py-4 px-4 text-sm font-semibold text-gray-600">Status</th>
+                        <th className="text-left py-4 px-4 text-sm font-semibold text-gray-600">Last Updated</th>
+                        <th className="text-left py-4 px-4 text-sm font-semibold text-gray-600">Actions</th>
                       </tr>
-                    ) : (
-                      filtered.map((flow) => (
-                        <tr key={flow.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="py-4 px-4">
-                            <div>
-                              <div className="font-semibold text-gray-900">{flow.name}</div>
-                              <div className="text-sm text-gray-500 mt-1 line-clamp-1">{flow.description || "No description"}</div>
-                            </div>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {filtered.length === 0 ? (
+                        <tr>
+                          <td colSpan="6" className="py-12 text-center">
+                            <Icons.Search className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                            <p className="text-gray-500">No workflows found. Try adjusting your filters.</p>
                           </td>
-                          <td className="py-4 px-4">
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getScopeBadgeStyle(flow.scope)}`}>
-                              {flow.scope || 'GLOBAL'}
-                            </span>
-                          </td>
-                          <td className="py-4 px-4">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
-                                <Icons.Building className="w-4 h-4 text-gray-600" />
+                        </tr>
+                      ) : (
+                        filtered.map((flow) => (
+                          <tr key={flow.id} className="hover:bg-gray-50 transition-colors">
+                            <td className="py-4 px-4">
+                              <div>
+                                <div className="font-semibold text-gray-900">{flow.name}</div>
+                                <div className="text-sm text-gray-500 mt-1 line-clamp-1">{flow.description || "No description"}</div>
                               </div>
-                              <span className="text-sm text-gray-700">
-                                {flow.scope?.toUpperCase() === 'PROJECT'
-                                  ? flow.project_name || 'Project-specific'
-                                  : flow.scope?.toUpperCase() === 'DEPARTMENT'
-                                  ? flow.department_name || 'Department-specific'
-                                  : 'Global'}
+                            </td>
+                            <td className="py-4 px-4">
+                              <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getScopeBadgeStyle(flow.scope)}`}>
+                                {flow.scope || 'GLOBAL'}
                               </span>
-                            </div>
-                          </td>
-                          <td className="py-4 px-4">
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadgeStyle(flow.active)}`}>
-                              {flow.active !== false ? 'Active' : 'Inactive'}
-                            </span>
-                          </td>
-                          <td className="py-4 px-4">
-                            <div className="text-sm text-gray-500">
-                              {flow.created_at
-                                ? new Date(flow.created_at).toLocaleDateString('en-US', {
+                            </td>
+                            <td className="py-4 px-4">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
+                                  <Icons.Building className="w-4 h-4 text-gray-600" />
+                                </div>
+                                <span className="text-sm text-gray-700">
+                                  {flow.scope?.toUpperCase() === 'PROJECT'
+                                    ? flow.project_name || 'Project-specific'
+                                    : flow.scope?.toUpperCase() === 'DEPARTMENT'
+                                      ? flow.department_name || 'Department-specific'
+                                      : 'Global'}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="py-4 px-4">
+                              <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadgeStyle(flow.active)}`}>
+                                {flow.active !== false ? 'Active' : 'Inactive'}
+                              </span>
+                            </td>
+                            <td className="py-4 px-4">
+                              <div className="text-sm text-gray-500">
+                                {flow.created_at
+                                  ? new Date(flow.created_at).toLocaleDateString('en-US', {
                                     year: 'numeric',
                                     month: 'short',
                                     day: 'numeric',
                                   })
-                                : '—'}
+                                  : '—'}
+                              </div>
+                            </td>
+                            <td className="py-4 px-4">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => setPreviewFlow(flow)}
+                                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                  title="View Details"
+                                >
+                                  <Icons.Eye className="w-5 h-5 text-gray-600" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setSelectedWorkflowForKanban(flow);
+                                    setViewMode("kanban");
+                                  }}
+                                  className="p-2 hover:bg-blue-50 rounded-lg transition-colors"
+                                  title="View Kanban"
+                                >
+                                  <Icons.KanbanSquare className="w-5 h-5 text-blue-600" />
+                                </button>
+                                <button
+                                  onClick={() => openEdit(flow)}
+                                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                  title="Edit"
+                                >
+                                  <Icons.Edit2 className="w-5 h-5 text-gray-600" />
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(flow)}
+                                  className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                                  title="Delete"
+                                >
+                                  <Icons.Trash2 className="w-5 h-5 text-red-600" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                /* Card View */
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filtered.length === 0 ? (
+                    <div className="col-span-3 py-12 text-center">
+                      <Icons.Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-500 text-lg">No workflows match your filters</p>
+                      <button
+                        onClick={clearFilters}
+                        className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        Clear all filters
+                      </button>
+                    </div>
+                  ) : (
+                    filtered.map((flow) => (
+                      <div key={flow.id} className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg transition-shadow">
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <h3 className="font-bold text-lg text-gray-900">{flow.name}</h3>
+                            <p className="text-gray-500 text-sm mt-1 line-clamp-2">{flow.description || "No description provided"}</p>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${getScopeBadgeStyle(flow.scope)}`}>
+                              {flow.scope || 'GLOBAL'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
+                              <Icons.Building className="w-4 h-4 text-gray-600" />
                             </div>
-                          </td>
-                          <td className="py-4 px-4">
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => setPreviewFlow(flow)}
-                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                                title="View Details"
-                              >
-                                <Icons.Eye className="w-5 h-5 text-gray-600" />
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setSelectedWorkflowForKanban(flow);
-                                  setViewMode("kanban");
-                                }}
-                                className="p-2 hover:bg-blue-50 rounded-lg transition-colors"
-                                title="View Kanban"
-                              >
-                                <Icons.KanbanSquare className="w-5 h-5 text-blue-600" />
-                              </button>
-                              <button
-                                onClick={() => openEdit(flow)}
-                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                                title="Edit"
-                              >
-                                <Icons.Edit2 className="w-5 h-5 text-gray-600" />
-                              </button>
-                              <button
-                                onClick={() => handleDelete(flow)}
-                                className="p-2 hover:bg-red-50 rounded-lg transition-colors"
-                                title="Delete"
-                              >
-                                <Icons.Trash2 className="w-5 h-5 text-red-600" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              /* Card View */
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filtered.length === 0 ? (
-                  <div className="col-span-3 py-12 text-center">
-                    <Icons.Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500 text-lg">No workflows match your filters</p>
-                    <button
-                      onClick={clearFilters}
-                      className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
-                    >
-                      Clear all filters
+                            <span className="text-sm text-gray-700">
+                              {flow.scope?.toUpperCase() === 'PROJECT'
+                                ? flow.project_name || 'Project-specific'
+                                : flow.scope?.toUpperCase() === 'DEPARTMENT'
+                                  ? flow.department_name || 'Department-specific'
+                                  : 'Global'}
+                            </span>
+                          </div>
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusBadgeStyle(flow.active)}`}>
+                            {flow.active !== false ? 'Active' : 'Inactive'}
+                          </span>
+                        </div>
+
+                        {/* Steps Preview */}
+                        <div className="mb-6">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-medium text-gray-500">STEPS ({flow.steps?.length || 0})</span>
+                            <span className="text-xs text-gray-400">{flow.trigger_event || 'Manual'}</span>
+                          </div>
+                          <div className="space-y-2">
+                            {(flow.steps || []).slice(0, 3).map((step, index) => (
+                              <div key={index} className="flex items-center gap-3">
+                                <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">
+                                  <span className="text-xs font-medium text-gray-600">{index + 1}</span>
+                                </div>
+                                <span className="text-sm text-gray-700">{step.name}</span>
+                              </div>
+                            ))}
+                            {(flow.steps || []).length > 3 && (
+                              <div className="text-center pt-2">
+                                <span className="text-xs text-gray-400">+{(flow.steps || []).length - 3} more steps</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                          <button
+                            onClick={() => setPreviewFlow(flow)}
+                            className="text-sm text-gray-600 hover:text-gray-900 font-medium flex items-center gap-1"
+                          >
+                            <Icons.Eye className="w-4 h-4" />
+                            View Details
+                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => {
+                                setSelectedWorkflowForKanban(flow);
+                                setViewMode("kanban");
+                              }}
+                              className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors flex items-center gap-1"
+                            >
+                              <Icons.KanbanSquare className="w-4 h-4" />
+                              Kanban
+                            </button>
+                            <button
+                              onClick={() => openEdit(flow)}
+                              className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+                            >
+                              Edit
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {/* Pagination (Optional) */}
+              {filtered.length > 0 && (
+                <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-100">
+                  <div className="text-sm text-gray-500">
+                    Showing <span className="font-medium">{filtered.length}</span> of <span className="font-medium">{flows.length}</span> workflows
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button className="px-3 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">
+                      Previous
+                    </button>
+                    <button className="px-3 py-2 rounded-lg bg-blue-600 text-white">
+                      1
+                    </button>
+                    <button className="px-3 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">
+                      2
+                    </button>
+                    <button className="px-3 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">
+                      Next
                     </button>
                   </div>
-                ) : (
-                  filtered.map((flow) => (
-                    <div key={flow.id} className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg transition-shadow">
-                      <div className="flex justify-between items-start mb-4">
-                        <div>
-                          <h3 className="font-bold text-lg text-gray-900">{flow.name}</h3>
-                          <p className="text-gray-500 text-sm mt-1 line-clamp-2">{flow.description || "No description provided"}</p>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${getScopeBadgeStyle(flow.scope)}`}>
-                            {flow.scope || 'GLOBAL'}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
-                            <Icons.Building className="w-4 h-4 text-gray-600" />
-                          </div>
-                          <span className="text-sm text-gray-700">
-                            {flow.scope?.toUpperCase() === 'PROJECT'
-                              ? flow.project_name || 'Project-specific'
-                              : flow.scope?.toUpperCase() === 'DEPARTMENT'
-                              ? flow.department_name || 'Department-specific'
-                              : 'Global'}
-                          </span>
-                        </div>
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusBadgeStyle(flow.active)}`}>
-                          {flow.active !== false ? 'Active' : 'Inactive'}
-                        </span>
-                      </div>
-
-                      {/* Steps Preview */}
-                      <div className="mb-6">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-medium text-gray-500">STEPS ({flow.steps?.length || 0})</span>
-                          <span className="text-xs text-gray-400">{flow.trigger_event || 'Manual'}</span>
-                        </div>
-                        <div className="space-y-2">
-                          {(flow.steps || []).slice(0, 3).map((step, index) => (
-                            <div key={index} className="flex items-center gap-3">
-                              <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">
-                                <span className="text-xs font-medium text-gray-600">{index + 1}</span>
-                              </div>
-                              <span className="text-sm text-gray-700">{step.name}</span>
-                            </div>
-                          ))}
-                          {(flow.steps || []).length > 3 && (
-                            <div className="text-center pt-2">
-                              <span className="text-xs text-gray-400">+{(flow.steps || []).length - 3} more steps</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                        <button
-                          onClick={() => setPreviewFlow(flow)}
-                          className="text-sm text-gray-600 hover:text-gray-900 font-medium flex items-center gap-1"
-                        >
-                          <Icons.Eye className="w-4 h-4" />
-                          View Details
-                        </button>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => {
-                              setSelectedWorkflowForKanban(flow);
-                              setViewMode("kanban");
-                            }}
-                            className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors flex items-center gap-1"
-                          >
-                            <Icons.KanbanSquare className="w-4 h-4" />
-                            Kanban
-                          </button>
-                          <button
-                            onClick={() => openEdit(flow)}
-                            className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
-                          >
-                            Edit
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-
-            {/* Pagination (Optional) */}
-            {filtered.length > 0 && (
-              <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-100">
-                <div className="text-sm text-gray-500">
-                  Showing <span className="font-medium">{filtered.length}</span> of <span className="font-medium">{flows.length}</span> workflows
                 </div>
-                <div className="flex items-center gap-2">
-                  <button className="px-3 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">
-                    Previous
-                  </button>
-                  <button className="px-3 py-2 rounded-lg bg-blue-600 text-white">
-                    1
-                  </button>
-                  <button className="px-3 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">
-                    2
-                  </button>
-                  <button className="px-3 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">
-                    Next
-                  </button>
-                </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
-
+        )}
         {/* Create / Edit Workflow Modal */}
         {showModal && (
           <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
@@ -836,14 +846,15 @@ export default function Workflow() {
                 </button>
               </div>
             </form>
-          </div>
-        )}
+          </div >
+        )
+        }
 
         {/* Admin Approvals Section */}
         <div className="mt-8">
           <AdminApprovalPanel />
         </div>
-      </div>
+      </div >
     );
   }
 
@@ -895,7 +906,7 @@ export default function Workflow() {
             <select
               value={currentProject?.id || currentProject?._id || ''}
               onChange={(e) => {
-                const selectedProject = projects.find(p => 
+                const selectedProject = projects.find(p =>
                   (p.id || p._id) === e.target.value
                 );
                 if (selectedProject) {
@@ -911,18 +922,18 @@ export default function Workflow() {
                   return status === 'ACTIVE' || status === 'REVIEW' || status === 'PENDING_FINAL_APPROVAL';
                 })
                 .map((project) => (
-                <option key={project.id || project._id} value={project.id || project._id}>
-                  {project.name || project.title || `Project ${project.id || project._id}`} 
-                  {project.status && `(${project.status})`}
-                </option>
-              ))}
+                  <option key={project.id || project._id} value={project.id || project._id}>
+                    {project.name || project.title || `Project ${project.id || project._id}`}
+                    {project.status && `(${project.status})`}
+                  </option>
+                ))}
             </select>
             {projects.filter(project => {
               const status = project.status?.toUpperCase();
               return status === 'ACTIVE' || status === 'REVIEW' || status === 'PENDING_FINAL_APPROVAL';
             }).length === 0 && (
-              <p className="text-sm text-gray-500 mt-1">No projects available for closure. Please contact admin if you believe this is an error.</p>
-            )}
+                <p className="text-sm text-gray-500 mt-1">No projects available for closure. Please contact admin if you believe this is an error.</p>
+              )}
           </div>
 
           {/* Project Selection Info */}
@@ -934,11 +945,10 @@ export default function Workflow() {
                   <span className="text-sm font-medium text-blue-800">Selected Project:</span>
                   <span className="text-sm text-blue-700">{currentProject.name || currentProject.title}</span>
                 </div>
-                <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                  currentProject.status?.toUpperCase() === 'ACTIVE' 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-gray-100 text-gray-800'
-                }`}>
+                <span className={`px-2 py-1 text-xs font-medium rounded-full ${currentProject.status?.toUpperCase() === 'ACTIVE'
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-gray-100 text-gray-800'
+                  }`}>
                   {currentProject.status || 'Unknown Status'}
                 </span>
               </div>

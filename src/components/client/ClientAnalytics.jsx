@@ -45,11 +45,11 @@ const ClientAnalytics = ({ client, tasks }) => {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {[ 
-            { title: "Total Tasks", value: clientTasks.length.toString(), icon: <ListChecks className="text-blue-500" />, color: "from-blue-500 to-blue-600" },
-            { title: "Projects", value: projects.length.toString(), icon: <Projector className="text-emerald-500" />, color: "from-emerald-500 to-emerald-600" },
-            { title: "Hours", value: `${totalHours}h`, icon: <Clock3 className="text-purple-500" />, color: "from-purple-500 to-purple-600" },
-            { title: "Deadlines", value: upcomingDeadlines.length.toString(), icon: <CalendarDays className="text-orange-500" />, color: "from-orange-500 to-orange-600" },
+          {[
+            { title: "Total Tasks", value: clientTasks.length.toString(), icon: <Icons.ListChecks className="text-blue-500" />, color: "from-blue-500 to-blue-600" },
+            { title: "Projects", value: projects.length.toString(), icon: <Icons.Projector className="text-emerald-500" />, color: "from-emerald-500 to-emerald-600" },
+            { title: "Hours", value: `${totalHours}h`, icon: <Icons.Clock3 className="text-purple-500" />, color: "from-purple-500 to-purple-600" },
+            { title: "Deadlines", value: upcomingDeadlines.length.toString(), icon: <Icons.CalendarDays className="text-orange-500" />, color: "from-orange-500 to-orange-600" },
           ].map((stat, i) => (
             <div key={i} className="group bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-white/50 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 overflow-hidden h-full min-h-[140px] flex flex-col justify-between">
               <div className="flex items-start justify-between">

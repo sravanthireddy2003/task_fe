@@ -25,7 +25,7 @@ let persistedCollapsed = false;
 try {
   const sc = localStorage.getItem("sidebarCollapsed");
   persistedCollapsed = sc === "true";
-} catch (e) {}
+} catch (e) { }
 
 // ✅ Add timestamp tracking to localStorage
 let lastTokenCheckTime = 0;
@@ -33,7 +33,7 @@ let lastProfileFetchTime = 0;
 try {
   lastTokenCheckTime = parseInt(localStorage.getItem("lastTokenCheckTime") || "0");
   lastProfileFetchTime = parseInt(localStorage.getItem("lastProfileFetchTime") || "0");
-} catch (e) {}
+} catch (e) { }
 
 const initialState = {
   user: userInfo,
@@ -56,12 +56,12 @@ const initialState = {
 // Helper to handle authentication errors
 const handleAuthError = (error, thunkAPI) => {
   const status = error?.response?.status;
-  
- if (status === 401) {
-  // Let refresh token logic handle it
-  return thunkAPI.rejectWithValue("Token expired");
-}
-  
+
+  if (status === 401) {
+    // Let refresh token logic handle it
+    return thunkAPI.rejectWithValue("Token expired");
+  }
+
   // For other errors, use the existing error handling
   return thunkAPI.rejectWithValue(
     error?.response?.data?.message || error?.message || "Request failed"
@@ -74,7 +74,7 @@ export const ensureValidToken = createAsyncThunk(
   async (_, thunkAPI) => {
     try {
       const refreshToken = getRefreshToken();
-      
+
       // Always try to refresh token on app start if refresh token exists
       if (refreshToken) {
         try {
@@ -83,12 +83,12 @@ export const ensureValidToken = createAsyncThunk(
           }, {
             skipAuth: true
           });
-          
+
           if (refreshResp?.accessToken) {
             // Persist new tokens
             setTokens(refreshResp.accessToken, refreshResp.refreshToken);
             setAuthToken(refreshResp.accessToken, refreshResp.refreshToken, 'local');
-            
+
             thunkAPI.dispatch(setTokenValidating(false));
             return true;
           }
@@ -97,7 +97,7 @@ export const ensureValidToken = createAsyncThunk(
           return false;
         }
       }
-      
+
       // If no refresh token, check if we have an access token
       const accessToken = getAccessToken();
       thunkAPI.dispatch(setTokenValidating(false));
@@ -135,12 +135,12 @@ export const authLogin = createAsyncThunk(
 
       const access = response?.accessToken || response?.token || response?.data?.accessToken || response?.data?.token;
       const refresh = response?.refreshToken || response?.refresh || response?.data?.refreshToken || response?.data?.refresh;
-      
+
       if (access) {
         try {
           setTokens(access, refresh || null);
           setAuthToken(access, refresh || null, 'local');
-          
+
           // Update timestamps
           const now = Date.now();
           thunkAPI.dispatch(setLastTokenCheck(now));
@@ -169,14 +169,14 @@ export const verifyOtp = createAsyncThunk(
   async (data, thunkAPI) => {
     try {
       const response = await httpPostService("api/auth/verify-otp", data, { skipAuth: true });
-      
+
       const access = response?.accessToken || response?.token;
       const refresh = response?.refreshToken || response?.refresh;
-      
+
       if (access) {
         setTokens(access, refresh || null);
         setAuthToken(access, refresh || null, 'local');
-        
+
         // Update timestamps
         const now = Date.now();
         thunkAPI.dispatch(setLastTokenCheck(now));
@@ -214,37 +214,37 @@ export const refreshToken = createAsyncThunk(
   async (_, thunkAPI) => {
     try {
       const storedRefresh = getRefreshToken();
-      
+
       if (!storedRefresh) {
         return thunkAPI.rejectWithValue("No refresh token available");
       }
-      
+
       // ✅ Send refresh token in BODY (not header)
       const response = await httpPostService("api/auth/refresh", {
         refreshToken: storedRefresh  // In body
       }, {
         skipAuth: true  // Don't add Authorization header
       });
-      
+
       // Support backend returning either { accessToken, refreshToken } or { token, refreshToken }
       const newAccess = response?.accessToken || response?.token || null;
       const newRefresh = response?.refreshToken || response?.refresh || storedRefresh;
-      
+
       if (newAccess) {
         setTokens(newAccess, newRefresh);
         setAuthToken(newAccess, newRefresh, 'local');
-        
+
         // Update timestamps
         const now = Date.now();
         thunkAPI.dispatch(setLastTokenCheck(now));
         localStorage.setItem("lastTokenCheckTime", now.toString());
-        
+
         return response;
       } else {
         return thunkAPI.rejectWithValue("No access token returned from refresh");
       }
     } catch (error) {
-      
+
       const status = error?.status || error?.response?.status;
       if (status === 401) {
         clearTokens();
@@ -254,7 +254,7 @@ export const refreshToken = createAsyncThunk(
         clearTokens();
         return thunkAPI.rejectWithValue('Refresh endpoint not found (404)');
       }
-      
+
       clearTokens();
       return thunkAPI.rejectWithValue(error?.message || "Refresh failed");
     }
@@ -266,7 +266,7 @@ export const getProfile = createAsyncThunk(
   async (_, thunkAPI) => {
     try {
       const { auth } = thunkAPI.getState();
-      
+
       // 🚨 FIX: Instead of rejecting, just skip or wait
       if (auth.profileLoading || auth.isProfileFetching) {
         return null;
@@ -274,15 +274,15 @@ export const getProfile = createAsyncThunk(
         // await new Promise(resolve => setTimeout(resolve, 500));
         // return await httpGetService("api/auth/profile");
       }
-      
+
       thunkAPI.dispatch(setProfileFetching(true));
       const response = await httpGetService("api/auth/profile");
-      
+
       // Update timestamp
       const now = Date.now();
       thunkAPI.dispatch(setLastProfileFetch(now));
       localStorage.setItem("lastProfileFetchTime", now.toString());
-      
+
       thunkAPI.dispatch(setProfileFetching(false));
       return response;
     } catch (error) {
@@ -299,30 +299,30 @@ export const getProfileSilently = createAsyncThunk(
   async (_, thunkAPI) => {
     try {
       const { auth } = thunkAPI.getState();
-      
+
       // ✅ THROTTLING: Only fetch every 5 minutes
       const now = Date.now();
       const fiveMinutes = 5 * 60 * 1000;
-      
+
       if (now - auth.lastProfileFetch < fiveMinutes && auth.user) {
         // Skip if recently fetched and we have user data
         return null;
       }
-      
+
       // 🚨 FIX: Skip if already fetching, don't reject
       if (auth.isProfileFetching || auth.profileLoading) {
         return null;
       }
-      
+
       thunkAPI.dispatch(setProfileFetching(true));
-      
+
       // Use existing access token
       const response = await httpGetService("api/auth/profile");
-      
+
       // Update timestamp
       thunkAPI.dispatch(setLastProfileFetch(now));
       localStorage.setItem("lastProfileFetchTime", now.toString());
-      
+
       thunkAPI.dispatch(setProfileFetching(false));
       return response;
     } catch (error) {
@@ -353,11 +353,11 @@ export const verify2FA = createAsyncThunk(
 
       const access = response?.accessToken || response?.token;
       const refresh = response?.refreshToken || response?.refresh;
-      
+
       if (access) {
         setTokens(access, refresh || null);
         setAuthToken(access, refresh || null, 'local');
-        
+
         // Update timestamps
         const now = Date.now();
         thunkAPI.dispatch(setLastTokenCheck(now));
@@ -386,11 +386,11 @@ export const verify2FA = createAsyncThunk(
           });
           const newAccess = refreshResp?.accessToken || refreshResp?.token;
           const newRefresh = refreshResp?.refreshToken || refreshResp?.refresh || storedRefresh;
-          
+
           if (newAccess) {
             setTokens(newAccess, newRefresh || null);
             setAuthToken(newAccess, newRefresh || null, 'local');
-            
+
             // Update timestamp
             const now = Date.now();
             thunkAPI.dispatch(setLastTokenCheck(now));
@@ -400,7 +400,7 @@ export const verify2FA = createAsyncThunk(
           const retryResp = await httpPostService("api/auth/2fa/verify", data);
           const retryAccess = retryResp?.accessToken || retryResp?.token;
           const retryRefresh = retryResp?.refreshToken || retryResp?.refresh;
-          
+
           if (retryAccess) {
             setTokens(retryAccess, retryRefresh || null);
             setAuthToken(retryAccess, retryRefresh || null, 'local');
@@ -447,12 +447,12 @@ export const updateProfile = createAsyncThunk(
         })
         : httpPutService("api/auth/profile", formData)
       );
-      
+
       // Update profile fetch timestamp
       const now = Date.now();
       thunkAPI.dispatch(setLastProfileFetch(now));
       localStorage.setItem("lastProfileFetchTime", now.toString());
-      
+
       return response;
     } catch (error) {
       console.error('Update profile error:', error);
@@ -491,14 +491,14 @@ export const authGoogleLogin = createAsyncThunk(
   async (code, thunkAPI) => {
     try {
       const response = await httpGetService(`api/auth/googleLogin?code=${code}`);
-      
+
       // Update timestamps
       const now = Date.now();
       thunkAPI.dispatch(setLastTokenCheck(now));
       thunkAPI.dispatch(setLastProfileFetch(now));
       localStorage.setItem("lastTokenCheckTime", now.toString());
       localStorage.setItem("lastProfileFetchTime", now.toString());
-      
+
       return response.user;
     } catch (error) {
       const errorMessage = error?.response?.data?.message || "Failed to login with Google";
@@ -564,11 +564,11 @@ const authSlice = createSlice({
     setTempToken: (state, action) => {
       state.tempToken = action.payload;
     },
-    setSidebarCollapsed: (state, action) => {  
+    setSidebarCollapsed: (state, action) => {
       state.isSidebarCollapsed = action.payload;
       try {
         localStorage.setItem('sidebarCollapsed', action.payload ? 'true' : 'false');
-      } catch (e) {}
+      } catch (e) { }
     },
     setLastTokenCheck: (state, action) => {
       state.lastTokenCheck = action.payload;
@@ -593,30 +593,30 @@ const authSlice = createSlice({
       state.lastProfileFetch = 0;
       state.isTokenValidating = false;
       state.isProfileFetching = false;
-      
+
       // Clear all localStorage items
-localStorage.removeItem("accessToken");
-localStorage.removeItem("refreshToken");
-localStorage.removeItem("userInfo");
-      
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("userInfo");
+
       // Clear sessionStorage
       sessionStorage.clear();
-      
+
       // Clear tokens
       clearTokens();
-      
+
       // Clear cookies
       try {
         if (typeof document !== 'undefined' && document.cookie) {
-          document.cookie.split(';').forEach(function(c) {
+          document.cookie.split(';').forEach(function (c) {
             const idx = c.indexOf('=');
             const name = idx > -1 ? c.substr(0, idx).trim() : c.trim();
             if (!name) return;
             document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;';
           });
         }
-      } catch (e) {}
-      
+      } catch (e) { }
+
       // Clear API headers
       try {
         if (window.api?.defaults?.headers?.common?.Authorization) {
@@ -625,7 +625,7 @@ localStorage.removeItem("userInfo");
         if (window.__API_CLIENT__?.defaults?.headers?.common?.Authorization) {
           delete window.__API_CLIENT__.defaults.headers.common['Authorization'];
         }
-      } catch (e) {}
+      } catch (e) { }
     },
     setOpenSidebar: (state, action) => {
       state.isSidebarOpen = action.payload;
@@ -807,8 +807,14 @@ localStorage.removeItem("userInfo");
         state.status = 'succeeded';
         const payloadUser = action.payload?.user || action.payload || null;
         if (payloadUser) {
-          state.user = payloadUser;
-          localStorage.setItem('userInfo', JSON.stringify(payloadUser));
+          state.user = {
+            ...state.user,
+            ...payloadUser,
+            // Ensure array fields are preserved if not provided in update
+            modules: payloadUser.modules || state.user?.modules || [],
+            sidebar: payloadUser.sidebar || state.user?.sidebar || [],
+          };
+          localStorage.setItem('userInfo', JSON.stringify(state.user));
         }
       })
       .addCase(updateProfile.rejected, (state, action) => {
@@ -864,7 +870,7 @@ localStorage.removeItem("userInfo");
       .addCase(logoutUser.rejected, (state) => {
         state.status = "logged out";
       })
-      
+
       // Ensure Valid Token
       .addCase(ensureValidToken.pending, (state) => {
         state.isTokenValidating = true;
@@ -876,16 +882,16 @@ localStorage.removeItem("userInfo");
         state.isTokenValidating = false;
       })
 
-    .addCase(refreshToken.fulfilled, (state, action) => {
-  if (action.payload?.data?.user) {
-    // Merge with existing user to preserve modules/sidebar
-    state.user = {
-      ...state.user,
-      ...action.payload.data.user
-    };
-    localStorage.setItem("userInfo", JSON.stringify(state.user));
-  }
-});   
+      .addCase(refreshToken.fulfilled, (state, action) => {
+        if (action.payload?.data?.user) {
+          // Merge with existing user to preserve modules/sidebar
+          state.user = {
+            ...state.user,
+            ...action.payload.data.user
+          };
+          localStorage.setItem("userInfo", JSON.stringify(state.user));
+        }
+      });
   },
 });
 

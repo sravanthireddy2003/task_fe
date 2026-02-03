@@ -48,7 +48,7 @@ export const fetchTasks = createAsyncThunk(
 
       // Handle API response structure: { success: true, data: [...] } or { success: false, error: "message" }
       if (res?.success === false) {
-        return thunkAPI.rejectWithValue(res.error || 'Failed to fetch tasks');
+        return thunkAPI.rejectWithValue(res.error || res.message || 'Failed to fetch tasks');
       }
 
       // Normalize response shapes: prefer `res.data` when server returns { success:true, data: [...] }
@@ -152,11 +152,11 @@ export const createTask = createAsyncThunk(
 
       // Use correct endpoint from Postman collection: POST /api/projects/tasks
       const res = await httpPostService('api/projects/tasks', body);
-      
+
       // ✅ NEW: Refresh notifications after successful task creation
       await new Promise(resolve => setTimeout(resolve, 500));
       thunkAPI.dispatch(fetchNotifications());
-      
+
       // API returns { success: true, message: "...", data: {...} }
       return res?.success ? res.data : res?.data || res || {};
     } catch (err) {
@@ -171,11 +171,11 @@ export const updateTask = createAsyncThunk(
     try {
       // Use correct endpoint from Postman collection: PUT /api/projects/tasks/{{taskId}}
       const res = await httpPutService(`api/projects/tasks/${taskId}`, data);
-      
+
       // ✅ NEW: Refresh notifications after successful task update
       await new Promise(resolve => setTimeout(resolve, 500));
       thunkAPI.dispatch(fetchNotifications());
-      
+
       // API returns { success: true, message: "...", data: {...} }
       return res?.success ? res.data : res?.data || res || {};
     } catch (err) {
@@ -189,11 +189,11 @@ export const deleteTask = createAsyncThunk(
   async (taskId, thunkAPI) => {
     try {
       const res = await httpDeleteService(`api/tasks/${taskId}`);
-      
+
       // ✅ NEW: Refresh notifications after successful task deletion
       await new Promise(resolve => setTimeout(resolve, 500));
       thunkAPI.dispatch(fetchNotifications());
-      
+
       // API returns { success: true, message: "..." }
       return { id: taskId, success: res?.success, message: res?.message };
     } catch (err) {

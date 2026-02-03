@@ -8,6 +8,7 @@ import { setAuthToken } from '../App/httpHandler';
 import { refreshToken as refreshTokenThunk } from '../redux/slices/authSlice';
 import * as Icons from '../icons';
 import PageHeader from '../components/PageHeader';
+import SelectList from '../components/SelectList';
 
 const {
   Settings: SettingsIcon,
@@ -51,7 +52,7 @@ const TwoFactorAuth = () => {
     try {
       setLoading(true);
       const res = await fetchWithTenant('/api/auth/2fa/setup', { method: 'POST' });
-      
+
       if (res?.qrCode && res?.secret) {
         setQrCode(res.qrCode);
         setSecret(res.secret);
@@ -138,7 +139,7 @@ const TwoFactorAuth = () => {
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
-            <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3">
           <div className="p-3 bg-blue-50 rounded-lg">
             <KeyRound className="w-6 h-6 text-blue-600" />
           </div>
@@ -147,12 +148,11 @@ const TwoFactorAuth = () => {
             <p className="text-gray-600 mt-1">Add an extra layer of security using TOTP authenticator apps</p>
           </div>
         </div>
-        
-        <div className={`px-4 py-2 rounded-full text-sm font-medium ${
-          isEnabled 
-            ? 'bg-green-100 text-green-800 border border-green-200' 
-            : 'bg-gray-100 text-gray-800 border border-gray-200'
-        }`}>
+
+        <div className={`px-4 py-2 rounded-full text-sm font-medium ${isEnabled
+          ? 'bg-green-100 text-green-800 border border-green-200'
+          : 'bg-gray-100 text-gray-800 border border-gray-200'
+          }`}>
           {isEnabled ? 'Enabled' : 'Disabled'}
         </div>
       </div>
@@ -162,14 +162,14 @@ const TwoFactorAuth = () => {
         <div className="space-y-6">
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
             <div className="flex items-start gap-4">
-                <div className="p-3 bg-white rounded-lg shadow-sm">
+              <div className="p-3 bg-white rounded-lg shadow-sm">
                 <ShieldCheck className="w-8 h-8 text-blue-600" />
               </div>
               <div className="flex-1">
                 <h4 className="font-semibold text-gray-900 mb-2">Enhanced Account Security</h4>
                 <p className="text-gray-600 mb-4">
-                  Two-factor authentication adds an extra layer of security to your account. 
-                  When enabled, you'll need to enter both your password and a verification code from 
+                  Two-factor authentication adds an extra layer of security to your account.
+                  When enabled, you'll need to enter both your password and a verification code from
                   an authenticator app when signing in.
                 </p>
                 <div className="flex items-center gap-3 text-sm text-gray-600">
@@ -192,10 +192,10 @@ const TwoFactorAuth = () => {
                 Use Google Authenticator, Authy, Microsoft Authenticator, or any TOTP-compatible app
               </p>
             </div>
-            
+
             <div className="p-5 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all">
               <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 bg-green-50 rounded">
+                <div className="p-2 bg-green-50 rounded">
                   <CheckCircle2 className="w-5 h-5 text-green-600" />
                 </div>
                 <h5 className="font-semibold text-gray-900">How It Works</h5>
@@ -206,7 +206,7 @@ const TwoFactorAuth = () => {
                 3. Save backup codes
               </p>
             </div>
-            
+
             <div className="p-5 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all">
               <div className="flex items-center gap-3 mb-3">
                 <div className="p-2 bg-purple-50 rounded">
@@ -255,7 +255,7 @@ const TwoFactorAuth = () => {
                 )}
               </button>
             )}
-            
+
             <button className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
               Learn More About 2FA
             </button>
@@ -285,9 +285,9 @@ const TwoFactorAuth = () => {
                 <h4 className="font-semibold text-gray-900 mb-3">Step 1: Scan QR Code</h4>
                 <div className="bg-white border border-gray-300 rounded-lg p-6 flex items-center justify-center">
                   {qrCode ? (
-                    <img 
-                      src={qrCode} 
-                      alt="2FA QR Code" 
+                    <img
+                      src={qrCode}
+                      alt="2FA QR Code"
                       className="w-64 h-64"
                     />
                   ) : (
@@ -316,20 +316,20 @@ const TwoFactorAuth = () => {
               </div>
 
               <div className="flex items-center gap-3">
-                  <button
-                    onClick={handleVerify2FA}
-                    disabled={loading || verificationCode.length !== 6}
-                    className="flex-1 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
-                        Verifying...
-                      </>
-                    ) : (
-                      'Verify and Enable'
-                    )}
-                  </button>
+                <button
+                  onClick={handleVerify2FA}
+                  disabled={loading || verificationCode.length !== 6}
+                  className="flex-1 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
+                      Verifying...
+                    </>
+                  ) : (
+                    'Verify and Enable'
+                  )}
+                </button>
                 <button
                   onClick={() => setStep('initial')}
                   className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
@@ -496,6 +496,16 @@ const TwoFactorAuth = () => {
   );
 };
 
+const TIMEZONES = [
+  "Asia/Kolkata",
+  "UTC",
+  "America/New_York",
+  "Europe/London",
+  "Asia/Tokyo",
+  "Australia/Sydney",
+  "America/Los_Angeles"
+];
+
 // Main Settings Component
 const Settings = () => {
   const [settings, setSettings] = useState(null);
@@ -624,9 +634,8 @@ const Settings = () => {
           <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
         </div>
         <svg
-          className={`w-5 h-5 text-gray-400 transform transition-transform ${
-            expandedSection === sectionKey ? 'rotate-180' : ''
-          }`}
+          className={`w-5 h-5 text-gray-400 transform transition-transform ${expandedSection === sectionKey ? 'rotate-180' : ''
+            }`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -634,7 +643,7 @@ const Settings = () => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
-      
+
       {expandedSection === sectionKey && (
         <div className="px-6 pb-6 border-t border-gray-100">
           {children}
@@ -651,15 +660,13 @@ const Settings = () => {
       </div>
       <button
         type="button"
-        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-          checked ? 'bg-blue-600' : 'bg-gray-300'
-        }`}
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${checked ? 'bg-blue-600' : 'bg-gray-300'
+          }`}
         onClick={() => onChange(!checked)}
       >
         <span
-          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-            checked ? 'translate-x-6' : 'translate-x-1'
-          }`}
+          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${checked ? 'translate-x-6' : 'translate-x-1'
+            }`}
         />
       </button>
     </div>
@@ -732,7 +739,7 @@ const Settings = () => {
             <div>
               <div className="mb-2">Token status: <strong>{getAccessToken() ? 'Present' : 'Missing'}</strong></div>
               {getAccessToken() && (
-                <div className="mb-2 text-xs text-gray-500">Token: {showToken ? getAccessToken() : (getAccessToken() ? `${getAccessToken().slice(0,8)}...${getAccessToken().slice(-6)}` : '')}</div>
+                <div className="mb-2 text-xs text-gray-500">Token: {showToken ? getAccessToken() : (getAccessToken() ? `${getAccessToken().slice(0, 8)}...${getAccessToken().slice(-6)}` : '')}</div>
               )}
               <div className="flex flex-wrap items-center gap-2 mt-1">
                 <button
@@ -826,18 +833,17 @@ const Settings = () => {
                   <button
                     key={item.key}
                     onClick={() => setExpandedSection(item.key)}
-                    className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                      expandedSection === item.key
-                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                        : 'text-gray-700 hover:bg-gray-50'
-                    }`}
+                    className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${expandedSection === item.key
+                      ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                      : 'text-gray-700 hover:bg-gray-50'
+                      }`}
                   >
                     <item.icon className="w-5 h-5" />
                     <span className="font-medium">{item.label}</span>
                   </button>
                 ))}
               </nav>
-              
+
               <div className="mt-8 pt-6 border-t border-gray-200">
                 <div className="flex items-center gap-3 text-gray-600">
                   <ShieldCheck className="w-4 h-4" />
@@ -854,15 +860,33 @@ const Settings = () => {
           <div className="lg:col-span-2">
             {/* General Settings */}
             <SettingCard title="General Settings" icon={SettingsIcon} sectionKey="general">
-              <div className="space-y-1">
-                {Object.entries(settings?.general || {}).map(([key, value]) => (
-                  <InputField
-                    key={key}
-                    label={key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                    value={value}
-                    onChange={(val) => handleSettingChange('general', key, val)}
-                  />
-                ))}
+              <div className="space-y-4">
+                {/* Dynamically render fields, using SelectList for timezone */}
+                {Object.entries(settings?.general || {}).map(([key, value]) => {
+                  const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+                  if (key === 'timezone') {
+                    return (
+                      <div key={key} className="py-4 border-b border-gray-100 last:border-b-0">
+                        <SelectList
+                          label={label}
+                          lists={TIMEZONES}
+                          selected={value}
+                          setSelected={(val) => handleSettingChange('general', key, val)}
+                        />
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <InputField
+                      key={key}
+                      label={label}
+                      value={value}
+                      onChange={(val) => handleSettingChange('general', key, val)}
+                    />
+                  );
+                })}
               </div>
             </SettingCard>
 
@@ -878,9 +902,8 @@ const Settings = () => {
                         </p>
                         <p className="text-sm text-gray-500 mt-1">{value}</p>
                       </div>
-                      <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        value ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                      }`}>
+                      <div className={`px-3 py-1 rounded-full text-xs font-medium ${value ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                        }`}>
                         {value ? 'Active' : 'Inactive'}
                       </div>
                     </div>

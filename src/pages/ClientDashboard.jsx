@@ -230,24 +230,24 @@ import ClientContacts from "../components/client/ClientContacts";
 import ClientDocuments from "../components/client/ClientDocuments";
 import ClientAnalytics from "../components/client/ClientAnalytics";
 import PageHeader from "../components/PageHeader";
- 
+
 const TABS = {
   OVERVIEW: "overview",
   CONTACTS: "contacts",
   DOCUMENTS: "documents",
   ANALYTICS: "analytics",
 };
- 
+
 const ClientDashboard = () => {
   const params = useParams();
   // support both route param names: :id and :clientId
   const clientIdParam = params.clientId || params.id || params.clientId;
   const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState(TABS.OVERVIEW);
- 
+
   const clientsState = useSelector((state) => state.clients);
   const { status: clientStatus, error: clientError, selectedClient, currentClient } = clientsState || {};
- 
+
   // Priority: use selectedClient/currentClient (from getClient thunk), then search clients array
   const client = selectedClient || currentClient || (clientsState?.clients || []).find((c) => {
     const id = c?.id || c?._id || c?.public_id || c?.client_id;
@@ -255,13 +255,13 @@ const ClientDashboard = () => {
     return id == clientIdParam;
   });
   const { tasks } = useSelector((state) => state.tasks || {});
- 
+
   useEffect(() => {
     if (clientIdParam) {
       dispatch(getClient(clientIdParam));
     }
   }, [clientIdParam, dispatch]);
- 
+
   const clientTasks = tasks.filter((task) => {
     return (
       task?.clientId == clientIdParam ||
@@ -270,7 +270,7 @@ const ClientDashboard = () => {
       task?.clientId == (client?.id ?? client?._id)
     );
   });
- 
+
   const stats = [
     {
       _id: "1",
@@ -305,7 +305,7 @@ const ClientDashboard = () => {
       thought: "Remaining",
     },
   ];
- 
+
   const Card = ({ label, count, bg, icon, thought }) => (
     <div className="w-full h-32 bg-white p-5 shadow-md rounded-md flex items-center justify-between">
       <div className="h-full flex flex-1 flex-col justify-between">
@@ -323,7 +323,7 @@ const ClientDashboard = () => {
       </div>
     </div>
   );
- 
+
   const renderContent = () => {
     switch (activeTab) {
       case TABS.OVERVIEW:
@@ -360,11 +360,11 @@ const ClientDashboard = () => {
         return null;
     }
   };
- 
+
   if (clientStatus === "loading") {
     return <div>Loading...</div>;
   }
- 
+
   if (clientStatus === "failed") {
     return <div>Error: {clientError || "Failed to load dashboard"}</div>;
   }
@@ -374,7 +374,7 @@ const ClientDashboard = () => {
       dispatch(getClient(clientIdParam));
     }
   };
- 
+
   return (
     <div className="h-full py-4">
       <PageHeader
@@ -430,10 +430,10 @@ const ClientDashboard = () => {
     </div>
   );
 };
- 
+
 export default ClientDashboard;
- 
- 
- 
- 
+
+
+
+
 

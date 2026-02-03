@@ -39,11 +39,11 @@ export const deleteClient = createAsyncThunk(
   async (clientId, thunkAPI) => {
     try {
       await httpDeleteService(`api/clients/${clientId}`);
-      
+
       // ✅ NEW: Refresh notifications after successful client deletion
       await new Promise(resolve => setTimeout(resolve, 500));
       thunkAPI.dispatch(fetchNotifications());
-      
+
       return clientId;
     } catch (error) {
       return thunkAPI.rejectWithValue(error.message);
@@ -56,11 +56,11 @@ export const updateClient = createAsyncThunk(
   async ({ clientId, clientData }, thunkAPI) => {
     try {
       const response = await httpPutService(`api/clients/${clientId}`, clientData);
-      
+
       // ✅ NEW: Refresh notifications after successful client update
       await new Promise(resolve => setTimeout(resolve, 500));
       thunkAPI.dispatch(fetchNotifications());
-      
+
       return response;
     } catch (error) {
       return thunkAPI.rejectWithValue(error.message);
@@ -340,7 +340,7 @@ const clientSlice = createSlice({
         state.status = 'failed';
         state.error = action.payload;
       })
-      
+
       .addCase(fetchDeletedClients.pending, (state) => {
         state.status = 'loading';
       })
@@ -382,111 +382,111 @@ const clientSlice = createSlice({
           state.clients[index] = action.payload;
         }
       });
-      
-      // create client
-      builder
-        .addCase(createClient.pending, (state) => {
-          state.status = 'loading';
-          state.error = null;
-        })
-        .addCase(createClient.fulfilled, (state, action) => {
-          if (!action.payload) return;
-          // Normalize created client shape: support { success, data } or raw object
-          const payload = action.payload;
-          const created = (payload.data && typeof payload.data === 'object') ? payload.data : payload;
-          // prepend newly created client
-          state.clients = [created, ...state.clients];
-          state.status = 'succeeded';
-        })
-        .addCase(createClient.rejected, (state, action) => {
-          state.status = 'failed';
-          state.error = action.payload || action.error?.message || 'Failed to create client';
-        });
 
-      // get single client (upsert)
-      builder.addCase(getClient.fulfilled, (state, action) => {
-        const client = action.payload;
-        if (!client) return;
-        // Store in currentClient for immediate access in ClientDashboard
-        state.currentClient = client;
-        const id = client.id || client._id || client.public_id;
-        const idx = state.clients.findIndex(c => (c.id === id || c._id === id || c.public_id === id));
-        if (idx !== -1) state.clients[idx] = client;
-        else state.clients.unshift(client);
+    // create client
+    builder
+      .addCase(createClient.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(createClient.fulfilled, (state, action) => {
+        if (!action.payload) return;
+        // Normalize created client shape: support { success, data } or raw object
+        const payload = action.payload;
+        const created = (payload.data && typeof payload.data === 'object') ? payload.data : payload;
+        // prepend newly created client
+        state.clients = [created, ...state.clients];
+        state.status = 'succeeded';
+      })
+      .addCase(createClient.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload || action.error?.message || 'Failed to create client';
       });
 
-      // restore client
-      builder.addCase(restoreClient.fulfilled, (state, action) => {
-        const client = action.payload;
-        if (!client) return;
-        const id = client.id || client._id || client.public_id;
-        const idx = state.clients.findIndex(c => (c.id === id || c._id === id || c.public_id === id));
-        if (idx !== -1) state.clients[idx] = client;
-        else state.clients.unshift(client);
-      });
+    // get single client (upsert)
+    builder.addCase(getClient.fulfilled, (state, action) => {
+      const client = action.payload;
+      if (!client) return;
+      // Store in currentClient for immediate access in ClientDashboard
+      state.currentClient = client;
+      const id = client.id || client._id || client.public_id;
+      const idx = state.clients.findIndex(c => (c.id === id || c._id === id || c.public_id === id));
+      if (idx !== -1) state.clients[idx] = client;
+      else state.clients.unshift(client);
+    });
 
-      // permanent delete
-      builder.addCase(permanentDeleteClient.fulfilled, (state, action) => {
-        state.clients = state.clients.filter(client => client.id !== action.payload);
-      });
+    // restore client
+    builder.addCase(restoreClient.fulfilled, (state, action) => {
+      const client = action.payload;
+      if (!client) return;
+      const id = client.id || client._id || client.public_id;
+      const idx = state.clients.findIndex(c => (c.id === id || c._id === id || c.public_id === id));
+      if (idx !== -1) state.clients[idx] = client;
+      else state.clients.unshift(client);
+    });
 
-      // assign manager (server returns updated client)
-      builder.addCase(assignManager.fulfilled, (state, action) => {
-        const client = action.payload;
-        if (!client) return;
-        const id = client.id || client._id || client.public_id;
-        const idx = state.clients.findIndex(c => (c.id === id || c._id === id || c.public_id === id));
-        if (idx !== -1) state.clients[idx] = client;
-      });
+    // permanent delete
+    builder.addCase(permanentDeleteClient.fulfilled, (state, action) => {
+      state.clients = state.clients.filter(client => client.id !== action.payload);
+    });
 
-      // contacts / documents — expect server returns updated client
-      builder.addCase(addContact.fulfilled, (state, action) => {
-        const client = action.payload;
-        if (!client) return;
-        const id = client.id || client._id || client.public_id;
-        const idx = state.clients.findIndex(c => (c.id === id || c._id === id || c.public_id === id));
-        if (idx !== -1) state.clients[idx] = client;
-      });
+    // assign manager (server returns updated client)
+    builder.addCase(assignManager.fulfilled, (state, action) => {
+      const client = action.payload;
+      if (!client) return;
+      const id = client.id || client._id || client.public_id;
+      const idx = state.clients.findIndex(c => (c.id === id || c._id === id || c.public_id === id));
+      if (idx !== -1) state.clients[idx] = client;
+    });
 
-      builder.addCase(updateContact.fulfilled, (state, action) => {
-        const client = action.payload;
-        if (!client) return;
-        const id = client.id || client._id || client.public_id;
-        const idx = state.clients.findIndex(c => (c.id === id || c._id === id || c.public_id === id));
-        if (idx !== -1) state.clients[idx] = client;
-      });
+    // contacts / documents — expect server returns updated client
+    builder.addCase(addContact.fulfilled, (state, action) => {
+      const client = action.payload;
+      if (!client) return;
+      const id = client.id || client._id || client.public_id;
+      const idx = state.clients.findIndex(c => (c.id === id || c._id === id || c.public_id === id));
+      if (idx !== -1) state.clients[idx] = client;
+    });
 
-      builder.addCase(deleteContact.fulfilled, (state, action) => {
-        const { clientId, contactId } = action.payload || {};
-        if (!clientId || !contactId) return;
-        const idx = state.clients.findIndex(c => (c.id === clientId || c._id === clientId || c.public_id === clientId));
-        if (idx === -1) return;
-        const client = state.clients[idx];
-        if (Array.isArray(client.contacts)) {
-          client.contacts = client.contacts.filter(ct => (ct.id !== contactId && ct._id !== contactId && ct.public_id !== contactId));
-          state.clients[idx] = client;
-        }
-      });
+    builder.addCase(updateContact.fulfilled, (state, action) => {
+      const client = action.payload;
+      if (!client) return;
+      const id = client.id || client._id || client.public_id;
+      const idx = state.clients.findIndex(c => (c.id === id || c._id === id || c.public_id === id));
+      if (idx !== -1) state.clients[idx] = client;
+    });
 
-      builder.addCase(setPrimaryContact.fulfilled, (state, action) => {
-        const client = action.payload;
-        if (!client) return;
-        const id = client.id || client._id || client.public_id;
-        const idx = state.clients.findIndex(c => (c.id === id || c._id === id || c.public_id === id));
-        if (idx !== -1) state.clients[idx] = client;
-      });
+    builder.addCase(deleteContact.fulfilled, (state, action) => {
+      const { clientId, contactId } = action.payload || {};
+      if (!clientId || !contactId) return;
+      const idx = state.clients.findIndex(c => (c.id === clientId || c._id === clientId || c.public_id === clientId));
+      if (idx === -1) return;
+      const client = state.clients[idx];
+      if (Array.isArray(client.contacts)) {
+        client.contacts = client.contacts.filter(ct => (ct.id !== contactId && ct._id !== contactId && ct.public_id !== contactId));
+        state.clients[idx] = client;
+      }
+    });
 
-      builder.addCase(deleteDocument.fulfilled, (state, action) => {
-        const { clientId, documentId } = action.payload || {};
-        if (!clientId || !documentId) return;
-        const idx = state.clients.findIndex(c => (c.id === clientId || c._id === clientId || c.public_id === clientId));
-        if (idx === -1) return;
-        const client = state.clients[idx];
-        if (Array.isArray(client.documents)) {
-          client.documents = client.documents.filter(doc => (doc.id !== documentId && doc._id !== documentId && doc.public_id !== documentId));
-          state.clients[idx] = client;
-        }
-      });
+    builder.addCase(setPrimaryContact.fulfilled, (state, action) => {
+      const client = action.payload;
+      if (!client) return;
+      const id = client.id || client._id || client.public_id;
+      const idx = state.clients.findIndex(c => (c.id === id || c._id === id || c.public_id === id));
+      if (idx !== -1) state.clients[idx] = client;
+    });
+
+    builder.addCase(deleteDocument.fulfilled, (state, action) => {
+      const { clientId, documentId } = action.payload || {};
+      if (!clientId || !documentId) return;
+      const idx = state.clients.findIndex(c => (c.id === clientId || c._id === clientId || c.public_id === clientId));
+      if (idx === -1) return;
+      const client = state.clients[idx];
+      if (Array.isArray(client.documents)) {
+        client.documents = client.documents.filter(doc => (doc.id !== documentId && doc._id !== documentId && doc.public_id !== documentId));
+        state.clients[idx] = client;
+      }
+    });
   },
 });
 

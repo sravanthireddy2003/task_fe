@@ -10,15 +10,29 @@ const UserAvatar = () => {
   const [imageError, setImageError] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  
+
   const user = useSelector(selectUser) || {};
   const profileFetched = useSelector(selectProfileFetched);
   const profileLoading = useSelector(selectProfileLoading);
   const photoUrl = user.photo;
-  
+
+  // Helper to ensure photo URL is served via proxy (same origin) to satisfy CORP
+  const getSafePhotoUrl = (url) => {
+    if (!url) return null;
+    try {
+      if (url.includes('localhost:4000')) {
+        const urlObj = new URL(url);
+        return urlObj.pathname + urlObj.search;
+      }
+    } catch (e) { console.error('URL parse error', e); }
+    return url;
+  };
+
+  const safePhotoUrl = getSafePhotoUrl(photoUrl);
+
   const initials = (() => {
     if (user?.firstName && user?.lastName) return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
-    if (user?.name) return user.name.split(' ').map(s => s[0]).slice(0,2).join('').toUpperCase();
+    if (user?.name) return user.name.split(' ').map(s => s[0]).slice(0, 2).join('').toUpperCase();
     if (user?.email) return user.email[0].toUpperCase();
     return 'U';
   })();
@@ -26,14 +40,19 @@ const UserAvatar = () => {
   const displayName = user?.firstName || user?.name || user?.email || 'User';
 
   const handleImageError = useCallback(() => {
-    console.log('❌ Image failed:', photoUrl);
+    console.log('❌ Image failed:', safePhotoUrl);
     setImageError(true);
-  }, [photoUrl]);
+  }, [safePhotoUrl]);
 
   const handleImageLoad = useCallback(() => {
-    console.log('✅ Image loaded:', photoUrl);
+    console.log('✅ Image loaded:', safePhotoUrl);
     setImageError(false);
-  }, [photoUrl]);
+  }, [safePhotoUrl]);
+
+  // Reset error state when photo URL changes
+  useEffect(() => {
+    setImageError(false);
+  }, [safePhotoUrl]);
 
   const go = (path) => {
     setIsDropdownOpen(false);
@@ -42,8 +61,8 @@ const UserAvatar = () => {
 
   const handleLogout = async () => {
     setIsDropdownOpen(false);
-    await dispatch(logoutUser()); 
-    dispatch(logout());         
+    await dispatch(logoutUser());
+    dispatch(logout());
     toast.success('Signed out');
     navigate('/log-in', { replace: true });
   };
@@ -51,10 +70,10 @@ const UserAvatar = () => {
   // ✅ FIXED useEffect - NO MORE INFINITE CALLS
   useEffect(() => {
     // Guards: Skip if no user, already fetched, currently loading, has modules, or has photo
-    if (!user?.id || profileFetched || profileLoading || user.modules?.length > 0 || photoUrl) {
+    if (!user?.id || profileFetched || profileLoading || user.modules?.length > 0 || safePhotoUrl) {
       return;
     }
-    
+
     console.log('🔄 Fetching profile for avatar...');
 
     const fetchProfile = async () => {
@@ -70,7 +89,7 @@ const UserAvatar = () => {
     };
 
     fetchProfile();
-  }, [dispatch, user?.id, profileFetched, profileLoading, photoUrl]);
+  }, [dispatch, user?.id, profileFetched, profileLoading, safePhotoUrl]);
 
   return (
     <div className="relative">
@@ -85,9 +104,9 @@ const UserAvatar = () => {
           className="relative w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md hover:scale-105 transition-all duration-200 flex items-center justify-center"
           aria-label="User menu"
         >
-          {photoUrl && !imageError ? (
-            <img 
-              src={photoUrl}
+          {safePhotoUrl && !imageError ? (
+            <img
+              src={safePhotoUrl}
               alt={displayName}
               className="w-full h-full rounded-full object-cover"
               onError={handleImageError}
@@ -102,34 +121,51 @@ const UserAvatar = () => {
 
       {/* Dropdown - UNCHANGED */}
       {isDropdownOpen && (
-        <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-2xl z-50 border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="p-4 bg-gradient-to-r from-white to-gray-50 border-b border-gray-100">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-sm font-bold text-white shadow-md">
-                {initials}
+        <div className="absolute right-0 mt-4 w-80 bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl z-50 border border-white/20 ring-1 ring-black/5 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 origin-top-right">
+          <div className="p-5 bg-gradient-to-br from-slate-900 to-slate-800 text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/20 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
+
+            <div className="flex items-center gap-4 relative z-10">
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-lg font-bold text-white shadow-lg ring-2 ring-white/10 overflow-hidden">
+                {safePhotoUrl && !imageError ? (
+                  <img
+                    src={safePhotoUrl}
+                    alt={displayName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  initials
+                )}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-semibold text-gray-800 truncate">{displayName}</div>
-                <div className="text-xs text-gray-500 truncate">{user?.email}</div>
-                <div className="text-xs text-gray-500 truncate">{user?.phone}</div>
+                <div className="font-bold text-lg truncate leading-tight">{displayName}</div>
+                <div className="text-sm text-slate-300 truncate">{user?.email}</div>
+                {user?.role && (
+                  <div className="inline-flex mt-1 px-2 py-0.5 rounded-full bg-white/10 border border-white/10 text-[10px] font-medium uppercase tracking-wider text-blue-200">
+                    {user.role}
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
-          <div className="p-2 divide-y divide-gray-100">
-            <button onClick={() => go('/profile')} className="w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 flex items-center gap-3 text-sm transition-colors">
-              <Icons.User className="text-gray-500 w-4 h-4" />
-              <span className="text-gray-700 font-medium">My Profile</span>
+          <div className="p-2 flex flex-col gap-1 bg-white/50">
+            <button onClick={() => go('/profile')} className="w-full text-left px-4 py-3 rounded-xl hover:bg-blue-50 group flex items-center gap-3 text-sm transition-all duration-200">
+              <div className="p-2 rounded-lg bg-blue-100/50 text-blue-600 group-hover:bg-blue-100 transition-colors">
+                <Icons.User className="w-4 h-4" />
+              </div>
+              <span className="text-gray-700 font-medium group-hover:text-blue-700">My Profile</span>
             </button>
 
-            <button onClick={() => go('/change-password')} className="w-full text-left px-4 py-3 rounded-lg hover:bg-amber-50 flex items-center gap-3 text-sm transition-colors">
-              <Icons.KeyRound className="text-gray-500 w-4 h-4" />
-              <span className="text-gray-700 font-medium">Change Password</span>
+            <button onClick={() => go('/change-password')} className="w-full text-left px-4 py-3 rounded-xl hover:bg-amber-50 group flex items-center gap-3 text-sm transition-all duration-200">
+              <div className="p-2 rounded-lg bg-amber-100/50 text-amber-600 group-hover:bg-amber-100 transition-colors">
+                <Icons.KeyRound className="w-4 h-4" />
+              </div>
+              <span className="text-gray-700 font-medium group-hover:text-amber-700">Change Password</span>
             </button>
 
             <button
               onClick={() => {
-                // Route manager/admin/etc. to their role-scoped settings page
                 const role = (user?.role || '').toString().toLowerCase();
                 let path = '/admin/settings';
                 if (role.includes('manager')) path = '/manager/settings';
@@ -137,18 +173,24 @@ const UserAvatar = () => {
                 else if (role.includes('client')) path = '/client/settings';
                 go(path);
               }}
-              className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-50 flex items-center gap-3 text-sm transition-colors"
+              className="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-50 group flex items-center gap-3 text-sm transition-all duration-200"
             >
-              <Icons.Settings className="text-gray-500 w-4 h-4" />
-              <span className="text-gray-700 font-medium">Settings</span>
+              <div className="p-2 rounded-lg bg-slate-100/50 text-slate-600 group-hover:bg-slate-100 transition-colors">
+                <Icons.Settings className="w-4 h-4" />
+              </div>
+              <span className="text-gray-700 font-medium group-hover:text-slate-700">Settings</span>
             </button>
 
-            <button 
+            <div className="my-1 border-t border-gray-100 mx-2" />
+
+            <button
               onClick={handleLogout}
-              className="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 flex items-center gap-3 text-sm transition-colors text-red-600 font-medium"
+              className="w-full text-left px-4 py-3 rounded-xl hover:bg-red-50 group flex items-center gap-3 text-sm transition-all duration-200"
             >
-              <Icons.LogOut className="w-4 h-4" />
-              <span>Sign Out</span>
+              <div className="p-2 rounded-lg bg-red-100/50 text-red-600 group-hover:bg-red-100 transition-colors">
+                <Icons.LogOut className="w-4 h-4" />
+              </div>
+              <span className="text-gray-700 font-medium group-hover:text-red-700">Sign Out</span>
             </button>
           </div>
         </div>

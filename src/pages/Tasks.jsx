@@ -3,7 +3,7 @@
 // import { useDispatch, useSelector } from 'react-redux';
 // import { toast } from 'sonner';
 import Card from "../components/Card";
- 
+
 // import {
 //   fetchTasks,
 //   fetchSelectedTaskDetails,
@@ -17,17 +17,17 @@ import Card from "../components/Card";
 // } from '../redux/slices/taskSlice';
 // import { fetchProjects, selectProjects } from '../redux/slices/projectSlice';
 // import { fetchUsers, selectUsers, selectCurrentUser } from '../redux/slices/userSlice';
- 
+
 // export default function Tasks() {
 //   const dispatch = useDispatch();
- 
+
 //   // Redux state
 //   const tasks = useSelector(selectTasks) || [];
 //   const status = useSelector(selectTaskStatus);
 //   const error = useSelector(selectTaskError);
 //   const projects = useSelector(selectProjects) || [];
 //   const users = useSelector(selectUsers) || [];
- 
+
 //   // Local UI state
 //   const [view, setView] = useState('list');
 //   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -44,69 +44,69 @@ import Card from "../components/Card";
 //     priority: 'medium',
 //     status: 'pending',
 //   });
- 
+
 //   const [filterStatus, setFilterStatus] = useState('all');
 //   const [activeStatusEdit, setActiveStatusEdit] = useState(null);
 //   const [isFetching, setIsFetching] = useState(false);
- 
+
 //   const statusOptions = ['pending', 'in_progress', 'completed', 'on_hold'];
 //   const priorityOptions = ['low', 'medium', 'high'];
- 
+
 //   const isLoading = status === 'loading';
- 
+
 //   // Fetch projects and users on initial load
 //   useEffect(() => {
 //     console.log('Initial useEffect - fetching projects and users');
 //     dispatch(fetchProjects());
 //     dispatch(fetchUsers());
 //   }, [dispatch]);
- 
+
 //   // Debug: Log when selectedProjectId changes
 //   useEffect(() => {
 //     console.log('selectedProjectId changed to:', selectedProjectId);
 //   }, [selectedProjectId]);
- 
+
 //   // Debug: Log tasks and projects
 //   useEffect(() => {
 //     console.log('Tasks updated:', tasks.length);
 //     console.log('Projects available:', projects.length);
 //   }, [tasks, projects]);
- 
+
 //   // Handle project selection change - FIXED VERSION
 //   const handleProjectChange = async (e) => {
 //     const projectId = e.target.value;
 //     console.log('handleProjectChange called with projectId:', projectId);
 //     setSelectedProjectId(projectId);
- 
+
 //     if (projectId === 'all') {
 //       console.log('Clearing tasks for "All Projects"');
 //       dispatch(clearTasks());
 //       return;
 //     }
- 
+
 //     // Validate project exists
 //     const selectedProject = projects.find(p =>
 //       p.id === projectId || p._id === projectId || p.public_id === projectId
 //     );
- 
+
 //     if (!selectedProject) {
 //       console.error('Selected project not found in projects list');
 //       toast.error('Selected project not found');
 //       return;
 //     }
- 
+
 //     console.log('Selected project found:', selectedProject.name);
- 
+
 //     // Fetch tasks for the selected project
 //     setIsFetching(true);
 //     try {
 //       console.log('Dispatching fetchTasks with project_id:', projectId);
- 
+
 //       // IMPORTANT: Make sure we're passing the correct parameter name
 //       // The fetchTasks thunk expects { project_id: value }
 //       const result = await dispatch(fetchTasks({ project_id: projectId }));
 //       console.log('fetchTasks result:', result);
- 
+
 //       if (fetchTasks.fulfilled.match(result)) {
 //         console.log('Tasks fetched successfully:', result.payload?.length || 0, 'tasks');
 //         toast.success(`Loaded ${result.payload?.length || 0} tasks for ${selectedProject.name}`);
@@ -121,7 +121,7 @@ import Card from "../components/Card";
 //       setIsFetching(false);
 //     }
 //   };
- 
+
 //   // Alternative: Fetch tasks when selectedProjectId changes (useEffect approach)
 //   useEffect(() => {
 //     const fetchTasksForProject = async () => {
@@ -137,10 +137,10 @@ import Card from "../components/Card";
 //         }
 //       }
 //     };
- 
+
 //     fetchTasksForProject();
 //   }, [selectedProjectId, dispatch]);
- 
+
 //   // Show error toast when error occurs
 //   useEffect(() => {
 //     if (error) {
@@ -148,14 +148,14 @@ import Card from "../components/Card";
 //       toast.error(error?.message || String(error));
 //     }
 //   }, [error]);
- 
+
 //   // Manual refresh function
 //   const handleRefreshTasks = useCallback(async () => {
 //     if (selectedProjectId === 'all') {
 //       toast.info('Please select a project to refresh tasks');
 //       return;
 //     }
- 
+
 //     console.log('Manual refresh for project:', selectedProjectId);
 //     setIsFetching(true);
 //     try {
@@ -169,7 +169,7 @@ import Card from "../components/Card";
 //       setIsFetching(false);
 //     }
 //   }, [selectedProjectId, dispatch]);
- 
+
 //   const openModal = (task = null) => {
 //     if (task) {
 //       setEditingTask(task);
@@ -199,12 +199,12 @@ import Card from "../components/Card";
 //     }
 //     setIsModalOpen(true);
 //   };
- 
+
 //   const closeModal = () => {
 //     setIsModalOpen(false);
 //     setEditingTask(null);
 //   };
- 
+
 //   const handleSubmit = async (e) => {
 //     e.preventDefault();
 //     try {
@@ -212,17 +212,17 @@ import Card from "../components/Card";
 //       const selectedProject = projects.find(
 //         (p) => (p.id || p._id || p.public_id) === formData.project_id
 //       );
- 
+
 //       if (!formData.name || !formData.project_id) {
 //         toast.error('Please provide a task name and select a project');
 //         return;
 //       }
- 
+
 //       // Prepare payload according to backend API
 //       const projectId = selectedProject?.id ?? selectedProject?._id ?? null;
 //       const projectPublicId = selectedProject?.public_id ?? selectedProject?.project_public_id ?? null;
 //       const client_id = selectedProject?.client_id ?? selectedProject?.clientId ?? selectedProject?.client?.id ?? selectedProject?.client?._id ?? null;
- 
+
 //       const payload = {
 //         project_id: projectId || formData.project_id,
 //         projectId: projectId || undefined,
@@ -236,7 +236,7 @@ import Card from "../components/Card";
 //         estimatedHours: formData.estimated_hours ? Number(formData.estimated_hours) : 0,
 //         timeAlloted: formData.estimated_hours ? Number(formData.estimated_hours) : 0,
 //       };
- 
+
 //       // Handle assigned users: support single or multiple selections
 //       if (formData.assigned_to && (Array.isArray(formData.assigned_to) ? formData.assigned_to.length > 0 : !!formData.assigned_to)) {
 //         const ids = Array.isArray(formData.assigned_to) ? formData.assigned_to : [formData.assigned_to];
@@ -254,7 +254,7 @@ import Card from "../components/Card";
 //         }).filter(Boolean);
 //         payload.assigned_to = ids;
 //       }
- 
+
 //       if (editingTask) {
 //         const taskId = editingTask.id || editingTask._id || editingTask.public_id;
 //         await dispatch(updateTask({ taskId, data: payload })).unwrap();
@@ -263,9 +263,9 @@ import Card from "../components/Card";
 //         await dispatch(createTask(payload)).unwrap();
 //         toast.success('Task created successfully');
 //       }
- 
+
 //       closeModal();
- 
+
 //       // Refresh tasks for the current project
 //       handleRefreshTasks();
 //     } catch (err) {
@@ -273,15 +273,15 @@ import Card from "../components/Card";
 //       toast.error(err?.message || 'Operation failed');
 //     }
 //   };
- 
+
 //   const handleDelete = async (task) => {
 //     if (!window.confirm('Are you sure you want to delete this task?')) return;
- 
+
 //     try {
 //       const taskId = task.id || task._id || task.public_id;
 //       await dispatch(deleteTask(taskId)).unwrap();
 //       toast.success('Task deleted successfully');
- 
+
 //       // Refresh tasks for the current project
 //       handleRefreshTasks();
 //     } catch (err) {
@@ -289,7 +289,7 @@ import Card from "../components/Card";
 //       toast.error(err?.message || 'Delete failed');
 //     }
 //   };
- 
+
 //   const handleOpenTaskDetails = async (task) => {
 //     const taskId = task.id || task._id || task.public_id || task.task_id;
 //     if (!taskId) return;
@@ -302,14 +302,14 @@ import Card from "../components/Card";
 //       toast.error(err?.message || 'Failed to load task details');
 //     }
 //   };
- 
+
 //   const closeDetails = () => {
 //     setSelectedTaskDetails(null);
 //   };
- 
+
 //   const updateStatusInline = async (task, newStatus) => {
 //     if (!newStatus) return;
- 
+
 //     try {
 //       const taskId = task.id || task._id || task.public_id;
 //       await dispatch(updateTask({
@@ -324,10 +324,10 @@ import Card from "../components/Card";
 //           timeAlloted: task.timeAlloted
 //         }
 //       })).unwrap();
- 
+
 //       setActiveStatusEdit(null);
 //       toast.success('Status updated');
- 
+
 //       // Refresh tasks for the current project
 //       handleRefreshTasks();
 //     } catch (err) {
@@ -335,7 +335,7 @@ import Card from "../components/Card";
 //       toast.error(err?.message || 'Status update failed');
 //     }
 //   };
- 
+
 //   // Get status text for display
 //   const getStatusText = (status) => {
 //     if (!status) return 'To Do';
@@ -368,7 +368,7 @@ import Card from "../components/Card";
 //     if (!task.assignedUsers || !task.assignedUsers.length) return 'Unassigned';
 //     return task.assignedUsers.map(u => u.name).join(', ');
 //   };
- 
+
 //   // Status colors
 //   const statusColors = {
 //     pending: 'bg-gray-100 text-gray-800 border border-gray-200', // To Do
@@ -377,14 +377,14 @@ import Card from "../components/Card";
 //     completed: 'bg-green-100 text-green-800 border border-green-200', // Completed
 //     on_hold: 'bg-red-100 text-red-800 border border-red-200', // Blocked
 //   };
- 
+
 //   // Priority colors
 //   const priorityColors = {
 //     low: 'bg-gray-100 text-gray-800 border border-gray-200',
 //     medium: 'bg-amber-100 text-amber-800 border border-amber-200',
 //     high: 'bg-red-100 text-red-800 border border-red-200',
 //   };
- 
+
 //   // Format date for display
 //   const formatDate = (dateString) => {
 //     if (!dateString) return '-';
@@ -395,7 +395,7 @@ import Card from "../components/Card";
 //       day: 'numeric'
 //     });
 //   };
- 
+
 //   // Helper: filter only employee-role users for assignee dropdown
 //   const isEmployeeUser = (u) => {
 //     if (!u) return false;
@@ -404,9 +404,9 @@ import Card from "../components/Card";
 //     if (Array.isArray(u.roles) && u.roles.some(r => String(r).toLowerCase().includes('employee'))) return true;
 //     return false;
 //   };
- 
+
 //   const employeeUsers = Array.isArray(users) ? users.filter(isEmployeeUser) : [];
- 
+
 //   // Current user and admin check
 //   const currentUser = useSelector(selectCurrentUser);
 //   const isAdminCurrentUser = (() => {
@@ -427,14 +427,14 @@ import Card from "../components/Card";
 //         <div>Status: {status}</div>
 //         <div>Fetching: {isFetching ? 'Yes' : 'No'}</div>
 //       </div>
- 
+
 //       {/* HEADER */}
 //       <div className="flex items-center justify-between mb-8">
 //         <div>
 //           <h1 className="text-heading-2 mb-2">Tasks</h1>
 //           <p className="text-body text-gray-600">Manage and track all your tasks</p>
 //         </div>
- 
+
 //         <div className="flex items-center gap-3">
 //           {/* Project Selector */}
 //           <div className="relative">
@@ -460,7 +460,7 @@ import Card from "../components/Card";
 //               </svg>
 //             </div>
 //           </div>
- 
+
 //           {/* Refresh Button */}
 //           <button
 //             onClick={handleRefreshTasks}
@@ -473,7 +473,7 @@ import Card from "../components/Card";
 //           >
 //             <RefreshCw className={`w-5 h-5 ${isFetching ? 'animate-spin' : ''}`} />
 //           </button>
- 
+
 //           {/* View Toggle */}
 //           <div className="flex border border-gray-300 rounded-lg overflow-hidden">
 //             <button
@@ -493,7 +493,7 @@ import Card from "../components/Card";
 //               <Grid className="w-5 h-5" />
 //             </button>
 //           </div>
- 
+
 //           {/* Add Task Button */}
 //           <button
 //             onClick={() => openModal()}
@@ -508,7 +508,7 @@ import Card from "../components/Card";
 //           </button>
 //         </div>
 //       </div>
- 
+
 //       {/* Loading Indicator */}
 //       {isFetching && (
 //         <div className="flex items-center justify-center p-4 mb-6 bg-blue-50 rounded-lg">
@@ -516,7 +516,7 @@ import Card from "../components/Card";
 //           <span className="text-blue-600 font-medium">Loading tasks...</span>
 //         </div>
 //       )}
- 
+
 //       {/* STATUS SUMMARY - Only show when a project is selected */}
 //       {selectedProjectId !== 'all' && tasks.length > 0 && (
 //         <div className="flex flex-wrap gap-3 mb-6">
@@ -537,7 +537,7 @@ import Card from "../components/Card";
 //           </div>
 //         </div>
 //       )}
- 
+
 //       {/* PROJECT INFO - Show selected project info */}
 //       {selectedProjectId !== 'all' && tasks.length > 0 && (
 //         <div className="bg-white rounded-xl border p-4 mb-6">
@@ -549,7 +549,7 @@ import Card from "../components/Card";
 //           </p>
 //         </div>
 //       )}
- 
+
 //       {/* FILTERS - Only show when a project is selected */}
 //       {selectedProjectId !== 'all' && tasks.length > 0 && (
 //         <div className="bg-white rounded-xl border p-4 mb-6 flex items-center gap-4 flex-wrap">
@@ -557,7 +557,7 @@ import Card from "../components/Card";
 //             <Filter className="w-5 h-5 text-gray-600" />
 //             <span className="text-gray-700 font-medium">Filters:</span>
 //           </div>
- 
+
 //           <select
 //             value={filterStatus}
 //             onChange={(e) => setFilterStatus(e.target.value)}
@@ -573,7 +573,7 @@ import Card from "../components/Card";
 //           </select>
 //         </div>
 //       )}
- 
+
 //       {/* NO PROJECT SELECTED STATE */}
 //       {selectedProjectId === 'all' && (
 //         <div className="bg-white rounded-xl border p-12 text-center">
@@ -598,7 +598,7 @@ import Card from "../components/Card";
 //           </div>
 //         </div>
 //       )}
- 
+
 //       {/* NO TASKS STATE - When project selected but no tasks */}
 //       {selectedProjectId !== 'all' && !isFetching && tasks.length === 0 && (
 //         <div className="bg-white rounded-xl border p-12 text-center">
@@ -624,7 +624,7 @@ import Card from "../components/Card";
 //           </div>
 //         </div>
 //       )}
- 
+
 //       {/* DETAILS PANEL */}
 //       {selectedTaskDetails && (
 //         <div className="bg-white border rounded-xl p-6 mb-6">
@@ -656,7 +656,7 @@ import Card from "../components/Card";
 //                 </div>
 //               </div>
 //             </div>
- 
+
 //             <div className="flex-shrink-0">
 //               <div className="flex items-center gap-2">
 //                 <div className="text-sm text-gray-600">{getProjectName(selectedProjectId)}</div>
@@ -694,7 +694,7 @@ import Card from "../components/Card";
 //                   />
 //                   Checklist
 //                 </h4>
- 
+
 //                 {((selectedTaskDetails.checklist ||
 //                   selectedTaskDetails.check_lists ||
 //                   selectedTaskDetails.check_items) || []).length ? (
@@ -726,7 +726,7 @@ import Card from "../components/Card";
 //                 ) : (
 //                   <p className="text-sm text-gray-500">No checklist items</p>
 //                 )}
- 
+
 //                 {/* Activities */}
 //                 <div className="mt-6">
 //                   <h4 className="font-semibold mb-3">Activities</h4>
@@ -759,7 +759,7 @@ import Card from "../components/Card";
 //                 </div>
 //               </div>
 //             </div>
- 
+
 //             {/* Summary card */}
 //             <div className="bg-white p-4 rounded-xl border">
 //               <h4 className="font-semibold mb-3">Summary</h4>
@@ -801,7 +801,7 @@ import Card from "../components/Card";
 //           </div>
 //         </div>
 //       )}
- 
+
 //       {/* LIST VIEW */}
 //       {!selectedTaskDetails && selectedProjectId !== 'all' && !isFetching && tasks.length > 0 && view === 'list' && (
 //         <div className="bg-white border rounded-xl overflow-hidden">
@@ -817,7 +817,7 @@ import Card from "../components/Card";
 //                 <th className="p-4 text-right">Actions</th>
 //               </tr>
 //             </thead>
- 
+
 //             <tbody>
 //               {filteredTasks.length === 0 ? (
 //                 <tr>
@@ -840,14 +840,14 @@ import Card from "../components/Card";
 //                         <div className="text-sm text-gray-500 mt-1 line-clamp-2">{task.description}</div>
 //                       )}
 //                     </td>
- 
+
 //                     <td className="p-4">
 //                       <div className="flex items-center gap-2">
 //                         <User className="w-4 h-4 text-gray-400" />
 //                         <span className="text-sm text-gray-700">{getAssignedUsers(task)}</span>
 //                       </div>
 //                     </td>
- 
+
 //                     <td className="p-4">
 //                       {activeStatusEdit === (task.id || task._id || task.public_id) ? (
 //                         <select
@@ -879,20 +879,20 @@ import Card from "../components/Card";
 //                         </div>
 //                       )}
 //                     </td>
- 
+
 //                     <td className="p-4">
 //                       <span className={`px-3 py-1 rounded-full text-sm font-medium ${priorityColors[(task.priority || 'MEDIUM').toLowerCase()]}`}>
 //                         {(task.priority || 'MEDIUM').toUpperCase()}
 //                       </span>
 //                     </td>
- 
+
 //                     <td className="p-4">
 //                       <div className="flex items-center gap-2">
 //                         <Calendar className="w-4 h-4 text-gray-400" />
 //                         <span className="text-sm text-gray-700">{formatDate(task.taskDate || task.dueDate)}</span>
 //                       </div>
 //                     </td>
- 
+
 //                     <td className="p-4">
 //                       <div className="space-y-1">
 //                         <div className="flex items-center gap-2">
@@ -904,7 +904,7 @@ import Card from "../components/Card";
 //                         )}
 //                       </div>
 //                     </td>
- 
+
 //                     <td className="p-4 text-right">
 //                       <div className="flex justify-end gap-2">
 //                         <button
@@ -930,7 +930,7 @@ import Card from "../components/Card";
 //           </table>
 //         </div>
 //       )}
- 
+
 //       {/* CARD VIEW */}
 //       {!selectedTaskDetails && selectedProjectId !== 'all' && !isFetching && tasks.length > 0 && view === 'card' && (
 //         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -971,7 +971,7 @@ import Card from "../components/Card";
 //                     </button>
 //                   </div>
 //                 </div>
- 
+
 //                 {/* Status and Priority */}
 //                 <div className="flex items-center gap-2 mb-4">
 //                   <span
@@ -984,7 +984,7 @@ import Card from "../components/Card";
 //                     {(task.priority || 'MEDIUM').toUpperCase()}
 //                   </span>
 //                 </div>
- 
+
 //                 {/* Task Details */}
 //                 <div className="space-y-3 mb-4">
 //                   <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -1000,7 +1000,7 @@ import Card from "../components/Card";
 //                     <span>{task.estimatedHours || task.timeAlloted || 0} hours estimated</span>
 //                   </div>
 //                 </div>
- 
+
 //                 {/* Project Info */}
 //                 <div className="pt-4 border-t">
 //                   <div className="text-xs text-gray-500">
@@ -1012,7 +1012,7 @@ import Card from "../components/Card";
 //           )}
 //         </div>
 //       )}
- 
+
 //       {/* MODAL */}
 //       {isModalOpen && (
 //         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -1028,7 +1028,7 @@ import Card from "../components/Card";
 //                 ✕
 //               </button>
 //             </div>
- 
+
 //             <form onSubmit={handleSubmit}>
 //               <div className="space-y-4">
 //                 {/* Task Name */}
@@ -1045,7 +1045,7 @@ import Card from "../components/Card";
 //                     placeholder="Enter task name"
 //                   />
 //                 </div>
- 
+
 //                 {/* Description */}
 //                 <div>
 //                   <label className="block text-gray-700 font-medium mb-2">
@@ -1059,7 +1059,7 @@ import Card from "../components/Card";
 //                     placeholder="Enter task description"
 //                   />
 //                 </div>
- 
+
 //                 {/* Project and Status */}
 //                 <div className="grid grid-cols-2 gap-4">
 //                   <div>
@@ -1098,7 +1098,7 @@ import Card from "../components/Card";
 //                       )}
 //                     </select>
 //                   </div>
- 
+
 //                   <div>
 //                     <label className="block text-gray-700 font-medium mb-2">
 //                       Status
@@ -1116,7 +1116,7 @@ import Card from "../components/Card";
 //                     </select>
 //                   </div>
 //                 </div>
- 
+
 //                 {/* Priority and Assignee */}
 //                 <div className="grid grid-cols-2 gap-4">
 //                   <div>
@@ -1135,7 +1135,7 @@ import Card from "../components/Card";
 //                       ))}
 //                     </select>
 //                   </div>
- 
+
 //                   <div>
 //                     <label className="block text-gray-700 font-medium mb-2">
 //                       Assign To
@@ -1178,7 +1178,7 @@ import Card from "../components/Card";
 //                     )}
 //                   </div>
 //                 </div>
- 
+
 //                 {/* Estimated Hours and Due Date */}
 //                 <div className="grid grid-cols-2 gap-4">
 //                   <div>
@@ -1195,7 +1195,7 @@ import Card from "../components/Card";
 //                       placeholder="e.g., 8"
 //                     />
 //                   </div>
- 
+
 //                   <div>
 //                     <label className="block text-gray-700 font-medium mb-2">
 //                       Due Date
@@ -1209,7 +1209,7 @@ import Card from "../components/Card";
 //                   </div>
 //                 </div>
 //               </div>
- 
+
 //               {/* Form Actions */}
 //               <div className="flex gap-3 mt-8">
 //                 <button
@@ -1233,7 +1233,7 @@ import Card from "../components/Card";
 //     </div>
 //   );
 // }
- 
+
 
 
 import { useState, useEffect, useCallback } from 'react';
@@ -1287,6 +1287,8 @@ export default function Tasks() {
     status: 'pending',
   });
 
+  const [isProjectLocked, setIsProjectLocked] = useState(false);
+
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterPriority, setFilterPriority] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -1332,6 +1334,7 @@ export default function Tasks() {
     const projectId = e.target.value;
     console.log('handleProjectChange called with projectId:', projectId);
     setSelectedProjectId(projectId);
+    setIsProjectLocked(false);
 
     if (projectId === 'all') {
       console.log('Clearing tasks for "All Projects"');
@@ -1350,28 +1353,8 @@ export default function Tasks() {
       return;
     }
 
-    console.log('Selected project found:', selectedProject.name);
-
-    // Fetch tasks for the selected project
-    setIsFetching(true);
-    try {
-      console.log('Dispatching fetchTasks with project_id:', projectId);
-      const result = await dispatch(fetchTasks({ project_id: projectId }));
-      console.log('fetchTasks result:', result);
-
-      if (fetchTasks.fulfilled.match(result)) {
-        console.log('Tasks fetched successfully:', result.payload?.length || 0, 'tasks');
-        toast.success(`Loaded ${result.payload?.length || 0} tasks for ${selectedProject.name}`);
-      } else if (fetchTasks.rejected.match(result)) {
-        console.error('fetchTasks rejected:', result.payload || result.error);
-        toast.error('Failed to fetch tasks: ' + (result.payload || result.error?.message || 'Unknown error'));
-      }
-    } catch (err) {
-      console.error('Error in handleProjectChange:', err);
-      toast.error('Failed to fetch tasks');
-    } finally {
-      setIsFetching(false);
-    }
+    // console.log('Selected project found:', selectedProject.name);
+    // Fetching is now handled by the useEffect dependent on selectedProjectId
   };
 
   // Fetch tasks when selectedProjectId changes
@@ -1380,10 +1363,25 @@ export default function Tasks() {
       if (selectedProjectId && selectedProjectId !== 'all') {
         console.log('useEffect: Fetching tasks for project:', selectedProjectId);
         setIsFetching(true);
+        // Reset lock state when trying to fetch new project tasks (though handleProjectChange does it too)
+        // setIsProjectLocked(false); 
+
         try {
-          await dispatch(fetchTasks({ project_id: selectedProjectId })).unwrap();
+          const result = await dispatch(fetchTasks({ project_id: selectedProjectId })).unwrap();
+          // Success
+          // toast.success(`Loaded ${result.length} tasks`);
         } catch (err) {
           console.error('Failed to fetch tasks in useEffect:', err);
+          const errorMessage = typeof err === 'string' ? err : err?.message || 'Unknown error';
+
+          if (errorMessage.includes("Project is closed") || errorMessage.includes("Tasks are locked")) {
+            setIsProjectLocked(true);
+            dispatch(clearTasks());
+            setSelectedTaskDetails(null);
+            toast.error(errorMessage);
+          } else {
+            toast.error('Failed to fetch tasks: ' + errorMessage);
+          }
         } finally {
           setIsFetching(false);
         }
@@ -1414,15 +1412,31 @@ export default function Tasks() {
       const result = await dispatch(fetchTasks({ project_id: selectedProjectId })).unwrap();
       console.log('Refresh successful, tasks:', result?.length || 0);
       toast.success(`Refreshed tasks (${result?.length || 0} found)`);
+
+      // If refresh succeeds, ensure project is unlocked (unless another logic overrides, but usually successful fetch means unlocked)
+      setIsProjectLocked(false);
+
     } catch (err) {
       console.error('Refresh failed:', err);
-      toast.error('Refresh failed: ' + (err?.message || String(err)));
+      const errorMessage = typeof err === 'string' ? err : err?.message || String(err);
+
+      if (errorMessage.includes("Project is closed") || errorMessage.includes("Tasks are locked")) {
+        setIsProjectLocked(true);
+        dispatch(clearTasks());
+        setSelectedTaskDetails(null);
+      }
+
+      toast.error('Refresh failed: ' + errorMessage);
     } finally {
       setIsFetching(false);
     }
   }, [selectedProjectId, dispatch]);
 
   const openModal = (task = null) => {
+    if (isProjectLocked) {
+      toast.error('Project is locked. Cannot create or edit tasks.');
+      return;
+    }
     if (task) {
       setEditingTask(task);
       setFormData({
@@ -1600,7 +1614,7 @@ export default function Tasks() {
   // Filter tasks based on search, status, and priority
   const filteredTasks = tasks.filter((task) => {
     // Search filter
-    const matchesSearch = searchQuery === '' || 
+    const matchesSearch = searchQuery === '' ||
       (task.title || task.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (task.description || '').toLowerCase().includes(searchQuery.toLowerCase());
 
@@ -1761,9 +1775,30 @@ export default function Tasks() {
               <tbody>
                 {filteredTasks.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="p-8 text-center text-gray-500">
-                      <AlertCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                      <p>No tasks found for the selected filters</p>
+                    <td colSpan="7" className="p-12 text-center text-gray-500">
+                      <AlertCircle className="tm-icon-hero mx-auto mb-3 opacity-50" />
+                      <p className="text-lg font-medium text-gray-900 mb-1">No tasks found</p>
+                      <p className="mb-6">No tasks match your selected filters.</p>
+                      <div className="flex gap-3 justify-center">
+                        <button
+                          onClick={() => openModal()}
+                          disabled={isProjectLocked}
+                          className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${isProjectLocked
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                            }`}
+                        >
+                          {isProjectLocked ? <Icons.Lock className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                          {isProjectLocked ? 'Project Locked' : 'Create Task'}
+                        </button>
+                        <button
+                          onClick={handleRefreshTasks}
+                          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors border border-gray-300 flex items-center gap-2"
+                        >
+                          <RefreshCw className="w-4 h-4" />
+                          Refresh
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ) : (
@@ -1825,15 +1860,19 @@ export default function Tasks() {
                         <div className="flex justify-end gap-2">
                           <button
                             onClick={(e) => { e.stopPropagation(); openModal(task); }}
-                            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                            title="Edit task"
+                            disabled={isProjectLocked}
+                            className={`p-2 rounded-lg transition-colors ${isProjectLocked ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100'
+                              }`}
+                            title={isProjectLocked ? "Project Locked" : "Edit task"}
                           >
                             <Edit2 className="tm-icon" />
                           </button>
                           <button
                             onClick={(e) => { e.stopPropagation(); handleDelete(task); }}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Delete task"
+                            disabled={isProjectLocked}
+                            className={`p-2 rounded-lg transition-colors ${isProjectLocked ? 'text-gray-300 cursor-not-allowed' : 'text-red-600 hover:bg-red-50'
+                              }`}
+                            title={isProjectLocked ? "Project Locked" : "Delete task"}
                           >
                             <Trash2 className="tm-icon" />
                           </button>
@@ -1848,6 +1887,35 @@ export default function Tasks() {
         );
 
       case 'kanban':
+        if (filteredTasks.length === 0) {
+          return (
+            <div className="bg-white rounded-xl border p-12 text-center">
+              <AlertCircle className="tm-icon-hero mx-auto mb-3 opacity-50" />
+              <p className="text-lg font-medium text-gray-900 mb-1">No tasks found</p>
+              <p className="text-gray-600 mb-6">No tasks match your selected filters.</p>
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={() => openModal()}
+                  disabled={isProjectLocked}
+                  className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${isProjectLocked
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                >
+                  {isProjectLocked ? <Icons.Lock className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                  {isProjectLocked ? 'Project Locked' : 'Create Task'}
+                </button>
+                <button
+                  onClick={handleRefreshTasks}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors border border-gray-300 flex items-center gap-2"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Refresh
+                </button>
+              </div>
+            </div>
+          );
+        }
         return (
           <div className="flex gap-4 overflow-x-auto pb-4">
             {Object.entries(kanbanColumns).map(([columnId, columnTasks]) => (
@@ -1881,9 +1949,8 @@ export default function Tasks() {
                           {task.title || task.name}
                         </h4>
                         <span
-                          className={`px-2 py-1 rounded text-xs ${
-                            priorityColors[(task.priority || 'MEDIUM').toLowerCase()]
-                          }`}
+                          className={`px-2 py-1 rounded text-xs ${priorityColors[(task.priority || 'MEDIUM').toLowerCase()]
+                            }`}
                         >
                           {(task.priority || 'MEDIUM').toUpperCase()}
                         </span>
@@ -1909,9 +1976,8 @@ export default function Tasks() {
 
                       <div className="mt-3 flex items-start justify-between">
                         <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            statusColors[getStatusKey(task)]
-                          }`}
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[getStatusKey(task)]
+                            }`}
                         >
                           {getStatusText(task.status || task.stage || 'pending')}
                         </span>
@@ -1948,13 +2014,13 @@ export default function Tasks() {
                   const taskDate = new Date(task.dueDate || task.taskDate);
                   return taskDate.getDate() === dayNumber;
                 });
-                
+
                 return (
                   <div key={i} className="min-h-32 border rounded-lg p-2 hover:bg-gray-50">
                     <div className="text-sm font-medium mb-2">{dayNumber}</div>
                     {dayTasks.slice(0, 2).map(task => (
-                      <div 
-                        key={task.id} 
+                      <div
+                        key={task.id}
                         className="text-xs p-2 mb-1 rounded bg-blue-50 text-blue-700 truncate hover:bg-blue-100 cursor-pointer border border-blue-100"
                         onClick={() => handleOpenTaskDetails(task)}
                       >
@@ -1989,8 +2055,8 @@ export default function Tasks() {
             </div>
             <div className="space-y-4">
               {filteredTasks.map((task) => (
-                <div 
-                  key={task.id} 
+                <div
+                  key={task.id}
                   className="flex items-start gap-4 p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
                   onClick={() => handleOpenTaskDetails(task)}
                 >
@@ -2000,9 +2066,9 @@ export default function Tasks() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <div className={`w-3 h-3 rounded-full ${(task.status || task.stage || 'pending').toLowerCase() === 'completed' ? 'bg-green-500' : 
-                        (task.status || task.stage || 'pending').toLowerCase() === 'in_progress' ? 'bg-blue-500' : 
-                        (task.status || task.stage || 'pending').toLowerCase() === 'pending' ? 'bg-gray-400' : 'bg-red-500'}`} 
+                      <div className={`w-3 h-3 rounded-full ${(task.status || task.stage || 'pending').toLowerCase() === 'completed' ? 'bg-green-500' :
+                        (task.status || task.stage || 'pending').toLowerCase() === 'in_progress' ? 'bg-blue-500' :
+                          (task.status || task.stage || 'pending').toLowerCase() === 'pending' ? 'bg-gray-400' : 'bg-red-500'}`}
                       />
                       <h4 className="font-medium text-gray-900">{task.title || task.name}</h4>
                       <span className={`px-2 py-1 rounded text-xs ${priorityColors[(task.priority || 'MEDIUM').toLowerCase()]}`}>
@@ -2031,15 +2097,19 @@ export default function Tasks() {
                   <div className="flex gap-2">
                     <button
                       onClick={(e) => { e.stopPropagation(); openModal(task); }}
-                      className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-                      title="Edit task"
+                      disabled={isProjectLocked}
+                      className={`p-2 rounded-lg ${isProjectLocked ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100'
+                        }`}
+                      title={isProjectLocked ? "Project Locked" : "Edit task"}
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDelete(task); }}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                      title="Delete task"
+                      disabled={isProjectLocked}
+                      className={`p-2 rounded-lg ${isProjectLocked ? 'text-gray-300 cursor-not-allowed' : 'text-red-600 hover:bg-red-50'
+                        }`}
+                      title={isProjectLocked ? "Project Locked" : "Delete task"}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -2130,8 +2200,8 @@ export default function Tasks() {
             onClick={handleRefreshTasks}
             disabled={selectedProjectId === 'all' || isFetching}
             className={`p-2 rounded-lg border ${selectedProjectId === 'all' || isFetching
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-white text-blue-600 hover:bg-blue-50 border-blue-200'
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              : 'bg-white text-blue-600 hover:bg-blue-50 border-blue-200'
               }`}
             title="Refresh tasks"
           >
@@ -2148,52 +2218,68 @@ export default function Tasks() {
           {/* Add Task Button */}
           <button
             onClick={() => openModal()}
-            disabled={selectedProjectId === 'all' || isFetching}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${selectedProjectId === 'all' || isFetching
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
+            disabled={selectedProjectId === 'all' || isFetching || isProjectLocked}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${selectedProjectId === 'all' || isFetching || isProjectLocked
+              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
           >
-            <Plus className="tm-icon" />
-            Add Task
+            {isProjectLocked ? <Icons.Lock className="tm-icon" /> : <Plus className="tm-icon" />}
+            {isProjectLocked ? 'Locked' : 'Add Task'}
           </button>
         </div>
       </div>
+
+      {/* ERROR / LOCKED PROJECT BANNER */}
+      {(error || isProjectLocked) && !isFetching && (
+        <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-xl text-red-800 animate-fadeIn">
+          <AlertCircle className="tm-icon-md flex-shrink-0 mt-0.5" />
+          <div>
+            <h3 className="font-semibold text-lg">{isProjectLocked ? 'Project Locked' : 'Error'}</h3>
+            <p className="text-red-700 mt-1">{error}</p>
+            {isProjectLocked && (
+              <p className="text-red-600 text-sm mt-2">
+                This project is currently closed or pending approval. Tasks are locked and cannot be modified.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* VIEW SELECTOR */}
       <div className="flex items-center gap-1 mb-6">
         <button
           onClick={() => setView('list')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-t-lg font-medium ${view === 'list' 
-              ? 'bg-white text-blue-600 border-t border-l border-r border-gray-300' 
-              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
+          className={`flex items-center gap-2 px-4 py-2 rounded-t-lg font-medium ${view === 'list'
+            ? 'bg-white text-blue-600 border-t border-l border-r border-gray-300'
+            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
         >
           <List className="tm-icon" />
           List
         </button>
         <button
           onClick={() => setView('kanban')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-t-lg font-medium ${view === 'kanban' 
-              ? 'bg-white text-blue-600 border-t border-l border-r border-gray-300' 
-              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
+          className={`flex items-center gap-2 px-4 py-2 rounded-t-lg font-medium ${view === 'kanban'
+            ? 'bg-white text-blue-600 border-t border-l border-r border-gray-300'
+            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
         >
           <LayoutGrid className="tm-icon" />
           Kanban
         </button>
         <button
           onClick={() => setView('calendar')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-t-lg font-medium ${view === 'calendar' 
-              ? 'bg-white text-blue-600 border-t border-l border-r border-gray-300' 
-              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
+          className={`flex items-center gap-2 px-4 py-2 rounded-t-lg font-medium ${view === 'calendar'
+            ? 'bg-white text-blue-600 border-t border-l border-r border-gray-300'
+            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
         >
           <Calendar className="tm-icon" />
           Calendar
         </button>
         <button
           onClick={() => setView('timeline')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-t-lg font-medium ${view === 'timeline' 
-              ? 'bg-white text-blue-600 border-t border-l border-r border-gray-300' 
-              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
+          className={`flex items-center gap-2 px-4 py-2 rounded-t-lg font-medium ${view === 'timeline'
+            ? 'bg-white text-blue-600 border-t border-l border-r border-gray-300'
+            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
         >
           <GitBranch className="tm-icon" />
           Timeline
@@ -2221,7 +2307,7 @@ export default function Tasks() {
               <Filter className="tm-icon text-gray-600" />
               <span className="text-gray-700 font-medium">Filters:</span>
             </div>
-            
+
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
@@ -2296,9 +2382,14 @@ export default function Tasks() {
           <div className="flex gap-3 justify-center">
             <button
               onClick={() => openModal()}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              disabled={isProjectLocked}
+              className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${isProjectLocked
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
             >
-              Create First Task
+              {isProjectLocked ? <Icons.Lock className="w-5 h-5" /> : null}
+              {isProjectLocked ? 'Project Locked' : 'Create First Task'}
             </button>
             <button
               onClick={handleRefreshTasks}
@@ -2350,15 +2441,14 @@ export default function Tasks() {
                         <div className="text-gray-500 uppercase tracking-wide mb-1">Priority</div>
                         <div className="font-semibold">
                           <span
-                            className={`px-3 py-1 rounded-full text-xs md:text-[11px] inline-flex items-center justify-center ${
-                              String(selectedTaskDetails.priority || '')
-                                .toLowerCase() === 'high'
-                                ? 'bg-red-50 text-red-600 border border-red-100'
-                                : String(selectedTaskDetails.priority || '')
-                                    .toLowerCase() === 'medium'
+                            className={`px-3 py-1 rounded-full text-xs md:text-[11px] inline-flex items-center justify-center ${String(selectedTaskDetails.priority || '')
+                              .toLowerCase() === 'high'
+                              ? 'bg-red-50 text-red-600 border border-red-100'
+                              : String(selectedTaskDetails.priority || '')
+                                .toLowerCase() === 'medium'
                                 ? 'bg-blue-50 text-blue-600 border border-blue-100'
                                 : 'bg-gray-50 text-gray-700 border border-gray-200'
-                            }`}
+                              }`}
                           >
                             {(selectedTaskDetails.priority || '').toString().toUpperCase() || 'NA'}
                           </span>
@@ -2755,9 +2845,9 @@ export default function Tasks() {
                     <div className="relative">
                       <select
                         value={formData.assigned_to[0] || ''}
-                        onChange={(e) => setFormData({ 
-                          ...formData, 
-                          assigned_to: e.target.value ? [e.target.value] : [] 
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          assigned_to: e.target.value ? [e.target.value] : []
                         })}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
                       >
@@ -2775,14 +2865,14 @@ export default function Tasks() {
                         <ChevronDown className="w-4 h-4" />
                       </div>
                     </div>
-                    
+
                     {/* Selected user preview */}
                     {formData.assigned_to[0] && (() => {
                       const user = employeeUsers.find(u => (u.id || u._id || u.public_id) === formData.assigned_to[0]);
                       return user ? (
                         <div className="mt-2 flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
                           <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-sm font-medium text-blue-600">
-                            {(user.name||'').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}
+                            {(user.name || '').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                           </div>
                           <div className="flex-1">
                             <div className="font-medium text-gray-900">{user.name}</div>

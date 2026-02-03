@@ -322,7 +322,7 @@ export default function Projects() {
   };
 
   // Loading and error states
-  if (isLoading) {
+  if (isLoading && projects.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="animate-spin h-12 w-12 border-4 border-blue-200 border-t-blue-600 rounded-full" />
@@ -330,7 +330,7 @@ export default function Projects() {
     );
   }
 
-  if (error) {
+  if (error && projects.length === 0) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-2xl p-8 text-center">
         <h3 className="text-xl font-bold text-red-800 mb-2">Failed to load projects</h3>
@@ -350,6 +350,7 @@ export default function Projects() {
         title="Projects"
         subtitle="Manage and track all your projects"
         onRefresh={handleRefresh}
+        refreshing={isLoading}
       >
         <div className="flex items-center gap-3">
           <ViewToggle
@@ -500,8 +501,11 @@ export default function Projects() {
                         </select>
                       ) : (
                         <span
-                          onClick={() => setActiveStatusEdit(project.id || project._id)}
-                          className={`px-3 py-1 rounded-full cursor-pointer text-sm font-medium ${statusColors[project.status]}`}
+                          onClick={() => {
+                            if (project.status === 'CLOSED') return;
+                            setActiveStatusEdit(project.id || project._id);
+                          }}
+                          className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[project.status] || 'bg-gray-100 text-gray-800'} ${project.status === 'CLOSED' ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'}`}
                         >
                           {project.status}
                         </span>
@@ -522,8 +526,13 @@ export default function Projects() {
                           📊
                         </button>
                         <button
-                          onClick={() => openModal(project)}
-                          className="p-2 text-gray-600 hover:bg-gray-200 rounded-lg"
+                          onClick={() => {
+                            if (project.status === 'CLOSED') return;
+                            openModal(project);
+                          }}
+                          disabled={project.status === 'CLOSED'}
+                          className={`p-2 rounded-lg ${project.status === 'CLOSED' ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-200'}`}
+                          title={project.status === 'CLOSED' ? "Project Closed" : "Edit Project"}
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
@@ -573,9 +582,13 @@ export default function Projects() {
                       📊
                     </button>
                     <button
-                      onClick={() => openModal(project)}
-                      className="p-2 hover:bg-blue-100 hover:text-blue-600 rounded-lg transition-colors"
-                      title="Edit"
+                      onClick={() => {
+                        if (project.status === 'CLOSED') return;
+                        openModal(project);
+                      }}
+                      disabled={project.status === 'CLOSED'}
+                      className={`p-2 rounded-lg transition-colors ${project.status === 'CLOSED' ? 'text-gray-300 cursor-not-allowed' : 'hover:bg-blue-100 hover:text-blue-600'}`}
+                      title={project.status === 'CLOSED' ? "Project Closed" : "Edit"}
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
@@ -891,8 +904,8 @@ export default function Projects() {
                     <div>
                       <div className="text-gray-500 font-medium text-xs sm:text-sm">STATUS</div>
                       <span className={`px-2 py-0.5 rounded text-xs font-semibold inline-flex items-center gap-1 ${projectSummary.project?.status === 'Completed' ? 'bg-green-50 text-green-700 border border-green-100' :
-                          projectSummary.project?.status === 'Active' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
-                            'bg-yellow-50 text-yellow-700 border border-yellow-100'
+                        projectSummary.project?.status === 'Active' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
+                          'bg-yellow-50 text-yellow-700 border border-yellow-100'
                         }`}>
                         {projectSummary.project?.status || selectedSummaryProject.status}
                       </span>
@@ -962,7 +975,7 @@ export default function Projects() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
-                      {Object.entries(projectSummary.tasks?.byStage || {}).map(([stage, count], index) => {
+                      {Object.entries(projectSummary.tasks?.byStatus || {}).map(([stage, count], index) => {
                         const total = projectSummary.tasks?.total || 0;
                         const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
                         return (
@@ -970,8 +983,8 @@ export default function Projects() {
                             <td className="px-3 sm:px-4 py-2.5">
                               <div className="flex items-center gap-2">
                                 <div className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full ${stage.toLowerCase().includes('complete') ? 'bg-green-400' :
-                                    stage.toLowerCase().includes('progress') ? 'bg-orange-400' :
-                                      'bg-red-400'
+                                  stage.toLowerCase().includes('progress') ? 'bg-orange-400' :
+                                    'bg-red-400'
                                   }`} />
                                 <span className="font-medium text-gray-800 capitalize truncate max-w-[120px] sm:max-w-none">{stage}</span>
                               </div>

@@ -510,7 +510,7 @@ const ClientForm = ({
           type="submit"
           className="px-10 py-4 text-lg rounded-xl font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
         >
-            <Icons.X className="w-5 h-5" />
+          {isEditMode ? "Update Client" : "Add Client"}
         </button>
       </div>
     </form>
@@ -526,7 +526,7 @@ const ClientForm = ({
           onClick={() => setOpen(false)}
           className="text-gray-400 hover:text-gray-600 transition-colors"
         >
-          <X className="w-5 h-5" />
+          <Icons.X className="w-5 h-5" />
         </button>
       )}
     </div>
