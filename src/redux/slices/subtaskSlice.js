@@ -75,19 +75,6 @@ export const createTask = createAsyncThunk(
 );
 
 // Update Task Status
-// export const updateTaskStatuss = createAsyncThunk(
-//   "tasks/updateStatus",
-//   async ({ id, stage }, { rejectWithValue }) => {
-//     try {
-//       const response = await httpPutService(`api/tasks/updatetask/${id}`, {
-//         stage,
-//       });
-//       return response;
-//     } catch (error) {
-//       return rejectWithValue(error.message);
-//     }
-//   }
-// );
 export const updateTaskStatuss = createAsyncThunk(
   "tasks/updateStatus",
   async ({ id, data }, { rejectWithValue }) => {
@@ -294,8 +281,6 @@ export const { addTempTask, confirmTask } = taskSlice.actions;
 export const selectTasks = (state) => state.tasks.tasks;
 export const selectTaskStatus = (state) => state.tasks.status;
 export const selectTaskError = (state) => state.tasks.error;
-// export const selectTaskById = (state, taskId) =>
-//   state.tasks.tasks.find((task) => task._id === taskId);
 export const selectTaskById = (state, taskId) =>
   state.tasks.tasks.find(
     (task) => task._id === taskId || task.task_id === taskId

@@ -168,7 +168,7 @@ const Clients = () => {
               title="Delete"
             >
               <Icons.Trash2 className="tm-icon" />
-            </button>
+            </button> 
           </div>
         </div>
       </div>

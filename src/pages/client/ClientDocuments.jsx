@@ -1,48 +1,15 @@
-// import React from "react";
-// import { useSelector } from "react-redux";
-
-// const ClientDocuments = () => {
-//   const user = useSelector((state) => state.auth.user);
-//   const allowedEndpoints = user?.resources?.allowedEndpoints || [];
-
-//   return (
-//     <section className="space-y-6">
-//       <div>
-//         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blue-500">Document & File Management</p>
-//         <h1 className="text-3xl font-semibold text-gray-900">Your documents</h1>
-//         <p className="text-sm text-gray-500 max-w-3xl">
-//           Files and attachments exposed for the clients team will appear here. Use the endpoints listed below to understand what this login allows.
-//         </p>
-//       </div>
-
-//       {allowedEndpoints.length === 0 ? (
-//         <div className="rounded-2xl border border-dashed border-gray-300 bg-white/50 p-6 text-sm text-gray-500">
-//           No document endpoints were shared with this profile.
-//         </div>
-//       ) : (
-//         <div className="grid gap-2 text-sm font-mono text-gray-700">
-//           {allowedEndpoints.map((endpoint) => (
-//             <div key={endpoint} className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-2">
-//               {endpoint}
-//             </div>
-//           ))}
-//         </div>
-//       )}
-//     </section>
-//   );
-// };
-
-// export default ClientDocuments;
-
 
 import React, { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { getAccessToken } from "../../utils/tokenService";
 import { useDispatch } from "react-redux";
 import * as Icons from "../../icons";
 import Button from "../../components/Button";
-import { attachDocument, deleteDocument } from "../../redux/slices/clientSlice";
+import { attachDocument, deleteDocument, getClient } from "../../redux/slices/clientSlice";
+import { resolveFileUrl, formatFileSize as formatFileSizeHelper } from '../../utils/fileHelpers';
 
 const ClientDocuments = ({ client }) => {
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const fileInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
@@ -59,12 +26,7 @@ const ClientDocuments = ({ client }) => {
     return <Icons.FileText className="tm-icon text-gray-400" />;
   };
 
-  const formatFileSize = (bytes) => {
-    if (!bytes) return '';
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
-  };
+  const formatFileSize = (bytes) => formatFileSizeHelper(bytes);
 
   // ✅ FIXED: Upload to backend API
   const handleFileUpload = async (event) => {
@@ -107,6 +69,10 @@ const ClientDocuments = ({ client }) => {
           }
         })).unwrap();
       }
+      // ✅ Refresh client data after all uploads
+      if (client?.id) {
+        await dispatch(getClient(client.id)).unwrap();
+      }
     } catch (error) {
       console.error("Failed to upload document:", error);
       alert("Upload failed: " + error.message);
@@ -118,11 +84,15 @@ const ClientDocuments = ({ client }) => {
     }
   };
 
-  // ✅ FIXED: Use publicUrl only
+  // ✅ FIXED: Use direct file URL only
   const handleDownload = async (doc) => {
     try {
-      const url = doc.publicUrl || doc.file_url;
-      if (!url) return;
+      const rawUrl = doc.file_url || doc.publicUrl;
+      if (!rawUrl) {
+        alert('No file URL available');
+        return;
+      }
+      const url = resolveFileUrl(rawUrl);
       const token = getAccessToken();
       const resp = await fetch(url, {
         method: 'GET',
@@ -137,7 +107,6 @@ const ClientDocuments = ({ client }) => {
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      // revoke after a short delay
       setTimeout(() => window.URL.revokeObjectURL(blobUrl), 5000);
     } catch (err) {
       console.error('Download failed', err);
@@ -145,11 +114,12 @@ const ClientDocuments = ({ client }) => {
     }
   };
 
-  // ✅ FIXED: Use publicUrl only
+  // ✅ FIXED: Use direct file URL only
   const handleView = async (doc) => {
     try {
-      const url = doc.publicUrl || doc.file_url;
-      if (!url) return;
+      const rawUrl = doc.file_url || doc.publicUrl;
+      if (!rawUrl) return;
+      const url = resolveFileUrl(rawUrl);
       const token = getAccessToken();
       const resp = await fetch(url, {
         method: 'GET',
@@ -159,7 +129,6 @@ const ClientDocuments = ({ client }) => {
       const blob = await resp.blob();
       const blobUrl = window.URL.createObjectURL(blob);
       window.open(blobUrl, '_blank');
-      // revoke after a short delay
       setTimeout(() => window.URL.revokeObjectURL(blobUrl), 5000);
     } catch (err) {
       console.error('View failed', err);
@@ -182,8 +151,18 @@ const ClientDocuments = ({ client }) => {
 
   return (
     <div className="w-full">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-800">Client Documents</h2>
+      <div className="flex items-center gap-4 mb-6">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 font-medium transition"
+          title="Go back to previous page"
+        >
+          <Icons.ChevronLeft className="tm-icon" />
+          Back
+        </button>
+        <div className="flex-1">
+          <h2 className="text-xl font-semibold text-gray-800">Client Documents</h2>
+        </div>
         <div className="flex space-x-3">
           <input
             type="file"

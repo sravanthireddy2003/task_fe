@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import fetchWithTenant from '../utils/fetchWithTenant';
 import { selectUser } from '../redux/slices/authSlice';
 import PageHeader from "../components/PageHeader";
+import { resolveFileUrl } from '../utils/fileHelpers';
 
 const ManagerClients = () => {
   const user = useSelector(selectUser);
@@ -50,7 +51,7 @@ const ManagerClients = () => {
   const selectedDocuments = useMemo(
     () => (selectedClient?.documents ?? []).map((doc) => ({
       ...doc,
-      url: doc.file_url,
+      url: resolveFileUrl(doc.file_url),
     })),
     [selectedClient]
   );
@@ -122,27 +123,6 @@ const ManagerClients = () => {
                   <p className="mt-1 text-base font-medium text-gray-900">{field.value}</p>
                 </div>
               ))}
-            </div>
-            <div className="mt-6 pt-4 border-t border-gray-200">
-              <h3 className="text-sm font-semibold text-gray-500">Documents & Uploads</h3>
-              {selectedDocuments.length === 0 ? (
-                <p className="mt-2 text-sm text-gray-600">No documents uploaded yet.</p>
-              ) : (
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  {selectedDocuments.map((doc) => (
-                    <a
-                      key={doc.id}
-                      href={doc.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-xl border border-gray-100 bg-gray-50 p-3 text-sm font-medium text-blue-600 transition hover:border-blue-200"
-                    >
-                      <p className="truncate font-semibold">{doc.file_name}</p>
-                      <p className="text-xs text-gray-500">{doc.file_type}</p>
-                    </a>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         ) : managerLoading ? (

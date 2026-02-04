@@ -22,8 +22,9 @@ const ICONS = {
   LOW: <Icons.ChevronDown className="w-4 h-4" />,
 };
 
-const TaskCard = ({ taskId }) => {
-  const task = useSelector((state) => selectTaskById(state, taskId));
+const TaskCard = ({ taskId, task: propTask }) => {
+  const taskFromStore = useSelector((state) => selectTaskById(state, taskId));
+  const task = propTask || taskFromStore;
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const [open, setOpen] = useState(false);
@@ -32,11 +33,12 @@ const TaskCard = ({ taskId }) => {
   const subtasks = useSelector(selectSubTasks);
 
   useEffect(() => {
-    if (task?.task_id) {
-      dispatch(getSubTask(task.task_id));
+    if (task?.task_id || task?.id || task?.public_id) {
+      const id = task?.task_id || task?.id || task?.public_id;
+      dispatch(getSubTask(id));
       setLocalTask(task);
     }
-  }, [dispatch, task?.task_id]);
+  }, [dispatch, task?.task_id, task?.id, task?.public_id]);
 
   const handleStatusUpdate = async (status) => {
     const id = task?.task_id ?? task?.id ?? task?._id;

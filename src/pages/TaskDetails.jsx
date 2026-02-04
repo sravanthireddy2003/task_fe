@@ -14,6 +14,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { selectTasks, fetchTasksbyId, selectSubTasks, getSubTask } from "../redux/slices/taskSlice";
 const { Clock, Info } = Icons;
 import { httpPostService, httpGetService } from '../App/httpHandler';
+import { resolveFileUrl } from '../utils/fileHelpers';
 
 
 const assets = [
@@ -101,28 +102,6 @@ const TaskDetails = () => {
 
   const task_id=id;
 
-  // useEffect(() => {
-  //   const fetchTaskActivities = async () => {
-  //     try {
-  //       const response = await fetch(`${import.meta.env.VITE_SERVERURL}/api/tasks/taskdetail/getactivity/${task_id}`);
-  //       if (!response.ok) {
-  //         throw new Error(`HTTP error! status: ${response.status}`);
-  //       }
-
-  //       const data = await response.json();
-  //       setActivitiesdata(data);
-  //       // setTimeout(fetchTaskActivities, 5000);
-  //     } catch (err) {
-  //       console.error("Error fetching task activities:", err);
-  //       setError("Failed to load task activities.");
-  //     }
-  //   };
-
-  //   if (task_id) {
-  //     fetchTaskActivities();
-  //   }
-  // }, [task_id]);
-
   useEffect(() => {
     const fetchTaskActivities = async () => {
       try {
@@ -203,8 +182,6 @@ const TaskDetails = () => {
             };
             fetchTask();
             }, [dispatch, id]);
-            
-  // const subtasks = useSelector(selectSubTasks);
 
             useEffect(() => {
               const fetchsubTask = async () => {
@@ -493,7 +470,7 @@ const TaskDetails = () => {
             {file.file_type.startsWith('image') && (
               <div className="mt-2">
                 <img 
-                  src={file.file_url} 
+                  src={resolveFileUrl(file.file_url)} 
                   alt={file.file_name} 
                   className="w-32 h-32 object-cover rounded-md" 
                 />
@@ -502,7 +479,7 @@ const TaskDetails = () => {
           </div>  
 
           <a
-            href={file.file_url}
+            href={resolveFileUrl(file.file_url)}
             target="_blank"
             rel="noopener noreferrer"
             className="text-blue-500 hover:text-blue-700"

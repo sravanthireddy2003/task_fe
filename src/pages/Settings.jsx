@@ -736,49 +736,6 @@ const Settings = () => {
           refreshing={loading || auditLoading}
         >
           <div className="flex flex-col items-end gap-3 text-sm text-gray-600">
-            <div>
-              <div className="mb-2">Token status: <strong>{getAccessToken() ? 'Present' : 'Missing'}</strong></div>
-              {getAccessToken() && (
-                <div className="mb-2 text-xs text-gray-500">Token: {showToken ? getAccessToken() : (getAccessToken() ? `${getAccessToken().slice(0, 8)}...${getAccessToken().slice(-6)}` : '')}</div>
-              )}
-              <div className="flex flex-wrap items-center gap-2 mt-1">
-                <button
-                  onClick={() => {
-                    const access = getAccessToken();
-                    const refresh = getRefreshToken();
-                    if (access) {
-                      setAuthToken(access, refresh || null, 'local');
-                      console.debug('[Settings] reattached token to axios defaults');
-                    } else {
-                      console.warn('[Settings] no access token found to attach');
-                    }
-                  }}
-                  className="px-3 py-2 bg-gray-50 border border-gray-200 rounded text-sm"
-                >
-                  Reattach Token
-                </button>
-                {getAccessToken() && (
-                  <button
-                    onClick={() => setShowToken(v => !v)}
-                    className="px-3 py-2 bg-gray-50 border border-gray-200 rounded text-sm"
-                  >
-                    {showToken ? 'Hide Token' : 'Show Token'}
-                  </button>
-                )}
-                <button
-                  onClick={() => dispatch(refreshTokenThunk())}
-                  className="px-3 py-2 bg-gray-50 border border-gray-200 rounded text-sm"
-                >
-                  Refresh Token
-                </button>
-                <button
-                  onClick={() => fetchAuditLogs()}
-                  className="px-3 py-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700"
-                >
-                  Retry Audit Fetch
-                </button>
-              </div>
-            </div>
             <div className="flex items-center gap-3">
               {saveStatus === 'success' && (
                 <div className="flex items-center gap-2 text-green-600">

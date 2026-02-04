@@ -270,9 +270,6 @@ export const getProfile = createAsyncThunk(
       // 🚨 FIX: Instead of rejecting, just skip or wait
       if (auth.profileLoading || auth.isProfileFetching) {
         return null;
-        // Option 2: Wait a bit and retry (uncomment if preferred)
-        // await new Promise(resolve => setTimeout(resolve, 500));
-        // return await httpGetService("api/auth/profile");
       }
 
       thunkAPI.dispatch(setProfileFetching(true));
@@ -852,12 +849,8 @@ const authSlice = createSlice({
 
       // Refresh token
       .addCase(refreshToken.rejected, (state) => {
-        // Don't log out user on refresh failure - let interceptor handle it
-        // state.user = null;
         state.tempToken = null;
         state.authError = "Session expired";
-        // Don't remove userInfo - keep user logged in
-        // localStorage.removeItem("userInfo");
       })
 
       // Logout User

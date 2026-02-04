@@ -1,324 +1,354 @@
-import React from "react";
+import React, { useMemo } from "react";
 import * as Icons from "../../icons";
+import clsx from "clsx";
 import { Chart } from "../Chart";
-import { useNavigate } from "react-router-dom";
-import fetchWithTenant from "../../utils/fetchWithTenant";
 
-const ClientAnalytics = ({ client, tasks = [], dashboard = {} }) => {
-  const navigate = useNavigate();
-  const [detailTasks, setDetailTasks] = React.useState([]);
-  const [detailStatus, setDetailStatus] = React.useState("idle");
-
-  React.useEffect(() => {
-    const taskIds = tasks
-      .map((task) => task?.id || task?._id || task?.public_id || task?.task_id)
-      .filter(Boolean);
-
-    if (taskIds.length === 0) {
-      setDetailTasks([]);
-      setDetailStatus("idle");
-      return;
-    }
-
-    let isActive = true;
-    const loadDetails = async () => {
-      try {
-        setDetailStatus("loading");
-        const resp = await fetchWithTenant("/api/tasks/selected-details", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ taskIds }),
-        });
-
-        if (!isActive) return;
-
-        if (resp && (resp.error || resp.success === false)) {
-          throw new Error(resp.error || resp.message || "Failed to fetch task details");
+const ClientAnalytics = ({ client, projects = [], dashboard = {} }) => {
+  // Extract all tasks from nested client.projects[].tasks[] structure
+  const allTasks = useMemo(() => {
+    const tasks = [];
+    if (Array.isArray(projects)) {
+      projects.forEach((project) => {
+        if (Array.isArray(project.tasks)) {
+          project.tasks.forEach((task) => {
+            tasks.push({ ...task, projectName: project.name, projectId: project.id });
+          });
         }
+      });
+    }
+    return tasks;
+  }, [projects]);
 
-        const payload = resp?.data ?? resp;
-        const list = Array.isArray(payload) ? payload : payload?.data;
-        setDetailTasks(Array.isArray(list) ? list : []);
-        setDetailStatus("succeeded");
-      } catch (err) {
-        if (!isActive) return;
-        console.error("Failed to fetch task details:", err);
-        setDetailTasks([]);
-        setDetailStatus("failed");
-      }
+  // Calculate metrics from nested data
+  const metrics = useMemo(() => {
+    const total = allTasks.length;
+    const completed = allTasks.filter(t => 
+      t.status?.toLowerCase() === 'completed' || t.stage?.toUpperCase() === 'COMPLETED'
+    ).length;
+    const pending = allTasks.filter(t => 
+      t.status?.toLowerCase() === 'pending' || t.stage?.toUpperCase() === 'PENDING'
+    ).length;
+    const inProgress = allTasks.filter(t => 
+      t.stage?.toUpperCase() === 'IN PROGRESS' || t.stage?.toUpperCase() === 'IN_PROGRESS'
+    ).length;
+
+    // Priority distribution
+    const highPriority = allTasks.filter(t => t.priority?.toUpperCase() === 'HIGH').length;
+    const mediumPriority = allTasks.filter(t => t.priority?.toUpperCase() === 'MEDIUM').length;
+    const lowPriority = allTasks.filter(t => t.priority?.toUpperCase() === 'LOW').length;
+
+    // Hours
+    const totalHours = allTasks.reduce((sum, task) => sum + (task.time_alloted || task.estimated_hours || 0), 0);
+
+    return {
+      total,
+      completed,
+      pending,
+      inProgress,
+      highPriority,
+      mediumPriority,
+      lowPriority,
+      totalHours
     };
+  }, [allTasks]);
 
-    loadDetails();
+  // Project breakdown
+  const projectBreakdown = useMemo(() => {
+    return projects.map(project => {
+      const tasks = Array.isArray(project.tasks) ? project.tasks : [];
+      const completed = tasks.filter(t => 
+        t.status?.toLowerCase() === 'completed' || t.stage?.toUpperCase() === 'COMPLETED'
+      ).length;
+      const pending = tasks.filter(t => 
+        t.status?.toLowerCase() === 'pending' || t.stage?.toUpperCase() === 'PENDING'
+      ).length;
+      const inProgress = tasks.filter(t => 
+        t.stage?.toUpperCase() === 'IN PROGRESS' || t.stage?.toUpperCase() === 'IN_PROGRESS'
+      ).length;
+      return {
+        name: project.name,
+        id: project.id,
+        totalTasks: tasks.length,
+        completed,
+        pending,
+        inProgress,
+        progressPercentage: tasks.length > 0 ? Math.round((completed / tasks.length) * 100) : 0
+      };
+    });
+  }, [projects]);
 
-    return () => {
-      isActive = false;
-    };
-  }, [tasks]);
+  const hasTasks = metrics.total > 0;
+  const hasProjects = projects.length > 0;
 
-  const effectiveTasks = detailTasks.length > 0 ? detailTasks : tasks;
+  const resolveTaskStatus = (task) => {
+    const status = task.status?.toLowerCase();
+    const stage = task.stage?.toUpperCase();
 
-  // Filter tasks for this client using multiple ID fields
-  const clientTasks = effectiveTasks.filter((task) => {
-    const clientId = client?.id || client?._id;
-    return task.clientId === clientId || 
-           task.client_id === clientId || 
-           task.client === clientId ||
-           task.clientId == clientId ||
-           task?.client?.id == clientId;
-  });
+    if (status === "completed" || stage === "COMPLETED") return "COMPLETED";
+    if (status === "pending" || stage === "PENDING" || stage === "TODO") return "PENDING";
+    if (stage === "IN PROGRESS" || stage === "IN_PROGRESS") return "IN_PROGRESS";
 
-  // Use dashboard data if available, otherwise calculate from tasks
-  const totalTaskCount = dashboard.taskCount ?? clientTasks.length;
-  const projectCount = dashboard.projectCount ?? 0;
-  const completedTasksCount = dashboard.completedTasks ?? clientTasks.filter(t => t.status === "done" || t.stage === "COMPLETED").length;
-  const pendingTasksCount = dashboard.pendingTasks ?? clientTasks.filter(t => t.status !== "done" && t.stage !== "COMPLETED").length;
+    return "UNKNOWN";
+  };
 
-  const taskStatusData = React.useMemo(() => [
-    { name: "To Do", value: clientTasks.filter(t => t.status === "todo" || t.status === "To Do" || t.stage === "TODO").length, color: "#fbbf24" },
-    { name: "In Progress", value: clientTasks.filter(t => t.status === "in_progress" || t.status === "In Progress" || t.stage === "IN PROGRESS").length, color: "#3b82f6" },
-    { name: "Review", value: clientTasks.filter(t => t.status === "review" || t.status === "Review" || t.stage === "REVIEW").length, color: "#8b5cf6" },
-    { name: "Done", value: completedTasksCount, color: "#10b981" },
-  ], [clientTasks, completedTasksCount]);
+  // Prepare chart data for task status pie chart
+  const statusChartData = useMemo(() => {
+    const todo = allTasks.filter(t => resolveTaskStatus(t) === "PENDING").length;
+    const inProgress = allTasks.filter(t => resolveTaskStatus(t) === "IN_PROGRESS").length;
+    const completed = allTasks.filter(t => resolveTaskStatus(t) === "COMPLETED").length;
+    
+    return [
+      { name: 'To Do', value: todo, color: '#F59E0B' },
+      { name: 'In Progress', value: inProgress, color: '#38BDF8' },
+      { name: 'Completed', value: completed, color: '#34D399' },
+    ];
+  }, [allTasks]);
 
-  const projects = React.useMemo(() => [...new Set(clientTasks.map(task => task.projectName || task.project).filter(Boolean))], [clientTasks]);
-  const totalHours = React.useMemo(() => {
-    const hours = dashboard.billableHours ?? clientTasks.reduce((sum, task) => sum + (task.hoursLogged || 0), 0);
-    return hours || 0;
-  }, [clientTasks, dashboard.billableHours]);
-  const upcomingDeadlines = React.useMemo(() => clientTasks.filter(task => task.dueDate && new Date(task.dueDate) > new Date()).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)).slice(0, 5), [clientTasks]);
+  // Prepare chart data for priority bar chart
+  const priorityChartData = useMemo(() => {
+    return [
+      { name: 'High', value: metrics.highPriority, color: '#FB7185' },
+      { name: 'Medium', value: metrics.mediumPriority, color: '#A78BFA' },
+      { name: 'Low', value: metrics.lowPriority, color: '#22C55E' },
+    ];
+  }, [metrics]);
 
-  const isLoadingDetails = detailStatus === "loading";
-  const hasTasks = totalTaskCount > 0;
-  const hasProjects = projectCount > 0 || projects.length > 0;
-  const showLoadingState = isLoadingDetails && !hasTasks;
+  // Prepare chart data for project progress
+  const projectChartData = useMemo(() => {
+    return projectBreakdown.map(p => ({
+      name: p.name.substring(0, 12),
+      value: p.progressPercentage,
+      color: '#8B5CF6'
+    }));
+  }, [projectBreakdown]);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Back Button */}
-        <div className="mb-6 flex items-center gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm"
-          >
-            <Icons.ArrowLeft className="w-4 h-4" />
-            Back
-          </button>
+    <div className="space-y-6">
+      {/* Main Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white/90 backdrop-blur p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm font-medium text-slate-600">Total Tasks</p>
+            <div className="p-2 rounded-lg bg-sky-50">
+              <Icons.ListChecks className="w-5 h-5 text-sky-600" />
+            </div>
+          </div>
+          <p className="text-3xl font-bold text-slate-900">{metrics.total}</p>
+          <p className="text-xs text-slate-500 mt-2">Across {projects.length} projects</p>
         </div>
 
-        {/* Header */}
-        <header className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-semibold text-gray-900 mb-2">
-            {client?.name || "Client"} Analytics
-          </h1>
-          <p className="text-sm text-gray-600">Performance overview and key metrics</p>
-        </header>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {[
-            { title: "Total Tasks", value: totalTaskCount.toString(), icon: <Icons.ListChecks className="w-5 h-5 text-blue-600" /> },
-            { title: "Projects", value: (projectCount || projects.length).toString(), icon: <Icons.Projector className="w-5 h-5 text-emerald-600" /> },
-            { title: "Hours", value: `${totalHours}h`, icon: <Icons.Clock3 className="w-5 h-5 text-purple-600" /> },
-            { title: "Deadlines", value: upcomingDeadlines.length.toString(), icon: <Icons.CalendarDays className="w-5 h-5 text-orange-600" /> },
-          ].map((stat, i) => (
-            <div key={i} className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
-                  <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
-                </div>
-                <div className="p-2 bg-gray-50 rounded-lg">
-                  {stat.icon}
-                </div>
-              </div>
+        <div className="bg-white/90 backdrop-blur p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm font-medium text-slate-600">Completed</p>
+            <div className="p-2 rounded-lg bg-emerald-50">
+              <Icons.CheckCircle className="w-5 h-5 text-emerald-600" />
             </div>
-          ))}
+          </div>
+          <p className="text-3xl font-bold text-slate-900">{metrics.completed}</p>
+          <div className="mt-3 bg-emerald-100 rounded-full h-2">
+            <div 
+              className="bg-emerald-500 h-2 rounded-full" 
+              style={{ width: `${metrics.total > 0 ? (metrics.completed / metrics.total) * 100 : 0}%` }}
+            ></div>
+          </div>
         </div>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 2xl:grid-cols-2 gap-8">
-          {/* Charts & Lists */}
-          <div className="grid grid-cols-1 lg:grid-cols-1 gap-8">
-            {/* Pie Chart Card */}
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-              <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100">
-                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <Icons.ListChecks className="w-5 h-5 text-gray-600" />
-                  Task Status
-                </h2>
-              </div>
-              <div className="flex items-center justify-center h-[22rem] w-full bg-gray-50 rounded-lg border border-gray-200">
-                {showLoadingState ? (
-                  <div className="text-center p-12">
-                    <Icons.RefreshCw className="w-10 h-10 text-gray-400 mx-auto mb-4 animate-spin" />
-                    <p className="text-gray-500">Loading task details...</p>
-                  </div>
-                ) : hasTasks ? (
-                  <div className="w-80 h-80 flex items-center justify-center mx-auto">
-                    <Chart
-                      type="pie"
-                      data={taskStatusData}
-                      height={300}
-                      options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        layout: { padding: 20 }
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <div className="text-center p-12">
-                    <Icons.ListChecks className="w-24 h-24 text-gray-300 mx-auto mb-6" />
-                    <h3 className="text-2xl font-bold text-gray-500 mb-2">No Tasks Yet</h3>
-                    <p className="text-gray-400">Tasks will appear here once assigned to this client</p>
-                  </div>
-                )}
-              </div>
+        <div className="bg-white/90 backdrop-blur p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm font-medium text-slate-600">In Progress</p>
+            <div className="p-2 rounded-lg bg-violet-50">
+              <Icons.Clock className="w-5 h-5 text-violet-600" />
             </div>
+          </div>
+          <p className="text-3xl font-bold text-slate-900">{metrics.inProgress}</p>
+          <p className="text-xs text-slate-500 mt-2">{metrics.pending} pending</p>
+        </div>
 
-            {/* Projects Card */}
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 lg:h-[22rem]">
-              <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100">
-                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <Icons.Projector className="w-5 h-5 text-gray-600" />
-                  Projects
-                </h2>
-              </div>
-              {hasProjects ? (
-                <div className="h-[18rem] overflow-y-auto pr-2 space-y-3">
-                  {projects.slice(0, 6).map((project, i) => {
-                    const projectTasks = clientTasks.filter(t => (t.projectName || t.project) === project);
-                    return (
-                      <div key={i} className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors">
-                        <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Icons.Projector className="w-5 h-5 text-emerald-600" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium text-gray-900 line-clamp-1">{project}</p>
-                          <p className="text-sm text-gray-500">{projectTasks.length} tasks</p>
-                        </div>
-                        <span className="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded">
-                          {projectTasks.filter(t => t.status === 'done').length} done
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="h-[18rem] flex items-center justify-center p-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                  <div className="text-center">
-                    <Icons.Projector className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                    <h3 className="text-base font-medium text-gray-600 mb-1">No Projects</h3>
-                    <p className="text-sm text-gray-500">Assign projects to see them here</p>
-                  </div>
-                </div>
-              )}
+        <div className="bg-white/90 backdrop-blur p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm font-medium text-slate-600">Total Hours</p>
+            <div className="p-2 rounded-lg bg-amber-50">
+              <Icons.Clock3 className="w-5 h-5 text-amber-600" />
+            </div>
+          </div>
+          <p className="text-3xl font-bold text-slate-900">{metrics.totalHours}h</p>
+          <p className="text-xs text-slate-500 mt-2">Allocated time</p>
+        </div>
+      </div>
+
+      {/* Charts Section */}
+      {hasTasks ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Task Status Pie Chart */}
+          <div className="bg-white/90 backdrop-blur p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h3 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2">
+              <Icons.PieChart className="w-5 h-5 text-sky-600" />
+              Task Status Distribution
+            </h3>
+            <div className="h-80 flex items-center justify-center">
+              <Chart
+                type="pie"
+                data={statusChartData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      position: 'bottom',
+                      labels: { 
+                        font: { size: 13 },
+                        padding: 15,
+                        usePointStyle: true
+                      }
+                    }
+                  }
+                }}
+              />
             </div>
           </div>
 
-          {/* Deadlines & Hours */}
-          <div className="grid grid-cols-1 gap-8">
-            {/* Deadlines Card */}
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 lg:h-[22rem]">
-              <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100">
-                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <Icons.CalendarDays className="w-5 h-5 text-gray-600" />
-                  Upcoming Deadlines
-                </h2>
-              </div>
-              {upcomingDeadlines.length ? (
-                <div className="h-[18rem] overflow-y-auto pr-2 space-y-3">
-                  {upcomingDeadlines.map((task, i) => {
-                    const days = Math.ceil((new Date(task.dueDate) - new Date()) / (86400000));
-                    return (
-                      <div key={i} className="p-4 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0 flex-1">
-                            <h4 className="font-medium text-gray-900 line-clamp-2 mb-2">{task.title || task.name}</h4>
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <span className="flex items-center gap-1 px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded text-xs font-medium">
-                                <Icons.Clock3 className="w-3 h-3" />
-                                {days}d
-                              </span>
-                              <span className="text-xs">{new Date(task.dueDate).toLocaleDateString()}</span>
-                            </div>
-                          </div>
-                          <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded">
-                            {task.status || 'To Do'}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="h-[18rem] flex items-center justify-center p-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                  <div className="text-center">
-                    <Icons.CalendarDays className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                    <h3 className="text-base font-medium text-gray-600 mb-1">All Clear</h3>
-                    <p className="text-sm text-gray-500">No upcoming deadlines</p>
-                  </div>
-                </div>
-              )}
+          {/* Priority Bar Chart */}
+          <div className="bg-white/90 backdrop-blur p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h3 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2">
+              <Icons.BarChart3 className="w-5 h-5 text-rose-500" />
+              Priority Distribution
+            </h3>
+            <div className="h-80 flex items-center justify-center">
+              <Chart
+                type="bar"
+                data={priorityChartData}
+                options={{
+                  indexAxis: 'y',
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: { display: false }
+                  },
+                  scales: {
+                    x: {
+                      beginAtZero: true,
+                      ticks: { font: { size: 12 } }
+                    },
+                    y: {
+                      ticks: { font: { size: 12 } }
+                    }
+                  }
+                }}
+              />
             </div>
+          </div>
+        </div>
+      ) : null}
 
-            {/* Hours Card */}
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-              <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100">
-                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <Icons.Clock3 className="w-5 h-5 text-gray-600" />
-                  Hours Summary
-                </h2>
-              </div>
-              <div className="text-center">
-                <div className="mb-6">
-                  <div className="inline-flex items-center gap-3 p-6 bg-gray-50 rounded-lg border border-gray-200 mx-auto mb-4">
-                    <span className="text-4xl font-bold text-gray-900">
-                      {totalHours}
-                    </span>
-                    <span className="text-lg font-medium text-gray-600">hours</span>
-                  </div>
-                  <p className="text-sm text-gray-600">Across {totalTaskCount} tasks</p>
+      {/* Project Progress Chart */}
+      {hasProjects && projectChartData.length > 0 && (
+        <div className="bg-white/90 backdrop-blur p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h3 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2">
+            <Icons.TrendingUp className="w-5 h-5 text-violet-600" />
+            Project Progress Overview
+          </h3>
+          <div className="h-96 flex items-center justify-center">
+            <Chart
+              type="bar"
+              data={projectChartData}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'x',
+                plugins: {
+                  legend: { display: false }
+                },
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                      callback: function(value) {
+                        return value + '%';
+                      },
+                      font: { size: 11 }
+                    }
+                  },
+                  x: {
+                    ticks: { font: { size: 12 } }
+                  }
+                }
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Status Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {[
+          { label: 'Completed', value: metrics.completed, icon: Icons.CheckCircle, bgColor: 'bg-emerald-50', textColor: 'text-emerald-700', borderColor: 'border-emerald-200' },
+          { label: 'In Progress', value: metrics.inProgress, icon: Icons.Clock, bgColor: 'bg-sky-50', textColor: 'text-sky-700', borderColor: 'border-sky-200' },
+          { label: 'Pending', value: metrics.pending, icon: Icons.AlertCircle, bgColor: 'bg-amber-50', textColor: 'text-amber-700', borderColor: 'border-amber-200' },
+        ].map((item, idx) => {
+          const Icon = item.icon;
+          return (
+            <div key={idx} className={clsx('p-4 rounded-xl border shadow-sm', item.bgColor, item.borderColor)}>
+              <div className="flex items-center justify-between mb-3">
+                <span className={clsx('text-sm font-medium', item.textColor)}>{item.label}</span>
+                <div className={clsx('p-2 rounded-lg bg-white/70')}>
+                  <Icon className={clsx('w-4 h-4', item.textColor)} />
                 </div>
-                {hasTasks && (
-                  <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    {[
-                      { count: clientTasks.filter(t => t.status === 'todo').length, label: 'To Do', color: 'text-amber-600' },
-                      { count: clientTasks.filter(t => t.status === 'in_progress').length, label: 'In Progress', color: 'text-blue-600' },
-                      { count: clientTasks.filter(t => t.status === 'review').length, label: 'Review', color: 'text-purple-600' },
-                      { count: clientTasks.filter(t => t.status === 'done').length, label: 'Done', color: 'text-emerald-600' }
-                    ].map((item, i) => (
-                      <div key={i} className="text-center p-4 rounded-lg bg-white border border-gray-200">
-                        <div className={`text-2xl font-semibold ${item.color} mb-1`}>
-                          {item.count}
-                        </div>
-                        <div className="text-sm font-medium text-gray-600">{item.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
+              <p className="text-2xl font-bold text-gray-900">{item.value}</p>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Manager Info & Projects */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Manager Info */}
+        {dashboard.assignedManager && (
+          <div className="bg-white/90 backdrop-blur p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h3 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2">
+              <Icons.User className="w-5 h-5 text-violet-600" />
+              Assigned Manager
+            </h3>
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-violet-50 rounded-full flex items-center justify-center flex-shrink-0 border border-violet-100">
+                <Icons.User2 className="w-8 h-8 text-violet-600" />
+              </div>
+              <div>
+                <p className="font-semibold text-slate-900 text-lg">{dashboard.assignedManager.name}</p>
+                <p className="text-sm text-slate-500">Project Manager</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Projects Count */}
+        <div className="bg-white/90 backdrop-blur p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h3 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2">
+            <Icons.FolderOpen className="w-5 h-5 text-emerald-600" />
+            Projects Summary
+          </h3>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
+              <span className="text-sm font-medium text-slate-600">Total Projects</span>
+              <span className="text-2xl font-bold text-slate-900">{projects.length}</span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
+              <span className="text-sm font-medium text-slate-600">Total Tasks</span>
+              <span className="text-2xl font-bold text-slate-900">{metrics.total}</span>
             </div>
           </div>
         </div>
       </div>
 
-      <style jsx>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #d1d5db;
-          border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #9ca3af;
-        }
-      `}</style>
+      {/* Empty State */}
+      {!hasTasks && (
+        <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-12 text-center">
+          <Icons.BarChart3 className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Analytics Data Available</h3>
+          <p className="text-gray-600">Tasks and projects assigned to this client will appear here with detailed visualizations</p>
+        </div>
+      )}
     </div>
   );
 };

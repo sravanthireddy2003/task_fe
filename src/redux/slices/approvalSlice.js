@@ -1,15 +1,23 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import workflowApi from '../../api/workflowApi';
 
-// Load pending workflow approval requests for MANAGER role
+// Load pending workflow approval requests for MANAGER role or specific manager ID
 export const fetchQueue = createAsyncThunk(
   'approval/fetchQueue',
-  async (role = 'MANAGER', { rejectWithValue }) => {
+  async (roleOrManagerId = 'MANAGER', { rejectWithValue }) => {
     try {
-      console.debug('[approvalSlice] fetchQueue -> workflowApi.getPending', role);
-      const resp = await workflowApi.getPending(role);
-      // Response format: { success: true, data: [...] }
-      const list = Array.isArray(resp) ? resp : resp?.data ?? [];
+      const resp = await workflowApi.getPending(roleOrManagerId);
+      // Response format: { success: true, data: { ready_to_approve: [...], already_approved: [...] } }
+      // Or legacy format: [...]
+      let list;
+      if (Array.isArray(resp)) {
+        list = resp;
+      } else if (resp?.ready_to_approve) {
+        // New API format with ready_to_approve and already_approved
+        list = resp.ready_to_approve || [];
+      } else {
+        list = resp?.data ?? [];
+      }
       return Array.isArray(list) ? list : [];
     } catch (err) {
       return rejectWithValue(err.message || err || 'Failed to fetch queue');
@@ -20,13 +28,12 @@ export const fetchQueue = createAsyncThunk(
 // Approve a pending workflow request
 export const approveInstance = createAsyncThunk(
   'approval/approveInstance',
-  async ({ requestId, reason, role }, thunkAPI) => {
+  async ({ requestId, reason, role, managerId }, thunkAPI) => {
     try {
-      console.debug('[approvalSlice] approveInstance ->', { requestId, reason, role });
       const data = await workflowApi.approveOrReject({ requestId, action: 'APPROVE', reason });
-      // refresh queue after approving (use provided role or default to MANAGER)
-      const roleToFetch = role || 'MANAGER';
-      try { await thunkAPI.dispatch(fetchQueue(roleToFetch)).unwrap(); } catch (e) { console.debug('fetchQueue refresh after approve failed', e); }
+      // refresh queue after approving (use managerId if provided, otherwise role, default to MANAGER)
+      const queueParam = managerId || role || 'MANAGER';
+      try { await thunkAPI.dispatch(fetchQueue(queueParam)).unwrap(); } catch (e) { }
       return { requestId, data };
     } catch (err) {
       return thunkAPI.rejectWithValue(err.message || err || 'Approve failed');
@@ -37,13 +44,12 @@ export const approveInstance = createAsyncThunk(
 // Reject a pending workflow request
 export const rejectInstance = createAsyncThunk(
   'approval/rejectInstance',
-  async ({ requestId, reason, role }, thunkAPI) => {
+  async ({ requestId, reason, role, managerId }, thunkAPI) => {
     try {
-      console.debug('[approvalSlice] rejectInstance ->', { requestId, reason, role });
       const data = await workflowApi.approveOrReject({ requestId, action: 'REJECT', reason });
-      // refresh queue after rejecting (use provided role or default to MANAGER)
-      const roleToFetch = role || 'MANAGER';
-      try { await thunkAPI.dispatch(fetchQueue(roleToFetch)).unwrap(); } catch (e) { console.debug('fetchQueue refresh after reject failed', e); }
+      // refresh queue after rejecting (use managerId if provided, otherwise role, default to MANAGER)
+      const queueParam = managerId || role || 'MANAGER';
+      try { await thunkAPI.dispatch(fetchQueue(queueParam)).unwrap(); } catch (e) { }
       return { requestId, data };
     } catch (err) {
       return thunkAPI.rejectWithValue(err.message || err || 'Reject failed');

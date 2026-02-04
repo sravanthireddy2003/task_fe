@@ -68,9 +68,15 @@ export default function Workflow() {
     if (isAdmin) {
       // Do not trigger departments/projects network calls from this page.
       // Instead, fetch admin workflow queue (pending admin-level requests)
-      dispatch(fetchQueue('ADMIN')).catch((e) => console.warn('[Workflow page] fetchQueue(ADMIN) error', e));
+      dispatch(fetchQueue('ADMIN')).catch((e) => {});
+    } else if (isManager && authUser) {
+      // For managers, fetch queue filtered by manager numeric ID (not public_id)
+      const managerId = authUser.user_id || authUser.userId || authUser.numeric_id || authUser.id;
+      if (managerId) {
+        dispatch(fetchQueue(managerId)).catch((e) => {});
+      }
     }
-  }, [dispatch, isAdmin]);
+  }, [dispatch, isAdmin, isManager, authUser]);
 
   // Sync fetched queue to flows state for display
   useEffect(() => {
@@ -82,7 +88,7 @@ export default function Workflow() {
   // For manager workflow page: load projects for closure requests
   useEffect(() => {
     if (isManager) {
-      dispatch(fetchProjects()).catch((e) => console.warn('[Workflow page] fetchProjects error', e));
+      dispatch(fetchProjects()).catch((e) => {});
     }
   }, [dispatch, isManager]);
 
@@ -325,7 +331,7 @@ export default function Workflow() {
             subtitle="Design, automate, and monitor approval workflows across your organization"
             onRefresh={() => {
               // Refresh admin workflow queue instead of triggering departments/projects API calls
-              dispatch(fetchQueue('ADMIN')).catch((e) => console.warn('[Workflow page] fetchQueue(ADMIN) error', e));
+              dispatch(fetchQueue('ADMIN')).catch((e) => {});
             }}
           >
           </PageHeader>
@@ -810,8 +816,11 @@ export default function Workflow() {
             title="Project Management"
             subtitle="Request project closures and manage workflow approvals"
             onRefresh={() => {
-              // Refresh manager workflow queue
-              dispatch(fetchQueue('MANAGER')).catch((e) => console.warn('[Workflow page] fetchQueue(MANAGER) error', e));
+              // Refresh manager workflow queue using manager numeric ID
+              if (authUser) {
+                const managerId = authUser.user_id || authUser.userId || authUser.numeric_id || authUser.id;
+                dispatch(fetchQueue(managerId)).catch((e) => {});
+              }
             }}
           />
         </div>

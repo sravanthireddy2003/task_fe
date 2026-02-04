@@ -121,18 +121,26 @@ export const getClient = createAsyncThunk(
   async (clientId, thunkAPI) => {
     try {
       const response = await httpGetService(`api/clients/${clientId}`);
-      // Backend may return a wrapped payload like { success:true, data: { client, documents, contacts, activities, dashboard } }
-      // Normalize to return a single client object with documents/contacts merged in for UI convenience.
+      // Backend returns: { success: true, data: { client, documents, contacts, activities, projects, tasks, dashboard } }
+      // Normalize to return a single client object with all related data merged in
       if (response) {
         // If response.data exists (fetchWithTenant returns parsed body), handle both shapes
         const body = response.data || response;
-        // If body contains nested 'client' object, merge related arrays into it
+        // If body contains nested 'client' object, merge all related arrays into it
         if (body && body.client) {
+          const projects = Array.isArray(body.projects)
+            ? body.projects
+            : (body.client.projects || []);
+          const bodyTasks = Array.isArray(body.tasks)
+            ? body.tasks
+            : (Array.isArray(body.client.tasks) ? body.client.tasks : []);
           const merged = {
             ...body.client,
             documents: Array.isArray(body.documents) ? body.documents : (body.client.documents || []),
             contacts: Array.isArray(body.contacts) ? body.contacts : (body.client.contacts || []),
             activities: Array.isArray(body.activities) ? body.activities : (body.client.activities || []),
+            projects,
+            tasks: bodyTasks,
             dashboard: body.dashboard || body.client.dashboard || {},
           };
           return merged;

@@ -17,12 +17,25 @@ export function initWorkflowSocket(store) {
 
   socket.on('workflow:created', () => {
     // New workflow template or instance created – refresh core views
-    store.dispatch(fetchQueue('MANAGER'));
+    const state = store.getState();
+    const user = state.auth?.user;
+    const userRole = user?.role;
+    
+    // Use numeric user ID for managers (not public_id), role for admins
+    const managerId = user?.user_id || user?.userId || user?.numeric_id || user?.id;
+    const queueParam = (userRole === 'Manager' && managerId) ? managerId : (userRole || 'MANAGER');
+    store.dispatch(fetchQueue(queueParam));
   });
 
   // Transition event for instance moving between steps/states
   socket.on('workflow:transition', (payload) => {
-    store.dispatch(fetchQueue('MANAGER'));
+    const state = store.getState();
+    const user = state.auth?.user;
+    const userRole = user?.role;
+    
+    const managerId = user?.user_id || user?.userId || user?.numeric_id || user?.id;
+    const queueParam = (userRole === 'Manager' && managerId) ? managerId : (userRole || 'MANAGER');
+    store.dispatch(fetchQueue(queueParam));
     if (payload && payload.instanceId) {
       store.dispatch(fetchHistoryByInstance(payload.instanceId));
     }
@@ -30,14 +43,26 @@ export function initWorkflowSocket(store) {
 
   // Backwards compatibility: some servers may still emit `workflow:updated`
   socket.on('workflow:updated', (payload) => {
-    store.dispatch(fetchQueue('MANAGER'));
+    const state = store.getState();
+    const user = state.auth?.user;
+    const userRole = user?.role;
+    
+    const managerId = user?.user_id || user?.userId || user?.numeric_id || user?.id;
+    const queueParam = (userRole === 'Manager' && managerId) ? managerId : (userRole || 'MANAGER');
+    store.dispatch(fetchQueue(queueParam));
     if (payload && payload.instanceId) {
       store.dispatch(fetchHistoryByInstance(payload.instanceId));
     }
   });
 
   socket.on('workflow:escalated', (payload) => {
-    store.dispatch(fetchQueue('MANAGER'));
+    const state = store.getState();
+    const user = state.auth?.user;
+    const userRole = user?.role;
+    
+    const managerId = user?.user_id || user?.userId || user?.numeric_id || user?.id;
+    const queueParam = (userRole === 'Manager' && managerId) ? managerId : (userRole || 'MANAGER');
+    store.dispatch(fetchQueue(queueParam));
     if (payload && payload.instanceId) {
       store.dispatch(fetchHistoryByInstance(payload.instanceId));
     }
@@ -45,7 +70,13 @@ export function initWorkflowSocket(store) {
 
   socket.on('workflow:closed', (payload) => {
     // Closed instances should disappear from manager queue but remain in history
-    store.dispatch(fetchQueue('MANAGER'));
+    const state = store.getState();
+    const user = state.auth?.user;
+    const userRole = user?.role;
+    
+    const managerId = user?.user_id || user?.userId || user?.numeric_id || user?.id;
+    const queueParam = (userRole === 'Manager' && managerId) ? managerId : (userRole || 'MANAGER');
+    store.dispatch(fetchQueue(queueParam));
     if (payload && payload.instanceId) {
       store.dispatch(fetchHistoryByInstance(payload.instanceId));
     }
