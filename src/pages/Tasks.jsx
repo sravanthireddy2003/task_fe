@@ -1241,7 +1241,7 @@ import * as Icons from '../icons';
 import ViewToggle from '../components/ViewToggle';
 import fetchWithTenant from '../utils/fetchWithTenant';
 
-const { Plus, Edit2, Trash2, AlertCircle, Filter, List, Grid, Calendar, Clock, User, RefreshCw, GitBranch, Search, ChevronDown, MoreVertical, CheckCircle, XCircle, PlayCircle, PauseCircle, Eye, LayoutGrid, Clock4, Folder, ClipboardList, CheckSquare, Pause, Play } = Icons;
+const { Plus, Edit2, Trash2, AlertCircle, Filter, List, Grid, Calendar, Clock, User, RefreshCw, GitBranch, Search, ChevronDown, MoreVertical, CheckCircle, XCircle, PlayCircle, PauseCircle, Eye, LayoutGrid, Clock4, Folder, ClipboardList, CheckSquare, Pause, Play, X } = Icons;
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'sonner';
 
@@ -2460,9 +2460,10 @@ export default function Tasks() {
                   <div className="flex flex-col items-end gap-3">
                     <button
                       onClick={closeDetails}
-                      className="text-gray-400 hover:text-gray-600 text-sm"
+                      className="text-gray-400 hover:text-gray-600"
+                      aria-label="Close"
                     >
-                      ✕
+                      <X className="tm-icon w-4 h-4" />
                     </button>
                     <div className="flex flex-col items-end gap-2">
                       <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 text-red-600 text-xs font-semibold">
@@ -2486,40 +2487,54 @@ export default function Tasks() {
                   </div>
                 </div>
 
-                {/* Workflow progress */}
+                {/* Workflow summary */}
                 <div className="bg-gray-50 border border-gray-100 rounded-2xl p-4 md:p-5">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
                       <GitBranch className="tm-icon w-4 h-4 text-blue-500" />
-                      Workflow Progress
+                      Workflow
                     </h3>
-                    <button
-                      type="button"
-                      className="text-xs font-medium text-blue-600 hover:text-blue-700 inline-flex items-center gap-1"
-                    >
-                      <Clock className="tm-icon w-3 h-3" />
-                      View History
-                    </button>
                   </div>
 
-                  <div className="flex items-center gap-4">
-                    <div className="flex-1 grid grid-cols-2 gap-3 md:gap-4">
-                      <div className="flex flex-col items-center gap-2">
-                        <div className="w-full flex items-center justify-center">
-                          <div className="w-full rounded-full bg-blue-100 text-blue-700 text-xs font-semibold py-2 text-center">
-                            MANAGER REVIEW
+                  {(() => {
+                    const rawStatus =
+                      selectedTaskDetails?.workflow_state ||
+                      selectedTaskDetails?.status ||
+                      selectedTaskDetails?.stage ||
+                      'PENDING';
+                    const normalized = String(rawStatus || '')
+                      .replace(/\s+/g, '_')
+                      .toUpperCase();
+                    const order = ['PENDING', 'IN_PROGRESS', 'REVIEW', 'COMPLETED'];
+                    const currentIndex = order.indexOf(normalized);
+                    const nextStep =
+                      currentIndex >= 0 && currentIndex < order.length - 1
+                        ? order[currentIndex + 1]
+                        : null;
+                    const currentLabel = getStatusText(rawStatus);
+                    const nextLabel = normalized === 'ON_HOLD'
+                      ? 'On Hold'
+                      : nextStep
+                        ? getStatusText(nextStep)
+                        : '—';
+
+                    return (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                        <div className="rounded-xl bg-white border border-gray-100 p-4">
+                          <div className="text-xs text-gray-500 mb-1">Current status</div>
+                          <div className="text-sm font-semibold text-gray-900">
+                            {currentLabel}
+                          </div>
+                        </div>
+                        <div className="rounded-xl bg-white border border-gray-100 p-4">
+                          <div className="text-xs text-gray-500 mb-1">Next step</div>
+                          <div className="text-sm font-semibold text-gray-900">
+                            {nextLabel}
                           </div>
                         </div>
                       </div>
-                      <div className="flex flex-col items-center gap-2">
-                        <div className="w-full flex items-center justify-center">
-                          <div className="w-full rounded-full bg-gray-100 text-gray-500 text-xs font-semibold py-2 text-center">
-                            ADMIN APPROVE
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Main content */}
@@ -2600,76 +2615,8 @@ export default function Tasks() {
                     </div>
                   </div>
 
-                  {/* Right column: Comments / Activity & details */}
+                  {/* Right column: details */}
                   <div className="space-y-4">
-                    {/* Comments (using activity stream) */}
-                    <div className="bg-white border border-gray-100 rounded-2xl p-4 md:p-5">
-                      <h4 className="text-sm font-semibold text-gray-900 mb-3">Comments</h4>
-                      <div className="space-y-3 max-h-64 overflow-y-auto">
-                        {detailActivities.length ? (
-                          detailActivities.map((a, i) => (
-                            <div
-                              key={a?.id || a?._id || i}
-                              className="flex items-start gap-3 rounded-lg"
-                            >
-                              <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-semibold">
-                                {String(a?.userName || a?.user || a?.by || 'U')
-                                  .split(' ')
-                                  .map((n) => n[0])
-                                  .join('')
-                                  .slice(0, 2)
-                                  .toUpperCase()}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between gap-2">
-                                  <div className="text-sm font-medium text-gray-900">
-                                    {a?.userName || a?.user || a?.by || 'User'}
-                                  </div>
-                                  <div className="text-xs text-gray-400 whitespace-nowrap">
-                                    {a?.time || a?.createdAt || a?.timestamp
-                                      ? new Date(a.time || a.createdAt || a.timestamp).toLocaleString()
-                                      : ''}
-                                  </div>
-                                </div>
-                                <div className="text-sm text-gray-700 mt-1">
-                                  {a?.text || a?.message || a?.summary || a?.title || 'Comment'}
-                                </div>
-                              </div>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="text-sm text-gray-500">No comments yet</div>
-                        )}
-                      </div>
-
-                      {/* Comment input (UI only) */}
-                      <div className="mt-4 border-t pt-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-700">
-                            {(selectedTaskDetails.currentUserInitials || 'U')
-                              .toString()
-                              .slice(0, 2)
-                              .toUpperCase()}
-                          </div>
-                          <div className="flex-1 flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-full px-3 py-1.5">
-                            <input
-                              type="text"
-                              placeholder="Add a comment..."
-                              className="flex-1 bg-transparent text-xs md:text-sm outline-none placeholder:text-gray-400"
-                              readOnly
-                            />
-                            <button
-                              type="button"
-                              className="px-3 py-1 rounded-full bg-blue-600 text-white text-xs font-medium cursor-default opacity-60"
-                            >
-                              Send
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Key details */}
                     <div className="bg-white border border-gray-100 rounded-2xl p-4 md:p-5">
                       <h4 className="text-sm font-semibold text-gray-900 mb-3">Details</h4>
                       <div className="space-y-2 text-xs md:text-sm text-gray-700">
@@ -2726,8 +2673,9 @@ export default function Tasks() {
               <button
                 onClick={closeModal}
                 className="text-gray-400 hover:text-gray-600"
+                aria-label="Close"
               >
-                ✕
+                <X className="tm-icon w-4 h-4" />
               </button>
             </div>
 
@@ -2884,8 +2832,9 @@ export default function Tasks() {
                             type="button"
                             onClick={() => setFormData({ ...formData, assigned_to: [] })}
                             className="text-gray-400 hover:text-gray-600"
+                            aria-label="Remove assignee"
                           >
-                            ×
+                            <X className="tm-icon w-4 h-4" />
                           </button>
                         </div>
                       ) : null;

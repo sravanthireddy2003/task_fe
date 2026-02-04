@@ -328,65 +328,7 @@ export default function Workflow() {
               dispatch(fetchQueue('ADMIN')).catch((e) => console.warn('[Workflow page] fetchQueue(ADMIN) error', e));
             }}
           >
-            <button
-              onClick={openCreate}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-xl font-medium flex items-center gap-2 shadow-lg hover:shadow-xl transition-all duration-200"
-            >
-              <Icons.Plus className="w-5 h-5" />
-              Create Workflow
-            </button>
           </PageHeader>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Total Workflows</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{stats.total}</p>
-              </div>
-              <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
-                <Icons.Layers className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Active</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{stats.active}</p>
-              </div>
-              <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
-                <Icons.CheckCircle className="w-6 h-6 text-green-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Project Scope</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{stats.project}</p>
-              </div>
-              <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center">
-                <Icons.Briefcase className="w-6 h-6 text-purple-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Global Scope</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{stats.global}</p>
-              </div>
-              <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center">
-                <Icons.Globe className="w-6 h-6 text-gray-600" />
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Main Content Area */}

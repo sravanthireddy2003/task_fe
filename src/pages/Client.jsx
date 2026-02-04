@@ -95,17 +95,17 @@ const Clients = () => {
   const ClientCard = ({ client }) => (
     <Card>
       <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-            <span className="text-blue-600 font-semibold text-sm">
-              {client.name?.charAt(0) || 'C'}
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+            <span className="text-blue-700 font-bold text-base">
+              {client.name?.charAt(0)?.toUpperCase() || 'C'}
             </span>
           </div>
-          <div>
-            <h3 className="font-medium text-gray-900 text-sm">{client.name}</h3>
-            <p className="text-xs text-gray-500 flex items-center gap-1">
-              <Icons.Building2 className="tm-icon" />
-              {client.company || "No company"}
+          <div className="min-w-0">
+            <h3 className="font-semibold text-gray-900 text-sm truncate">{client.name}</h3>
+            <p className="text-xs text-gray-500 flex items-center gap-1 truncate">
+              <Icons.Building2 className="w-3 h-3 flex-shrink-0" />
+              <span className="truncate">{client.company || "No company"}</span>
             </p>
           </div>
         </div>
@@ -246,57 +246,69 @@ const Clients = () => {
           </div>
         </PageHeader>
 
-        {/* Stats Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="bg-white rounded-lg border border-gray-200 p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500">Total</p>
-                <p className="text-lg font-semibold text-gray-900">{stats.total}</p>
+        {/* Stats Grid - Consistent KPI Style */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 p-5 flex flex-col gap-3 min-h-[120px]">
+            <div className="flex items-start justify-between gap-3">
+              <div className="p-2.5 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Icons.Building2 className="w-5 h-5 text-gray-700 flex-shrink-0" />
               </div>
-              <div className="w-8 h-8 rounded bg-blue-50 flex items-center justify-center">
-                <Icons.Building2 className="tm-icon text-blue-600" />
-              </div>
+            </div>
+            <div className="flex flex-col gap-1 flex-1 justify-end">
+              <span className="text-2xl font-bold text-gray-900 leading-tight">
+                {stats.total}
+              </span>
+              <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Total Clients
+              </span>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg border border-gray-200 p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500">Active</p>
-                <p className="text-lg font-semibold text-gray-900">{stats.active}</p>
+          <div className="group relative overflow-hidden rounded-2xl border border-emerald-200 bg-emerald-50/60 hover:border-emerald-300 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 p-5 flex flex-col gap-3 min-h-[120px]">
+            <div className="flex items-start justify-between gap-3">
+              <div className="p-2.5 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Icons.CheckCircle2 className="w-5 h-5 text-gray-700 flex-shrink-0" />
               </div>
-              <div className="w-8 h-8 rounded bg-green-50 flex items-center justify-center">
-                <Icons.CheckCircle2 className="tm-icon text-green-600" />
-              </div>
+            </div>
+            <div className="flex flex-col gap-1 flex-1 justify-end">
+              <span className="text-2xl font-bold text-gray-900 leading-tight">
+                {stats.active}
+              </span>
+              <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Active
+              </span>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg border border-gray-200 p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500">Deleted</p>
-                <p className="text-lg font-semibold text-gray-900">{stats.deleted}</p>
+          <div className="group relative overflow-hidden rounded-2xl border border-red-200 bg-red-50/60 hover:border-red-300 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 p-5 flex flex-col gap-3 min-h-[120px]">
+            <div className="flex items-start justify-between gap-3">
+              <div className="p-2.5 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Icons.Trash2 className="w-5 h-5 text-gray-700 flex-shrink-0" />
               </div>
-              <div className="w-8 h-8 rounded bg-red-50 flex items-center justify-center">
-                <Icons.Trash2 className="tm-icon text-red-600" />
-              </div>
+            </div>
+            <div className="flex flex-col gap-1 flex-1 justify-end">
+              <span className="text-2xl font-bold text-gray-900 leading-tight">
+                {stats.deleted}
+              </span>
+              <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Deleted
+              </span>
             </div>
           </div>
         </div>
 
         {/* Search and Filters */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
           <div className="flex flex-col md:flex-row gap-3">
             <div className="flex-1">
               <div className="relative">
-                <Icons.Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Icons.Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
                   type="text"
-                  placeholder="Search clients..."
+                  placeholder="Search by name, company, or email..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 />
               </div>
             </div>
@@ -306,20 +318,20 @@ const Clients = () => {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full pl-3 pr-8 py-2 border border-gray-300 rounded-lg appearance-none bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm"
+                  className="w-full pl-3 pr-9 py-2.5 border border-gray-300 rounded-lg appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-medium"
                 >
                   <option value="all">All Status</option>
                   <option value="active">Active</option>
                   <option value="deleted">Deleted</option>
                 </select>
-                <Icons.ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none w-4 h-4" />
+                <Icons.ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none w-4 h-4" />
               </div>
 
               <div className="relative">
                 <select
                   value={managerFilter}
                   onChange={(e) => setManagerFilter(e.target.value)}
-                  className="w-full pl-3 pr-8 py-2 border border-gray-300 rounded-lg appearance-none bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm"
+                  className="w-full pl-3 pr-9 py-2.5 border border-gray-300 rounded-lg appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-medium"
                 >
                   <option value="all">All Managers</option>
                   {managers.map((manager, idx) => {
@@ -331,7 +343,7 @@ const Clients = () => {
                     );
                   })}
                 </select>
-                <Icons.User2 className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none w-4 h-4" />
+                <Icons.ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none w-4 h-4" />
               </div>
             </div>
           </div>
@@ -404,15 +416,19 @@ const Clients = () => {
               ))}
               
               {/* Add Client Card */}
-              <Link to="/add-client">
-                <div className="border border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 cursor-pointer flex flex-col items-center justify-center">
-                  <div className="w-10 h-10 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center mb-2">
-                    <Icons.Plus className="w-5 h-5 text-gray-400" />
-                  </div>
-                  <h3 className="text-sm font-medium text-gray-900 mb-1">Add Client</h3>
-                  <p className="text-xs text-gray-500">Click to add new</p>
+              <div
+                onClick={() => {
+                  setSelectedClient(null);
+                  setOpenClientForm(true);
+                }}
+                className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-300 hover:bg-blue-50 transition-all duration-300 cursor-pointer flex flex-col items-center justify-center min-h-[280px]"
+              >
+                <div className="w-12 h-12 rounded-full border-2 border-dashed border-gray-400 flex items-center justify-center mb-3 bg-white">
+                  <Icons.Plus className="w-6 h-6 text-gray-500" />
                 </div>
-              </Link>
+                <h3 className="text-sm font-semibold text-gray-900 mb-1">Add New Client</h3>
+                <p className="text-xs text-gray-600">Click to create</p>
+              </div>
             </div>
           </>
         ) : (
