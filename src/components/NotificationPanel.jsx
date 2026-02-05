@@ -226,7 +226,7 @@ const NotificationPanel = () => {
                 </div>
               ) : (
                 <div className="p-8 text-center">
-                  <AlertCircle className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                  <Icons.AlertCircle className="w-12 h-12 mx-auto mb-2 text-gray-300" />
                   <p className="text-gray-500 text-sm">No new notifications</p>
                 </div>
               )}
