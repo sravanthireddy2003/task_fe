@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 const UserAvatar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [fallbackSrc, setFallbackSrc] = useState(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -40,14 +41,20 @@ const UserAvatar = () => {
   const displayName = user?.firstName || user?.name || user?.email || 'User';
 
   const handleImageError = useCallback(() => {
-    console.log('❌ Image failed:', safePhotoUrl);
+    // Avoid noisy console output; set a data-uri fallback to stop repeated 404s
     setImageError(true);
-  }, [safePhotoUrl]);
+    try {
+      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128'><rect width='100%' height='100%' fill='%23829BE0' /><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='Arial, Helvetica, sans-serif' font-size='48' fill='white'>${initials}</text></svg>`;
+      const dataUri = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+      setFallbackSrc(dataUri);
+    } catch (e) {
+      setFallbackSrc(null);
+    }
+  }, [initials]);
 
   const handleImageLoad = useCallback(() => {
-    console.log('✅ Image loaded:', safePhotoUrl);
     setImageError(false);
-  }, [safePhotoUrl]);
+  }, []);
 
   // Reset error state when photo URL changes
   useEffect(() => {
@@ -113,6 +120,8 @@ const UserAvatar = () => {
               onLoad={handleImageLoad}
               loading="lazy"
             />
+          ) : fallbackSrc ? (
+            <img src={fallbackSrc} alt={displayName} className="w-full h-full rounded-full object-cover" />
           ) : (
             <span className="font-bold text-sm leading-none">{initials}</span>
           )}

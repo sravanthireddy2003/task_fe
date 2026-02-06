@@ -260,17 +260,19 @@ export default function Workflow() {
 
   // Filter workflows based on search and active filters
   const filtered = flows.filter((flow) => {
-    const matchesSearch = flow.name.toLowerCase().includes(query.toLowerCase()) ||
-      (flow.description || "").toLowerCase().includes(query.toLowerCase());
+    if (!flow) return false;
+    const name = (flow.name || '').toString();
+    const desc = (flow.description || '').toString();
+    const matchesSearch = name.toLowerCase().includes(query.toLowerCase()) || desc.toLowerCase().includes(query.toLowerCase());
 
     const matchesScope = activeFilters.scope === "all" ||
-      flow.scope?.toLowerCase() === activeFilters.scope.toLowerCase();
+      (flow.scope || '').toString().toLowerCase() === activeFilters.scope.toLowerCase();
 
     const matchesStatus = activeFilters.status === "all" ||
       (activeFilters.status === "active" ? flow.active !== false : flow.active === false);
 
-    const matchesDepartment = activeFilters.department === "all" ||
-      (flow.department_id || flow.departmentId)?.toString() === activeFilters.department;
+    const deptVal = (flow.department_id || flow.departmentId || '').toString();
+    const matchesDepartment = activeFilters.department === "all" || deptVal === activeFilters.department;
 
     return matchesSearch && matchesScope && matchesStatus && matchesDepartment;
   });

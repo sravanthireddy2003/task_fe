@@ -9,22 +9,26 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentR
   useEffect(() => {
     let interval;
     const status = task.status || task.stage;
-    
-    if (status === 'In Progress' && task.started_at) {
-      const startTime = new Date(task.started_at).getTime();
-      const baseDuration = task.total_duration || 0;
+
+    // Support multiple possible backend fields for running timer and durations.
+    const isTimerRunning = Boolean(task.timer_running || (status === 'In Progress' && (task.started_at || task.timer_started_at)));
+    const startAt = task.timer_started_at || task.started_at || null;
+    const baseDuration = task.total_duration || task.total_time_seconds || task.timeSpent || 0;
+
+    if (isTimerRunning && startAt) {
+      const startTime = new Date(startAt).getTime();
 
       interval = setInterval(() => {
-        const now = new Date().getTime();
+        const now = Date.now();
         const elapsed = Math.floor((now - startTime) / 1000);
-        setLiveTime(baseDuration + elapsed);
+        setLiveTime((baseDuration || 0) + elapsed);
       }, 1000);
     } else {
-      setLiveTime(task.total_duration || 0);
+      setLiveTime(baseDuration || 0);
     }
 
     return () => clearInterval(interval);
-  }, [task.status, task.stage, task.total_duration, task.started_at]);
+  }, [task.status, task.stage, task.total_duration, task.total_time_seconds, task.timeSpent, task.started_at, task.timer_started_at, task.timer_running]);
 
   const {
     attributes,

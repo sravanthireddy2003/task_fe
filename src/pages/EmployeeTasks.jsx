@@ -176,6 +176,29 @@ const EmployeeTasks = () => {
 
     return isTaskInReview(task) || isTaskLocked(task) || getReassignmentState(task) === 'pending';
   }, [user]);
+
+  // Re-fetch latest task and ensure it's writable before performing mutations
+  const ensureTaskWritable = useCallback(async (taskOrId) => {
+    const taskId = typeof taskOrId === 'object' ? getTaskIdForApi(taskOrId) : taskOrId;
+    if (!taskId) {
+      toast.error('Task not found');
+      return { ok: false };
+    }
+
+    try {
+      const resp = await fetchWithTenant(`/api/tasks/${taskId}`);
+      const latestTask = resp?.data || resp;
+      if (isTaskReadOnly(latestTask)) {
+        toast.error('Task is under review. No actions are allowed.');
+        return { ok: false, latestTask };
+      }
+      return { ok: true, latestTask };
+    } catch (err) {
+      toast.error('Failed to validate task state');
+      console.error('ensureTaskWritable error:', err);
+      return { ok: false };
+    }
+  }, [isTaskReadOnly]);
   const [selectedProjectId, setSelectedProjectId] = useState('');
   const [tasks, setTasks] = useState([]);
   const [kanbanData, setKanbanData] = useState([]);
@@ -294,14 +317,29 @@ const EmployeeTasks = () => {
 
   // Handle status change with validation
   const handleStatusChange = async (task, newStatus) => {
-    const validation = validateStatusTransition(task.status || task.stage, newStatus, task);
+    // Re-fetch latest task from server to re-evaluate permissions and status
+    const taskId = getTaskIdForApi(task);
+    let latestTask = task;
+    try {
+      const latestResp = await fetchWithTenant(`/api/tasks/${encodeURIComponent(taskId)}`);
+      latestTask = latestResp?.data || latestResp || task;
+    } catch (e) {
+      console.warn('Failed to fetch latest task for status change validation', e);
+    }
+
+    const validation = validateStatusTransition(latestTask.status || latestTask.stage, newStatus, latestTask);
     if (!validation.valid) {
       toast.error(validation.error);
       return;
     }
 
+    // Prevent status change if user has read-only access on latest task
+    if (isTaskReadOnly(latestTask)) {
+      toast.error('You have read-only access to this task and cannot change status');
+      return;
+    }
+
     try {
-      const taskId = getTaskIdForApi(task);
       const result = await dispatch(updateTaskStatus({ 
         taskId, 
         status: newStatus, 
@@ -328,9 +366,19 @@ const EmployeeTasks = () => {
       return;
     }
 
+    // Re-fetch latest task from server to re-evaluate permissions
+    const taskId = getTaskIdForApi(task);
+    let latestTask = task;
+    try {
+      const latestResp = await fetchWithTenant(`/api/tasks/${encodeURIComponent(taskId)}`);
+      latestTask = latestResp?.data || latestResp || task;
+    } catch (e) {
+      console.warn('Could not fetch latest task for reassignment check', e);
+    }
+
     // Prevent duplicate or forbidden reassignment requests
-    if (isTaskReadOnly(task)) {
-      toast.error('Task is under review. No actions are allowed.');
+    if (isTaskReadOnly(latestTask)) {
+      toast.error('Task is under review or you have read-only access. No actions are allowed.');
       return;
     }
     if (getReassignmentState(task) === 'pending') {
@@ -706,6 +754,8 @@ const EmployeeTasks = () => {
   // Task action functions - updated for your API
   const handleStartTask = async (taskOrId) => {
     try {
+      const writable = await ensureTaskWritable(taskOrId);
+      if (!writable.ok) return;
       // Handle both task objects and task IDs
       const taskId = typeof taskOrId === 'object' ? getTaskIdForApi(taskOrId) : taskOrId;
       const task = typeof taskOrId === 'object' ? taskOrId : tasks.find(t => getTaskIdForApi(t) === taskOrId);
@@ -746,6 +796,8 @@ const EmployeeTasks = () => {
 
   const handlePauseTask = async (taskOrId) => {
     try {
+      const writable = await ensureTaskWritable(taskOrId);
+      if (!writable.ok) return;
       // Handle both task objects and task IDs
       const taskId = typeof taskOrId === 'object' ? getTaskIdForApi(taskOrId) : taskOrId;
       const task = typeof taskOrId === 'object' ? taskOrId : tasks.find(t => getTaskIdForApi(t) === taskOrId);
@@ -788,6 +840,8 @@ const EmployeeTasks = () => {
 
   const handleResumeTask = async (taskOrId) => {
     try {
+      const writable = await ensureTaskWritable(taskOrId);
+      if (!writable.ok) return;
       // Handle both task objects and task IDs
       const taskId = typeof taskOrId === 'object' ? getTaskIdForApi(taskOrId) : taskOrId;
       const task = typeof taskOrId === 'object' ? taskOrId : tasks.find(t => getTaskIdForApi(t) === taskOrId);
@@ -828,11 +882,9 @@ const EmployeeTasks = () => {
     // Handle both task objects and task IDs
     const task = typeof taskOrId === 'object' ? taskOrId : tasks.find(t => getTaskIdForApi(t) === taskOrId);
 
-    // Block any write actions if the task is read-only (review/locked/reassignment)
-    if (task && isTaskReadOnly(task)) {
-      toast.error('Task is under review. No actions are allowed.');
-      return;
-    }
+    // Revalidate latest state and block if read-only
+    const writable = await ensureTaskWritable(taskOrId);
+    if (!writable.ok) return;
 
     try {
       // Prevent completing a task that is already in review
@@ -977,6 +1029,8 @@ const EmployeeTasks = () => {
     }
     setActionRunning(true);
     try {
+      const writable = await ensureTaskWritable(selectedTask);
+      if (!writable.ok) return;
       const taskId = getTaskIdForApi(selectedTask);
       const payload = {
         taskId: taskId,
@@ -1038,6 +1092,8 @@ const EmployeeTasks = () => {
     }
     setActionRunning(true);
     try {
+      const writable = await ensureTaskWritable(selectedTask);
+      if (!writable.ok) return;
       const taskId = getTaskIdForApi(selectedTask);
       const payload = {
         title: editingChecklistValues.title.trim(),
@@ -1089,6 +1145,8 @@ const EmployeeTasks = () => {
     if (!window.confirm('Remove this checklist item?')) return;
     setActionRunning(true);
     try {
+      const writable = await ensureTaskWritable(selectedTask);
+      if (!writable.ok) return;
       const resp = await fetchWithTenant(`/api/employee/subtask/${itemId}`, {
         method: 'DELETE',
       });

@@ -107,9 +107,17 @@ const ManagerApprovalPanel = () => {
         reason: rejectReason.trim()
       })).unwrap();
 
-      // Handle the response
-      if (result && result.success) {
-        toast.success('Task rejected');
+      // Handle the response. Some backends return the data object directly
+      // (e.g. { message, newStatus }) instead of { success: true, data: {...} }.
+      const isSuccess = result?.success === true ||
+                        result?.newStatus === 'APPROVED' ||
+                        result?.newStatus === 'COMPLETED' ||
+                        result?.newStatus === 'IN_PROGRESS' ||
+                        (result?.message && !result?.error);
+
+      if (isSuccess) {
+        const successMessage = result?.message || result?.data?.message || 'Task rejected';
+        toast.success(successMessage);
         setShowRejectModal(false);
         setSelectedRequest(null);
         setRejectReason('');

@@ -673,18 +673,20 @@ const ManagerTasks = () => {
             className="ml-1"
           />
 
-          {/* Add Task Button */}
-          <button
-            onClick={openCreateTaskModal}
-            disabled={!selectedProjectId || loading || isProjectLocked}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${!selectedProjectId || loading || isProjectLocked
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              : 'bg-blue-600 text-white hover:bg-blue-700'
-              }`}
-          >
-            {isProjectLocked ? <Lock className="tm-icon" /> : <Plus className="tm-icon" />}
-            {isProjectLocked ? 'Locked' : 'Add Task'}
-          </button>
+          {/* Add Task Button - show in header only when project selected, not loading, and project has tasks */}
+          {selectedProjectId && !loading && Array.isArray(tasks) && tasks.length > 0 && (
+            <button
+              onClick={openCreateTaskModal}
+              disabled={!selectedProjectId || loading || isProjectLocked}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${!selectedProjectId || loading || isProjectLocked
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+            >
+              {isProjectLocked ? <Lock className="tm-icon" /> : <Plus className="tm-icon" />}
+              {isProjectLocked ? 'Locked' : 'Add Task'}
+            </button>
+          )}
         </div>
       </PageHeader>
 
@@ -776,18 +778,8 @@ const ManagerTasks = () => {
             </div>
 
             <div className="flex flex-col gap-3 md:w-auto w-full">
-              <button
-                onClick={openCreateTaskModal}
-                disabled={isProjectLocked}
-                className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors ${isProjectLocked
-                  ? 'bg-gray-400 text-white cursor-not-allowed'
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
-                  }`}
-              >
-                {isProjectLocked ? <Lock className="tm-icon" /> : <Plus className="tm-icon" />}
-                {isProjectLocked ? 'Project Locked' : 'Add New Task'}
-              </button>
-              <RefreshButton onClick={() => loadTasks(selectedProjectId)} loading={loading} className="px-4 py-3" />
+              {/* Primary actions (Add / Refresh) are shown in the header to avoid duplication.
+                  The project card intentionally hides create/refresh controls. */}
             </div>
           </div>
         </div>

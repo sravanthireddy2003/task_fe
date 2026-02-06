@@ -188,11 +188,28 @@ const TaskCard = ({ taskId, task: propTask }) => {
           />
 
           <Button
-            onClick={() => setOpenStage(true)}
+            onClick={() => {
+              // Prevent opening status modal if current user has read-only assignment
+              const assigned = localTask.assignedUsers || localTask.assigned_users || [];
+              const currentUserAssignment = Array.isArray(assigned) ? assigned.find(a =>
+                String(a.id || a._id || a.internalId || a.public_id) === String(user?.id || user?._id || user?.internal_id || user?.public_id)
+              ) : null;
+              if (currentUserAssignment?.readOnly === true) {
+                return;
+              }
+              setOpenStage(true);
+            }}
             variant="secondary"
             size="sm"
             label="Update Status"
             className="flex-1"
+            disabled={(() => {
+              const assigned = localTask.assignedUsers || localTask.assigned_users || [];
+              const currentUserAssignment = Array.isArray(assigned) ? assigned.find(a =>
+                String(a.id || a._id || a.internalId || a.public_id) === String(user?.id || user?._id || user?.internal_id || user?.public_id)
+              ) : null;
+              return currentUserAssignment?.readOnly === true;
+            })()}
           />
         </div>
       </div>

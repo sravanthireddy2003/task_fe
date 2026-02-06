@@ -19,13 +19,34 @@ const TaskRequestButton = ({ task, projectId, onSuccess }) => {
 
   // Only show for employees and tasks in progress
   const isEmployee = user?.role?.toLowerCase() === 'employee';
-  const canRequest = isEmployee && task?.status === 'IN_PROGRESS';
+  const taskStatus = (task?.status || (task?.stage || '')).toString().toUpperCase();
+  const isInProgress = taskStatus === 'IN_PROGRESS' || taskStatus === 'IN PROGRESS' || taskStatus === 'INPROGRESS';
 
-  if (!canRequest) return null;
+  // Determine if current user has readOnly assignment on this task
+  const isUserReadOnly = (() => {
+    if (!task || !user) return false;
+    const assigned = task.assignedUsers || task.assigned_users || task.assigned_to || [];
+    if (Array.isArray(assigned)) {
+      const found = assigned.find(a =>
+        String(a.id || a._id || a.internalId || a.public_id) === String(user.id || user._id || user.internal_id || user.public_id)
+      );
+      return found?.readOnly === true;
+    }
+    return false;
+  })();
+
+  const canRequest = isEmployee && isInProgress && !isUserReadOnly;
+
+  if (!isEmployee || !isInProgress) return null;
 
   const handleRequest = async () => {
     if (!reason.trim()) {
       toast.error('Please provide a reason for completion request');
+      return;
+    }
+
+    if (isUserReadOnly) {
+      toast.error('You have read-only access to this task and cannot request completion');
       return;
     }
 
@@ -55,9 +76,10 @@ const TaskRequestButton = ({ task, projectId, onSuccess }) => {
   return (
     <>
       <button
-        onClick={() => setShowReasonModal(true)}
-        disabled={loading}
-        className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 rounded-md transition-colors"
+        onClick={() => { if (!isUserReadOnly) setShowReasonModal(true); }}
+        disabled={loading || isUserReadOnly}
+        title={isUserReadOnly ? 'You have read-only access to this task' : ''}
+        className={`inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white ${isUserReadOnly ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'} disabled:bg-blue-400 rounded-md transition-colors`}
       >
         {loading ? (
           <Loader2 className="w-4 h-4 animate-spin" />

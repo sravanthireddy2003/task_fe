@@ -36,8 +36,12 @@ export async function httpPostService(url, data, config = {}) {
             }
         if (tenantId) headers["x-tenant-id"] = tenantId;
         // allow callers to skip attaching Authorization (for verify-otp/resend flows)
-        if (!config.skipAuth && token) headers["Authorization"] = `Bearer ${token}`;
-        else console.warn(`[httpPostService] no access token found for request to ${url}`);
+        if (!config.skipAuth && token) {
+            headers["Authorization"] = `Bearer ${token}`;
+        } else if (!config.skipAuth && !token) {
+            // Only warn when we expected an auth header but no token was available
+            console.warn(`[httpPostService] no access token found for request to ${url}`);
+        }
         console.debug('[httpPostService] POST', url, { tenantId, hasToken: !!token });
         const resp = await api.post(`/${url}`.replace(/^\/+/, ""), data, { ...config, headers });
         return resp.data;

@@ -38,12 +38,34 @@ const Approvals = () => {
               assignees: []
             };
           }
+
+          // Prefer explicit current_assignee_name when provided
           if (request.current_assignee_name) {
             acc[key].assignees.push({
+              id: request.current_assignee_id || null,
               name: request.current_assignee_name,
-              department: request.current_assignee_department_name || 'Unknown Department'
+              department: request.current_assignee_department_name || null
             });
+            return acc;
           }
+
+          // If backend returned assigned_to or assignedUsers on the request object, use that
+          if (request.assigned_to) {
+            // assigned_to may be id or object
+            if (typeof request.assigned_to === 'string' || typeof request.assigned_to === 'number') {
+              acc[key].assignees.push({ id: request.assigned_to, name: null });
+            } else if (typeof request.assigned_to === 'object' && request.assigned_to !== null) {
+              acc[key].assignees.push({ id: request.assigned_to.id || null, name: request.assigned_to.name || null });
+            }
+            return acc;
+          }
+
+          if (Array.isArray(request.assignees) && request.assignees.length) {
+            // Keep any grouped assignees (name only)
+            request.assignees.forEach(a => acc[key].assignees.push({ id: a.id || null, name: a.name || null, department: a.department }));
+            return acc;
+          }
+
           return acc;
         }, {});
 
@@ -128,7 +150,13 @@ const Approvals = () => {
               'Content-Type': 'application/json',
               'Accept': 'application/json'
             },
-            body: JSON.stringify({ new_assignee_id: selectedAssignee })
+            // Ensure status and assigned_to are sent so task won't have null status
+            body: JSON.stringify({
+              new_assignee_id: selectedAssignee,
+              assigned_to: [selectedAssignee],
+              status: 'In Progress',
+              task_status: { current_status: 'In Progress' }
+            })
           }
         );
 
@@ -136,12 +164,36 @@ const Approvals = () => {
           throw new Error(resp.error || 'Approve + reassign failed');
         }
 
-        toast.success(resp?.message || 'Reassignment approved and applied');
-        setShowReassignModal(false);
-        setSelectedAssignee('');
-        setSelectedRequest(null);
-        setPendingApprovalRequestId(null);
-        loadReassignmentRequests();
+          // Update local requests immediately so UI reflects approved assignee.
+          try {
+            const resolvedName = (resp && resp.assigned_to && (resp.assigned_to.name || resp.assigned_to.full_name))
+              || (employees.find(e => String(e.id) === String(selectedAssignee)) || {}).name
+              || String(selectedAssignee);
+
+            setRawRequests(prev => prev.map(r => {
+              if (r.id === pendingApprovalRequestId) {
+                return {
+                  ...r,
+                  status: 'Approved',
+                  assignees: [{ id: selectedAssignee, name: resolvedName }],
+                  responded_at: resp.responded_at || r.responded_at,
+                  responded_by: resp.responded_by || r.responded_by,
+                  responder_name: resp.responder_name || r.responder_name
+                };
+              }
+              return r;
+            }));
+          } catch (e) {
+            console.warn('Failed to update local requests after approve', e);
+          }
+
+          toast.success(resp?.message || 'Reassignment approved and applied');
+          setShowReassignModal(false);
+          setSelectedAssignee('');
+          setSelectedRequest(null);
+          setPendingApprovalRequestId(null);
+          // still refresh the list to get canonical server state
+          loadReassignmentRequests();
       } catch (err) {
         toast.error(err?.message || 'Failed to approve and reassign');
       } finally {
@@ -156,16 +208,42 @@ const Approvals = () => {
       const taskId = selectedRequest.task_id || selectedRequest.task_public_id;
       const projectId = selectedRequest.project_public_id;
 
+      // Build payload compatible with backend enum and assignedUsers format.
+      // Ensure old assignee is preserved as readOnly and new assignee is added.
+      let oldAssigneeId = null;
+      try {
+        // Attempt to fetch current task details to determine existing assignees
+        const taskResp = await fetchWithTenant(`/api/tasks/${encodeURIComponent(taskId)}`);
+        const taskObj = taskResp?.data || taskResp || {};
+        if (Array.isArray(taskObj.assignedUsers) && taskObj.assignedUsers.length) {
+          oldAssigneeId = taskObj.assignedUsers[0].id || taskObj.assignedUsers[0].internalId || taskObj.assignedUsers[0].public_id || null;
+        } else if (Array.isArray(taskObj.assigned_to) && taskObj.assigned_to.length) {
+          oldAssigneeId = taskObj.assigned_to[0];
+        } else if (selectedRequest && Array.isArray(selectedRequest.assignees) && selectedRequest.assignees.length) {
+          // fallback: use grouped request assignees if present (may not include ids)
+          oldAssigneeId = selectedRequest.assignees[0].id || null;
+        }
+      } catch (e) {
+        console.warn('Could not fetch task details for assignee resolution', e);
+      }
+
+      const assignedUsers = [];
+      if (oldAssigneeId) assignedUsers.push({ id: oldAssigneeId, readOnly: true });
+      if (selectedAssignee) assignedUsers.push({ id: selectedAssignee, readOnly: false });
+
       const payload = {
-        assigned_to: selectedAssignee,
+        // backend expects assigned_to as an array of ids (and sometimes assignedUsers objects)
+        assignedUsers,
+        assigned_to: assignedUsers.map(u => u.id).filter(Boolean),
         projectId: projectId,
-        status: 'IN_PROGRESS',
+        project_id: projectId,
+        // Use enum-correct status values (backend expects 'In Progress' etc.)
+        status: 'In Progress',
+        stage: 'In Progress',
         handleResignationRequestId: selectedRequest.id,
-        stage: 'IN_PROGRESS',
         task_status: {
-          current_status: 'IN_PROGRESS'
-        },
-        project_id: projectId
+          current_status: 'In Progress'
+        }
       };
 
       const resp = await fetchWithTenant(`/api/projects/tasks/${encodeURIComponent(taskId)}`, {
@@ -195,6 +273,17 @@ const Approvals = () => {
 
   // Format requests
   const approvals = useMemo(() => {
+    const resolveAssigneeName = (a) => {
+      if (!a) return null;
+      if (a.name) return a.department ? `${a.name} (${a.department})` : a.name;
+      if (a.id) {
+        const emp = employees.find(e => String(e.id || e._id) === String(a.id));
+        if (emp) return emp.name || emp.full_name || emp.first_name + ' ' + emp.last_name;
+        return String(a.id);
+      }
+      return null;
+    };
+
     return rawRequests.map(request => ({
       id: request.id,
       type: 'task_reassignment',
@@ -202,9 +291,13 @@ const Approvals = () => {
       project: request.project_name || `Project ${request.project_id || 'Unknown'}`,
       title: `Task Reassignment: ${request.task_title || 'Unknown Task'}`,
       requester: request.requester_name || 'Unknown',
-      assignedTo: request.assignees && request.assignees.length > 0 
-        ? request.assignees.map(a => `${a.name} (${a.department})`).join(', ')
-        : 'Unassigned',
+      assignedTo: (() => {
+        if (request.assignees && request.assignees.length > 0) {
+          const names = request.assignees.map(a => resolveAssigneeName(a)).filter(Boolean);
+          return names.length ? names.join(', ') : 'Unassigned';
+        }
+        return 'Unassigned';
+      })(),
       date: request.requested_at ? new Date(request.requested_at).toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
@@ -229,7 +322,7 @@ const Approvals = () => {
         project_id: request.project_id
       }
     }));
-  }, [rawRequests]);
+  }, [rawRequests, employees]);
 
   // Legacy handlers
   const handleApprove = (id) => {

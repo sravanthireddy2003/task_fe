@@ -541,26 +541,7 @@ export default function Tasks() {
                       <AlertCircle className="tm-icon-hero mx-auto mb-3 opacity-50" />
                       <p className="text-lg font-medium text-gray-900 mb-1">No tasks found</p>
                       <p className="mb-6">No tasks match your selected filters.</p>
-                      <div className="flex gap-3 justify-center">
-                        <button
-                          onClick={() => openModal()}
-                          disabled={isProjectLocked}
-                          className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${isProjectLocked
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            : 'bg-blue-600 text-white hover:bg-blue-700'
-                            }`}
-                        >
-                          {isProjectLocked ? <Icons.Lock className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                          {isProjectLocked ? 'Project Locked' : 'Create Task'}
-                        </button>
-                        <button
-                          onClick={handleRefreshTasks}
-                          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors border border-gray-300 flex items-center gap-2"
-                        >
-                          <RefreshCw className="w-4 h-4" />
-                          Refresh
-                        </button>
-                      </div>
+                      <div className="flex gap-3 justify-center" />
                     </td>
                   </tr>
                 ) : (
@@ -655,26 +636,7 @@ export default function Tasks() {
               <AlertCircle className="tm-icon-hero mx-auto mb-3 opacity-50" />
               <p className="text-lg font-medium text-gray-900 mb-1">No tasks found</p>
               <p className="text-gray-600 mb-6">No tasks match your selected filters.</p>
-              <div className="flex gap-3 justify-center">
-                <button
-                  onClick={() => openModal()}
-                  disabled={isProjectLocked}
-                  className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${isProjectLocked
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
-                    }`}
-                >
-                  {isProjectLocked ? <Icons.Lock className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                  {isProjectLocked ? 'Project Locked' : 'Create Task'}
-                </button>
-                <button
-                  onClick={handleRefreshTasks}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors border border-gray-300 flex items-center gap-2"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  Refresh
-                </button>
-              </div>
+              <div className="flex gap-3 justify-center" />
             </div>
           );
         }
@@ -957,18 +919,20 @@ export default function Tasks() {
             </div>
           </div>
 
-          {/* Refresh Button */}
-          <button
-            onClick={handleRefreshTasks}
-            disabled={selectedProjectId === 'all' || isFetching}
-            className={`p-2 rounded-lg border ${selectedProjectId === 'all' || isFetching
-              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              : 'bg-white text-blue-600 hover:bg-blue-50 border-blue-200'
-              }`}
-            title="Refresh tasks"
-          >
-            <RefreshCw className={`tm-icon ${isFetching ? 'animate-spin' : ''} text-blue-600`} />
-          </button>
+          {/* Refresh Button - show in header only when there are tasks for the selected project */}
+          {selectedProjectId !== 'all' && !isFetching && Array.isArray(tasks) && tasks.length > 0 && (
+            <button
+              onClick={handleRefreshTasks}
+              disabled={selectedProjectId === 'all' || isFetching}
+              className={`p-2 rounded-lg border ${selectedProjectId === 'all' || isFetching
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-blue-600 hover:bg-blue-50 border-blue-200'
+                }`}
+              title="Refresh tasks"
+            >
+              <RefreshCw className={`tm-icon ${isFetching ? 'animate-spin' : ''} text-blue-600`} />
+            </button>
+          )}
 
           {/* View Toggle: shared list/grid control (grid maps to kanban) */}
           <ViewToggle
@@ -977,18 +941,20 @@ export default function Tasks() {
             className="ml-1"
           />
 
-          {/* Add Task Button */}
-          <button
-            onClick={() => openModal()}
-            disabled={selectedProjectId === 'all' || isFetching || isProjectLocked}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${selectedProjectId === 'all' || isFetching || isProjectLocked
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              : 'bg-blue-600 text-white hover:bg-blue-700'
-              }`}
-          >
-            {isProjectLocked ? <Icons.Lock className="tm-icon" /> : <Plus className="tm-icon" />}
-            {isProjectLocked ? 'Locked' : 'Add Task'}
-          </button>
+          {/* Add Task Button - show in header only when there are tasks for the selected project */}
+          {selectedProjectId !== 'all' && !isFetching && Array.isArray(tasks) && tasks.length > 0 && (
+            <button
+              onClick={() => openModal()}
+              disabled={selectedProjectId === 'all' || isFetching || isProjectLocked}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${selectedProjectId === 'all' || isFetching || isProjectLocked
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+            >
+              {isProjectLocked ? <Icons.Lock className="tm-icon" /> : <Plus className="tm-icon" />}
+              {isProjectLocked ? 'Locked' : 'Add Task'}
+            </button>
+          )}
         </div>
       </div>
 
