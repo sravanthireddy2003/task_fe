@@ -47,8 +47,11 @@ const workflowApi = {
       body = { requestId, action: 'APPROVE', reason };
     }
 
+    // httpPostService already returns the parsed response body (resp.data).
+    // Returning the full parsed response preserves the top-level `success` flag
+    // and `message` fields so callers can reliably decide success vs error.
     const resp = await httpPostService('api/workflow/approve', body);
-    return resp?.data ?? resp;
+    return resp;
   },
 
   getHistory: async ({ entityType, entityId }) => {
