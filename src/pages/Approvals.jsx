@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import * as Icons from '../icons';
 import ViewToggle from "../components/ViewToggle";
-
-
+ 
+ 
 const { Eye, Check, X, List, Grid, Plus, RefreshCw, AlertCircle, User, Clock, ChevronRight, Rows4, LayoutGrid } = Icons;
 import { toast } from 'sonner';
 import fetchWithTenant from '../utils/fetchWithTenant';
 import { useSelector } from 'react-redux';
 import { selectUser } from '../redux/slices/authSlice';
-
+ 
 const Approvals = () => {
   const user = useSelector(selectUser);
   const [view, setView] = useState('list'); // card | list
@@ -22,13 +22,13 @@ const Approvals = () => {
   const [approvingRequestId, setApprovingRequestId] = useState(null);
   const [rejectingRequestId, setRejectingRequestId] = useState(null);
   const [pendingApprovalRequestId, setPendingApprovalRequestId] = useState(null);
-
+ 
   // Load task reassignment requests
   const loadReassignmentRequests = async () => {
     try {
       setLoading(true);
       const resp = await fetchWithTenant('/api/tasks/reassign-requests');
-      
+     
       if (resp && resp.success && Array.isArray(resp.requests)) {
         const groupedRequests = resp.requests.reduce((acc, request) => {
           const key = request.id;
@@ -38,7 +38,7 @@ const Approvals = () => {
               assignees: []
             };
           }
-
+ 
           // Prefer explicit current_assignee_name when provided
           if (request.current_assignee_name) {
             acc[key].assignees.push({
@@ -48,7 +48,7 @@ const Approvals = () => {
             });
             return acc;
           }
-
+ 
           // If backend returned assigned_to or assignedUsers on the request object, use that
           if (request.assigned_to) {
             // assigned_to may be id or object
@@ -59,16 +59,16 @@ const Approvals = () => {
             }
             return acc;
           }
-
+ 
           if (Array.isArray(request.assignees) && request.assignees.length) {
             // Keep any grouped assignees (name only)
             request.assignees.forEach(a => acc[key].assignees.push({ id: a.id || null, name: a.name || null, department: a.department }));
             return acc;
           }
-
+ 
           return acc;
         }, {});
-
+ 
         setRawRequests(Object.values(groupedRequests));
       } else {
         setRawRequests([]);
@@ -80,7 +80,7 @@ const Approvals = () => {
       setLoading(false);
     }
   };
-
+ 
   // Load employees for reassignment
   const loadEmployees = async () => {
     try {
@@ -90,7 +90,7 @@ const Approvals = () => {
       }
     } catch (err) {}
   };
-
+ 
   // Handle approve request flow
   const handleApproveRequest = (requestId, requestData) => {
     if (!requestId) return;
@@ -98,30 +98,30 @@ const Approvals = () => {
     setPendingApprovalRequestId(requestId);
     setShowReassignModal(true);
   };
-
+ 
   // Handle reject reassignment request
   const handleRejectRequest = async (requestId, requestData) => {
     if (!requestId || rejectingRequestId) return;
     setRejectingRequestId(requestId);
-    
+   
     try {
       const taskId = requestData.task_id || requestData.task_public_id;
       const resp = await fetchWithTenant(`/api/tasks/${taskId}/reassign-requests/${requestId}/reject`, {
         method: 'POST',
       });
-
+ 
       if (resp && resp.error) {
         throw new Error(resp.error);
       }
-
+ 
       toast.success(resp?.message || 'Request rejected. Task unlocked.');
-      
-      setRawRequests(prev => prev.map(req => 
-        req.id === requestId 
+     
+      setRawRequests(prev => prev.map(req =>
+        req.id === requestId
           ? { ...req, status: 'REJECTED' }
           : req
       ));
-      
+     
       loadReassignmentRequests();
     } catch (err) {
       toast.error(err?.message || 'Failed to reject request');
@@ -129,14 +129,14 @@ const Approvals = () => {
       setRejectingRequestId(null);
     }
   };
-
+ 
   // Handle task reassignment after approval
   const handleReassignTask = async () => {
     if (!selectedRequest || !selectedAssignee) {
       toast.error('Select an employee to reassign the task to');
       return;
     }
-    
+   
     if (pendingApprovalRequestId) {
       setReassigning(true);
       setApprovingRequestId(pendingApprovalRequestId);
@@ -159,17 +159,17 @@ const Approvals = () => {
             })
           }
         );
-
+ 
         if (resp && resp.error) {
           throw new Error(resp.error || 'Approve + reassign failed');
         }
-
+ 
           // Update local requests immediately so UI reflects approved assignee.
           try {
             const resolvedName = (resp && resp.assigned_to && (resp.assigned_to.name || resp.assigned_to.full_name))
               || (employees.find(e => String(e.id) === String(selectedAssignee)) || {}).name
               || String(selectedAssignee);
-
+ 
             setRawRequests(prev => prev.map(r => {
               if (r.id === pendingApprovalRequestId) {
                 return {
@@ -186,7 +186,7 @@ const Approvals = () => {
           } catch (e) {
             console.warn('Failed to update local requests after approve', e);
           }
-
+ 
           toast.success(resp?.message || 'Reassignment approved and applied');
           setShowReassignModal(false);
           setSelectedAssignee('');
@@ -202,12 +202,12 @@ const Approvals = () => {
       }
       return;
     }
-
+ 
     setReassigning(true);
     try {
       const taskId = selectedRequest.task_id || selectedRequest.task_public_id;
       const projectId = selectedRequest.project_public_id;
-
+ 
       // Build payload compatible with backend enum and assignedUsers format.
       // Ensure old assignee is preserved as readOnly and new assignee is added.
       let oldAssigneeId = null;
@@ -226,11 +226,11 @@ const Approvals = () => {
       } catch (e) {
         console.warn('Could not fetch task details for assignee resolution', e);
       }
-
+ 
       const assignedUsers = [];
       if (oldAssigneeId) assignedUsers.push({ id: oldAssigneeId, readOnly: true });
       if (selectedAssignee) assignedUsers.push({ id: selectedAssignee, readOnly: false });
-
+ 
       const payload = {
         // backend expects assigned_to as an array of ids (and sometimes assignedUsers objects)
         assignedUsers,
@@ -245,7 +245,7 @@ const Approvals = () => {
           current_status: 'In Progress'
         }
       };
-
+ 
       const resp = await fetchWithTenant(`/api/projects/tasks/${encodeURIComponent(taskId)}`, {
         method: 'PUT',
         headers: {
@@ -254,11 +254,11 @@ const Approvals = () => {
         },
         body: JSON.stringify(payload)
       });
-
+ 
       if (resp && resp.error) {
         throw new Error(resp.error || 'Reassignment failed');
       }
-
+ 
       toast.success('Task reassigned successfully!');
       setShowReassignModal(false);
       setSelectedAssignee('');
@@ -270,7 +270,7 @@ const Approvals = () => {
       setReassigning(false);
     }
   };
-
+ 
   // Format requests
   const approvals = useMemo(() => {
     const resolveAssigneeName = (a) => {
@@ -283,7 +283,7 @@ const Approvals = () => {
       }
       return null;
     };
-
+ 
     return rawRequests.map(request => ({
       id: request.id,
       type: 'task_reassignment',
@@ -307,8 +307,8 @@ const Approvals = () => {
         hour: '2-digit',
         minute: '2-digit'
       }) : '',
-      status: request.status === 'PENDING' ? 'Pending' : 
-              request.status === 'APPROVE' ? 'Approved' : 
+      status: request.status === 'PENDING' ? 'Pending' :
+              request.status === 'APPROVE' ? 'Approved' :
               request.status === 'REJECT' ? 'Rejected' : request.status,
       requestData: request,
       reason: request.reason,
@@ -323,7 +323,7 @@ const Approvals = () => {
       }
     }));
   }, [rawRequests, employees]);
-
+ 
   // Legacy handlers
   const handleApprove = (id) => {
     const request = rawRequests.find(a => a.id === id);
@@ -331,20 +331,20 @@ const Approvals = () => {
       handleApproveRequest(id, request);
     }
   };
-
+ 
   const handleReject = (id) => {
     const request = rawRequests.find(a => a.id === id);
     if (request) {
       handleRejectRequest(id, request);
     }
   };
-
+ 
   // Load data on component mount
   useEffect(() => {
     loadReassignmentRequests();
     loadEmployees();
   }, []);
-
+ 
   return (
     <div className="p-4 md:p-6 bg-gray-50 min-h-screen">
       {/* Header */}
@@ -369,7 +369,7 @@ const Approvals = () => {
           />
         </div>
       </div>
-
+ 
       {/* Stats Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-xl p-4 shadow-sm border">
@@ -410,7 +410,7 @@ const Approvals = () => {
           </div>
         </div>
       </div>
-
+ 
       {/* ---------------- CARD VIEW ---------------- */}
       {view === 'card' && (
         <>
@@ -419,7 +419,7 @@ const Approvals = () => {
               Reassignment Requests ({approvals.filter(a => a.status === 'Pending').length} pending)
             </h3>
           </div>
-          
+         
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
             {loading ? (
               <div className="col-span-full flex flex-col items-center justify-center py-12">
@@ -465,7 +465,7 @@ const Approvals = () => {
                         </div>
                       </div>
                     </div>
-
+ 
                     {/* Details Grid */}
                     <div className="grid grid-cols-2 gap-3 mb-4">
                       <div>
@@ -491,7 +491,7 @@ const Approvals = () => {
                         <p className="text-sm font-medium text-gray-800">{a.date}</p>
                       </div>
                     </div>
-
+ 
                     {/* Assignee Info */}
                     <div className="mb-4">
                       <p className="text-xs text-gray-500 mb-1">Current Assignee(s)</p>
@@ -499,7 +499,7 @@ const Approvals = () => {
                         {a.assignedTo}
                       </p>
                     </div>
-
+ 
                     {/* Reason */}
                     {a.reason && (
                       <div className="mb-4">
@@ -514,7 +514,7 @@ const Approvals = () => {
                         </div>
                       </div>
                     )}
-
+ 
                     {/* Actions */}
                     <div className="pt-4 border-t border-gray-100">
                       <div className="flex gap-2">
@@ -561,7 +561,7 @@ const Approvals = () => {
           </div>
         </>
       )}
-
+ 
       {/* ---------------- LIST VIEW ---------------- */}
       {view === 'list' && (
         <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
@@ -720,7 +720,7 @@ const Approvals = () => {
           </div>
         </div>
       )}
-
+ 
       {/* Reassignment Modal */}
       {showReassignModal && selectedRequest && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
@@ -736,7 +736,7 @@ const Approvals = () => {
             >
               <X className="tm-icon" />
             </button>
-
+ 
             <div className="text-center mb-6">
               <div className="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
                 <User className="tm-icon-xl text-blue-600" />
@@ -746,7 +746,7 @@ const Approvals = () => {
                 Select a new employee to assign this task to
               </p>
             </div>
-
+ 
             <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6">
               <h4 className="font-semibold text-gray-900 mb-2">Task Details</h4>
               <p className="text-sm text-gray-700 mb-1">
@@ -756,7 +756,7 @@ const Approvals = () => {
                 From: {selectedRequest.requester_name || 'Unknown'}
               </p>
             </div>
-
+ 
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -776,7 +776,7 @@ const Approvals = () => {
                   ))}
                 </select>
               </div>
-
+ 
               <div className="pt-4 border-t border-gray-200">
                 <button
                   onClick={handleReassignTask}
@@ -800,5 +800,6 @@ const Approvals = () => {
     </div>
   );
 };
-
+ 
 export default Approvals;
+ 

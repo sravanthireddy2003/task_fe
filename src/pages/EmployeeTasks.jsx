@@ -161,6 +161,11 @@ const EmployeeTasks = () => {
   const isTaskReadOnly = useCallback((task) => {
     if (!task) return false;
 
+    // Check if task is marked as readonly directly
+    if (task.readOnly === true) {
+      return true;
+    }
+
     // Check if current user has readonly access
     if (task.assignedUsers && Array.isArray(task.assignedUsers)) {
       const currentUserAssignment = task.assignedUsers.find(assignedUser =>
@@ -1608,7 +1613,7 @@ const EmployeeTasks = () => {
                     <button
                       key={taskId || task.title}
                       type="button"
-                      disabled={hasPending || isCompleted || isTaskLocked(task)}
+                      disabled={hasPending || isCompleted || isTaskLocked(task) || isTaskReadOnly(task)}
                       onClick={() => setSelectedTask(task)}
                       className={`w-full rounded-2xl border px-4 py-3 text-left shadow-sm transition ${
                         isCompleted
@@ -1695,6 +1700,11 @@ const EmployeeTasks = () => {
                         {isDenied && (
                           <span className="rounded-full border border-red-200 bg-red-50 px-3 py-0.5 text-red-600 font-medium">
                             ❌ Reassignment Denied
+                          </span>
+                        )}
+                        {isTaskInReview(task) && (
+                          <span className="rounded-full border border-purple-200 bg-purple-50 px-3 py-0.5 text-purple-600 font-medium">
+                            👁️ Under Review - Readonly
                           </span>
                         )}
                       </div>
@@ -1831,17 +1841,6 @@ const EmployeeTasks = () => {
                         Resume
                       </button>
                     ) : null}
-
-                    {(selectedTask.status === 'IN_PROGRESS' || selectedTask.status === 'In Progress') && (
-                      <button
-                        onClick={() => handleCompleteTask(selectedTask)}
-                        disabled={isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask) || isTaskLocked(selectedTask) || isTaskInReview(selectedTask)}
-                        className="rounded-full border border-green-200 px-3 py-1 text-green-600 hover:bg-green-50 flex items-center gap-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <CheckCircle className="w-3 h-3" />
-                        Complete Task
-                      </button>
-                    )}
 
                     <button
                       onClick={() => handleOpenTimeline(selectedTask)}
@@ -2021,7 +2020,7 @@ const EmployeeTasks = () => {
                                   <button
                                     type="button"
                                     onClick={() => startEditingChecklist(item)}
-                                    disabled={isTaskReadOnly(selectedTask)}
+                                    disabled={isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending'}
                                     className="rounded-full border border-gray-200 px-3 py-1 hover:border-blue-300 hover:text-blue-600 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                                   >
                                     Edit
@@ -2029,7 +2028,7 @@ const EmployeeTasks = () => {
                                   <button
                                     type="button"
                                     onClick={() => handleCompleteChecklist(item)}
-                                    disabled={isTaskReadOnly(selectedTask) || actionRunning}
+                                    disabled={isTaskReadOnly(selectedTask) || actionRunning || getReassignmentState(selectedTask) === 'pending'}
                                     className="rounded-full border border-emerald-200 px-3 py-1 text-emerald-600 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                                   >
                                     Mark complete
@@ -2037,7 +2036,7 @@ const EmployeeTasks = () => {
                                   <button
                                     type="button"
                                     onClick={() => handleDeleteChecklist(item)}
-                                    disabled={isTaskReadOnly(selectedTask)}
+                                    disabled={isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending'}
                                     className="rounded-full border border-rose-200 px-3 py-1 text-rose-600 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                                   >
                                     Delete
@@ -2058,19 +2057,19 @@ const EmployeeTasks = () => {
                       value={checklistForm.title}
                       onChange={(e) => setChecklistForm((prev) => ({ ...prev, title: e.target.value }))}
                       placeholder="New checklist item"
-                      disabled={isTaskCompleted(selectedTask) || isTaskReadOnly(selectedTask)}
+                      disabled={isTaskCompleted(selectedTask) || isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending'}
                       className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
                     />
                     <input
                       type="date"
                       value={checklistForm.dueDate}
                       onChange={(e) => setChecklistForm((prev) => ({ ...prev, dueDate: e.target.value }))}
-                      disabled={isTaskCompleted(selectedTask) || isTaskReadOnly(selectedTask)}
+                      disabled={isTaskCompleted(selectedTask) || isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending'}
                       className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
                     />
                     <button
                       type="submit"
-                      disabled={actionRunning || isTaskCompleted(selectedTask) || isTaskReadOnly(selectedTask)}
+                      disabled={actionRunning || isTaskCompleted(selectedTask) || isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending'}
                       className="rounded-full bg-indigo-600 px-4 py-2 text-white disabled:opacity-60 disabled:cursor-not-allowed text-sm"
                     >
                       {actionRunning ? 'Adding…' : isTaskCompleted(selectedTask) ? 'Task Completed - Cannot Add Items' : 'Add checklist'}

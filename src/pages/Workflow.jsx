@@ -38,6 +38,7 @@ export default function Workflow() {
   const [closureReason, setClosureReason] = useState("");
   const [closureLoading, setClosureLoading] = useState(false);
   const [closureError, setClosureError] = useState("");
+  const [projectsWithPendingClosure, setProjectsWithPendingClosure] = useState(new Set());
 
   const role = authUser?.role;
   const isAdmin = role === 'Admin';
@@ -91,6 +92,16 @@ export default function Workflow() {
       dispatch(fetchProjects()).catch((e) => {});
     }
   }, [dispatch, isManager]);
+
+  // Clear current project if it has pending closure request
+  useEffect(() => {
+    if (isManager && currentProject) {
+      const projectId = currentProject.id || currentProject._id || currentProject.public_id;
+      if (projectsWithPendingClosure.has(projectId)) {
+        dispatch(setCurrentProject(null));
+      }
+    }
+  }, [isManager, currentProject, projectsWithPendingClosure, dispatch]);
 
   // -------- Modal & CRUD Handlers --------
 
@@ -236,6 +247,11 @@ export default function Workflow() {
       }
 
       toast.success(resp?.message || 'Project closure request submitted successfully');
+      
+      // Mark project as having pending closure request
+      const projectId = currentProject.id || currentProject._id || currentProject.public_id;
+      setProjectsWithPendingClosure(prev => new Set([...prev, projectId]));
+      
       setShowClosureModal(false);
       setClosureReason('');
       setClosureError('');
@@ -872,7 +888,9 @@ export default function Workflow() {
               {projects
                 .filter(project => {
                   const status = project.status?.toUpperCase();
-                  return status === 'ACTIVE' || status === 'REVIEW' || status === 'PENDING_FINAL_APPROVAL';
+                  const projectId = project.id || project._id || project.public_id;
+                  const hasPendingClosure = projectsWithPendingClosure.has(projectId);
+                  return (status === 'ACTIVE' || status === 'REVIEW' || status === 'PENDING_FINAL_APPROVAL') && !hasPendingClosure;
                 })
                 .map((project) => (
                   <option key={project.id || project._id} value={project.id || project._id}>
@@ -883,9 +901,11 @@ export default function Workflow() {
             </select>
             {projects.filter(project => {
               const status = project.status?.toUpperCase();
-              return status === 'ACTIVE' || status === 'REVIEW' || status === 'PENDING_FINAL_APPROVAL';
+              const projectId = project.id || project._id || project.public_id;
+              const hasPendingClosure = projectsWithPendingClosure.has(projectId);
+              return (status === 'ACTIVE' || status === 'REVIEW' || status === 'PENDING_FINAL_APPROVAL') && !hasPendingClosure;
             }).length === 0 && (
-                <p className="text-sm text-gray-500 mt-1">No projects available for closure. Please contact admin if you believe this is an error.</p>
+                <p className="text-sm text-gray-500 mt-1">No projects available for closure. Projects with pending closure requests are hidden. Please contact admin if you believe this is an error.</p>
               )}
           </div>
 
@@ -911,11 +931,44 @@ export default function Workflow() {
             </div>
           )}
 
+          {/* Projects with Pending Closure Requests */}
+          {projectsWithPendingClosure.size > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Icons.Clock className="w-5 h-5 text-amber-600" />
+                <span className="text-sm font-medium text-amber-800">Projects with Pending Closure Requests</span>
+              </div>
+              <div className="space-y-2">
+                {Array.from(projectsWithPendingClosure).map(projectId => {
+                  const project = projects.find(p => (p.id || p._id || p.public_id) === projectId);
+                  return (
+                    <div key={projectId} className="flex items-center justify-between bg-white rounded-md p-3 border border-amber-200">
+                      <div className="flex items-center gap-2">
+                        <Icons.Archive className="w-4 h-4 text-amber-600" />
+                        <span className="text-sm font-medium text-gray-900">
+                          {project?.name || project?.title || `Project ${projectId}`}
+                        </span>
+                      </div>
+                      <span className="px-2 py-1 text-xs font-medium bg-amber-100 text-amber-800 rounded-full">
+                        Pending Approval
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-amber-600 mt-2">
+                These projects have closure requests pending admin approval and cannot be submitted again.
+              </p>
+            </div>
+          )}
+
           {/* Recent Closure Requests or Status */}
-          <div className="text-center py-8 text-gray-500">
-            <Icons.Archive className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-            <p>Project closure requests will appear here once submitted</p>
-          </div>
+          {projectsWithPendingClosure.size === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              <Icons.Archive className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <p>Project closure requests will appear here once submitted</p>
+            </div>
+          )}
         </div>
 
         {/* Approval Queue Section */}
