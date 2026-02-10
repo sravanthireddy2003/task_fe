@@ -37,9 +37,8 @@ const Documents = () => {
   const [projectsLoading, setProjectsLoading] = useState(true);
   const [selectedProjectId, setSelectedProjectId] = useState('');
   const [selectedDocument, setSelectedDocument] = useState(null);
-  const [showUploadModal, setShowUploadModal] = useState(false);
+  // Upload modal and uploading state removed
   const [showPreviewModal, setShowPreviewModal] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [downloading, setDownloading] = useState(null);
   const [showManageAccessModal, setShowManageAccessModal] = useState(false);
   const [managingDocId, setManagingDocId] = useState(null);
@@ -51,13 +50,7 @@ const Documents = () => {
   const [permissionLevel, setPermissionLevel] = useState('VIEW');
   const [assigningAccess, setAssigningAccess] = useState(false);
 
-  // Upload form state
-  const [uploadForm, setUploadForm] = useState({
-    file: null,
-    entityType: 'PROJECT',
-    entityId: '',
-    accessType: 'READ'
-  });
+  // Upload form state removed
 
   // Available entity types based on role
   const getEntityTypes = () => {
@@ -162,53 +155,7 @@ const Documents = () => {
     }
   }, [loadDocuments]);
 
-  // Upload document
-  const handleUpload = async (e) => {
-    e.preventDefault();
-
-    if (!uploadForm.file) {
-      toast.error('Please select a file to upload');
-      return;
-    }
-
-    if (!uploadForm.entityId && uploadForm.entityType !== 'GENERAL') {
-      toast.error('Please provide an entity ID');
-      return;
-    }
-
-    setUploading(true);
-
-    try {
-      const formData = new FormData();
-      formData.append('document', uploadForm.file);
-      // Postman: include projectId, clientId, taskId and optional fileName
-      formData.append('projectId', selectedProjectId || '');
-      if (uploadForm.taskId) formData.append('taskId', uploadForm.taskId);
-      if (uploadForm.clientId) formData.append('clientId', uploadForm.clientId);
-      formData.append('fileName', uploadForm.file.name || '');
-
-      // Use httpPostService which handles FormData and attaches auth/tenant headers
-      const result = await httpPostService('documents/upload', formData);
-
-      // Check for 200 status or success flag
-      const isSuccess = (result && (result.success || result?.data?.success)) || 
-                       (result?.status >= 200 && result?.status < 300);
-
-      if (isSuccess) {
-        toast.success('Document uploaded successfully!');
-        setShowUploadModal(false);
-        setUploadForm({ file: null, entityType: 'PROJECT', entityId: '', accessType: 'READ' });
-        loadDocuments(selectedProjectId, 1, 25);
-      } else {
-        throw new Error((result && result.error) || 'Upload failed');
-      }
-    } catch (err) {
-      console.error('Upload error:', err);
-      toast.error(err.message || 'Failed to upload document');
-    } finally {
-      setUploading(false);
-    }
-  };
+  // Upload handler removed
 
   // Preview document
   const handlePreview = async (documentId) => {
@@ -661,10 +608,7 @@ const Documents = () => {
     return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
   };
 
-  // Check if user can upload
-  const canUpload = () => {
-    return ['admin', 'manager'].includes(userRole);
-  };
+  // canUpload helper removed
 
   // Check if user can assign access
   const canAssignAccess = () => {
@@ -683,17 +627,7 @@ const Documents = () => {
         title="Documents"
         subtitle="Manage and organize project documents, files, and resources"
         onRefresh={() => loadDocuments(selectedProjectId, 1, 25)}
-      >
-        {canUpload() && (
-          <button
-            onClick={() => setShowUploadModal(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Upload className="w-5 h-5" />
-            Upload Document
-          </button>
-        )}
-      </PageHeader>
+      />
 
       {/* Search and Filter Bar */}
       <div className="bg-white rounded-xl border p-6 mb-8">
@@ -800,14 +734,7 @@ const Documents = () => {
                   : 'No documents have been uploaded for this project yet.')
               : 'Please select a project from the dropdown above to view its documents.'}
           </p>
-          {canUpload() && (
-            <button
-              onClick={() => setShowUploadModal(true)}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Upload Your First Document
-            </button>
-          )}
+          {/* Upload button removed as requested */}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -953,97 +880,7 @@ const Documents = () => {
         </div>
       )}
 
-      {/* Upload Modal */}
-      {showUploadModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-900">Upload Document</h3>
-              <button
-                onClick={() => setShowUploadModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleUpload} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Document File *
-                </label>
-                <input
-                  type="file"
-                  accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png"
-                  onChange={(e) => setUploadForm({ ...uploadForm, file: e.target.files[0] })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Entity Type
-                </label>
-                <select
-                  value={uploadForm.entityType}
-                  onChange={(e) => setUploadForm({ ...uploadForm, entityType: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {entityTypes.map(type => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {uploadForm.entityType !== 'GENERAL' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Entity ID *
-                  </label>
-                  <input
-                    type="text"
-                    value={uploadForm.entityId}
-                    onChange={(e) => setUploadForm({ ...uploadForm, entityId: e.target.value })}
-                    placeholder={`Enter ${uploadForm.entityType.toLowerCase()} ID`}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-              )}
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowUploadModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={uploading}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
-                >
-                  {uploading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      Uploading...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-4 h-4" />
-                      Upload
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Upload Modal removed */}
 
       {/* Manage Access Modal */}
       {showManageAccessModal && (
