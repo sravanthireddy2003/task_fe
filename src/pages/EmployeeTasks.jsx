@@ -1260,10 +1260,12 @@ const EmployeeTasks = () => {
         setForceRefresh(f => f + 1);
         setSelectedTaskForReassignment(null);
       } else {
-        toast.error(resp.error || 'Failed to request reassignment');
+        const errorMessage = resp?.error || resp?.message || 'Failed to request reassignment';
+        toast.error(errorMessage);
       }
     } catch (err) {
-      toast.error(err.message || 'Failed to request reassignment');
+      const errorMessage = err?.response?.data?.message || err?.message || err?.data?.message || 'Failed to request reassignment';
+      toast.error(errorMessage);
     } finally {
       setReassigning(false);
     }

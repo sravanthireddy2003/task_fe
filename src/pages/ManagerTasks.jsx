@@ -523,7 +523,8 @@ const ManagerTasks = () => {
         setShowCreateTaskModal(false);
         loadTasks(selectedProjectId);
       } else {
-        toast.error(err?.message || 'Unable to create task');
+        const errorMessage = err?.response?.data?.message || err?.message || err?.data?.message || 'Unable to create task';
+        toast.error(errorMessage);
       }
     } finally {
       setActionLoading(false);
@@ -624,7 +625,8 @@ const ManagerTasks = () => {
       }
     } catch (err) {
       console.error('Failed to reassign task:', err);
-      toast.error(err?.message || 'Failed to reassign task');
+      const errorMessage = err?.response?.data?.message || err?.message || err?.data?.message || 'Failed to reassign task';
+      toast.error(errorMessage);
     } finally {
       setReassigning(false);
     }

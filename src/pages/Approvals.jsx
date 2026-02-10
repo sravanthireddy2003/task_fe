@@ -195,7 +195,8 @@ const Approvals = () => {
           // still refresh the list to get canonical server state
           loadReassignmentRequests();
       } catch (err) {
-        toast.error(err?.message || 'Failed to approve and reassign');
+        const errorMessage = err?.response?.data?.message || err?.message || err?.data?.message || 'Failed to approve and reassign';
+        toast.error(errorMessage);
       } finally {
         setReassigning(false);
         setApprovingRequestId(null);
@@ -265,7 +266,8 @@ const Approvals = () => {
       setSelectedRequest(null);
       loadReassignmentRequests();
     } catch (err) {
-      toast.error(err?.message || 'Reassignment failed');
+      const errorMessage = err?.response?.data?.message || err?.message || err?.data?.message || 'Reassignment failed';
+      toast.error(errorMessage);
     } finally {
       setReassigning(false);
     }

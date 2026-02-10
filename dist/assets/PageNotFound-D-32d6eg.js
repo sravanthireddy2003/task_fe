@@ -1,1 +1,0 @@
-import{a as o,j as t}from"./index-BNLOVeat.js";const s=()=>{const n=o();return t.jsxs("div",{children:[t.jsx("div",{children:"PageNotFound 404"}),t.jsx("button",{onClick:()=>n("/"),children:" Login "})]})};export{s as default};

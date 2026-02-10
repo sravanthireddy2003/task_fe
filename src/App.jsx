@@ -565,7 +565,7 @@ function App() {
         </Routes>
 
         <MobileSidebar />
-        <Toaster richColors />
+        <Toaster richColors position="top-right" />
       </Suspense>
     </main>
   );

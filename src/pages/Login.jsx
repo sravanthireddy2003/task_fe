@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
+import { toast } from "sonner";
 import taskManagerLogo from "../assets/task1.png";
 import * as Icons from "../icons";
 import Textbox from "../components/Textbox";
@@ -101,6 +102,13 @@ const Login = () => {
       navigate(target, { replace: true });
     }
   }, [user, navigate]);
+
+  // Show password expired error as toast
+  useEffect(() => {
+    if (authStatus === "failed" && authError === "Password expired. Please reset your password.") {
+      toast.error("Password expired. Please reset your password.");
+    }
+  }, [authStatus, authError]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center px-4">

@@ -294,7 +294,8 @@ export default function Tasks() {
       handleRefreshTasks();
     } catch (err) {
       console.error('Submit error:', err);
-      toast.error(err?.message || 'Operation failed');
+      const errorMessage = err?.response?.data?.message || err?.message || err?.data?.message || 'Operation failed';
+      toast.error(errorMessage);
     }
   };
 
