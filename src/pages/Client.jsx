@@ -22,7 +22,7 @@ const Clients = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const location = useLocation();
-  
+
   const clients = useSelector(selectClients);
   const status = useSelector(selectClientStatus);
   const error = useSelector(selectClientError);
@@ -111,8 +111,8 @@ const Clients = () => {
         </div>
         <span className={clsx(
           "px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1",
-          client.isDeleted 
-            ? "bg-red-50 text-red-700" 
+          client.isDeleted
+            ? "bg-red-50 text-red-700"
             : "bg-green-50 text-green-700"
         )}>
           {client.isDeleted ? (
@@ -139,9 +139,14 @@ const Clients = () => {
         <div className="flex items-center justify-between">
           <div className="text-xs">
             <p className="text-gray-500">Manager</p>
-            <p className="font-medium text-gray-900 flex items-center gap-1">
-              <Icons.User2 className="tm-icon text-gray-400" />
-              {client.managerName?.split(" ")[0] || "Unassigned"}
+            <p className={`font-medium text-sm flex items-center gap-1.5 ${(client.manager_name || client.managerName || client.manager) ? "text-gray-900" : "text-gray-500 italic"
+              }`}>
+              <Icons.User2 className={`w-3.5 h-3.5 ${(client.manager_name || client.managerName || client.manager) ? "text-blue-600" : "text-gray-400"
+                }`} />
+              {(client.manager_name || client.managerName || client.manager)
+                ? (client.manager_name || client.managerName || client.manager).toString().trim()
+                : "Unassigned"
+              }
             </p>
           </div>
           <div className="flex items-center gap-1">
@@ -168,7 +173,7 @@ const Clients = () => {
               title="Delete"
             >
               <Icons.Trash2 className="tm-icon" />
-            </button> 
+            </button>
           </div>
         </div>
       </div>
@@ -188,7 +193,7 @@ const Clients = () => {
           </div>
           <div className="h-10 bg-gray-200 rounded-lg"></div>
           <div className="space-y-3">
-            {[1,2,3,4,5].map(i => (
+            {[1, 2, 3, 4, 5].map(i => (
               <div key={i} className="h-12 bg-gray-200 rounded-lg"></div>
             ))}
           </div>
@@ -202,9 +207,9 @@ const Clients = () => {
       <div className="p-6">
         <div className="max-w-7xl mx-auto">
           <div className="bg-white rounded-lg border border-red-200 p-6 text-center">
-              <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                <Icons.Trash2 className="tm-icon" />
-              </div>
+            <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3">
+              <Icons.Trash2 className="tm-icon" />
+            </div>
             <h3 className="text-base font-medium text-gray-900 mb-2">Failed to load clients</h3>
             <p className="text-sm text-gray-600 mb-4">{error || 'An error occurred'}</p>
             <button
@@ -263,7 +268,7 @@ const Clients = () => {
               </span>
             </div>
           </div>
-          
+
           <div className="group relative overflow-hidden rounded-2xl border border-emerald-200 bg-emerald-50/60 hover:border-emerald-300 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 p-5 flex flex-col gap-3 min-h-[120px]">
             <div className="flex items-start justify-between gap-3">
               <div className="p-2.5 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -279,7 +284,7 @@ const Clients = () => {
               </span>
             </div>
           </div>
-          
+
           <div className="group relative overflow-hidden rounded-2xl border border-red-200 bg-red-50/60 hover:border-red-300 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 p-5 flex flex-col gap-3 min-h-[120px]">
             <div className="flex items-start justify-between gap-3">
               <div className="p-2.5 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -355,7 +360,7 @@ const Clients = () => {
             <span className="font-medium text-gray-900">{filteredClients.length}</span> of{" "}
             <span className="font-medium text-gray-900">{clients.length}</span> clients
           </div>
-          
+
           {(searchQuery || statusFilter !== "all" || managerFilter !== "all") && (
             <button
               onClick={() => {
@@ -414,7 +419,7 @@ const Clients = () => {
               {filteredClients.map((client) => (
                 <ClientCard key={client.id} client={client} />
               ))}
-              
+
               {/* Add Client Card */}
               <div
                 onClick={() => {
@@ -444,7 +449,7 @@ const Clients = () => {
                 onDelete={handleDelete}
               />
             </div>
-            
+
             <div className="border-t border-gray-200 p-3">
               <button
                 onClick={() => {
