@@ -155,9 +155,10 @@ export const authLogin = createAsyncThunk(
       return response;
     } catch (error) {
       const message =
-        error?.response?.data?.message ||
-        error?.response?.data?.error ||
-        "Login failed. Please try again.";
+        error?.message ||
+        error?.data?.message ||
+        error?.error ||
+        (typeof error === 'string' ? error : "Login failed. Please try again.");
       return thunkAPI.rejectWithValue(message);
     }
   }
@@ -201,7 +202,7 @@ export const resendOtp = createAsyncThunk(
       const response = await httpPostService("api/auth/resend-otp", data, { skipAuth: true });
       return response;
     } catch (error) {
-      const msg = error?.response?.data?.message || "Failed to resend OTP";
+      const msg = error?.message || error?.error || "Failed to resend OTP";
       return thunkAPI.rejectWithValue(msg);
     }
   }
@@ -498,7 +499,7 @@ export const authGoogleLogin = createAsyncThunk(
 
       return response.user;
     } catch (error) {
-      const errorMessage = error?.response?.data?.message || "Failed to login with Google";
+      const errorMessage = error?.message || error?.error || "Failed to login with Google";
       return thunkAPI.rejectWithValue(errorMessage);
     }
   }
@@ -512,7 +513,7 @@ export const authRegister = createAsyncThunk(
       const response = await httpPostService("api/auth/register", data);
       return response;
     } catch (error) {
-      const message = error?.response?.data?.message || "Registration failed.";
+      const message = error?.message || error?.error || "Registration failed.";
       return thunkAPI.rejectWithValue(message);
     }
   }

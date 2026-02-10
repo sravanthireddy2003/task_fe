@@ -93,7 +93,7 @@ const Login = () => {
         });
         return;
       }
-    } catch (err) {}
+    } catch (err) { }
   };
 
   useEffect(() => {
@@ -103,10 +103,10 @@ const Login = () => {
     }
   }, [user, navigate]);
 
-  // Show password expired error as toast
+  // Show auth errors as toast
   useEffect(() => {
-    if (authStatus === "failed" && authError === "Password expired. Please reset your password.") {
-      toast.error("Password expired. Please reset your password.");
+    if (authStatus === "failed" && authError) {
+      toast.error(authError);
     }
   }, [authStatus, authError]);
 
