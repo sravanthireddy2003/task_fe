@@ -207,9 +207,9 @@ const AdminApprovalPanel = () => {
                 </h3>
                 <div className="space-y-6">
                   {readyToApprove.map((request) => (
-                    <ApprovalRequestCard 
-                      key={request.id} 
-                      request={request} 
+                    <ApprovalRequestCard
+                      key={request.id}
+                      request={request}
                       isReadyToApprove={true}
                       processingId={processingId}
                       onApprove={handleApprove}
@@ -230,9 +230,9 @@ const AdminApprovalPanel = () => {
                 </h3>
                 <div className="space-y-6">
                   {alreadyApproved.map((request) => (
-                    <ApprovalRequestCard 
-                      key={request.id} 
-                      request={request} 
+                    <ApprovalRequestCard
+                      key={request.id}
+                      request={request}
                       isReadyToApprove={false}
                       processingId={processingId}
                       onApprove={handleApprove}
@@ -360,7 +360,9 @@ const ApprovalRequestCard = ({ request, isReadyToApprove, processingId, onApprov
             <div className="flex items-center gap-4 text-sm text-gray-600">
               <div className="flex items-center gap-1">
                 <User className="w-4 h-4" />
-                <span>Requested by: <span className="font-medium">{request.requested_by_name || request.requestedByName || request.requested_by}</span></span>
+                <span>Requested by: <span className="font-medium">
+                  {request.requested_by_name || request.requestedByName || (typeof request.requested_by === 'object' ? request.requested_by?.name : request.requested_by)}
+                </span></span>
               </div>
               <div className="flex items-center gap-1">
                 <Calendar className="w-4 h-4" />
@@ -462,10 +464,10 @@ const ApprovalRequestCard = ({ request, isReadyToApprove, processingId, onApprov
                 <span className="text-sm font-medium text-gray-700">Approved By</span>
               </div>
               <p className="text-sm text-green-800 font-semibold">
-                {request.approved_by_name || request.approved_by || 'System'}
+                {request.approved_by_name || (typeof request.approved_by === 'object' ? request.approved_by?.name : request.approved_by) || 'System'}
               </p>
               <p className="text-xs text-gray-600">
-                {request.approved_by_email || request.approved_by || ''}
+                {request.approved_by_email || (typeof request.approved_by === 'object' ? request.approved_by?.email : '') || ''}
               </p>
             </div>
             <div className="bg-white/60 rounded-lg p-4">
@@ -506,11 +508,10 @@ const ApprovalRequestCard = ({ request, isReadyToApprove, processingId, onApprov
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <h5 className="font-medium text-gray-900">{task.title}</h5>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        task.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${task.status === 'Completed' ? 'bg-green-100 text-green-800' :
                         task.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
+                          'bg-gray-100 text-gray-800'
+                        }`}>
                         {task.status}
                       </span>
                     </div>

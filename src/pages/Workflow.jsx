@@ -14,6 +14,7 @@ import PageHeader from "../components/PageHeader";
 
 export default function Workflow() {
   const dispatch = useDispatch();
+  const authStatus = useSelector((s) => s.auth?.status);
   const authUser = useSelector((s) => s.auth?.user);
   const departments = useSelector(selectDepartments);
   const projects = useSelector(selectProjects);
@@ -45,6 +46,18 @@ export default function Workflow() {
   const isManager = role === 'Manager';
   const isEmployee = role === 'Employee';
 
+  // Loading state handling for auth
+  if (authStatus === 'loading' || !authUser) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-500 font-medium">Loading workflows...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Modal states
   const emptyForm = {
     name: "",
@@ -69,12 +82,12 @@ export default function Workflow() {
     if (isAdmin) {
       // Do not trigger departments/projects network calls from this page.
       // Instead, fetch admin workflow queue (pending admin-level requests)
-      dispatch(fetchQueue('ADMIN')).catch((e) => {});
+      dispatch(fetchQueue('ADMIN')).catch((e) => { });
     } else if (isManager && authUser) {
       // For managers, fetch queue filtered by manager numeric ID (not public_id)
       const managerId = authUser.user_id || authUser.userId || authUser.numeric_id || authUser.id;
       if (managerId) {
-        dispatch(fetchQueue(managerId)).catch((e) => {});
+        dispatch(fetchQueue(managerId)).catch((e) => { });
       }
     }
   }, [dispatch, isAdmin, isManager, authUser]);
@@ -89,7 +102,7 @@ export default function Workflow() {
   // For manager workflow page: load projects for closure requests
   useEffect(() => {
     if (isManager) {
-      dispatch(fetchProjects()).catch((e) => {});
+      dispatch(fetchProjects()).catch((e) => { });
     }
   }, [dispatch, isManager]);
 
@@ -247,11 +260,11 @@ export default function Workflow() {
       }
 
       toast.success(resp?.message || 'Project closure request submitted successfully');
-      
+
       // Mark project as having pending closure request
       const projectId = currentProject.id || currentProject._id || currentProject.public_id;
       setProjectsWithPendingClosure(prev => new Set([...prev, projectId]));
-      
+
       setShowClosureModal(false);
       setClosureReason('');
       setClosureError('');
@@ -349,7 +362,7 @@ export default function Workflow() {
             subtitle="Design, automate, and monitor approval workflows across your organization"
             onRefresh={() => {
               // Refresh admin workflow queue instead of triggering departments/projects API calls
-              dispatch(fetchQueue('ADMIN')).catch((e) => {});
+              dispatch(fetchQueue('ADMIN')).catch((e) => { });
             }}
           >
           </PageHeader>
@@ -526,7 +539,7 @@ export default function Workflow() {
               // Refresh manager workflow queue using manager numeric ID
               if (authUser) {
                 const managerId = authUser.user_id || authUser.userId || authUser.numeric_id || authUser.id;
-                dispatch(fetchQueue(managerId)).catch((e) => {});
+                dispatch(fetchQueue(managerId)).catch((e) => { });
               }
             }}
           />
