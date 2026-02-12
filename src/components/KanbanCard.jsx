@@ -3,7 +3,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import * as Icons from '../icons';
 
-const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentRequests = {} }) => {
+const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentRequests = {}, isReadOnly = false }) => {
   const [liveTime, setLiveTime] = useState(task.total_duration || 0);
 
   useEffect(() => {
@@ -39,6 +39,7 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentR
     isDragging: isSortableDragging,
   } = useSortable({
     id: task.id || task._id || task.public_id,
+    disabled: isReadOnly, // Disable drag if read only
   });
 
   const style = {
@@ -96,16 +97,20 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentR
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...(hasPendingReassignment || isCompleted ? {} : { ...listeners })}
-      className={`bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow ${
-        isDragging || isSortableDragging ? 'opacity-50' : ''
-      } ${
-        isCompleted ? 'border-green-300 bg-green-50 opacity-75 cursor-not-allowed' : ''
-      } ${
-        hasPendingReassignment ? 'border-orange-300 bg-orange-50 opacity-75 cursor-not-allowed' : 'cursor-pointer'
-      }`}
-      onClick={hasPendingReassignment || isCompleted ? undefined : onClick}
+      {...(hasPendingReassignment || isCompleted || isReadOnly ? {} : { ...listeners })}
+      className={`bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow relative ${isDragging || isSortableDragging ? 'opacity-50' : ''
+        } ${isCompleted ? 'border-green-300 bg-green-50 opacity-75 cursor-not-allowed' : ''
+        } ${hasPendingReassignment ? 'border-orange-300 bg-orange-50 opacity-75 cursor-not-allowed' : ''
+        } ${isReadOnly && !isCompleted && !hasPendingReassignment ? 'bg-gray-50 border-gray-200 opacity-90' : 'cursor-pointer'
+        }`}
+      onClick={hasPendingReassignment ? undefined : onClick}
     >
+      {/* Read Only Indicator */}
+      {isReadOnly && !isCompleted && !hasPendingReassignment && (
+        <div className="absolute top-2 right-2 text-gray-400" title="Read Only Access">
+          <Icons.Lock className="w-4 h-4" />
+        </div>
+      )}
       {/* Task Title */}
       <h4 className="font-semibold text-gray-900 mb-2 line-clamp-2">
         {task.title || task.name || 'Untitled Task'}

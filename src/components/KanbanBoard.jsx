@@ -79,8 +79,6 @@ const KanbanBoard = ({
 
   // Organize tasks into columns based on status
   const columns = useMemo(() => {
-    console.log('KanbanBoard columns useMemo:', { kanbanData, tasks });
-
     // Always organize tasks by their current status from the tasks array
     // This ensures immediate visual feedback when task status changes
     const organizedColumns = {
@@ -229,8 +227,8 @@ const KanbanBoard = ({
     // Strict Kanban Workflow Transitions
     try {
       if (targetColumn === 'In Progress') {
-        if (currentStatus === 'PENDING' || currentStatus === 'Pending' || currentStatus === 'To Do' || 
-            currentStatus === 'PENDING' || currentStatus === 'TO_DO' || currentStatus === 'TO DO') {
+        if (currentStatus === 'PENDING' || currentStatus === 'Pending' || currentStatus === 'To Do' ||
+          currentStatus === 'PENDING' || currentStatus === 'TO_DO' || currentStatus === 'TO DO') {
           await onStartTask(taskId);
         } else if (currentStatus === 'On Hold' || currentStatus === 'ON_HOLD') {
           await onResumeTask(taskId);
@@ -251,8 +249,8 @@ const KanbanBoard = ({
         }
       } else if (targetColumn === 'To Do') {
         // Allow moving back to To Do from In Progress or On Hold
-        if (currentStatus === 'In Progress' || currentStatus === 'IN_PROGRESS' || 
-            currentStatus === 'On Hold' || currentStatus === 'ON_HOLD') {
+        if (currentStatus === 'In Progress' || currentStatus === 'IN_PROGRESS' ||
+          currentStatus === 'On Hold' || currentStatus === 'ON_HOLD') {
           // This would require a custom API call or status update
           toast.error('Moving back to To Do is not currently supported');
         } else {

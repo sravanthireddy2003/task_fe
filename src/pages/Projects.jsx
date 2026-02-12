@@ -212,8 +212,12 @@ export default function Projects() {
     setActiveStatusEdit(null);
   };
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     try {
       // Validate clientId and departmentIds are selected
       if (!formData.clientId) {
@@ -228,6 +232,8 @@ export default function Projects() {
         toast.error("Please select both start and end dates");
         return;
       }
+
+      setIsSubmitting(true);
 
       // Map local form fields to API payload (Postman collection format)
       const payload = {
@@ -261,6 +267,8 @@ export default function Projects() {
       await dispatch(fetchProjects()).unwrap();
     } catch (err) {
       toast.error(err?.message || "Operation failed");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -474,6 +482,7 @@ export default function Projects() {
                 <th className="p-3 text-left">Project</th>
                 <th className="p-3 text-left">Department</th>
                 <th className="p-3 text-left">Client</th>
+                <th className="p-3 text-left">Manager</th>
                 <th className="p-3 text-left">Status</th>
                 <th className="p-3 text-left">Duration</th>
                 <th className="p-3 text-right">Actions</th>
@@ -488,6 +497,7 @@ export default function Projects() {
                     <td className="p-3 font-medium">{project.name}</td>
                     <td className="p-3 text-sm">{getDepartmentName(project.departments)}</td>
                     <td className="p-3 text-sm text-gray-600">{getClientName(project.client || project.client_id)}</td>
+                    <td className="p-3 text-sm text-gray-600">{getManagerName(project.project_manager_id, project.project_manager)}</td>
                     <td className="p-3">
                       {activeStatusEdit === (project.id || project._id) ? (
                         <select
@@ -855,9 +865,17 @@ export default function Projects() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                  disabled={isSubmitting}
+                  className={`flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center justify-center gap-2 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
                 >
-                  {editingProject ? "Update" : "Create"}
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    editingProject ? "Update" : "Create"
+                  )}
                 </button>
               </div>
             </form>
@@ -891,12 +909,14 @@ export default function Projects() {
             <div className="overflow-y-auto max-h-[calc(90vh-90px)] p-3 sm:p-4">
               {/* RESPONSIVE PROJECT INFO */}
               <div className="bg-gray-25 border border-gray-100 rounded-md p-3 sm:p-4 mb-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3">
                   <div className="flex items-center gap-2 text-xs sm:text-sm">
                     <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0" />
                     <div className="min-w-0 flex-1">
                       <div className="text-gray-500 font-medium text-xs sm:text-sm">ASSIGNED</div>
-                      <div className="font-semibold text-gray-800 truncate">John C.</div>
+                      <div className="font-semibold text-gray-800 truncate">
+                        {getManagerName(selectedSummaryProject.project_manager_id, selectedSummaryProject.project_manager)}
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 text-xs sm:text-sm">
@@ -911,9 +931,16 @@ export default function Projects() {
                       </span>
                     </div>
                   </div>
-                  <div className="flex items-start gap-2 text-xs sm:text-sm lg:col-span-1">
-                    <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-600 line-clamp-2 text-xs sm:text-sm">{projectSummary.project?.description || selectedSummaryProject.description}</span>
+                </div>
+
+                {/* Full Description Section */}
+                <div className="flex items-start gap-2 text-xs sm:text-sm border-t border-gray-100 pt-3 mb-1">
+                  <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-gray-500 font-medium text-xs sm:text-sm mb-1">DESCRIPTION</div>
+                    <span className="text-gray-600 text-xs sm:text-sm whitespace-pre-wrap leading-relaxed block">
+                      {projectSummary.project?.description || selectedSummaryProject.description || "No description provided."}
+                    </span>
                   </div>
                 </div>
 

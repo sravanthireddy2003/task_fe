@@ -28,6 +28,19 @@ export const fetchProjects = createAsyncThunk(
   }
 );
 
+export const fetchManagerProjects = createAsyncThunk(
+  'projects/fetchManagerProjects',
+  async (_, thunkAPI) => {
+    try {
+      const res = await httpGetService('api/manager/projects');
+      // API returns { success: true, data: [...] }
+      return res?.success && Array.isArray(res.data) ? res.data : [];
+    } catch (err) {
+      return thunkAPI.rejectWithValue(formatRejectValue(err));
+    }
+  }
+);
+
 export const getProject = createAsyncThunk(
   'projects/getProject',
   async (projectId, thunkAPI) => {
@@ -173,6 +186,20 @@ const projectSlice = createSlice({
         state.projects = action.payload || [];
       })
       .addCase(fetchProjects.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload || action.error?.message;
+      })
+
+      // Fetch Manager Projects
+      .addCase(fetchManagerProjects.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(fetchManagerProjects.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.projects = action.payload || [];
+      })
+      .addCase(fetchManagerProjects.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.payload || action.error?.message;
       })

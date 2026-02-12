@@ -46,8 +46,7 @@ const ManagerTasks = () => {
   const [selectedTask, setSelectedTask] = useState(null);
   const [employees, setEmployees] = useState([]);
   const [employeesLoading, setEmployeesLoading] = useState(true);
-  const [selectedAssignee, setSelectedAssignee] = useState('');
-  const [reassigning, setReassigning] = useState(false);
+
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState('all');
   const [viewMode, setViewMode] = useState('list');
@@ -576,61 +575,7 @@ const ManagerTasks = () => {
     }
   };
 
-  // Handle task reassignment
-  const handleReassignTask = async () => {
-    if (!selectedTask || !selectedAssignee) return;
 
-    const taskId = selectedTask.id || selectedTask.public_id || selectedTask._id;
-    if (!taskId) {
-      toast.error('Task ID not found');
-      return;
-    }
-
-    setReassigning(true);
-    try {
-      const resp = await fetchWithTenant(`/api/tasks/${taskId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          assigned_to: selectedAssignee,
-        }),
-      });
-
-      if (resp && resp.error) {
-        throw new Error(resp.error || 'Failed to reassign task');
-      }
-
-      toast.success('Task reassigned successfully');
-
-      // Update the task in local state
-      setTasks(prevTasks => prevTasks.map(task =>
-        (task.id || task.public_id || task._id) === taskId
-          ? { ...task, assigned_to: [selectedAssignee] }
-          : task
-      ));
-
-      // Update selected task if it's the one being reassigned
-      if (selectedTask && (selectedTask.id || selectedTask.public_id || selectedTask._id) === taskId) {
-        setSelectedTask(prev => prev ? { ...prev, assigned_to: [selectedAssignee] } : null);
-      }
-
-      // Clear the selected assignee
-      setSelectedAssignee('');
-
-      // Refresh tasks to get updated data
-      if (selectedProjectId) {
-        loadTasks(selectedProjectId);
-      }
-    } catch (err) {
-      console.error('Failed to reassign task:', err);
-      const errorMessage = err?.response?.data?.message || err?.message || err?.data?.message || 'Failed to reassign task';
-      toast.error(errorMessage);
-    } finally {
-      setReassigning(false);
-    }
-  };
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
@@ -857,8 +802,8 @@ const ManagerTasks = () => {
                   onClick={openCreateTaskModal}
                   disabled={isProjectLocked}
                   className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${isProjectLocked
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
                     }`}
                 >
                   {isProjectLocked ? <Lock className="tm-icon" /> : null}
@@ -1154,48 +1099,7 @@ const ManagerTasks = () => {
                   </div>
                 )}
 
-                {/* Reassign Section */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <RefreshCw className="w-5 h-5 text-blue-600" />
-                    <span className="font-medium text-blue-800">Reassign Task</span>
-                  </div>
-                  <div className="flex flex-col gap-3">
-                    <select
-                      value={selectedAssignee}
-                      onChange={(e) => setSelectedAssignee(e.target.value)}
-                      disabled={employees.length === 0 || getManagerTaskStatus(selectedTask) === 'COMPLETED' || getManagerTaskStatus(selectedTask) === 'LOCKED'}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm"
-                    >
-                      <option value="">Select employee</option>
-                      {employees.map((employee) => {
-                        const key = employee.internalId || employee.id || employee.public_id || employee._id;
-                        return (
-                          <option key={key} value={key}>
-                            {employee.name || employee.email || 'Unnamed'}
-                          </option>
-                        );
-                      })}
-                    </select>
-                    <button
-                      onClick={handleReassignTask}
-                      disabled={reassigning || !selectedAssignee || employees.length === 0 || getManagerTaskStatus(selectedTask) === 'COMPLETED' || getManagerTaskStatus(selectedTask) === 'LOCKED'}
-                      className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm ${reassigning || !selectedAssignee || employees.length === 0
-                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
-                        }`}
-                    >
-                      {reassigning ? (
-                        <>
-                          <RefreshCw className="w-4 h-4 animate-spin" />
-                          Reassigning...
-                        </>
-                      ) : (
-                        'Reassign Task'
-                      )}
-                    </button>
-                  </div>
-                </div>
+
 
                 {/* Checklist Section */}
                 {selectedTask.checklist && selectedTask.checklist.length > 0 && (

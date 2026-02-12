@@ -7,9 +7,9 @@ import { Navigate } from "react-router-dom";
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'sonner';
 import { selectDepartments } from '../redux/slices/departmentSlice';
-import { selectProjects, selectCurrentProject, setCurrentProject, fetchProjects } from '../redux/slices/projectSlice';
+import { selectProjects, selectCurrentProject, setCurrentProject, fetchProjects, fetchManagerProjects } from '../redux/slices/projectSlice';
 import { fetchQueue } from '../redux/slices/approvalSlice';
-import { requestProjectClosure } from '../redux/slices/workflowSlice';
+import { requestProjectClosure, fetchPendingApprovals } from '../redux/slices/workflowSlice';
 import PageHeader from "../components/PageHeader";
 
 export default function Workflow() {
@@ -102,7 +102,7 @@ export default function Workflow() {
   // For manager workflow page: load projects for closure requests
   useEffect(() => {
     if (isManager) {
-      dispatch(fetchProjects()).catch((e) => { });
+      dispatch(fetchManagerProjects()).catch((e) => { });
     }
   }, [dispatch, isManager]);
 
@@ -361,13 +361,16 @@ export default function Workflow() {
             title="Workflow Management"
             subtitle="Design, automate, and monitor approval workflows across your organization"
             onRefresh={() => {
-              // Refresh admin workflow queue instead of triggering departments/projects API calls
-              dispatch(fetchQueue('ADMIN')).catch((e) => { });
+              // Refresh admin workflow queue AND pending approvals
+              Promise.all([
+                dispatch(fetchQueue('ADMIN')),
+                dispatch(fetchPendingApprovals('ADMIN'))
+              ]).catch((e) => { console.error("Refresh failed", e); });
             }}
           >
           </PageHeader>
         </div>
-        
+
         {showModal && (
           <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
             <form
@@ -536,11 +539,18 @@ export default function Workflow() {
             title="Project Management"
             subtitle="Request project closures and manage workflow approvals"
             onRefresh={() => {
-              // Refresh manager workflow queue using manager numeric ID
+              // Refresh manager workflow queue, pending approvals, and projects
+              const actions = [
+                dispatch(fetchPendingApprovals('MANAGER')),
+                dispatch(fetchManagerProjects())
+              ];
+
               if (authUser) {
                 const managerId = authUser.user_id || authUser.userId || authUser.numeric_id || authUser.id;
-                dispatch(fetchQueue(managerId)).catch((e) => { });
+                actions.push(dispatch(fetchQueue(managerId)));
               }
+
+              Promise.all(actions).catch((e) => { console.error("Refresh failed", e); });
             }}
           />
         </div>

@@ -10,7 +10,7 @@ import { selectUser } from '../redux/slices/authSlice';
  * Only shows when task.status = IN_PROGRESS and user is EMPLOYEE
  * Calls POST /api/workflow/request with entityType: 'TASK'
  */
-const TaskRequestButton = ({ task, projectId, onSuccess }) => {
+const TaskRequestButton = ({ task, projectId, onSuccess, disabled }) => {
   const dispatch = useDispatch();
   const user = useSelector(selectUser);
   const [loading, setLoading] = useState(false);
@@ -40,6 +40,7 @@ const TaskRequestButton = ({ task, projectId, onSuccess }) => {
   if (!isEmployee || !isInProgress) return null;
 
   const handleRequest = async () => {
+    if (disabled) return;
     if (!reason.trim()) {
       toast.error('Please provide a reason for completion request');
       return;
@@ -76,10 +77,10 @@ const TaskRequestButton = ({ task, projectId, onSuccess }) => {
   return (
     <>
       <button
-        onClick={() => { if (!isUserReadOnly) setShowReasonModal(true); }}
-        disabled={loading || isUserReadOnly}
-        title={isUserReadOnly ? 'You have read-only access to this task' : ''}
-        className={`inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white ${isUserReadOnly ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'} disabled:bg-blue-400 rounded-md transition-colors`}
+        onClick={() => { if (!isUserReadOnly && !disabled) setShowReasonModal(true); }}
+        disabled={loading || isUserReadOnly || disabled}
+        title={isUserReadOnly || disabled ? 'Task is read-only or locked' : ''}
+        className={`inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white ${isUserReadOnly || disabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'} disabled:bg-blue-400 rounded-md transition-colors`}
       >
         {loading ? (
           <Loader2 className="w-4 h-4 animate-spin" />

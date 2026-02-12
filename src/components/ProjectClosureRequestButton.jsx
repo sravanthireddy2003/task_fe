@@ -110,74 +110,98 @@ const ProjectClosureRequestButton = ({ project, tasks = [], taskSummary }) => {
       <button
         onClick={() => !isClosurePending && setShowConfirmModal(true)}
         disabled={!canRequestClosure || loading || isClosurePending}
-        className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-          isClosurePending
-            ? 'text-gray-500 bg-gray-200 cursor-not-allowed'
+        className={`relative group inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl shadow-sm transition-all duration-200 border ${isClosurePending
+            ? 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'
             : canRequestClosure
-            ? 'text-white bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400'
-            : 'text-gray-500 bg-gray-200 cursor-not-allowed'
-        }`}
+              ? 'bg-white text-orange-600 border-orange-200 hover:bg-orange-50 hover:border-orange-300 hover:shadow-md'
+              : 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed opacity-75'
+          }`}
         title={
           isClosurePending
-            ? 'Project closure request is pending admin approval. You cannot send another request at this time.'
+            ? 'Request pending approval'
             : !canRequestClosure
-            ? 'All tasks must be completed before closing the project'
-            : ''
+              ? 'All tasks must be completed first'
+              : 'Request to close this project'
         }
       >
         {loading ? (
           <Loader2 className="w-4 h-4 animate-spin" />
-        ) : isClosurePending ? (
-          <Lock className="w-4 h-4" />
         ) : (
-          <Lock className="w-4 h-4" />
+          <div className={`p-1 rounded-full ${canRequestClosure && !isClosurePending ? 'bg-orange-100' : 'bg-gray-200'}`}>
+            <Lock className="w-3.5 h-3.5" />
+          </div>
         )}
-        {getButtonText()}
+        <span>{getButtonText()}</span>
+
+        {/* Tooltip for disabled state */}
+        {!canRequestClosure && !isClosurePending && !loading && (
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none text-center">
+            Complete all active tasks to enable
+          </div>
+        )}
       </button>
 
       {/* Confirmation Modal */}
       {showConfirmModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <div className="flex items-center gap-3 mb-4">
-              <AlertTriangle className="w-6 h-6 text-orange-500" />
-              <h3 className="text-lg font-semibold">Request Project Closure</h3>
+        <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all duration-300">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform scale-100 transition-all">
+
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-orange-50 to-red-50 px-6 py-6 border-b border-orange-100 flex items-start gap-4">
+              <div className="bg-white p-2 rounded-xl shadow-sm border border-orange-100">
+                <AlertTriangle className="w-8 h-8 text-orange-500" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Request Project Closure</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  You are about to request closure for <span className="font-semibold text-gray-900">"{project.name || project.title}"</span>.
+                </p>
+              </div>
             </div>
 
-            <div className="mb-4">
-              <p className="text-sm text-gray-600 mb-2">
-                This will request administrative approval to close the project "{project.name || project.title}".
-              </p>
-              <p className="text-sm text-gray-600">
-                Please provide a reason for closing this project:
+            <div className="p-6">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Reason for Closure <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <textarea
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="Please provide a detailed reason for closing this project..."
+                  className="w-full p-4 border border-gray-300 rounded-xl resize-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all text-sm min-h-[120px]"
+                  maxLength={500}
+                  autoFocus
+                />
+                <div className="absolute bottom-3 right-3 text-xs text-gray-400 pointer-events-none">
+                  {reason.length}/500
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 mt-3 flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                This request will be sent to the Admin for final approval.
               </p>
             </div>
 
-            <textarea
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Explain why this project should be closed..."
-              className="w-full p-3 border border-gray-300 rounded-md resize-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              rows={4}
-              maxLength={500}
-            />
-
-            <div className="flex justify-end gap-3 mt-4">
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
               <button
                 onClick={() => {
                   setShowConfirmModal(false);
                   setReason('');
                 }}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+                className="px-5 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-xl transition-colors shadow-sm"
               >
                 Cancel
               </button>
               <button
                 onClick={handleRequestClosure}
                 disabled={loading || !reason.trim()}
-                className="px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 rounded-md"
+                className="px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed rounded-xl shadow-md hover:shadow-lg transition-all"
               >
-                {loading ? 'Submitting...' : 'Request Closure'}
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Submitting...
+                  </span>
+                ) : 'Submit Request'}
               </button>
             </div>
           </div>

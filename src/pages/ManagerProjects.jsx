@@ -289,14 +289,16 @@ const ManagerProjects = () => {
                   {filteredProjects.map((project) => (
                     <tr key={project.id || project._id} className="border-b hover:bg-gray-50">
                       <td className="p-3 font-medium">{project.name}</td>
-                      <td className="p-3 text-sm">{getClientName(project.client || project.client_id)}</td>
+                      <td className="p-3 text-sm">{getClientName(project.client || project.client_id || project.clientId)}</td>
                       <td className="p-3">
                         <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[project.status] || 'bg-gray-100 text-gray-700'}`}>
                           {project.status || 'Planning'}
                         </span>
                       </td>
                       <td className="p-3 text-sm text-gray-600 uppercase tracking-wide">{project.priority || 'Medium'}</td>
-                      <td className="p-3 text-sm text-gray-600">{formatDate(project.start_date)} → {formatDate(project.end_date)}</td>
+                      <td className="p-3 text-sm text-gray-600">
+                        {formatDate(project.startDate || project.start_date)} → {formatDate(project.endDate || project.end_date)}
+                      </td>
                       <td className="p-3 text-right">
                         <button
                           onClick={() => handleViewSummary(project)}
@@ -325,7 +327,7 @@ const ManagerProjects = () => {
                       </div>
                       <div>
                         <h3 className="font-semibold text-gray-900">{project.name}</h3>
-                        <p className="text-sm text-gray-600">{getClientName(project.client || project.client_id)}</p>
+                        <p className="text-sm text-gray-600">{getClientName(project.client || project.client_id || project.clientId)}</p>
                       </div>
                     </div>
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[project.status] || 'bg-gray-100 text-gray-700'}`}>
@@ -347,9 +349,9 @@ const ManagerProjects = () => {
                   </div>
 
                   <div className="flex items-center justify-between text-xs text-gray-500 mt-3 pt-3 border-t">
-                    <span>📅 {formatDate(project.start_date)}</span>
+                    <span>📅 {formatDate(project.startDate || project.start_date)}</span>
                     <span>→</span>
-                    <span>{formatDate(project.end_date)}</span>
+                    <span>{formatDate(project.endDate || project.end_date)}</span>
                   </div>
 
                   <div className="flex items-center justify-between mt-4">
@@ -401,11 +403,10 @@ const ManagerProjects = () => {
                 </div>
                 <div>
                   <span className="text-gray-600">Status:</span>
-                  <span className={`font-medium ml-2 px-2 py-1 rounded-full text-xs ${
-                    projectSummary.project?.status === 'Completed' ? 'bg-green-100 text-green-700' :
+                  <span className={`font-medium ml-2 px-2 py-1 rounded-full text-xs ${projectSummary.project?.status === 'Completed' ? 'bg-green-100 text-green-700' :
                     projectSummary.project?.status === 'Active' ? 'bg-blue-100 text-blue-700' :
-                    'bg-yellow-100 text-yellow-700'
-                  }`}>
+                      'bg-yellow-100 text-yellow-700'
+                    }`}>
                     {projectSummary.project?.status || selectedSummaryProject.status}
                   </span>
                 </div>
