@@ -6,7 +6,7 @@ import fetchWithTenant from '../utils/fetchWithTenant';
 const { Plus, Edit2, Trash2, AlertCircle, Filter, List, Grid, Calendar, Clock, User, RefreshCw, GitBranch, Search, ChevronDown, MoreVertical, CheckCircle, XCircle, PlayCircle, PauseCircle, Eye, LayoutGrid, Clock4, Folder, ClipboardList, CheckSquare, Pause, Play, X } = Icons;
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'sonner';
-
+import Card from "../components/Card";
 import {
   fetchTasks,
   fetchSelectedTaskDetails,
@@ -554,7 +554,11 @@ export default function Tasks() {
                       className="border-b hover:bg-gray-50 transition-colors cursor-pointer"
                     >
                       <td className="p-4">
-                        <div onClick={() => handleOpenTaskDetails(task)} title="View task details" className="font-medium text-gray-900 cursor-pointer hover:underline">{task.title || task.name}</div>
+                        <div onClick={() => handleOpenTaskDetails(task)} title="View task details" className={`font-medium cursor-pointer hover:underline ${
+                          (task.status || task.stage || 'pending').toLowerCase() === 'completed'
+                            ? 'text-gray-400 line-through'
+                            : 'text-gray-900'
+                        }`}>{task.title || task.name}</div>
                         {task.description && (
                           <div className="text-sm text-gray-500 mt-1 line-clamp-2">{task.description}</div>
                         )}
@@ -670,7 +674,11 @@ export default function Tasks() {
                       onClick={() => handleOpenTaskDetails(task)}
                     >
                       <div className="flex items-start justify-between mb-2">
-                        <h4 className="font-medium text-gray-900">
+                        <h4 className={`font-medium ${
+                          (task.status || task.stage || 'pending').toLowerCase() === 'completed'
+                            ? 'text-gray-400 line-through'
+                            : 'text-gray-900'
+                        }`}>
                           {task.title || task.name}
                         </h4>
                         <span
@@ -749,7 +757,11 @@ export default function Tasks() {
                         className="text-xs p-2 mb-1 rounded bg-blue-50 text-blue-700 truncate hover:bg-blue-100 cursor-pointer border border-blue-100"
                         onClick={() => handleOpenTaskDetails(task)}
                       >
-                        <div className="font-medium">{task.title || task.name}</div>
+                        <div className={`font-medium ${
+                          (task.status || task.stage || 'pending').toLowerCase() === 'completed'
+                            ? 'line-through'
+                            : ''
+                        }`}>{task.title || task.name}</div>
                         <div className="flex items-center gap-1 mt-1">
                           <span className={`px-1 rounded ${priorityColors[(task.priority || 'MEDIUM').toLowerCase()]}`}>
                             {task.priority}
@@ -795,7 +807,11 @@ export default function Tasks() {
                         (task.status || task.stage || 'pending').toLowerCase() === 'in_progress' ? 'bg-blue-500' :
                           (task.status || task.stage || 'pending').toLowerCase() === 'pending' ? 'bg-gray-400' : 'bg-red-500'}`}
                       />
-                      <h4 className="font-medium text-gray-900">{task.title || task.name}</h4>
+                      <h4 className={`font-medium ${
+                        (task.status || task.stage || 'pending').toLowerCase() === 'completed'
+                          ? 'text-gray-400 line-through'
+                          : 'text-gray-900'
+                      }`}>{task.title || task.name}</h4>
                       <span className={`px-2 py-1 rounded text-xs ${priorityColors[(task.priority || 'MEDIUM').toLowerCase()]}`}>
                         {task.priority}
                       </span>
