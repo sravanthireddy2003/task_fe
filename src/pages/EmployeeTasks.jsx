@@ -1230,57 +1230,148 @@ const EmployeeTasks = () => {
     }
   };
 
-  const handleCompleteChecklist = async (item) => {
-    const itemId = item?.id || item?.public_id;
-    if (!itemId || !selectedTask) return;
+const handleCompleteChecklist = async (item) => {
+  const itemId = item?.id || item?.public_id;
+  if (!itemId || !selectedTask) return;
 
-    setActionRunning(true);
-    try {
-      const writable = await ensureTaskWritable(selectedTask);
-      if (!writable.ok) return;
-      const resp = await fetchWithTenant(`/api/employee/subtask/${itemId}/complete`, {
-        method: 'POST',
-      });
+  setActionRunning(true);
+  try {
+    const writable = await ensureTaskWritable(selectedTask);
+    if (!writable.ok) return;
+    
+    // Make the API call to complete the checklist item
+    const resp = await fetchWithTenant(`/api/employee/subtask/${itemId}/complete`, {
+      method: 'POST',
+    });
 
-      const updatedChecklistItem = resp.data;
-      toast.success(resp?.message || 'Checklist marked complete');
+    // Get the updated checklist item from the response
+    const updatedChecklistItem = resp.data;
+    
+    toast.success(resp?.message || 'Checklist marked complete');
 
-      // Get the current task ID
-      const selectedTaskId = normalizeId(selectedTask);
+    // Get the current task ID
+    const selectedTaskId = normalizeId(selectedTask);
 
-      // Update the main tasks array to reflect the checklist change
-      setTasks(prevTasks =>
-        prevTasks.map(task => {
-          if (normalizeId(task) === selectedTaskId) {
-            const updatedChecklist = (task.checklist || []).map(checkItem =>
-              (checkItem.id || checkItem.public_id) === itemId ? updatedChecklistItem : checkItem
-            );
+    // Update the main tasks array to reflect the checklist change
+    setTasks(prevTasks =>
+      prevTasks.map(task => {
+        if (normalizeId(task) === selectedTaskId) {
+          // Update the specific checklist item in the task's checklist array
+          const updatedChecklist = (task.checklist || []).map(checkItem =>
+            (checkItem.id || checkItem.public_id) === itemId 
+              ? { 
+                  ...checkItem, 
+                  status: 'Completed',
+                  completedAt: updatedChecklistItem?.completedAt || new Date().toISOString()
+                } 
+              : checkItem
+          );
 
-            return {
-              ...task,
-              checklist: updatedChecklist,
-            };
-          }
-          return task;
-        })
-      );
+          return {
+            ...task,
+            checklist: updatedChecklist,
+          };
+        }
+        return task;
+      })
+    );
 
-      // Update selectedTask
-      if (selectedTask) {
-        setSelectedTask(prev => ({
+    // Update selectedTask directly to ensure immediate UI update
+    if (selectedTask) {
+      setSelectedTask(prev => {
+        if (!prev) return prev;
+        
+        const updatedChecklist = (prev.checklist || []).map(checkItem =>
+          (checkItem.id || checkItem.public_id) === itemId 
+            ? { 
+                ...checkItem, 
+                status: 'Completed',
+                completedAt: updatedChecklistItem?.completedAt || new Date().toISOString()
+              } 
+            : checkItem
+        );
+        
+        return {
           ...prev,
-          checklist: (prev.checklist || []).map(checkItem =>
-            (checkItem.id || checkItem.public_id) === itemId ? updatedChecklistItem : checkItem
-          )
-        }));
-      }
-
-    } catch (err) {
-      toast.error(err?.message || 'Unable to update checklist status');
-    } finally {
-      setActionRunning(false);
+          checklist: updatedChecklist
+        };
+      });
     }
-  };
+
+    // Also update the checklists state if you're using it
+    if (checklists[selectedTaskId]) {
+      setChecklists(prev => ({
+        ...prev,
+        [selectedTaskId]: (prev[selectedTaskId] || []).map(checkItem =>
+          (checkItem.id || checkItem.public_id) === itemId 
+            ? { 
+                ...checkItem, 
+                status: 'Completed',
+                completedAt: updatedChecklistItem?.completedAt || new Date().toISOString()
+              } 
+            : checkItem
+        )
+      }));
+    }
+
+  } catch (err) {
+    toast.error(err?.message || 'Unable to update checklist status');
+  } finally {
+    setActionRunning(false);
+  }
+};
+
+  // const handleCompleteChecklist = async (item) => {
+  //   const itemId = item?.id || item?.public_id;
+  //   if (!itemId || !selectedTask) return;
+
+  //   setActionRunning(true);
+  //   try {
+  //     const writable = await ensureTaskWritable(selectedTask);
+  //     if (!writable.ok) return;
+  //     const resp = await fetchWithTenant(`/api/employee/subtask/${itemId}/complete`, {
+  //       method: 'POST',
+  //     });
+
+  //     const updatedChecklistItem = resp.data;
+  //     toast.success(resp?.message || 'Checklist marked complete');
+
+  //     // Get the current task ID
+  //     const selectedTaskId = normalizeId(selectedTask);
+
+  //     // Update the main tasks array to reflect the checklist change
+  //     setTasks(prevTasks =>
+  //       prevTasks.map(task => {
+  //         if (normalizeId(task) === selectedTaskId) {
+  //           const updatedChecklist = (task.checklist || []).map(checkItem =>
+  //             (checkItem.id || checkItem.public_id) === itemId ? updatedChecklistItem : checkItem
+  //           );
+
+  //           return {
+  //             ...task,
+  //             checklist: updatedChecklist,
+  //           };
+  //         }
+  //         return task;
+  //       })
+  //     );
+
+  //     // Update selectedTask
+  //     if (selectedTask) {
+  //       setSelectedTask(prev => ({
+  //         ...prev,
+  //         checklist: (prev.checklist || []).map(checkItem =>
+  //           (checkItem.id || checkItem.public_id) === itemId ? updatedChecklistItem : checkItem
+  //         )
+  //       }));
+  //     }
+
+  //   } catch (err) {
+  //     toast.error(err?.message || 'Unable to update checklist status');
+  //   } finally {
+  //     setActionRunning(false);
+  //   }
+  // };
 
   // Existing functions
   const handleOpenTimeline = (task) => {
@@ -2064,32 +2155,46 @@ const EmployeeTasks = () => {
                                   )}
                                 </div>
                               </div>
-                              {!isItemCompleted && !isTaskCompleted(selectedTask) && (
+                              {/* UPDATED: Only show buttons when task is not completed and based on item completion status */}
+                              {!isTaskCompleted(selectedTask) && (
                                 <div className="flex items-center gap-2 text-xs uppercase text-gray-500">
-                                  <button
-                                    type="button"
-                                    onClick={() => startEditingChecklist(item)}
-                                    disabled={isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending'}
-                                    className="rounded-full border border-gray-200 px-3 py-1 hover:border-blue-300 hover:text-blue-600 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                                  >
-                                    Edit
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleCompleteChecklist(item)}
-                                    disabled={isTaskReadOnly(selectedTask) || actionRunning || getReassignmentState(selectedTask) === 'pending'}
-                                    className="rounded-full border border-emerald-200 px-3 py-1 text-emerald-600 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                                  >
-                                    Mark complete
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDeleteChecklist(item)}
-                                    disabled={isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending'}
-                                    className="rounded-full border border-rose-200 px-3 py-1 text-rose-600 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                                  >
-                                    Delete
-                                  </button>
+                                  {!isItemCompleted ? (
+                                    <>
+                                      <button
+                                        type="button"
+                                        onClick={() => startEditingChecklist(item)}
+                                        disabled={isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending'}
+                                        className="rounded-full border border-gray-200 px-3 py-1 hover:border-blue-300 hover:text-blue-600 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                                      >
+                                        Edit
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleCompleteChecklist(item)}
+                                        disabled={isTaskReadOnly(selectedTask) || actionRunning || getReassignmentState(selectedTask) === 'pending'}
+                                        className="rounded-full border border-emerald-200 px-3 py-1 text-emerald-600 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                                      >
+                                        Mark complete
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteChecklist(item)}
+                                        disabled={isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending'}
+                                        className="rounded-full border border-rose-200 px-3 py-1 text-rose-600 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                                      >
+                                        Delete
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteChecklist(item)}
+                                      disabled={isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending'}
+                                      className="rounded-full border border-rose-200 px-3 py-1 text-rose-600 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                      Delete
+                                    </button>
+                                  )}
                                 </div>
                               )}
                             </div>
