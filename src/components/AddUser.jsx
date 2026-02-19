@@ -305,7 +305,6 @@ const AddUser = ({ open, setOpen, userData }) => {
                       <option value="Admin">Admin</option>
                       <option value="Manager">Manager</option>
                       <option value="Employee">Employee</option>
-                      <option value="Client">Client</option>
                     </select>
                     {errors.role && (
                       <p className="mt-2 text-sm text-red-600">

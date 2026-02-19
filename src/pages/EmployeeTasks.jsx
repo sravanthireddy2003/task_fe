@@ -22,7 +22,7 @@ import * as Icons from '../icons';
 const { AlertCircle, CheckCircle, XCircle, Play, Pause, RotateCcw, Check, Clock, Kanban, List, CheckSquare, MessageSquare, Plus, Send, User, Calendar, RefreshCw, Eye, Filter, ChevronDown } = Icons;
 import KanbanBoard from '../components/KanbanBoard';
 import ReassignTaskRequestModal from './ReassignTaskRequest';
-import TaskRequestButton from '../components/TaskRequestButton';
+
 
 // Updated normalizeId to handle your API response
 const normalizeId = (entity) => {
@@ -1868,17 +1868,7 @@ const EmployeeTasks = () => {
                           <Pause className="w-3 h-3" />
                           Pause
                         </button>
-                        <TaskRequestButton
-                          task={selectedTask}
-                          projectId={selectedProjectId}
-                          disabled={isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending' || isTaskCompleted(selectedTask) || isTaskLocked(selectedTask)}
-                          onSuccess={(updatedTask) => {
-                            // Update the task in the local state
-                            setTasks(prev => prev.map(t =>
-                              (t.id || t._id) === (updatedTask.id || updatedTask._id) ? updatedTask : t
-                            ));
-                          }}
-                        />
+
                       </>
                     ) : null}
 
