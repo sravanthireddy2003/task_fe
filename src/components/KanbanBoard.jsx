@@ -259,7 +259,6 @@ const KanbanBoard = ({
       }
     } catch (error) {
       toast.error(error?.message || 'Failed to update task status');
-      console.error('Drag end error:', error);
     }
   };
 

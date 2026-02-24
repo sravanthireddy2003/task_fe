@@ -4,7 +4,7 @@ import { Provider } from "react-redux";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App.jsx";
 import "./index.css";
- 
+
 import store from "./redux/store";
 import { DEV_SEED } from "./dev/dev_token";
 import { getAccessToken, getRefreshToken, setTokens } from './utils/tokenService';
@@ -12,15 +12,15 @@ import { setAuthToken } from './App/httpHandler';
 import { refreshToken } from './redux/slices/authSlice';
 import { initWorkflowSocket } from './socket/initWorkflowSocket';
 import { API_BASE_URL, TENANT_ID_FALLBACK } from './utils/envConfig';
- 
+
 // Ensure tenantId default from environment is persisted for API calls
 try {
   const defaultTenant = TENANT_ID_FALLBACK || null;
   if (defaultTenant && !localStorage.getItem("tenantId")) {
     localStorage.setItem("tenantId", defaultTenant);
   }
-} catch (e) {}
- 
+} catch (e) { }
+
 // ✅ FIXED: Bootstrapping sequence - NO DEV TOKEN AUTO-LOGIN (gated by env flag)
 async function boot() {
   try {
@@ -45,11 +45,11 @@ async function boot() {
           return await originalFetch(input, init);
         }
       };
-    } catch (e) {}
+    } catch (e) { }
     // ✅ STEP 1: Load existing tokens OR use dev seed for development (only when explicitly enabled)
     let access = getAccessToken();
     let refresh = getRefreshToken();
-    
+
     const isDev = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.DEV;
     const useDevSeed = typeof import.meta !== 'undefined' && import.meta.env && (import.meta.env.VITE_USE_DEV_SEED === 'true');
     // Use dev seed only if: no tokens, running in dev, and flag enabled
@@ -59,12 +59,12 @@ async function boot() {
       setTokens(access, refresh, 'local');
       try {
         localStorage.setItem('userInfo', JSON.stringify(DEV_SEED.user));
-      } catch (e) {}
+      } catch (e) { }
     }
-   
+
     if (access) {
       setAuthToken(access, refresh || null, "local");
- 
+
       // ✅ STEP 2: Try silent refresh ONLY if valid token exists
       try {
         await store.dispatch(refreshToken()).unwrap();
@@ -83,17 +83,16 @@ async function boot() {
     // initialize workflow socket after store is ready
     try {
       initWorkflowSocket(store);
-    } catch (e) {}
+    } catch (e) { }
 
     ReactDOM.createRoot(document.getElementById("root")).render(
       <Provider store={store}>
-        <BrowserRouter>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <App />
         </BrowserRouter>
       </Provider>
     );
   }
 }
- 
+
 boot();
- 

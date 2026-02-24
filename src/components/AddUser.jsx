@@ -119,8 +119,6 @@ const AddUser = ({ open, setOpen, userData }) => {
       setOpen(false);
       dispatch(fetchUsers());
     } catch (err) {
-      console.error("Submit error:", err);
-
       if (err?.message) {
         toast.error(err.message);
       } else {

@@ -1,9 +1,9 @@
 import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./slices/authSlice";
 import { apiSlice } from "./slices/apiSlice";
-import userReducer from "./slices/userSlice"; 
+import userReducer from "./slices/userSlice";
 import taskReducer from "./slices/taskSlice";
-import clientReducer from "./slices/clientSlice"; 
+import clientReducer from "./slices/clientSlice";
 import departmentReducer from "./slices/departmentSlice";
 import projectReducer from "./slices/projectSlice";
 import subtaskReducer from "./slices/subtaskSlice";
@@ -13,6 +13,7 @@ import reportsReducer from "./slices/reportsSlice";
 import workflowReducer from "./slices/workflowSlice";
 import approvalReducer from "./slices/approvalSlice";
 import historyReducer from "./slices/historySlice";
+import documentReducer from "./slices/documentSlice";
 
 const store = configureStore({
   reducer: {
@@ -30,6 +31,7 @@ const store = configureStore({
     subtasks: subtaskReducer,
     notifications: notificationReducer,
     chat: chatReducer,
+    documents: documentReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(apiSlice.middleware),

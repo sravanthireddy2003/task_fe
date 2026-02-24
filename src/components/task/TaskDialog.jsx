@@ -37,9 +37,7 @@ const TaskDialog = ({ task }) => {
     const taskId = task?._id || task?.task_id;
     if (taskId) {
       navigate(`/task/${taskId}`);
-    } else {
-      console.error("No valid task ID available for navigation");
-    }
+    } else {}
   };
 
   const items = [
@@ -54,9 +52,7 @@ const TaskDialog = ({ task }) => {
       onClick: () => {
         if (task?.task_id) {
           setOpenEdit(true);
-        } else {
-          console.error("No task ID available for editing");
-        }
+        } else {}
       }
     },
   ];

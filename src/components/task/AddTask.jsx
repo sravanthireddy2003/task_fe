@@ -62,9 +62,7 @@ const AddTask = ({ open, setOpen }) => {
         setStage(LISTS[0]);
         setPriority(PRIORITY[2]);
       }
-    } catch (error) {
-      console.error("Error creating task:", error);
-    }
+    } catch (error) {}
 
     setUploading(false);
   };

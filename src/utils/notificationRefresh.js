@@ -39,9 +39,7 @@ export const refreshNotificationsAfterAction = async (thunkAPI) => {
     
     // Dispatch notification fetch
     thunkAPI.dispatch(fetchNotifications());
-  } catch (error) {
-    console.error('[Notifications] Failed to refresh after action:', error);
-  }
+  } catch (error) {}
 };
 
 /**
@@ -55,9 +53,7 @@ export const refreshNotificationsNow = async (dispatch) => {
   try {
     await new Promise(resolve => setTimeout(resolve, 500));
     dispatch(fetchNotifications());
-  } catch (error) {
-    console.error('[Notifications] Failed to refresh:', error);
-  }
+  } catch (error) {}
 };
 
 /**

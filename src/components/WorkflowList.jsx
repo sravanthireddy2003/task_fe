@@ -42,10 +42,7 @@ const WorkflowList = () => {
     try {
       // NOTE: Adjust payload to match your backend contract
       await dispatch(triggerWorkflow({ task_id: taskId })).unwrap();
-    } catch (err) {
-      // Silently fail for now; surrounding page can show toasts
-      console.error('triggerWorkflow failed', err);
-    }
+    } catch (err) {}
   };
 
   const isEmployee = role === 'employee';

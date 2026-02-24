@@ -34,7 +34,6 @@ const TaskModal = ({ task, onClose, onUpdate, userRole, projectId }) => {
       setIsEditing(false);
     } catch (error) {
       toast.error('Failed to update task');
-      console.error('Update error:', error);
     } finally {
       setLoading(false);
     }
@@ -56,7 +55,6 @@ const TaskModal = ({ task, onClose, onUpdate, userRole, projectId }) => {
         }
       };
 
-      console.debug('[TaskModal] Requesting workflow transition:', payload);
       const result = await dispatch(requestTransition(payload)).unwrap();
 
       if (result.status === 'APPLIED') {
@@ -69,7 +67,6 @@ const TaskModal = ({ task, onClose, onUpdate, userRole, projectId }) => {
         toast.success(`Transition to ${newStatus} submitted for approval`);
       }
     } catch (error) {
-      console.error('Workflow transition error:', error);
       toast.error('Failed to request status change');
     }
   };

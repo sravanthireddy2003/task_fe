@@ -28,21 +28,17 @@ export async function httpPostService(url, data, config = {}) {
         const token = getAccessToken();
         const tenantId = localStorage.getItem("tenantId") || getTenantFromStorage() || defaultTenantId;
         const headers = Object.assign({}, config.headers || {});
-            // If sending multipart FormData, let axios set the correct Content-Type/boundary
-            if (typeof FormData !== 'undefined' && data instanceof FormData) {
-                // remove any forced content-type so axios can set multipart boundary
-                if (headers['Content-Type']) delete headers['Content-Type'];
-                if (headers['content-type']) delete headers['content-type'];
-            }
+        // If sending multipart FormData, let axios set the correct Content-Type/boundary
+        if (typeof FormData !== 'undefined' && data instanceof FormData) {
+            // Explicitly set to undefined to ensure Axios/Browser sets the boundary
+            headers['Content-Type'] = undefined;
+            headers['content-type'] = undefined;
+        }
         if (tenantId) headers["x-tenant-id"] = tenantId;
         // allow callers to skip attaching Authorization (for verify-otp/resend flows)
         if (!config.skipAuth && token) {
             headers["Authorization"] = `Bearer ${token}`;
-        } else if (!config.skipAuth && !token) {
-            // Only warn when we expected an auth header but no token was available
-            console.warn(`[httpPostService] no access token found for request to ${url}`);
-        }
-        console.debug('[httpPostService] POST', url, { tenantId, hasToken: !!token });
+        } else if (!config.skipAuth && !token) {}
         const resp = await api.post(`/${url}`.replace(/^\/+/, ""), data, { ...config, headers });
         return resp.data;
     } catch (error) {
@@ -77,7 +73,7 @@ export async function httpPatchService(url, data, config = {}) {
         throw formatAxiosError(error);
     }
 }
-    
+
 export async function httpPutService(url, data, config = {}) {
     try {
         const token = getAccessToken();
@@ -99,7 +95,6 @@ export async function httpGetService(url, config = {}) {
         const headers = Object.assign({}, config.headers || {});
         if (tenantId) headers["x-tenant-id"] = tenantId;
         if (!config.skipAuth && token) headers["Authorization"] = `Bearer ${token}`;
-        console.debug('[httpGetService] GET', url, { tenantId, hasToken: !!token });
         const resp = await api.get(`/${url}`.replace(/^\/+/, ""), { ...config, headers });
         return resp.data;
     } catch (error) {
@@ -134,9 +129,9 @@ export const setAuthToken = (accessToken, refreshToken = null, storageType = 'lo
 export const clearAuthTokens = () => {
     clearTokens();
     try {
-      localStorage.removeItem('user');
-      sessionStorage.removeItem('user');
-            // also clear axios default auth header if set
-            try { delete api.defaults.headers.common['Authorization']; } catch (e) {}
-    } catch (e) {}
+        localStorage.removeItem('user');
+        sessionStorage.removeItem('user');
+        // also clear axios default auth header if set
+        try { delete api.defaults.headers.common['Authorization']; } catch (e) { }
+    } catch (e) { }
 };

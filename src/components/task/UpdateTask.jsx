@@ -54,9 +54,7 @@ const UpdateTask = ({ open, setOpen, taskId }) => {
       try {
         const response = await httpGetService("api/clients");
         setClients(response);
-      } catch (error) {
-        console.error("Error fetching clients:", error);
-      }
+      } catch (error) {}
     };
     fetchClients();
   }, []);
@@ -97,7 +95,6 @@ const UpdateTask = ({ open, setOpen, taskId }) => {
         alert(`Update failed: ${result.payload || result.error}`);
       }
     } catch (error) {
-      console.error("Update error:", error);
       alert("Failed to update task");
     } finally {
       setUploading(false);

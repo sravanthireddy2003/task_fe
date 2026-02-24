@@ -109,7 +109,6 @@ const TaskDetails = () => {
         // normalize shapes (some endpoints return { data: [...] } or [...])
         setActivitiesdata(Array.isArray(data) ? data : data?.data || []);
       } catch (err) {
-        console.error("Error fetching task activities:", err);
         setError("Failed to load task activities.");
       }
     };
@@ -131,7 +130,6 @@ const TaskDetails = () => {
         const hours = data?.total_working_hours ?? data?.total ?? data;
         return hours;
       } catch (error) {
-        console.error('Error fetching total working hours:', error);
         throw error;
       }
     };
@@ -156,7 +154,6 @@ const TaskDetails = () => {
           const result = await httpGetService(`api/uploads/getuploads/${task_id}`);
           setgetfile(Array.isArray(result) ? result : result?.data || []);
         } catch (err) {
-          console.error("Error fetching uploads:", err);
           setError("Failed to load uploads.");
         }
       };
@@ -188,9 +185,7 @@ const TaskDetails = () => {
                 try {
                   const response = await dispatch(getSubTask(id)).unwrap();
                   setsubTask(response);
-                } catch (err) {
-                  console.log("Failed to fetch task details");
-                  }
+                } catch (err) {}
                   };
                 fetchsubTask();
                  }, [dispatch, id]);
@@ -238,7 +233,6 @@ const TaskDetails = () => {
         // ignore refresh errors
       }
     } catch (error) {
-      console.error('Error uploading file:', error);
       setMessage(error?.message || 'Internal Server Error');
     }
   };
@@ -552,7 +546,6 @@ const Activities = ({ activity, taskId}) => {
       setSelected(act_types[0]); 
 
     } catch (err) {
-      console.error("Error submitting activity:", err);
       setError("Failed to submit activity");
     } finally {
       setIsLoading(false);

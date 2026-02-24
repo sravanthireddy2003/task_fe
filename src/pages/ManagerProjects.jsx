@@ -57,18 +57,14 @@ const ManagerProjects = () => {
     try {
       const resp = await fetchWithTenant('api/projects/stats');
       setProjectStats(resp?.data || resp || {});
-    } catch (err) {
-      console.error('Failed to load project stats:', err);
-    }
+    } catch (err) {}
   }, []);
 
   const loadProjectSummary = useCallback(async (projectId) => {
     try {
       const resp = await fetchWithTenant(`api/projects/${projectId}/summary`);
       setProjectSummary(resp?.data || resp || {});
-    } catch (err) {
-      console.error('Failed to load project summary:', err);
-    }
+    } catch (err) {}
   }, []);
 
   const loadClients = useCallback(async () => {
@@ -115,7 +111,6 @@ const ManagerProjects = () => {
       setSelectedSummaryProject(project);
       setShowSummaryModal(true);
     } catch (err) {
-      console.error('Summary error:', err);
       toast.error(err?.message || 'Failed to load project summary');
     }
   };

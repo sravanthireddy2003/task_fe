@@ -52,49 +52,28 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
   // ✅ Load data on mount and projectId change
   useEffect(() => {
     if (projectId) {
-      console.log('📨 Loading messages for projectId:', projectId);
-      
       // Fetch messages immediately
       dispatch(getProjectMessages({ projectId, limit: 50, offset: 0 }))
-        .then((result) => {
-          console.log('✅ Messages loaded:', result.payload?.data?.length || 0);
-        })
-        .catch((err) => {
-          console.error('❌ Error loading messages:', err);
-        });
-      
+        .then((result) => {})
+        .catch((err) => {});
+
       // Fetch participants
       dispatch(getProjectParticipants(projectId));
-      
+
       // Fetch stats
       dispatch(getChatStats(projectId));
-      
+
       // Re-fetch messages every 5 seconds to catch new messages
       const refetchInterval = setInterval(() => {
-        console.log('🔄 Refetching messages...');
         dispatch(getProjectMessages({ projectId, limit: 50, offset: 0 }));
       }, 5000);
-      
+
       return () => clearInterval(refetchInterval);
     }
   }, [projectId, dispatch]);
 
   // Diagnostic: log icons to detect undefined icon components
-  useEffect(() => {
-    console.log('chat icons:', {
-      Paperclip: Icons.Paperclip,
-      Send: Icons.Send,
-      MessageCircle: Icons.MessageCircle,
-      Zap: Icons.Zap,
-      BarChart3: Icons.BarChart3,
-      Users: Icons.Users,
-      HelpCircle: Icons.HelpCircle,
-      ChevronRight: Icons.ChevronRight,
-      Trash2: Icons.Trash2,
-      ChevronDown: Icons.ChevronDown,
-      RefreshCw: Icons.RefreshCw,
-    });
-  }, []);
+  useEffect(() => {}, []);
   
   // Remove diagnostic log once icons are stable
 
@@ -222,7 +201,6 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
       setIsTyping(false);
       sendTypingStop();
     } catch (err) {
-      console.error('❌ Error sending message:', err);
       toast.error('Failed to send message');
       setNewMessage(messageContent);
     }
@@ -362,7 +340,7 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
     // Message sender ID
     const senderIdRaw =
       msg.sender_id ?? msg.senderId ?? msg.user_id ?? msg.userId ?? msg.sender ?? msg.from ?? (msg.user && (msg.user.id || msg.user._id));
-    
+
     // Get current user ID - prioritize public_id from localStorage
     let currentIdRaw = null;
 
@@ -370,15 +348,11 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
     try {
       const stored = JSON.parse(localStorage.getItem('userInfo') || '{}');
       currentIdRaw = stored.public_id || stored._id || stored.id || stored.userId;
-      console.log('✅ Got currentIdRaw from localStorage.userInfo:', currentIdRaw);
-    } catch (e) {
-      console.log('⚠️ Could not parse localStorage.userInfo');
-    }
+    } catch (e) {}
 
     // 2. If still not found, try prop
     if (!currentIdRaw) {
       currentIdRaw = currentUserId;
-      console.log('✅ Got currentIdRaw from prop:', currentIdRaw);
     }
 
     // 3. If still not available, try decode from authToken JWT payload
@@ -395,34 +369,19 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
           );
           const payload = JSON.parse(json);
           currentIdRaw = payload.id || payload._id || payload.sub || payload.userId || payload.public_id;
-          console.log('✅ Got currentIdRaw from JWT:', currentIdRaw);
         }
-      } catch (e) {
-        console.log('⚠️ Could not decode JWT');
-      }
+      } catch (e) {}
     }
 
     const normalize = (v) => (v || v === 0 ? String(v).trim().toLowerCase() : null);
     const senderId = normalize(senderIdRaw);
     const curId = normalize(currentIdRaw);
 
-    // DEBUG LOG
-    console.log('📨 Message sender check:', {
-      senderIdRaw,
-      currentIdRaw,
-      senderId,
-      curId,
-      messageType: msg.message_type,
-      messageText: msg.message?.substring(0, 30),
-      isMatch: senderId && curId && senderId === curId
-    });
-
     // Compare normalized IDs
     if (senderId && curId && senderId === curId) {
-      console.log('✅ MATCH FOUND - Message is from current user');
       return true;
     }
-    
+
     return false;
   };
 
@@ -447,7 +406,6 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
         <div className="flex items-center gap-1">
           <button
             onClick={() => {
-              console.log('🔄 Manually refreshing messages...');
               dispatch(getProjectMessages({ projectId, limit: 50, offset: 0 }));
             }}
             className="p-2.5 hover:bg-gray-50 text-gray-600 hover:text-gray-800 rounded-lg transition-all duration-200"
@@ -508,7 +466,6 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
           </button>
         </div>
       </div>
-
       {/* ===== STATS PANEL ===== */}
       {showStats && stats && (
         <div className="flex-shrink-0 bg-gray-50 border-b border-gray-200 px-6 py-5 grid grid-cols-2 md:grid-cols-4 gap-4 relative">
@@ -539,7 +496,6 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
           </div>
         </div>
       )}
-
       {/* ===== PARTICIPANTS PANEL ===== */}
       {showParticipants && (
         <div className="flex-shrink-0 bg-gray-50 border-b border-gray-200 px-6 py-5 max-h-64 overflow-y-auto relative">
@@ -579,7 +535,6 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
           </div>
         </div>
       )}
-
       {/* ===== CHATBOT HELP PANEL ===== */}
       {showHelp && (
         <div className="flex-shrink-0 bg-gray-50 border-b border-gray-200 px-6 py-5 max-h-64 overflow-y-auto relative">
@@ -618,7 +573,6 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
           </div>
         </div>
       )}
-
       {/* ===== MAIN MESSAGES AREA ===== */}
       <div ref={messagesContainerRef} className="relative flex-1 overflow-y-auto bg-gray-50">
         {/* Chat Header */}
@@ -777,7 +731,6 @@ const ChatInterface = ({ projectId, projectName, authToken, currentUserId, curre
           <div ref={messagesEndRef} />
         </div>
       </div>
-
       {/* ===== INPUT AREA ===== */}
       <div className="flex-shrink-0 border-t border-gray-200 bg-white relative">
         {/* Mention Dropdown */}

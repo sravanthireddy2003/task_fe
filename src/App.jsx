@@ -243,7 +243,6 @@ const MobileNav = ({ onNavigate }) => {
           </button>
         );
       })}
-
       <div className="p-4 border-t border-slate-800 mt-8">
         <button
           onClick={() => onNavigate('/profile')}
@@ -290,8 +289,6 @@ function App() {
     };
 
     if ((needsModuleFallback || needsSidebarFallback) && shouldApplyFallback(user.role)) {
-      console.log(`[Fallback] Applying for role: ${user.role}`);
-
       const fallbackModules = needsModuleFallback ? getFallbackModules(user.role) : user.modules;
       const fallbackSidebar = needsSidebarFallback ? getFallbackSidebar(user.role) : user.sidebar;
 

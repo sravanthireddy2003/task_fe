@@ -72,7 +72,6 @@ const ReassignTaskRequestModal = ({ selectedTask, onClose, onSuccess }) => {
           }
         }
       } catch (err) {
-        console.error('Status check failed:', err);
         toast.error('Failed to load task status');
       } finally {
         setLoadingTaskStatus(false);

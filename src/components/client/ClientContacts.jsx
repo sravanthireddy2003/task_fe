@@ -36,9 +36,7 @@ const ClientContacts = ({ client }) => {
         setShowAddForm(false);
       }
       setFormData({ name: "", email: "", phone: "", position: "", department: "" });
-    } catch (error) {
-      console.error("Failed to save contact:", error);
-    }
+    } catch (error) {}
   };
 
   const handleEdit = (contact) => {
@@ -59,9 +57,7 @@ const ClientContacts = ({ client }) => {
           clientId: client.id,
           contactId
         })).unwrap();
-      } catch (error) {
-        console.error("Failed to delete contact:", error);
-      }
+      } catch (error) {}
     }
   };
 
@@ -71,9 +67,7 @@ const ClientContacts = ({ client }) => {
         clientId: client.id,
         contactId
       })).unwrap();
-    } catch (error) {
-      console.error("Failed to set primary contact:", error);
-    }
+    } catch (error) {}
   };
 
   const resetForm = () => {

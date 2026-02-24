@@ -73,9 +73,7 @@ const Trash = () => {
       }
       // Refresh the list
       dispatch(fetchDeletedClients());
-    } catch (error) {
-      console.error("Failed to perform action:", error);
-    }
+    } catch (error) {}
   };
 
   const TableHeader = () => (

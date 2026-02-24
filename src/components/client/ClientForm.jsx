@@ -216,7 +216,6 @@ const ClientForm = ({
               }
             }
           } catch (err) {
-            console.warn("Failed to attach documents:", err);
             setSubmitError(err?.message || "Failed to attach documents");
             return;
           }
@@ -238,7 +237,6 @@ const ClientForm = ({
         setSubmitError(err);
       }
     } catch (error) {
-      console.error("Form submission error:", error);
       setSubmitError(error?.message || "Unexpected error. Please try again.");
     }
   };

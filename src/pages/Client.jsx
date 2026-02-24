@@ -56,9 +56,7 @@ const Clients = () => {
     if (window.confirm('Are you sure you want to delete this client?')) {
       try {
         await dispatch(deleteClient(clientId)).unwrap();
-      } catch (error) {
-        console.error("Failed to delete client:", error);
-      }
+      } catch (error) {}
     }
   };
 

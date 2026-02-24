@@ -59,7 +59,6 @@ export const fetchTasks = createAsyncThunk(
       if (Array.isArray(res?.tasks)) return res.tasks;
       return Array.isArray(res?.data) ? res.data : [];
     } catch (err) {
-      console.error('fetchTasks error:', err);
       // Handle HTTP errors consistently
       if (err.response) {
         const status = err.response.status;

@@ -35,9 +35,7 @@ export const useRefreshNotifications = () => {
       // Add small delay to ensure backend has processed the creation
       await new Promise(resolve => setTimeout(resolve, 500));
       dispatch(fetchNotifications());
-    } catch (error) {
-      console.error('Failed to refresh notifications:', error);
-    }
+    } catch (error) {}
   };
 };
 
@@ -55,8 +53,6 @@ export const dispatchNotificationRefresh = (dispatch) => {
     try {
       await new Promise(resolve => setTimeout(resolve, 500));
       dispatch(fetchNotifications());
-    } catch (error) {
-      console.error('Failed to refresh notifications:', error);
-    }
+    } catch (error) {}
   };
 };

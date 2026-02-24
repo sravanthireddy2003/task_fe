@@ -56,7 +56,6 @@ const TaskCard = ({ taskId, task: propTask }) => {
         setLocalTask((prev) => ({ ...prev, stage: status }));
       }
     } catch (error) {
-      console.error("Update failed:", error);
       setLocalTask((prev) => ({ ...prev }));
     }
   };

@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback, Fragment } from "react";
-import { Listbox, Transition } from "@headlessui/react";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Listbox, Transition, Menu } from "@headlessui/react";
+import { Check, ChevronsUpDown, MoreVertical } from "lucide-react";
 import * as Icons from "../icons";
 import ViewToggle from "../components/ViewToggle";
 import PageHeader from "../components/PageHeader";
 import Card from "../components/Card";
 import ProjectClosureRequestButton from "../components/ProjectClosureRequestButton";
 import ProjectLockBanner from "../components/ProjectLockBanner";
+import ProjectDocuments from "../components/project/ProjectDocuments";
+import ModalWrapper from "../components/ModalWrapper";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchProjects,
@@ -83,6 +85,8 @@ export default function Projects() {
   const [activeStatusEdit, setActiveStatusEdit] = useState(null);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [selectedSummaryProject, setSelectedSummaryProject] = useState(null);
+  const [showDocsModal, setShowDocsModal] = useState(false);
+  const [selectedDocsProject, setSelectedDocsProject] = useState(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -307,7 +311,6 @@ export default function Projects() {
       setSelectedSummaryProject(project);
       setShowSummaryModal(true);
     } catch (err) {
-      console.error('Summary error:', err);
       toast.error(err?.message || 'Failed to load project summary');
     }
   };
@@ -322,6 +325,11 @@ export default function Projects() {
     } catch (err) {
       toast.error(err?.message || "Status update failed");
     }
+  };
+
+  const handleOpenDocuments = (project) => {
+    setSelectedDocsProject(project);
+    setShowDocsModal(true);
   };
 
   // Filters
@@ -369,7 +377,7 @@ export default function Projects() {
     );
   }
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <PageHeader
         title="Projects"
         subtitle="Manage and track all your projects"
@@ -491,8 +499,8 @@ export default function Projects() {
 
       {/* --------------------------- LIST VIEW --------------------------- */}
       {view === "list" && (
-        <div className="bg-white border rounded-xl overflow-hidden">
-          <table className="w-full table-auto">
+        <div className="bg-white border rounded-xl overflow-hidden overflow-x-auto">
+          <table className="w-full min-w-[800px] table-auto">
             <thead className="bg-gray-100 text-gray-700">
               <tr>
                 <th className="p-3 text-left">Project</th>
@@ -539,35 +547,79 @@ export default function Projects() {
                     </td>
                     <td className="p-3 text-sm text-gray-600">{formatDate(project.start_date)} → {formatDate(project.end_date)}</td>
                     <td className="p-3 text-right">
-                      <div className="flex justify-end gap-2 items-center">
+                      <div className="flex justify-end gap-2 items-center relative">
                         <ProjectClosureRequestButton
                           project={project}
                           taskSummary={projectSummary?.[project.id || project._id]?.tasks}
                         />
-                        <button
-                          onClick={() => handleViewSummary(project)}
-                          className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg"
-                          title="View Summary"
-                        >
-                          📊
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (project.status === 'CLOSED') return;
-                            openModal(project);
-                          }}
-                          disabled={project.status === 'CLOSED'}
-                          className={`p-2 rounded-lg ${project.status === 'CLOSED' ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-200'}`}
-                          title={project.status === 'CLOSED' ? "Project Closed" : "Edit Project"}
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(project)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                        >
-                          <Trash2 className="tm-icon" />
-                        </button>
+                        <Menu as="div" className="relative inline-block text-left">
+                          <Menu.Button className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
+                            <MoreVertical className="w-5 h-5" />
+                          </Menu.Button>
+                          <Transition
+                            as={Fragment}
+                            enter="transition ease-out duration-100"
+                            enterFrom="transform opacity-0 scale-95"
+                            enterTo="transform opacity-100 scale-100"
+                            leave="transition ease-in duration-75"
+                            leaveFrom="transform opacity-100 scale-100"
+                            leaveTo="transform opacity-0 scale-95"
+                          >
+                            <Menu.Items className="absolute right-0 mt-2 w-48 origin-top-right bg-white divide-y divide-gray-100 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                              <div className="px-1 py-1">
+                                <Menu.Item>
+                                  {({ active }) => (
+                                    <button
+                                      onClick={() => handleViewSummary(project)}
+                                      className={`${active ? 'bg-blue-50 text-blue-700' : 'text-gray-700'} group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                                    >
+                                      <BarChart3 className="w-4 h-4 mr-2" />
+                                      Summary
+                                    </button>
+                                  )}
+                                </Menu.Item>
+                                <Menu.Item>
+                                  {({ active }) => (
+                                    <button
+                                      onClick={() => handleOpenDocuments(project)}
+                                      className={`${active ? 'bg-blue-50 text-blue-700' : 'text-gray-700'} group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                                    >
+                                      <FileText className="w-4 h-4 mr-2" />
+                                      Documents
+                                    </button>
+                                  )}
+                                </Menu.Item>
+                                <Menu.Item>
+                                  {({ active }) => (
+                                    <button
+                                      onClick={() => {
+                                        if (project.status !== 'CLOSED') openModal(project);
+                                      }}
+                                      disabled={project.status === 'CLOSED'}
+                                      className={`${active && project.status !== 'CLOSED' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'} ${project.status === 'CLOSED' ? 'opacity-50 cursor-not-allowed hidden' : ''} group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                                    >
+                                      <Edit2 className="w-4 h-4 mr-2" />
+                                      Edit Project
+                                    </button>
+                                  )}
+                                </Menu.Item>
+                              </div>
+                              <div className="px-1 py-1">
+                                <Menu.Item>
+                                  {({ active }) => (
+                                    <button
+                                      onClick={() => handleDelete(project)}
+                                      className={`${active ? 'bg-red-50 text-red-700' : 'text-red-600'} group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                                    >
+                                      <Trash2 className="w-4 h-4 mr-2" />
+                                      Delete Project
+                                    </button>
+                                  )}
+                                </Menu.Item>
+                              </div>
+                            </Menu.Items>
+                          </Transition>
+                        </Menu>
                       </div>
                     </td>
                   </tr>
@@ -595,36 +647,79 @@ export default function Projects() {
                     <h3 className="text-lg font-bold text-gray-900">{project.name}</h3>
                     <p className="text-sm text-gray-600 mt-1 line-clamp-2">{project.description || "No description"}</p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 relative">
                     <ProjectClosureRequestButton
                       project={project}
                       taskSummary={projectSummary?.[project.id || project._id]?.tasks}
                     />
-                    <button
-                      onClick={() => handleViewSummary(project)}
-                      className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-                      title="View Summary"
-                    >
-                      📊
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (project.status === 'CLOSED') return;
-                        openModal(project);
-                      }}
-                      disabled={project.status === 'CLOSED'}
-                      className={`p-2 rounded-lg transition-colors ${project.status === 'CLOSED' ? 'text-gray-300 cursor-not-allowed' : 'hover:bg-blue-100 hover:text-blue-600'}`}
-                      title={project.status === 'CLOSED' ? "Project Closed" : "Edit"}
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(project)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <Menu as="div" className="relative inline-block text-left">
+                      <Menu.Button className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
+                        <MoreVertical className="w-5 h-5" />
+                      </Menu.Button>
+                      <Transition
+                        as={Fragment}
+                        enter="transition ease-out duration-100"
+                        enterFrom="transform opacity-0 scale-95"
+                        enterTo="transform opacity-100 scale-100"
+                        leave="transition ease-in duration-75"
+                        leaveFrom="transform opacity-100 scale-100"
+                        leaveTo="transform opacity-0 scale-95"
+                      >
+                        <Menu.Items className="absolute right-0 mt-2 w-48 origin-top-right bg-white divide-y divide-gray-100 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                          <div className="px-1 py-1">
+                            <Menu.Item>
+                              {({ active }) => (
+                                <button
+                                  onClick={() => handleViewSummary(project)}
+                                  className={`${active ? 'bg-blue-50 text-blue-700' : 'text-gray-700'} group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                                >
+                                  <BarChart3 className="w-4 h-4 mr-2" />
+                                  Summary
+                                </button>
+                              )}
+                            </Menu.Item>
+                            <Menu.Item>
+                              {({ active }) => (
+                                <button
+                                  onClick={() => handleOpenDocuments(project)}
+                                  className={`${active ? 'bg-blue-50 text-blue-700' : 'text-gray-700'} group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                                >
+                                  <FileText className="w-4 h-4 mr-2" />
+                                  Documents
+                                </button>
+                              )}
+                            </Menu.Item>
+                            <Menu.Item>
+                              {({ active }) => (
+                                <button
+                                  onClick={() => {
+                                    if (project.status !== 'CLOSED') openModal(project);
+                                  }}
+                                  disabled={project.status === 'CLOSED'}
+                                  className={`${active && project.status !== 'CLOSED' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'} ${project.status === 'CLOSED' ? 'opacity-50 cursor-not-allowed hidden' : ''} group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                                >
+                                  <Edit2 className="w-4 h-4 mr-2" />
+                                  Edit Project
+                                </button>
+                              )}
+                            </Menu.Item>
+                          </div>
+                          <div className="px-1 py-1">
+                            <Menu.Item>
+                              {({ active }) => (
+                                <button
+                                  onClick={() => handleDelete(project)}
+                                  className={`${active ? 'bg-red-50 text-red-700' : 'text-red-600'} group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Delete Project
+                                </button>
+                              )}
+                            </Menu.Item>
+                          </div>
+                        </Menu.Items>
+                      </Transition>
+                    </Menu>
                   </div>
                 </div>
 
@@ -774,7 +869,7 @@ export default function Projects() {
                   <p className="text-xs text-gray-500 mt-1">Optional field</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">
                       Departments <span className="text-red-500">*</span>
@@ -855,7 +950,7 @@ export default function Projects() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">Start Date</label>
                     <input
@@ -877,7 +972,7 @@ export default function Projects() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">Budget(optional)</label>
                     <input
@@ -1093,15 +1188,15 @@ export default function Projects() {
               </div>
 
               {/* RESPONSIVE ACTIVITY */}
-              <div className="bg-gradient-to-r from-emerald-25 to-green-25 border border-emerald-100 rounded-md p-3 sm:p-4">
+              <div className="bg-emerald-50 border border-emerald-100 rounded-md p-3 sm:p-4 mt-4">
                 <h4 className="text-xs sm:text-sm font-bold text-gray-800 mb-2 flex items-center gap-1.5">
-                  <Activity className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500 flex-shrink-0" />
+                  <Activity className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500" />
                   Recent Activity
                 </h4>
                 <div className="bg-white border border-gray-100 rounded p-2 sm:p-2.5 text-xs">
                   <div className="flex items-center gap-2 text-gray-600">
-                    <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse flex-shrink-0" />
-                    <span className="truncate">Summary loaded successfully</span>
+                    <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+                    <span>Summary loaded successfully</span>
                   </div>
                 </div>
               </div>
@@ -1109,6 +1204,13 @@ export default function Projects() {
           </div>
         </div>
       )}
+
+      {/* PROJECT DOCUMENTS MODAL */}
+      <ModalWrapper isOpen={showDocsModal} onClose={() => { setShowDocsModal(false); setSelectedDocsProject(null); }} title={`Documents: ${selectedDocsProject?.name || 'Project'}`}>
+        {selectedDocsProject && (
+          <ProjectDocuments project={selectedDocsProject} onClose={() => { setShowDocsModal(false); setSelectedDocsProject(null); }} />
+        )}
+      </ModalWrapper>
 
     </div>
   );

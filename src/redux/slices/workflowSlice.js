@@ -6,7 +6,6 @@ export const requestTransition = createAsyncThunk(
   'workflow/requestTransition',
   async (payload, { rejectWithValue }) => {
     try {
-      console.debug('[workflowSlice] requestTransition ->', payload);
       const data = await workflowApi.requestTransition(payload);
       return data;
     } catch (err) {
@@ -20,7 +19,6 @@ export const fetchPendingApprovals = createAsyncThunk(
   'workflow/fetchPendingApprovals',
   async (role, { rejectWithValue }) => {
     try {
-      console.debug('[workflowSlice] fetchPendingApprovals for role:', role);
       const data = await workflowApi.getPendingApprovals(role);
       return { role, approvals: data };
     } catch (err) {
@@ -34,7 +32,6 @@ export const requestTaskCompletion = createAsyncThunk(
   'workflow/requestTaskCompletion',
   async ({ taskId, projectId, reason }, { rejectWithValue }) => {
     try {
-      console.debug('[workflowSlice] requestTaskCompletion:', { taskId, projectId, reason });
       const payload = {
         entityType: 'TASK',
         entityId: taskId,
@@ -55,7 +52,6 @@ export const approveWorkflow = createAsyncThunk(
   'workflow/approveWorkflow',
   async ({ requestId, action, reason }, { rejectWithValue }) => {
     try {
-      console.debug('[workflowSlice] approveWorkflow:', { requestId, action, reason });
       const data = await workflowApi.approveRequest(requestId, action, reason);
       return data;
     } catch (err) {
@@ -69,7 +65,6 @@ export const requestProjectClosure = createAsyncThunk(
   'workflow/requestProjectClosure',
   async (payload, { rejectWithValue }) => {
     try {
-      console.debug('[workflowSlice] requestProjectClosure:', payload);
       const data = await workflowApi.requestProjectClosure(payload);
       return data;
     } catch (err) {

@@ -12,23 +12,59 @@ const ManagerChat = () => {
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Fetch projects managed by this manager
+  // ✅ Fetch projects strictly assigned to or managed by this manager
   const fetchManagedProjects = useCallback(async () => {
     try {
       setLoading(true);
-      // Fetch projects managed by this manager
-      const res = await httpGetService('api/projects?manager_id=' + user?.id);
-      if (res?.success) {
-        const managedProjects = res.data || [];
-        setProjects(managedProjects);
-        if (managedProjects.length > 0) {
-          setSelectedProjectId(managedProjects[0]._id || managedProjects[0].id);
+
+      // 1. Fetch accessible projects
+      const res = await httpGetService('api/projects');
+      let allProjects = res?.success ? (res.data || []) : [];
+
+      // 2. Fetch tasks assigned to this user to see where they are participants
+      let userTasks = [];
+      try {
+        const taskRes = await httpGetService('api/employee/my-tasks');
+        if (taskRes?.success && taskRes.data && taskRes.data.length > 0) {
+          userTasks = taskRes.data;
+        } else {
+          // Fallback
+          const fallbackRes = await httpGetService(`api/tasks?assignedTo=${user?.id}`);
+          if (fallbackRes?.success && fallbackRes.data) userTasks = fallbackRes.data;
         }
+      } catch (e) {}
+
+      const assignedProjectIds = new Set();
+      userTasks.forEach(task => {
+        if (task.project) {
+          assignedProjectIds.add(String(task.project.publicId || task.project.id));
+        }
+        if (task.projectId || task.project_id) {
+          assignedProjectIds.add(String(task.projectId || task.project_id));
+        }
+      });
+
+      // 3. Keep ONLY projects where user is the manager OR has tasks assigned
+      const filteredProjects = allProjects.filter(p => {
+        const isManager = String(p.project_manager?.public_id) === String(user?.id) ||
+          String(p.project_manager?.id) === String(user?.id) ||
+          String(p.project_manager_id) === String(user?.id);
+
+        const isAssigned = assignedProjectIds.has(String(p.public_id)) ||
+          assignedProjectIds.has(String(p.id)) ||
+          assignedProjectIds.has(String(p._id));
+
+        return isManager || isAssigned;
+      });
+
+      setProjects(filteredProjects);
+
+      if (filteredProjects.length > 0) {
+        setSelectedProjectId(filteredProjects[0]._id || filteredProjects[0].id || filteredProjects[0].publicId || filteredProjects[0].public_id);
       } else {
-        toast.error('Failed to load projects');
+        setSelectedProjectId(null);
       }
     } catch (err) {
-      console.error('Error fetching projects:', err);
       toast.error(err?.message || 'Failed to load projects');
     } finally {
       setLoading(false);
@@ -53,7 +89,7 @@ const ManagerChat = () => {
   }
 
   const selectedProject = projects.find(
-    (p) => (p._id || p.id) === selectedProjectId
+    (p) => (p._id || p.id || p.public_id || p.publicId) === selectedProjectId
   );
 
   return (

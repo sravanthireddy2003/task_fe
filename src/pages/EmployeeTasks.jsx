@@ -245,7 +245,6 @@ const EmployeeTasks = () => {
       return { ok: true, latestTask };
     } catch (err) {
       toast.error('Failed to validate task state');
-      console.error('ensureTaskWritable error:', err);
       return { ok: false };
     }
   }, [isTaskReadOnly]);
@@ -373,9 +372,7 @@ const EmployeeTasks = () => {
     try {
       const latestResp = await fetchWithTenant(`/api/tasks/${encodeURIComponent(taskId)}`);
       latestTask = latestResp?.data || latestResp || task;
-    } catch (e) {
-      console.warn('Failed to fetch latest task for status change validation', e);
-    }
+    } catch (e) {}
 
     const validation = validateStatusTransition(latestTask.status || latestTask.stage, newStatus, latestTask);
     if (!validation.valid) {
@@ -405,7 +402,6 @@ const EmployeeTasks = () => {
       setTimeout(() => refreshAllTasks(), 500);
     } catch (error) {
       toast.error(error?.message || 'Failed to update task status');
-      console.error('Status change error:', error);
     }
   };
 
@@ -422,9 +418,7 @@ const EmployeeTasks = () => {
     try {
       const latestResp = await fetchWithTenant(`/api/tasks/${encodeURIComponent(taskId)}`);
       latestTask = latestResp?.data || latestResp || task;
-    } catch (e) {
-      console.warn('Could not fetch latest task for reassignment check', e);
-    }
+    } catch (e) {}
 
     // Prevent duplicate or forbidden reassignment requests
     if (isTaskReadOnly(latestTask)) {
@@ -455,7 +449,6 @@ const EmployeeTasks = () => {
       setTimeout(() => refreshAllTasks(), 500);
     } catch (error) {
       toast.error(error?.message || 'Failed to request reassignment');
-      console.error('Reassignment request error:', error);
     }
   };
 
@@ -470,9 +463,7 @@ const EmployeeTasks = () => {
           setSelectedProjectId(firstProjectId);
         }
       }
-    } catch (err) {
-      console.error('Failed to load projects:', err);
-    }
+    } catch (err) {}
   };
 
   const loadTasks = async (projectId) => {
@@ -560,16 +551,13 @@ const EmployeeTasks = () => {
         }
       }
       setReassignmentRequests(requestsMap);
-    } catch (error) {
-      console.error('Failed to load reassignment requests:', error);
-    }
+    } catch (error) {}
   };
 
   const loadTaskTimeline = async (task) => {
     try {
       const taskId = getTaskIdForApi(task);
       if (!taskId) {
-        console.warn('Invalid task ID for timeline:', task);
         return;
       }
 
@@ -581,9 +569,7 @@ const EmployeeTasks = () => {
           [normalizedId]: result
         }));
       }
-    } catch (error) {
-      console.error('Failed to load task timeline:', error);
-    }
+    } catch (error) {}
   };
 
   const loadEmployees = async () => {
@@ -591,9 +577,7 @@ const EmployeeTasks = () => {
       const resp = await fetchWithTenant('/api/manager/employees/all');
       const data = Array.isArray(resp?.data) ? resp.data : resp;
       setEmployees(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error('Failed to load employees:', err);
-    }
+    } catch (err) {}
   };
 
   // Fetch employee-specific tasks
@@ -840,7 +824,6 @@ const EmployeeTasks = () => {
       setTimeout(() => refreshAllTasks(), 500);
     } catch (error) {
       toast.error(error?.message || 'Failed to start task');
-      console.error('Start task error:', error);
     }
   };
 
@@ -884,7 +867,6 @@ const EmployeeTasks = () => {
       setTimeout(() => refreshAllTasks(), 500);
     } catch (error) {
       toast.error(error?.message || 'Failed to pause task');
-      console.error('Pause task error:', error);
     }
   };
 
@@ -924,7 +906,6 @@ const EmployeeTasks = () => {
       setTimeout(() => refreshAllTasks(), 500);
     } catch (error) {
       toast.error(error?.message || 'Failed to resume task');
-      console.error('Resume task error:', error);
     }
   };
 
@@ -985,7 +966,6 @@ const EmployeeTasks = () => {
       setTimeout(() => refreshAllTasks(), 500);
     } catch (error) {
       toast.error(error?.message || 'Failed to request task completion');
-      console.error('Request task completion error:', error);
     }
   };
 
@@ -1031,7 +1011,6 @@ const EmployeeTasks = () => {
       }
     } catch (error) {
       toast.error('Failed to submit task for review');
-      console.error('Submit for review error:', error);
     }
   };
 
@@ -1065,7 +1044,6 @@ const EmployeeTasks = () => {
       setTimeout(() => refreshAllTasks(), 500);
     } catch (error) {
       toast.error(error?.message || 'Failed to update task');
-      console.error('Update task error:', error);
     }
   };
 
@@ -1230,96 +1208,96 @@ const EmployeeTasks = () => {
     }
   };
 
-const handleCompleteChecklist = async (item) => {
-  const itemId = item?.id || item?.public_id;
-  if (!itemId || !selectedTask) return;
+  const handleCompleteChecklist = async (item) => {
+    const itemId = item?.id || item?.public_id;
+    if (!itemId || !selectedTask) return;
 
-  setActionRunning(true);
-  try {
-    const writable = await ensureTaskWritable(selectedTask);
-    if (!writable.ok) return;
-    
-    // Make the API call to complete the checklist item
-    const resp = await fetchWithTenant(`/api/employee/subtask/${itemId}/complete`, {
-      method: 'POST',
-    });
+    setActionRunning(true);
+    try {
+      const writable = await ensureTaskWritable(selectedTask);
+      if (!writable.ok) return;
 
-    // Get the updated checklist item from the response
-    const updatedChecklistItem = resp.data;
-    
-    toast.success(resp?.message || 'Checklist marked complete');
+      // Make the API call to complete the checklist item
+      const resp = await fetchWithTenant(`/api/employee/subtask/${itemId}/complete`, {
+        method: 'POST',
+      });
 
-    // Get the current task ID
-    const selectedTaskId = normalizeId(selectedTask);
+      // Get the updated checklist item from the response
+      const updatedChecklistItem = resp.data;
 
-    // Update the main tasks array to reflect the checklist change
-    setTasks(prevTasks =>
-      prevTasks.map(task => {
-        if (normalizeId(task) === selectedTaskId) {
-          // Update the specific checklist item in the task's checklist array
-          const updatedChecklist = (task.checklist || []).map(checkItem =>
-            (checkItem.id || checkItem.public_id) === itemId 
-              ? { 
-                  ...checkItem, 
+      toast.success(resp?.message || 'Checklist marked complete');
+
+      // Get the current task ID
+      const selectedTaskId = normalizeId(selectedTask);
+
+      // Update the main tasks array to reflect the checklist change
+      setTasks(prevTasks =>
+        prevTasks.map(task => {
+          if (normalizeId(task) === selectedTaskId) {
+            // Update the specific checklist item in the task's checklist array
+            const updatedChecklist = (task.checklist || []).map(checkItem =>
+              (checkItem.id || checkItem.public_id) === itemId
+                ? {
+                  ...checkItem,
                   status: 'Completed',
                   completedAt: updatedChecklistItem?.completedAt || new Date().toISOString()
-                } 
+                }
+                : checkItem
+            );
+
+            return {
+              ...task,
+              checklist: updatedChecklist,
+            };
+          }
+          return task;
+        })
+      );
+
+      // Update selectedTask directly to ensure immediate UI update
+      if (selectedTask) {
+        setSelectedTask(prev => {
+          if (!prev) return prev;
+
+          const updatedChecklist = (prev.checklist || []).map(checkItem =>
+            (checkItem.id || checkItem.public_id) === itemId
+              ? {
+                ...checkItem,
+                status: 'Completed',
+                completedAt: updatedChecklistItem?.completedAt || new Date().toISOString()
+              }
               : checkItem
           );
 
           return {
-            ...task,
-            checklist: updatedChecklist,
+            ...prev,
+            checklist: updatedChecklist
           };
-        }
-        return task;
-      })
-    );
+        });
+      }
 
-    // Update selectedTask directly to ensure immediate UI update
-    if (selectedTask) {
-      setSelectedTask(prev => {
-        if (!prev) return prev;
-        
-        const updatedChecklist = (prev.checklist || []).map(checkItem =>
-          (checkItem.id || checkItem.public_id) === itemId 
-            ? { 
-                ...checkItem, 
-                status: 'Completed',
-                completedAt: updatedChecklistItem?.completedAt || new Date().toISOString()
-              } 
-            : checkItem
-        );
-        
-        return {
+      // Also update the checklists state if you're using it
+      if (checklists[selectedTaskId]) {
+        setChecklists(prev => ({
           ...prev,
-          checklist: updatedChecklist
-        };
-      });
-    }
-
-    // Also update the checklists state if you're using it
-    if (checklists[selectedTaskId]) {
-      setChecklists(prev => ({
-        ...prev,
-        [selectedTaskId]: (prev[selectedTaskId] || []).map(checkItem =>
-          (checkItem.id || checkItem.public_id) === itemId 
-            ? { 
-                ...checkItem, 
+          [selectedTaskId]: (prev[selectedTaskId] || []).map(checkItem =>
+            (checkItem.id || checkItem.public_id) === itemId
+              ? {
+                ...checkItem,
                 status: 'Completed',
                 completedAt: updatedChecklistItem?.completedAt || new Date().toISOString()
-              } 
-            : checkItem
-        )
-      }));
-    }
+              }
+              : checkItem
+          )
+        }));
+      }
 
-  } catch (err) {
-    toast.error(err?.message || 'Unable to update checklist status');
-  } finally {
-    setActionRunning(false);
-  }
-};
+    } catch (err) {
+      toast.error(err?.message || 'Unable to update checklist status');
+    } finally {
+      setActionRunning(false);
+    }
+  };
 
   // const handleCompleteChecklist = async (item) => {
   //   const itemId = item?.id || item?.public_id;
@@ -1723,11 +1701,6 @@ const handleCompleteChecklist = async (item) => {
                   <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
                   Refresh
                 </button>
-                {userRole === 'employee' && (
-                  <Link to="/employee/tasks" className="text-blue-600 hover:underline">
-                    Full task view
-                  </Link>
-                )}
               </div>
             </div>
 

@@ -65,9 +65,7 @@ const WeekCalendar = () => {
         }
         const data = await response.json();
         setTasks(data);
-      } catch (error) {
-        console.error(error.message);
-      }
+      } catch (error) {}
     };
     fetchTasks();
   }, []);
@@ -87,9 +85,7 @@ const WeekCalendar = () => {
         }
         const data = await response.json();
         setFetchedTaskHours(data);
-      } catch (error) {
-        console.error(error.message);
-      }
+      } catch (error) {}
     };
     fetchTaskHours();
   }, [currentWeek, refreshTrigger]);
@@ -168,9 +164,7 @@ const WeekCalendar = () => {
   
         setTasks(updatedTasks);
         closeDialog();
-      } catch (error) {
-        console.error(error.message);
-      }
+      } catch (error) {}
     }
   };
   

@@ -22,7 +22,6 @@ const AddSubTask = ({ open, setOpen, id }) => {
       due_date: data.date,
       tag: data.tag,
     };
-    console.log(id);
     dispatch(createSubTask(subtaskData));
     setOpen(false);
   };

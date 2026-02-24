@@ -92,11 +92,7 @@ export const logger = {
   debug(context, message, data) {
     if (!isDev || isTest) return;
     const formatted = formatMessage(LOG_LEVELS.DEBUG, context, message);
-    if (data) {
-      console.debug(formatted, containsSensitiveData(data) ? sanitize(data) : data);
-    } else {
-      console.debug(formatted);
-    }
+    if (data) {} else {}
   },
 
   /**
@@ -108,11 +104,7 @@ export const logger = {
   info(context, message, data) {
     if (isTest) return;
     const formatted = formatMessage(LOG_LEVELS.INFO, context, message);
-    if (data) {
-      console.info(formatted, containsSensitiveData(data) ? sanitize(data) : data);
-    } else {
-      console.info(formatted);
-    }
+    if (data) {} else {}
   },
 
   /**
@@ -124,11 +116,7 @@ export const logger = {
   warn(context, message, data) {
     if (isTest) return;
     const formatted = formatMessage(LOG_LEVELS.WARN, context, message);
-    if (data) {
-      console.warn(formatted, containsSensitiveData(data) ? sanitize(data) : data);
-    } else {
-      console.warn(formatted);
-    }
+    if (data) {} else {}
   },
 
   /**
@@ -139,11 +127,7 @@ export const logger = {
    */
   error(context, message, data) {
     const formatted = formatMessage(LOG_LEVELS.ERROR, context, message);
-    if (data) {
-      console.error(formatted, containsSensitiveData(data) ? sanitize(data) : data);
-    } else {
-      console.error(formatted);
-    }
+    if (data) {} else {}
   },
 };
 

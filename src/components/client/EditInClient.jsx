@@ -15,11 +15,7 @@ const Table = ({ clients, onEdit, onRowClick, onDelete }) => {
     setSortField(field);
   };
 
-  const handleDelete = (clientId) => {
-    // Implement your delete logic here, e.g., API call to delete the client
-    console.log("Delete client with ID:", clientId);
-    // Optionally, refresh or update the client list state after deletion
-  };
+  const handleDelete = (clientId) => {};
 
   // Filtered and sorted clients based on input
   const filteredClients = clients

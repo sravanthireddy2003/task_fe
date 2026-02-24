@@ -453,7 +453,6 @@ export const updateProfile = createAsyncThunk(
 
       return response;
     } catch (error) {
-      console.error('Update profile error:', error);
       return thunkAPI.rejectWithValue(error?.message || "Failed to update profile");
     }
   }
@@ -539,10 +538,7 @@ export const logoutUser = createAsyncThunk(
   async (_, thunkAPI) => {
     try {
       await httpPostService("api/auth/logout", {});
-      console.log('✅ Backend logout called');
-    } catch (error) {
-      console.warn('⚠️ Logout API failed (OK):', error.message);
-    }
+    } catch (error) {}
   }
 );
 
@@ -581,7 +577,6 @@ const authSlice = createSlice({
       state.isProfileFetching = action.payload;
     },
     logout: (state) => {
-      console.log('🔥 LOGOUT - Full cleanup');
       state.user = null;
       state.authError = null;
       state.status = null;

@@ -21,9 +21,6 @@ const ChangePassword = () => {
 
   const onSubmit = async (data) => {
     try {
-      // Debug log to ensure handler runs
-      console.debug("ChangePassword onSubmit payload:", data);
-
       // Normalize payload to support different backend key expectations
       const payload = {
         oldPassword: data.oldPassword,
@@ -34,15 +31,12 @@ const ChangePassword = () => {
         new_password: data.newPassword,
       };
 
-      console.debug("Dispatching changePassword with payload:", payload);
       const res = await dispatch(changePassword(payload)).unwrap();
-      console.debug("changePassword result:", res);
 
       toast.success(res?.message || "Password changed successfully. Please log in again.");
       dispatch(logout());
       navigate("/log-in");
     } catch (err) {
-      console.error("changePassword error:", err);
       const message = err?.message || err || "Failed to change password";
       toast.error(message);
     }

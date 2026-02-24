@@ -18,8 +18,7 @@ const AddWorkingHours = ({ open, setOpen, idWH }) => {
       start_time: data.start_time,
       end_time: data.end_time,
     };
-    console.log(idWH);  // Corrected variable name
-  
+
     try {
       const fetchWithTenant = (await import('../utils/fetchWithTenant')).default;
       const response = await fetchWithTenant(`/api/tasks/working-hours`, {
@@ -29,15 +28,11 @@ const AddWorkingHours = ({ open, setOpen, idWH }) => {
 
       if (response.ok) {
         const result = await response.json();
-        console.log(result.message);
         setOpen(false);
       } else {
         const errorData = await response.json();
-        console.error("Error:", errorData.error || errorData.message || 'Unknown');
       }
-    } catch (error) {
-      console.error("Network error:", error);
-    }
+    } catch (error) {}
   };
 
   return (

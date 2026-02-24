@@ -31,20 +31,11 @@ const ClientDetailPage = () => {
     { id: 2, name: 'Jane Smith', role: 'Designer' },
   ];
 
-  const handleEditTask = (task) => {
-    // Handle task editing logic
-    console.log("Editing task: ", task);
-  };
+  const handleEditTask = (task) => {};
 
-  const handleAssignEmployee = () => {
-    // Logic for assigning employees
-    console.log('Assigning employees to tasks for client', clientId);
-  };
+  const handleAssignEmployee = () => {};
 
-  const handleGenerateReport = () => {
-    // Logic for generating reports
-    console.log('Generating report for client', clientId);
-  };
+  const handleGenerateReport = () => {};
 
   return (
     <div className="container mx-auto p-6">

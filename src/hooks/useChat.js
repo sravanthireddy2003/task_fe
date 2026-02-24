@@ -108,20 +108,16 @@ export const useChat = (projectId, authToken, callbacks = {}) => {
 
     // ✅ Listen for message deletion - REAL-TIME
     const handleMessageDeleted = (data) => {
-      console.log('[Chat] 🗑️ Message deleted:', data?.messageId);
       if (data?.messageId) {
         dispatch(removeMessageLocally(data.messageId));
       }
     };
 
     // ✅ Listen for errors
-    const handleError = (error) => {
-      console.error('[Chat] ❌ Socket.IO error:', error);
-    };
+    const handleError = (error) => {};
 
     // ✅ Listen for new messages batch (fallback)
     const handleNewMessages = (messages) => {
-      console.log('[Chat] 📦 Received batch of messages:', messages?.length);
       if (messages && Array.isArray(messages)) {
         messages.forEach(msg => {
           if (msg && (msg.id || msg._id)) {
@@ -130,13 +126,10 @@ export const useChat = (projectId, authToken, callbacks = {}) => {
         });
         // ✅ Trigger callback to fetch fresh messages immediately
         if (onMessageReceived) {
-          console.log('[Chat] 🔄 Triggering onMessageReceived callback for batch');
           onMessageReceived();
         }
       }
     };
-
-    console.log('[Chat] 🔌 Registering Socket.IO event listeners...');
 
     // Register listeners - Order matters!
     socketRef.current.on('chat_message', handleChatMessage);
@@ -149,11 +142,8 @@ export const useChat = (projectId, authToken, callbacks = {}) => {
     socketRef.current.on('message_deleted', handleMessageDeleted);
     socketRef.current.on('error', handleError);
 
-    console.log('[Chat] ✅ All event listeners registered');
-
     // ✅ Cleanup listeners
     return () => {
-      console.log('[Chat] 🧹 Cleaning up event listeners');
       if (socketRef.current) {
         socketRef.current.off('chat_message', handleChatMessage);
         socketRef.current.off('new_message', handleChatMessage);
@@ -171,7 +161,6 @@ export const useChat = (projectId, authToken, callbacks = {}) => {
   // ✅ Send message via Socket.IO + REST API
   const sendMessage = useCallback((message) => {
     if (socketRef.current && projectIdRef.current) {
-      console.log('[Chat] Sending message:', message);
       socketRef.current.emit('send_message', {
         projectId: projectIdRef.current,
         message,
@@ -183,7 +172,6 @@ export const useChat = (projectId, authToken, callbacks = {}) => {
   // ✅ Send typing indicator START
   const sendTypingStart = useCallback(() => {
     if (socketRef.current && projectIdRef.current) {
-      console.log('[Chat] User started typing');
       socketRef.current.emit('typing_start', {
         projectId: projectIdRef.current,
         timestamp: new Date().toISOString(),
@@ -194,7 +182,6 @@ export const useChat = (projectId, authToken, callbacks = {}) => {
   // ✅ Send typing indicator STOP
   const sendTypingStop = useCallback(() => {
     if (socketRef.current && projectIdRef.current) {
-      console.log('[Chat] User stopped typing');
       socketRef.current.emit('typing_stop', {
         projectId: projectIdRef.current,
         timestamp: new Date().toISOString(),
@@ -205,7 +192,6 @@ export const useChat = (projectId, authToken, callbacks = {}) => {
   // ✅ Send chatbot command
   const sendChatbotCommand = useCallback((command) => {
     if (socketRef.current && projectIdRef.current) {
-      console.log('[Chat] Executing command:', command);
       socketRef.current.emit('chatbot_command', {
         projectId: projectIdRef.current,
         command,
@@ -222,7 +208,6 @@ export const useChat = (projectId, authToken, callbacks = {}) => {
   // ✅ Manual reconnect if needed
   const reconnect = useCallback(() => {
     if (socketRef.current && !socketRef.current.connected) {
-      console.log('[Chat] Attempting manual reconnect...');
       socketRef.current.connect();
     }
   }, []);

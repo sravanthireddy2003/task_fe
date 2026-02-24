@@ -585,7 +585,6 @@ const EmployeeDashboard = () => {
         onRefresh={loadDashboard}
         refreshing={loading}
       />
-
       {/* Stats Overview */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
         {statsCards.map((card) => (
@@ -599,7 +598,6 @@ const EmployeeDashboard = () => {
           />
         ))}
       </div>
-
       {/* Main Charts Grid - Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Task Status Distribution - Vertical Bar Chart */}
@@ -636,7 +634,6 @@ const EmployeeDashboard = () => {
           data={metrics.reassignment}
         />
       </div>
-
       {/* Charts Grid - Row 2 (simplified) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Locked vs Active - Progress Chart */}
@@ -663,7 +660,6 @@ const EmployeeDashboard = () => {
           ]}
         />
       </div>
-
       {/* Attention Needed Section */}
       {attentionTasks.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
@@ -739,7 +735,6 @@ const EmployeeDashboard = () => {
           </div>
         </div>
       )}
-
       {/* Task Summary and Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Activity */}

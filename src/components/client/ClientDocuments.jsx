@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAccessToken } from "../../utils/tokenService";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { toast } from "sonner";
 import * as Icons from "../../icons";
 import Button from "../Button";
 import { attachDocument, deleteDocument, getClient } from "../../redux/slices/clientSlice";
@@ -35,46 +36,21 @@ const ClientDocuments = ({ client }) => {
     setUploading(true);
     try {
       for (const file of files) {
-        const formData = new FormData();
-        formData.append('document', file);
-        formData.append('entityType', 'CLIENT');
-        formData.append('entityId', client.id);
-
-        const token = getAccessToken();
-        const response = await fetch('/api/documents/upload', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          },
-          body: formData
-        });
-
-        if (!response.ok) {
-          throw new Error(`Upload failed: ${response.status}`);
-        }
-
-        const result = await response.json();
-
-        // ✅ Add new document with publicUrl (NOT blob URL)
+        // Pass raw file to thunk to avoid FormData serialization issues
         await dispatch(attachDocument({
           clientId: client.id,
-          document: {
-            id: result.data.documentId,
-            file_name: result.data.fileName,
-            file_type: result.data.mimeType,
-            file_size: result.data.fileSize,
-            file_url: result.data.publicUrl,  // ✅ Backend public URL
-            uploaded_at: new Date().toISOString()
-          }
+          file: file
         })).unwrap();
       }
+
+      toast.success('Documents uploaded successfully');
+
       // ✅ Refresh client data after all uploads
       if (client?.id) {
         await dispatch(getClient(client.id)).unwrap();
       }
     } catch (error) {
-      console.error("Failed to upload document:", error);
-      alert("Upload failed: " + error.message);
+      toast.error("Upload failed: " + (error.message || "Unknown error"));
     } finally {
       setUploading(false);
       if (fileInputRef.current) {
@@ -108,7 +84,6 @@ const ClientDocuments = ({ client }) => {
       document.body.removeChild(a);
       setTimeout(() => window.URL.revokeObjectURL(blobUrl), 5000);
     } catch (err) {
-      console.error('Download failed', err);
       alert('Download failed: ' + (err.message || err));
     }
   };
@@ -133,7 +108,6 @@ const ClientDocuments = ({ client }) => {
       window.open(blobUrl, '_blank');
       setTimeout(() => window.URL.revokeObjectURL(blobUrl), 5000);
     } catch (err) {
-      console.error('View failed', err);
       alert('Unable to open document: ' + (err.message || err));
     }
   };
@@ -145,11 +119,14 @@ const ClientDocuments = ({ client }) => {
           clientId: client.id,
           documentId
         })).unwrap();
-      } catch (error) {
-        console.error("Failed to delete document:", error);
-      }
+      } catch (error) {}
     }
   };
+
+  // RBAC Access Checks: Employees cannot upload or delete client documents
+  const user = useSelector(state => state.auth.user);
+  const userRole = user?.role?.toLowerCase() || 'employee';
+  const canModify = userRole === 'admin' || userRole === 'manager';
 
   return (
     <div className="w-full">
@@ -165,23 +142,27 @@ const ClientDocuments = ({ client }) => {
         <div className="flex-1">
           <h2 className="text-xl font-semibold text-gray-800">Client Documents</h2>
         </div>
-        <div className="flex space-x-3">
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileUpload}
-            multiple
-            accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-            className="hidden"
-          />
-          <Button
-            label={uploading ? "Uploading..." : "Upload Documents"}
-            icon={<Icons.UploadCloud />}
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg disabled:opacity-50"
-          />
-        </div>
+
+        {/* Only show upload button for Admin/Manager */}
+        {canModify && (
+          <div className="flex space-x-3">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              multiple
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+              className="hidden"
+            />
+            <Button
+              label={uploading ? "Uploading..." : "Upload Documents"}
+              icon={<Icons.UploadCloud />}
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+            />
+          </div>
+        )}
       </div>
 
       {/* Documents List */}
@@ -190,7 +171,7 @@ const ClientDocuments = ({ client }) => {
           <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
             <Icons.UploadCloud className="tm-icon mx-auto mb-4 text-gray-300" />
             <p className="text-lg mb-2">No documents uploaded yet</p>
-            <p className="text-sm">Click "Upload Documents" to add files</p>
+            {canModify && <p className="text-sm">Click "Upload Documents" to add files</p>}
           </div>
         ) : (
           documents.map((document) => (
@@ -228,13 +209,16 @@ const ClientDocuments = ({ client }) => {
                 >
                   <Icons.Download className="tm-icon" />
                 </button>
-                <button
-                  onClick={() => handleDelete(document.id || document.documentId || document._id)}
-                  className="text-red-500 hover:text-red-600 p-2 icon-center"
-                  title="Delete document"
-                >
-                  <Icons.Trash2 className="tm-icon" />
-                </button>
+                {/* Only show delete button for Admin/Manager */}
+                {canModify && (
+                  <button
+                    onClick={() => handleDelete(document.id || document.documentId || document._id)}
+                    className="text-red-500 hover:text-red-600 p-2 icon-center"
+                    title="Delete document"
+                  >
+                    <Icons.Trash2 className="tm-icon" />
+                  </button>
+                )}
               </div>
             </div>
           ))
@@ -242,13 +226,15 @@ const ClientDocuments = ({ client }) => {
       </div>
 
       {/* Upload Instructions */}
-      <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-        <h3 className="font-medium text-blue-900 mb-2">Supported File Types</h3>
-        <p className="text-sm text-blue-700">
-          You can upload PDF, Word documents (.doc, .docx), Excel files (.xls, .xlsx),
-          and images (.jpg, .jpeg, .png). Maximum file size: 10MB per file.
-        </p>
-      </div>
+      {canModify && (
+        <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <h3 className="font-medium text-blue-900 mb-2">Supported File Types</h3>
+          <p className="text-sm text-blue-700">
+            You can upload PDF, Word documents (.doc, .docx), Excel files (.xls, .xlsx),
+            and images (.jpg, .jpeg, .png). Maximum file size: 10MB per file.
+          </p>
+        </div>
+      )}
     </div>
   );
 };

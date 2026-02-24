@@ -71,7 +71,6 @@ const TaskDetailsWithRequests = () => {
         setReassignRequests([]);
       }
     } catch (err) {
-      console.error('Failed to load reassignment requests:', err);
       setReassignRequests([]);
     } finally {
       setLoadingRequests(false);

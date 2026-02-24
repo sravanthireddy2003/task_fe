@@ -31,7 +31,7 @@ const ApprovalCard = ({ item, onApprove, onReject, onEscalate }) => {
       dispatch(fetchTasksbyId({ task_id: entityId }))
         .unwrap()
         .then((task) => setTaskDetails(task))
-        .catch((err) => console.warn('Failed to fetch task details:', err));
+        .catch((err) => undefined);
     }
   }, [dispatch, entityType, entityId]);
 

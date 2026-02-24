@@ -221,9 +221,7 @@ const ManagerTasks = () => {
       }
 
       if (resp && resp.error) {
-        if (resp.error.includes('assigned_to')) {
-          console.warn('Backend assignment error:', resp.error);
-        }
+        if (resp.error.includes('assigned_to')) {}
         throw new Error(resp.error || 'Failed to load tasks');
       }
 
@@ -310,7 +308,6 @@ const ManagerTasks = () => {
       const approvals = result?.approvals || result?.data || [];
       setPendingApprovals(Array.isArray(approvals) ? approvals : []);
     } catch (err) {
-      console.error('Failed to load pending approvals:', err);
       setPendingApprovals([]);
     } finally {
       setApprovalsLoading(false);
@@ -505,8 +502,6 @@ const ManagerTasks = () => {
       setShowCreateTaskModal(false);
       loadTasks(selectedProjectId);
     } catch (err) {
-      console.error('Error creating task:', err);
-
       if (err.response && err.response.message && err.response.message.includes('successfully')) {
         toast.success(err.response.message || 'Task created successfully');
         setFormData({
@@ -566,7 +561,6 @@ const ManagerTasks = () => {
       const details = Array.isArray(payload) ? payload[0] : payload;
       setSelectedTask(details || task);
     } catch (err) {
-      console.error('Failed to load task details:', err);
       toast.error(err?.message || 'Failed to load task details');
       // fallback: set the minimal task so UI still shows something
       setSelectedTask(task);

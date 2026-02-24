@@ -10,13 +10,10 @@ export function initWorkflowSocket(store) {
   try {
     socket = io(url, { transports: ['websocket', 'polling'] });
   } catch (e) {
-    console.warn('socket.io client init failed', e);
     return null;
   }
 
-  socket.on('connect', () => {
-    console.info('workflow socket connected');
-  });
+  socket.on('connect', () => {});
 
   socket.on('workflow:created', (data) => {
     try {
@@ -40,7 +37,7 @@ export function initWorkflowSocket(store) {
     } catch (e) {}
   });
 
-  socket.on('disconnect', () => console.info('workflow socket disconnected'));
+  socket.on('disconnect', () => undefined);
 
   return socket;
 }

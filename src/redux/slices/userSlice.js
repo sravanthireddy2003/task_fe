@@ -110,20 +110,18 @@ export const updateUser = createAsyncThunk(
   'users/update',
   async ({ id, ...userData }, { rejectWithValue, dispatch }) => {
     try {
-      console.log('🔍 UPDATE THUNK - ID:', id, 'Data:', userData);
       const response = await httpPutService(`api/users/update/${id}`, userData);
-      
+
       // ✅ NEW: Refresh notifications after successful user update
       await new Promise(resolve => setTimeout(resolve, 500));
       dispatch(fetchNotifications());
-      
+
       if (!response.success) {
         return rejectWithValue(response);
       }
-      
+
       return response.user || response.data || response;
     } catch (error) {
-      console.error('Update error:', error.response?.data);
       return rejectWithValue(error.response?.data || { message: error.message });
     }
   }
@@ -137,23 +135,22 @@ export const deleteUser = createAsyncThunk(
       if (!userData) {
         return rejectWithValue({ message: 'Missing user data' });
       }
-      
+
       if (typeof userData === 'string' || typeof userData === 'number') {
         id = userData;
       } else {
         id = userData.id || userData.public_id || userData._id || userData.publicId;
       }
-      
+
       if (!id) {
         return rejectWithValue({ message: 'Missing user ID for delete' });
       }
-      console.log('🗑️ DELETE THUNK - ID:', id);
-      
+
       const response = await httpDeleteService(`api/users/delete/${id}`);
       if (!response.success) {
         return rejectWithValue(response);
       }
-      
+
       return { removedId: id, success: true };
     } catch (error) {
       return rejectWithValue(error.response?.data || { message: error.message });

@@ -40,7 +40,6 @@ api.interceptors.request.use((config) => {
         }
       });
     }
-    console.debug('[apiClient] request ->', { method: (config && config.method) || 'get', url: config.url, headers: safeHeaders });
   } catch (e) {}
   return config;
 });

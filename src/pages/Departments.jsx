@@ -20,16 +20,16 @@ import clsx from 'clsx';
 
 function DepartmentsModal({ show, onClose, form, setForm, onSubmit, editing, managers = [] }) {
   if (!show) return null;
-  
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="absolute inset-0" onClick={onClose}></div>
-      <form 
+      <form
         onSubmit={(e) => {
           e.preventDefault();
           e.stopPropagation();
           onSubmit(e);
-        }} 
+        }}
         className="relative bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto z-10"
       >
         <div className="flex items-center justify-between mb-6">
@@ -108,10 +108,10 @@ const Departments = () => {
   const status = useSelector(selectDepartmentStatus);
   const error = useSelector(selectDepartmentError);
   const allUsers = useSelector(selectUsers) || [];
-  
-  const managers = React.useMemo(() => 
-    allUsers.filter((u) => (u?.role || '').toLowerCase() === 'manager'), 
-  [allUsers]
+
+  const managers = React.useMemo(() =>
+    allUsers.filter((u) => (u?.role || '').toLowerCase() === 'manager'),
+    [allUsers]
   );
 
   const [showModal, setShowModal] = useState(false);
@@ -136,13 +136,22 @@ const Departments = () => {
     }
 
     const managerName = managerDetails?.name || dept.manager_name || dept.managerName || dept.manager || 'Unassigned';
-    
+
+    const rawDate = dept.createdAt || dept.created_at;
+    const formattedDate = rawDate
+      ? new Date(rawDate).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
+      : 'N/A';
+
     return {
       ...dept,
       displayId: index + 1,
       actualId: dept.public_id || dept._id || dept.id,
       managerName,
-      createdAt: dept.createdAt || dept.created_at || 'N/A',
+      createdAt: formattedDate,
       name: dept.name || 'Unnamed Department',
       color: ['#6366F1', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'][index % 5]
     };
@@ -152,30 +161,29 @@ const Departments = () => {
     dept.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     dept.managerName?.toLowerCase().includes(searchQuery.toLowerCase())
   );
-const handleSubmit = async (e) => {
-  if (e) {
-    e.preventDefault();
-    e.stopPropagation();
-  }
-  
-  try {
-    if (editDept) {
-      await dispatch(updateDepartment({ 
-        departmentId: editDept.actualId, 
-        data: form 
-      })).unwrap();
-      toast.success('✅ Department updated');
-    } else {
-      await dispatch(createDepartment(form)).unwrap();
-      toast.success('✅ Department created');
-      setForm({ name: '', managerId: '', headId: '' });
+  const handleSubmit = async (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
     }
-    setShowModal(false);
-  } catch (err) {
-    console.error('Submit error:', err); // ✅ Debug
-    toast.error(err.message || '❌ Operation failed');
-  }
-};
+
+    try {
+      if (editDept) {
+        await dispatch(updateDepartment({
+          departmentId: editDept.actualId,
+          data: form
+        })).unwrap();
+        toast.success('✅ Department updated');
+      } else {
+        await dispatch(createDepartment(form)).unwrap();
+        toast.success('✅ Department created');
+        setForm({ name: '', managerId: '', headId: '' });
+      }
+      setShowModal(false);
+    } catch (err) {
+      toast.error(err.message || '❌ Operation failed');
+    }
+  };
 
 
   const handleDelete = async (id) => {
@@ -196,10 +204,10 @@ const handleSubmit = async (e) => {
 
   const openEdit = (d) => {
     setEditDept(d);
-    setForm({ 
-      name: d.name || '', 
-      managerId: d.managerId || d.manager_id || '', 
-      headId: d.headId || '' 
+    setForm({
+      name: d.name || '',
+      managerId: d.managerId || d.manager_id || '',
+      headId: d.headId || ''
     });
     setShowModal(true);
   };
@@ -269,7 +277,7 @@ const handleSubmit = async (e) => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -283,7 +291,7 @@ const handleSubmit = async (e) => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -295,7 +303,7 @@ const handleSubmit = async (e) => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -394,7 +402,7 @@ const handleSubmit = async (e) => {
                   </div>
                 </div>
 
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                   <div className="text-xs text-gray-500">Created: {d.createdAt}</div>
                   <div className="flex items-center gap-2">
                     <button

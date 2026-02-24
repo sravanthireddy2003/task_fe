@@ -365,12 +365,11 @@ export default function Workflow() {
               Promise.all([
                 dispatch(fetchQueue('ADMIN')),
                 dispatch(fetchPendingApprovals('ADMIN'))
-              ]).catch((e) => { console.error("Refresh failed", e); });
+              ]).catch((e) => {});
             }}
           >
           </PageHeader>
         </div>
-
         {showModal && (
           <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
             <form
@@ -520,7 +519,6 @@ export default function Workflow() {
           </div >
         )
         }
-
         {/* Admin Approvals Section */}
         <div className="mt-8">
           <AdminApprovalPanel />
@@ -550,11 +548,10 @@ export default function Workflow() {
                 actions.push(dispatch(fetchQueue(managerId)));
               }
 
-              Promise.all(actions).catch((e) => { console.error("Refresh failed", e); });
+              Promise.all(actions).catch((e) => {});
             }}
           />
         </div>
-
         {/* Project Closure Section */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
           <div className="flex items-center justify-between mb-6">
@@ -682,7 +679,6 @@ export default function Workflow() {
             </div>
           )}
         </div>
-
         {/* Approval Queue Section */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-6 border-b border-gray-100">
@@ -693,7 +689,6 @@ export default function Workflow() {
             <ManagerApprovalPanel />
           </div>
         </div>
-
         {/* Project Closure Modal */}
         {showClosureModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

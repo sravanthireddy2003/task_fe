@@ -313,7 +313,6 @@ const Dashboard = () => {
       try {
         await dispatch(fetchUsers());
       } catch (error) {
-        console.error('Failed to load dashboard data:', error);
         setSystemStatus('alert');
       }
     };

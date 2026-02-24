@@ -36,7 +36,6 @@ const Sidebar = () => {
           <Icons.Menu className="tm-icon" />
         </button>
       </div>
-
       {/* Navigation */}
       <nav className="flex-1 mt-8 px-4 space-y-2 overflow-y-auto scrollbar-hide">
         {modules.map((mod, idx) => {
@@ -70,7 +69,6 @@ const Sidebar = () => {
           );
         })}
       </nav>
-
       {/* User Section */}
       <div className="p-4 border-t border-gray-700 bg-gray-800">
         <div className={clsx("flex items-center gap-3", isSidebarCollapsed ? "justify-center" : "px-2")}>

@@ -47,9 +47,7 @@ export function setTokens(accessToken, refreshToken, storage = 'local') {
       // Don't store it - it's wrong!
     }
     
-  } catch (e) {
-    console.error('Error setting tokens:', e);
-  }
+  } catch (e) {}
 }
 
 export function clearTokens() {

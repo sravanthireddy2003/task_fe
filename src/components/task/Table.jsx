@@ -31,7 +31,6 @@ const Table = ({ tasks }) => {
       const date = new Date(dateString);
       return isNaN(date.getTime()) ? "N/A" : formatDate(date);
     } catch (error) {
-      console.error("Error formatting date:", error);
       return "N/A";
     }
   };

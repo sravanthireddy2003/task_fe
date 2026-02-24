@@ -25,7 +25,7 @@ const UserAvatar = () => {
         const urlObj = new URL(url);
         return urlObj.pathname + urlObj.search;
       }
-    } catch (e) { console.error('URL parse error', e); }
+    } catch (e) {}
     return url;
   };
 
@@ -81,13 +81,10 @@ const UserAvatar = () => {
       return;
     }
 
-    console.log('🔄 Fetching profile for avatar...');
-
     const fetchProfile = async () => {
       try {
         await dispatch(getProfile()).unwrap();
       } catch (err) {
-        console.error('Profile fetch failed:', err);
         if (err.status === 401) {
           dispatch(logout());
           navigate('/log-in', { replace: true });

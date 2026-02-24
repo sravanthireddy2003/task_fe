@@ -34,7 +34,6 @@ export const fetchTaskss = createAsyncThunk(
       const response = await httpGetService(url);
       return Array.isArray(response) ? response : response?.data || response || [];
     } catch (error) {
-      console.error("Error fetching tasks:", error);
       return thunkAPI.rejectWithValue(
         // Normalize error message
         (error && (error.message || (error.data && error.data.message))) || error

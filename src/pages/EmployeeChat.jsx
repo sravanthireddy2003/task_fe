@@ -12,75 +12,55 @@ const EmployeeChat = () => {
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch projects assigned to this employee
+  // Fetch projects strictly assigned to this employee
   const fetchAssignedProjects = useCallback(async () => {
     try {
       setLoading(true);
 
-      // Try to fetch tasks assigned to this user
+      // 1. Fetch accessible projects
+      const res = await httpGetService('api/projects');
+      let allProjects = res?.success ? (res.data || []) : [];
+
+      // 2. Fetch tasks assigned to this user to see where they are participants
       let userTasks = [];
       try {
-        const res = await httpGetService('api/employee/my-tasks');
-        if (res?.success && res?.data && res.data.length > 0) {
-          userTasks = res.data;
+        const taskRes = await httpGetService('api/employee/my-tasks');
+        if (taskRes?.success && taskRes.data && taskRes.data.length > 0) {
+          userTasks = taskRes.data;
+        } else {
+          // Fallback
+          const fallbackRes = await httpGetService(`api/tasks?assignedTo=${user?.id}`);
+          if (fallbackRes?.success && fallbackRes.data) userTasks = fallbackRes.data;
         }
-      } catch (e) {
-        // Fallback to the old method if needed
-        const paramVariations = [
-          `api/tasks?assigned_to=${user?.id}`,
-          `api/tasks?assignedTo=${user?.id}`,
-          `api/tasks?user_id=${user?.id}`,
-          `api/tasks?userId=${user?.id}`,
-          `api/tasks?employee_id=${user?.id}`,
-          `api/employee/tasks`,
-        ];
+      } catch (e) {}
 
-        for (const param of paramVariations) {
-          try {
-            const res = await httpGetService(param);
-            if (res?.success && res?.data && res.data.length > 0) {
-              userTasks = res.data;
-              break;
-            }
-          } catch (e) {
-            continue;
-          }
+      const assignedProjectIds = new Set();
+      userTasks.forEach(task => {
+        if (task.project) {
+          assignedProjectIds.add(String(task.project.publicId || task.project.id));
         }
-      }
-
-      // Extract unique projects from tasks
-      if (userTasks && userTasks.length > 0) {
-        const projectMap = new Map();
-
-        userTasks.forEach((task) => {
-          if (task.project) {
-            const projectId = task.project.publicId || task.project.id;
-            const projectName = task.project.name || task.project.title || 'Unknown Project';
-
-            if (projectId && !projectMap.has(projectId)) {
-              projectMap.set(projectId, {
-                id: projectId,
-                _id: projectId, // For compatibility
-                name: projectName,
-                title: projectName, // For compatibility
-              });
-            }
-          }
-        });
-
-        const assignedProjects = Array.from(projectMap.values());
-        setProjects(assignedProjects);
-
-        if (assignedProjects.length > 0) {
-          setSelectedProjectId(assignedProjects[0].id);
+        if (task.projectId || task.project_id) {
+          assignedProjectIds.add(String(task.projectId || task.project_id));
         }
+      });
+
+      // 3. Keep ONLY projects where user has tasks assigned
+      const filteredProjects = allProjects.filter(p => {
+        const isAssigned = assignedProjectIds.has(String(p.public_id)) ||
+          assignedProjectIds.has(String(p.id)) ||
+          assignedProjectIds.has(String(p._id));
+
+        return isAssigned;
+      });
+
+      setProjects(filteredProjects);
+
+      if (filteredProjects.length > 0) {
+        setSelectedProjectId(filteredProjects[0]._id || filteredProjects[0].id || filteredProjects[0].publicId || filteredProjects[0].public_id);
       } else {
-        // If no tasks found, show no projects
-        console.warn('No tasks found for employee');
-        setProjects([]);
+        setSelectedProjectId(null);
       }
     } catch (err) {
-      console.error('Error fetching projects:', err);
       toast.error(err?.message || 'Failed to load projects');
     } finally {
       setLoading(false);
@@ -106,7 +86,7 @@ const EmployeeChat = () => {
   }
 
   const selectedProject = projects.find(
-    (p) => (p._id || p.id) === selectedProjectId
+    (p) => (p._id || p.id || p.publicId || p.public_id) === selectedProjectId
   );
 
   return (

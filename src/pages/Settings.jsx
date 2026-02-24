@@ -47,7 +47,6 @@ const TwoFactorAuth = () => {
         setIsEnabled(response.enabled || false);
       }
     } catch (error) {
-      console.error('Failed to check 2FA status:', error);
       setIsEnabled(false);
     }
   };
@@ -72,7 +71,6 @@ const TwoFactorAuth = () => {
       }
     } catch (error) {
       toast.error('Failed to enable 2FA: ' + (error.message || 'Unknown error'));
-      console.error('2FA enable error:', error);
     } finally {
       setLoading(false);
     }
@@ -100,12 +98,9 @@ const TwoFactorAuth = () => {
         setIsEnabled(true);
         toast.success('2FA enabled successfully!');
       } else {
-        // Log why it failed
-        console.error('2FA verification failed:', response);
         toast.error(response?.message || 'Invalid verification code');
       }
     } catch (error) {
-      console.error('2FA verify error (catch):', error);
       toast.error('Verification failed: ' + (error.message || 'Unknown error'));
     } finally {
       setLoading(false);
@@ -134,7 +129,6 @@ const TwoFactorAuth = () => {
       }
     } catch (error) {
       toast.error('Failed to disable 2FA: ' + (error.message || 'Unknown error'));
-      console.error('2FA disable error:', error);
     } finally {
       setLoading(false);
     }
@@ -184,7 +178,6 @@ const TwoFactorAuth = () => {
           {isEnabled ? 'Enabled' : 'Disabled'}
         </div>
       </div>
-
       {/* Main Content */}
       {step === 'initial' && (
         <div className="space-y-6">
@@ -290,7 +283,6 @@ const TwoFactorAuth = () => {
           </div>
         </div>
       )}
-
       {/* Setup Step - QR Code */}
       {step === 'setup' && (
         <div className="space-y-6">
@@ -444,7 +436,6 @@ const TwoFactorAuth = () => {
           </div>
         </div>
       )}
-
       {/* Backup Codes Step */}
       {step === 'backup' && backupCodes.length > 0 && (
         <div className="space-y-6">
@@ -550,11 +541,8 @@ const Settings = () => {
     try {
       const access = getAccessToken();
       const refresh = getRefreshToken();
-      console.debug('[Settings] tokens:', { access: access ? 'present' : null, refresh: refresh ? 'present' : null });
       if (access) setAuthToken(access, refresh || null, 'local');
-    } catch (e) {
-      console.warn('Settings token diagnostic failed', e);
-    }
+    } catch (e) {}
   }, []);
 
   const [showToken, setShowToken] = useState(false);
@@ -603,7 +591,6 @@ const Settings = () => {
       const logs = Array.isArray(data?.logs) ? data.logs : (Array.isArray(data) ? data : []);
       setAuditLogs(logs);
     } catch (err) {
-      console.error('Failed to load audit logs', err);
       setAuditError(err.message || 'Failed to load audit logs');
     } finally {
       setAuditLoading(false);
@@ -1031,7 +1018,6 @@ const Settings = () => {
                                             }
                                             window.open(fileUrl, '_blank');
                                           } catch (err) {
-                                            console.error('Preview audit file error', err);
                                             window.open(fileUrl, '_blank');
                                           }
                                         }}

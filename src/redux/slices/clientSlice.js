@@ -245,9 +245,16 @@ export const setPrimaryContact = createAsyncThunk(
 // Documents
 export const attachDocument = createAsyncThunk(
   'clients/attachDocument',
-  async ({ clientId, document }, thunkAPI) => {
+  async ({ clientId, document, file }, thunkAPI) => {
     try {
       if (!clientId) return thunkAPI.rejectWithValue('Missing clientId');
+
+      // ✅ FIX: Handle raw File object (preferred to avoid FormData serialization issues in Redux)
+      if (file) {
+        const formData = new FormData();
+        formData.append('file', file); // Backend expects 'file' for upload.single('file')
+        document = formData;
+      }
 
       // Shape the payload according to backend examples:
       // - single: { file_url, file_name, file_type }

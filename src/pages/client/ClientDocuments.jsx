@@ -74,7 +74,6 @@ const ClientDocuments = ({ client }) => {
         await dispatch(getClient(client.id)).unwrap();
       }
     } catch (error) {
-      console.error("Failed to upload document:", error);
       alert("Upload failed: " + error.message);
     } finally {
       setUploading(false);
@@ -109,7 +108,6 @@ const ClientDocuments = ({ client }) => {
       document.body.removeChild(a);
       setTimeout(() => window.URL.revokeObjectURL(blobUrl), 5000);
     } catch (err) {
-      console.error('Download failed', err);
       alert('Download failed: ' + (err.message || err));
     }
   };
@@ -131,7 +129,6 @@ const ClientDocuments = ({ client }) => {
       window.open(blobUrl, '_blank');
       setTimeout(() => window.URL.revokeObjectURL(blobUrl), 5000);
     } catch (err) {
-      console.error('View failed', err);
       alert('Unable to open document: ' + (err.message || err));
     }
   };
@@ -143,9 +140,7 @@ const ClientDocuments = ({ client }) => {
           clientId: client.id,
           documentId
         })).unwrap();
-      } catch (error) {
-        console.error("Failed to delete document:", error);
-      }
+      } catch (error) {}
     }
   };
 

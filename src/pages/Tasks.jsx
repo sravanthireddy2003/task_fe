@@ -86,7 +86,6 @@ export default function Tasks() {
 
   // Fetch projects and users on initial load
   useEffect(() => {
-    console.log('Initial useEffect - fetching projects and users');
     dispatch(fetchProjects());
     dispatch(fetchUsers());
   }, [dispatch]);
@@ -94,12 +93,10 @@ export default function Tasks() {
   // Handle project selection change
   const handleProjectChange = async (e) => {
     const projectId = e.target.value;
-    console.log('handleProjectChange called with projectId:', projectId);
     setSelectedProjectId(projectId);
     setIsProjectLocked(false);
 
     if (projectId === 'all') {
-      console.log('Clearing tasks for "All Projects"');
       dispatch(clearTasks());
       return;
     }
@@ -110,7 +107,6 @@ export default function Tasks() {
     );
 
     if (!selectedProject) {
-      console.error('Selected project not found in projects list');
       toast.error('Selected project not found');
       return;
     }
@@ -123,7 +119,6 @@ export default function Tasks() {
   useEffect(() => {
     const fetchTasksForProject = async () => {
       if (selectedProjectId && selectedProjectId !== 'all') {
-        console.log('useEffect: Fetching tasks for project:', selectedProjectId);
         setIsFetching(true);
         // Reset lock state when trying to fetch new project tasks (though handleProjectChange does it too)
         // setIsProjectLocked(false); 
@@ -133,7 +128,6 @@ export default function Tasks() {
           // Success
           // toast.success(`Loaded ${result.length} tasks`);
         } catch (err) {
-          console.error('Failed to fetch tasks in useEffect:', err);
           const errorMessage = typeof err === 'string' ? err : err?.message || 'Unknown error';
 
           if (errorMessage.includes("Project is closed") || errorMessage.includes("Tasks are locked")) {
@@ -156,7 +150,6 @@ export default function Tasks() {
   // Show error toast when error occurs
   useEffect(() => {
     if (error) {
-      console.error('Task error:', error);
       toast.error(error?.message || String(error));
     }
   }, [error]);
@@ -168,18 +161,14 @@ export default function Tasks() {
       return;
     }
 
-    console.log('Manual refresh for project:', selectedProjectId);
     setIsFetching(true);
     try {
       const result = await dispatch(fetchTasks({ project_id: selectedProjectId })).unwrap();
-      console.log('Refresh successful, tasks:', result?.length || 0);
       toast.success(`Refreshed tasks (${result?.length || 0} found)`);
 
       // If refresh succeeds, ensure project is unlocked (unless another logic overrides, but usually successful fetch means unlocked)
       setIsProjectLocked(false);
-
     } catch (err) {
-      console.error('Refresh failed:', err);
       const errorMessage = typeof err === 'string' ? err : err?.message || String(err);
 
       if (errorMessage.includes("Project is closed") || errorMessage.includes("Tasks are locked")) {
@@ -293,7 +282,6 @@ export default function Tasks() {
       // Refresh tasks for the current project
       handleRefreshTasks();
     } catch (err) {
-      console.error('Submit error:', err);
       const errorMessage = err?.response?.data?.message || err?.message || err?.data?.message || 'Operation failed';
       toast.error(errorMessage);
     }
@@ -310,7 +298,6 @@ export default function Tasks() {
       // Refresh tasks for the current project
       handleRefreshTasks();
     } catch (err) {
-      console.error('Delete error:', err);
       toast.error(err?.message || 'Delete failed');
     }
   };
@@ -333,7 +320,6 @@ export default function Tasks() {
       const details = Array.isArray(payload) ? payload[0] : payload;
       setSelectedTaskDetails(details || null);
     } catch (err) {
-      console.error('Failed to fetch task details:', err);
       toast.error(err?.message || 'Failed to load task details');
       setSelectedTaskDetails(task);
     } finally {
@@ -369,7 +355,6 @@ export default function Tasks() {
       // Refresh tasks for the current project
       handleRefreshTasks();
     } catch (err) {
-      console.error('Status update error:', err);
       toast.error(err?.message || 'Status update failed');
     }
   };
@@ -522,8 +507,8 @@ export default function Tasks() {
     switch (view) {
       case 'list':
         return (
-          <div className="tm-list-container">
-            <table className="w-full table-auto">
+          <div className="tm-list-container overflow-x-auto">
+            <table className="w-full table-auto min-w-[800px]">
               <thead className="bg-gray-50 text-gray-700">
                 <tr>
                   <th className="p-4 text-left">Task</th>
@@ -554,11 +539,10 @@ export default function Tasks() {
                       className="border-b hover:bg-gray-50 transition-colors cursor-pointer"
                     >
                       <td className="p-4">
-                        <div onClick={() => handleOpenTaskDetails(task)} title="View task details" className={`font-medium cursor-pointer hover:underline ${
-                          (task.status || task.stage || 'pending').toLowerCase() === 'completed'
-                            ? 'text-gray-400 line-through'
-                            : 'text-gray-900'
-                        }`}>{task.title || task.name}</div>
+                        <div onClick={() => handleOpenTaskDetails(task)} title="View task details" className={`font-medium cursor-pointer hover:underline ${(task.status || task.stage || 'pending').toLowerCase() === 'completed'
+                          ? 'text-gray-400 line-through'
+                          : 'text-gray-900'
+                          }`}>{task.title || task.name}</div>
                         {task.description && (
                           <div className="text-sm text-gray-500 mt-1 line-clamp-2">{task.description}</div>
                         )}
@@ -674,11 +658,10 @@ export default function Tasks() {
                       onClick={() => handleOpenTaskDetails(task)}
                     >
                       <div className="flex items-start justify-between mb-2">
-                        <h4 className={`font-medium ${
-                          (task.status || task.stage || 'pending').toLowerCase() === 'completed'
-                            ? 'text-gray-400 line-through'
-                            : 'text-gray-900'
-                        }`}>
+                        <h4 className={`font-medium ${(task.status || task.stage || 'pending').toLowerCase() === 'completed'
+                          ? 'text-gray-400 line-through'
+                          : 'text-gray-900'
+                          }`}>
                           {task.title || task.name}
                         </h4>
                         <span
@@ -725,56 +708,57 @@ export default function Tasks() {
 
       case 'calendar':
         return (
-          <div className="bg-white border rounded-xl p-6">
-            <div className="flex items-center justify-between mb-6">
+          <div className="bg-white border rounded-xl p-6 overflow-x-auto">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <h3 className="text-lg font-semibold">Calendar View</h3>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <button className="px-3 py-1 border rounded-lg text-sm bg-blue-50 text-blue-700 font-medium">Today</button>
                 <button className="px-3 py-1 border rounded-lg text-sm hover:bg-gray-50">Week</button>
                 <button className="px-3 py-1 border rounded-lg text-sm hover:bg-gray-50">Month</button>
               </div>
             </div>
-            <div className="grid grid-cols-7 gap-2 mb-2">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                <div key={day} className="text-center font-medium text-gray-600 py-2">{day}</div>
-              ))}
-            </div>
-            <div className="grid grid-cols-7 gap-2">
-              {Array.from({ length: 35 }).map((_, i) => {
-                const dayNumber = i + 1;
-                const dayTasks = filteredTasks.filter(task => {
-                  if (!task.dueDate && !task.taskDate) return false;
-                  const taskDate = new Date(task.dueDate || task.taskDate);
-                  return taskDate.getDate() === dayNumber;
-                });
+            <div className="min-w-[700px]">
+              <div className="grid grid-cols-7 gap-2 mb-2">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                  <div key={day} className="text-center font-medium text-gray-600 py-2">{day}</div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-2">
+                {Array.from({ length: 35 }).map((_, i) => {
+                  const dayNumber = i + 1;
+                  const dayTasks = filteredTasks.filter(task => {
+                    if (!task.dueDate && !task.taskDate) return false;
+                    const taskDate = new Date(task.dueDate || task.taskDate);
+                    return taskDate.getDate() === dayNumber;
+                  });
 
-                return (
-                  <div key={i} className="min-h-32 border rounded-lg p-2 hover:bg-gray-50">
-                    <div className="text-sm font-medium mb-2">{dayNumber}</div>
-                    {dayTasks.slice(0, 2).map(task => (
-                      <div
-                        key={task.id}
-                        className="text-xs p-2 mb-1 rounded bg-blue-50 text-blue-700 truncate hover:bg-blue-100 cursor-pointer border border-blue-100"
-                        onClick={() => handleOpenTaskDetails(task)}
-                      >
-                        <div className={`font-medium ${
-                          (task.status || task.stage || 'pending').toLowerCase() === 'completed'
+                  return (
+                    <div key={i} className="min-h-32 border rounded-lg p-2 hover:bg-gray-50">
+                      <div className="text-sm font-medium mb-2">{dayNumber}</div>
+                      {dayTasks.slice(0, 2).map(task => (
+                        <div
+                          key={task.id}
+                          className="text-xs p-2 mb-1 rounded bg-blue-50 text-blue-700 truncate hover:bg-blue-100 cursor-pointer border border-blue-100"
+                          onClick={() => handleOpenTaskDetails(task)}
+                        >
+                          <div className={`font-medium ${(task.status || task.stage || 'pending').toLowerCase() === 'completed'
                             ? 'line-through'
                             : ''
-                        }`}>{task.title || task.name}</div>
-                        <div className="flex items-center gap-1 mt-1">
-                          <span className={`px-1 rounded ${priorityColors[(task.priority || 'MEDIUM').toLowerCase()]}`}>
-                            {task.priority}
-                          </span>
+                            }`}>{task.title || task.name}</div>
+                          <div className="flex items-center gap-1 mt-1">
+                            <span className={`px-1 rounded ${priorityColors[(task.priority || 'MEDIUM').toLowerCase()]}`}>
+                              {task.priority}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                    {dayTasks.length > 2 && (
-                      <div className="text-xs text-gray-500 pl-2">+{dayTasks.length - 2} more</div>
-                    )}
-                  </div>
-                );
-              })}
+                      ))}
+                      {dayTasks.length > 2 && (
+                        <div className="text-xs text-gray-500 pl-2">+{dayTasks.length - 2} more</div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         );
@@ -782,9 +766,9 @@ export default function Tasks() {
       case 'timeline':
         return (
           <div className="bg-white border rounded-xl p-6">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <h3 className="text-lg font-semibold">Timeline View</h3>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <button className="px-3 py-1 border rounded-lg text-sm bg-blue-50 text-blue-700 font-medium">Day</button>
                 <button className="px-3 py-1 border rounded-lg text-sm hover:bg-gray-50">Week</button>
                 <button className="px-3 py-1 border rounded-lg text-sm hover:bg-gray-50">Month</button>
@@ -807,11 +791,10 @@ export default function Tasks() {
                         (task.status || task.stage || 'pending').toLowerCase() === 'in_progress' ? 'bg-blue-500' :
                           (task.status || task.stage || 'pending').toLowerCase() === 'pending' ? 'bg-gray-400' : 'bg-red-500'}`}
                       />
-                      <h4 className={`font-medium ${
-                        (task.status || task.stage || 'pending').toLowerCase() === 'completed'
-                          ? 'text-gray-400 line-through'
-                          : 'text-gray-900'
-                      }`}>{task.title || task.name}</h4>
+                      <h4 className={`font-medium ${(task.status || task.stage || 'pending').toLowerCase() === 'completed'
+                        ? 'text-gray-400 line-through'
+                        : 'text-gray-900'
+                        }`}>{task.title || task.name}</h4>
                       <span className={`px-2 py-1 rounded text-xs ${priorityColors[(task.priority || 'MEDIUM').toLowerCase()]}`}>
                         {task.priority}
                       </span>
@@ -867,7 +850,7 @@ export default function Tasks() {
   };
 
   return (
-    <div className="p-8 bg-gray-50 min-h-screen">
+    <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
       {/* Task summary cards with icons */}
       <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         {(() => {
@@ -902,15 +885,14 @@ export default function Tasks() {
           );
         })()}
       </div>
-
       {/* HEADER */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-heading-2 mb-2">Tasks</h1>
           <p className="text-body text-gray-600">Manage and track all your tasks</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {/* Project Selector */}
           <div className="relative">
             <select
@@ -974,7 +956,6 @@ export default function Tasks() {
           )}
         </div>
       </div>
-
       {/* ERROR / LOCKED PROJECT BANNER */}
       {(error || isProjectLocked) && !isFetching && (
         <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-xl text-red-800 animate-fadeIn">
@@ -990,9 +971,8 @@ export default function Tasks() {
           </div>
         </div>
       )}
-
       {/* VIEW SELECTOR */}
-      <div className="flex items-center gap-1 mb-6">
+      <div className="flex items-center gap-1 mb-6 overflow-x-auto pb-1 no-scrollbar">
         <button
           onClick={() => setView('list')}
           className={`flex items-center gap-2 px-4 py-2 rounded-t-lg font-medium ${view === 'list'
@@ -1030,7 +1010,6 @@ export default function Tasks() {
           Timeline
         </button>
       </div>
-
       {/* SEARCH AND FILTERS */}
       {selectedProjectId !== 'all' && tasks.length > 0 && (
         <div className="mb-6 space-y-4">
@@ -1081,7 +1060,6 @@ export default function Tasks() {
           </div>
         </div>
       )}
-
       {/* Loading Indicator */}
       {isFetching && (
         <div className="flex items-center justify-center p-4 mb-6 bg-blue-50 rounded-lg">
@@ -1089,10 +1067,9 @@ export default function Tasks() {
           <span className="text-blue-600 font-medium">Loading tasks...</span>
         </div>
       )}
-
       {/* NO PROJECT SELECTED STATE */}
       {selectedProjectId === 'all' && (
-        <div className="bg-white rounded-xl border p-12 text-center">
+        <div className="bg-white rounded-xl border p-6 md:p-12 text-center">
           <AlertCircle className="tm-icon-hero mx-auto mb-4 text-gray-400" />
           <h3 className="text-xl font-semibold text-gray-900 mb-2">Select a Project</h3>
           <p className="text-gray-600 mb-6">
@@ -1114,10 +1091,9 @@ export default function Tasks() {
           </div>
         </div>
       )}
-
       {/* NO TASKS STATE - When project selected but no tasks */}
       {selectedProjectId !== 'all' && !isFetching && tasks.length === 0 && (
-        <div className="bg-white rounded-xl border p-12 text-center">
+        <div className="bg-white rounded-xl border p-6 md:p-12 text-center">
           <AlertCircle className="tm-icon-hero mx-auto mb-4 text-gray-400" />
           <h3 className="text-xl font-semibold text-gray-900 mb-2">No Tasks Found</h3>
           <p className="text-gray-600 mb-6">
@@ -1145,10 +1121,8 @@ export default function Tasks() {
           </div>
         </div>
       )}
-
       {/* RENDER THE SELECTED VIEW */}
       {selectedProjectId !== 'all' && !isFetching && tasks.length > 0 && renderView()}
-
       {/* DETAILS PANEL (modal popup) */}
       {selectedTaskDetails && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={closeDetails}>
@@ -1406,7 +1380,6 @@ export default function Tasks() {
           </div>
         </div>
       )}
-
       {/* MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -1456,7 +1429,7 @@ export default function Tasks() {
                 </div>
 
                 {/* Project and Status */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">
                       Project <span className="text-red-500">*</span>
@@ -1482,14 +1455,14 @@ export default function Tasks() {
                         </>
                       ) : (
                         // If a project is selected from the list, lock the modal project to that project only
-                        projects.filter(p => (p.id || p._id || p.public_id) === selectedProjectId).map((project) => (
+                        (projects.filter(p => (p.id || p._id || p.public_id) === selectedProjectId).map((project) => (
                           <option
                             key={project.id || project._id || project.public_id}
                             value={project.id || project._id || project.public_id}
                           >
                             {project.name || project.title}
                           </option>
-                        ))
+                        )))
                       )}
                     </select>
                   </div>
@@ -1513,7 +1486,7 @@ export default function Tasks() {
                 </div>
 
                 {/* Priority and Assignee */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">
                       Priority
@@ -1588,7 +1561,7 @@ export default function Tasks() {
                 </div>
 
                 {/* Estimated Hours and Due Date */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-gray-700 font-medium mb-2">
                       Estimated Hours

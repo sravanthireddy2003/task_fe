@@ -472,7 +472,7 @@ const ManagerDashboard = () => {
                 <tbody className="divide-y divide-gray-200">
                   {loading ? (
                     // Loading skeleton
-                    Array.from({ length: 5 }).map((_, index) => (
+                    (Array.from({ length: 5 }).map((_, index) => (
                       <tr key={index}>
                         <td className="py-4 px-6">
                           <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
@@ -496,7 +496,7 @@ const ManagerDashboard = () => {
                           <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
                         </td>
                       </tr>
-                    ))
+                    )))
                   ) : tasks.length === 0 ? (
                     <tr>
                       <td colSpan="7" className="py-12 text-center">
@@ -571,7 +571,7 @@ const ManagerDashboard = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {loading ? (
                   // Loading skeleton for grid
-                  Array.from({ length: 6 }).map((_, index) => (
+                  (Array.from({ length: 6 }).map((_, index) => (
                     <div key={index} className="bg-white border border-gray-200 rounded-xl p-5 animate-pulse">
                       <div className="h-4 bg-gray-200 rounded mb-4 w-3/4"></div>
                       <div className="h-3 bg-gray-200 rounded mb-3 w-1/2"></div>
@@ -579,7 +579,7 @@ const ManagerDashboard = () => {
                       <div className="h-3 bg-gray-200 rounded mb-2 w-full"></div>
                       <div className="h-3 bg-gray-200 rounded w-2/3"></div>
                     </div>
-                  ))
+                  )))
                 ) : tasks.length === 0 ? (
                   <div className="col-span-full text-center py-12">
                     <div className="flex flex-col items-center justify-center">
