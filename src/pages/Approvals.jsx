@@ -194,7 +194,7 @@ const Approvals = () => {
         // still refresh the list to get canonical server state
         loadReassignmentRequests();
       } catch (err) {
-        const errorMessage = err?.response?.data?.message || err?.message || err?.data?.message || 'Failed to approve and reassign';
+        const errorMessage = typeof err === 'string' ? err : err?.response?.data?.message || err?.message || err?.data?.message || 'Failed to approve and reassign';
         toast.error(errorMessage);
       } finally {
         setReassigning(false);
@@ -263,7 +263,7 @@ const Approvals = () => {
       setSelectedRequest(null);
       loadReassignmentRequests();
     } catch (err) {
-      const errorMessage = err?.response?.data?.message || err?.message || err?.data?.message || 'Reassignment failed';
+      const errorMessage = typeof err === 'string' ? err : err?.response?.data?.message || err?.message || err?.data?.message || 'Reassignment failed';
       toast.error(errorMessage);
     } finally {
       setReassigning(false);
@@ -452,10 +452,10 @@ const Approvals = () => {
                           </span>
                           <span
                             className={`px-2 py-1 rounded-full text-xs font-semibold ${a.status === 'Approved'
-                                ? 'bg-green-100 text-green-800'
-                                : a.status === 'Rejected'
-                                  ? 'bg-red-100 text-red-800'
-                                  : 'bg-yellow-100 text-yellow-800'
+                              ? 'bg-green-100 text-green-800'
+                              : a.status === 'Rejected'
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-yellow-100 text-yellow-800'
                               }`}
                           >
                             {a.status}
@@ -661,10 +661,10 @@ const Approvals = () => {
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span
                           className={`px-2 py-1 rounded-full text-xs font-semibold ${a.status === 'Approved'
-                              ? 'bg-green-100 text-green-800'
-                              : a.status === 'Rejected'
-                                ? 'bg-red-100 text-red-800'
-                                : 'bg-yellow-100 text-yellow-800'
+                            ? 'bg-green-100 text-green-800'
+                            : a.status === 'Rejected'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-yellow-100 text-yellow-800'
                             }`}
                         >
                           {a.status}
@@ -823,10 +823,10 @@ const Approvals = () => {
                   <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1">Status</label>
                   <span
                     className={`px-2 py-1 rounded-full text-xs font-semibold inline-block ${viewDetails.status === 'Approved'
-                        ? 'bg-green-100 text-green-800'
-                        : viewDetails.status === 'Rejected'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-yellow-100 text-yellow-800'
+                      ? 'bg-green-100 text-green-800'
+                      : viewDetails.status === 'Rejected'
+                        ? 'bg-red-100 text-red-800'
+                        : 'bg-yellow-100 text-yellow-800'
                       }`}
                   >
                     {viewDetails.status}

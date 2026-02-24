@@ -11,6 +11,11 @@ import { fetchNotifications } from "./notificationSlice";
 const formatRejectValue = (err) => {
   if (!err) return 'Unknown error';
   if (typeof err === 'string') return err;
+  if (err?.response?.data?.message) return err.response.data.message;
+  if (err?.response?.data?.error) {
+    if (typeof err.response.data.error === 'string') return err.response.data.error;
+    if (err.response.data.error.message) return err.response.data.error.message;
+  }
   if (err?.message) return err.message;
   try {
     return JSON.stringify(err);

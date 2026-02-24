@@ -221,7 +221,7 @@ const ManagerTasks = () => {
       }
 
       if (resp && resp.error) {
-        if (resp.error.includes('assigned_to')) {}
+        if (resp.error.includes('assigned_to')) { }
         throw new Error(resp.error || 'Failed to load tasks');
       }
 
@@ -517,7 +517,7 @@ const ManagerTasks = () => {
         setShowCreateTaskModal(false);
         loadTasks(selectedProjectId);
       } else {
-        const errorMessage = err?.response?.data?.message || err?.message || err?.data?.message || 'Unable to create task';
+        const errorMessage = typeof err === 'string' ? err : err?.response?.data?.message || err?.message || err?.data?.message || 'Unable to create task';
         toast.error(errorMessage);
       }
     } finally {

@@ -372,7 +372,7 @@ const EmployeeTasks = () => {
     try {
       const latestResp = await fetchWithTenant(`/api/tasks/${encodeURIComponent(taskId)}`);
       latestTask = latestResp?.data || latestResp || task;
-    } catch (e) {}
+    } catch (e) { }
 
     const validation = validateStatusTransition(latestTask.status || latestTask.stage, newStatus, latestTask);
     if (!validation.valid) {
@@ -418,7 +418,7 @@ const EmployeeTasks = () => {
     try {
       const latestResp = await fetchWithTenant(`/api/tasks/${encodeURIComponent(taskId)}`);
       latestTask = latestResp?.data || latestResp || task;
-    } catch (e) {}
+    } catch (e) { }
 
     // Prevent duplicate or forbidden reassignment requests
     if (isTaskReadOnly(latestTask)) {
@@ -463,7 +463,7 @@ const EmployeeTasks = () => {
           setSelectedProjectId(firstProjectId);
         }
       }
-    } catch (err) {}
+    } catch (err) { }
   };
 
   const loadTasks = async (projectId) => {
@@ -551,7 +551,7 @@ const EmployeeTasks = () => {
         }
       }
       setReassignmentRequests(requestsMap);
-    } catch (error) {}
+    } catch (error) { }
   };
 
   const loadTaskTimeline = async (task) => {
@@ -569,7 +569,7 @@ const EmployeeTasks = () => {
           [normalizedId]: result
         }));
       }
-    } catch (error) {}
+    } catch (error) { }
   };
 
   const loadEmployees = async () => {
@@ -577,7 +577,7 @@ const EmployeeTasks = () => {
       const resp = await fetchWithTenant('/api/manager/employees/all');
       const data = Array.isArray(resp?.data) ? resp.data : resp;
       setEmployees(Array.isArray(data) ? data : []);
-    } catch (err) {}
+    } catch (err) { }
   };
 
   // Fetch employee-specific tasks
@@ -1386,7 +1386,7 @@ const EmployeeTasks = () => {
         toast.error(errorMessage);
       }
     } catch (err) {
-      const errorMessage = err?.response?.data?.message || err?.message || err?.data?.message || 'Failed to request reassignment';
+      const errorMessage = typeof err === 'string' ? err : err?.response?.data?.message || err?.message || err?.data?.message || 'Failed to request reassignment';
       toast.error(errorMessage);
     } finally {
       setReassigning(false);

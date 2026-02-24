@@ -5,6 +5,11 @@ import { fetchNotifications } from './notificationSlice';
 const formatRejectValue = (err) => {
   if (!err) return 'Unknown error';
   if (typeof err === 'string') return err;
+  if (err?.response?.data?.message) return err.response.data.message;
+  if (err?.response?.data?.error) {
+    if (typeof err.response.data.error === 'string') return err.response.data.error;
+    if (err.response.data.error.message) return err.response.data.error.message;
+  }
   if (err?.message) return err.message;
   try {
     return JSON.stringify(err);
@@ -126,7 +131,7 @@ const departmentSlice = createSlice({
         const updated = action.payload;
         const id = updated._id || updated.id;
         if (id) {
-          state.departments = state.departments.map((d) => 
+          state.departments = state.departments.map((d) =>
             d._id === id || d.id === id ? { ...d, ...updated } : d
           );
         }
@@ -145,7 +150,7 @@ const departmentSlice = createSlice({
         state.status = 'succeeded';
         state.error = null;
         const id = action.payload?.id || action.meta.arg;
-        state.departments = state.departments.filter((d) => 
+        state.departments = state.departments.filter((d) =>
           d._id !== id && d.id !== id && d.public_id !== id
         );
       })

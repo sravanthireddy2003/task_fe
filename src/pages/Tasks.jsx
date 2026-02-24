@@ -282,7 +282,7 @@ export default function Tasks() {
       // Refresh tasks for the current project
       handleRefreshTasks();
     } catch (err) {
-      const errorMessage = err?.response?.data?.message || err?.message || err?.data?.message || 'Operation failed';
+      const errorMessage = typeof err === 'string' ? err : err?.response?.data?.message || err?.message || err?.data?.message || 'Operation failed';
       toast.error(errorMessage);
     }
   };
