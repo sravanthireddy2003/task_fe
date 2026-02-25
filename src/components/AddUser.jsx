@@ -147,6 +147,14 @@ const AddUser = ({ open, setOpen, userData }) => {
     setOpen(false);
   };
 
+  const handleOnError = (errors) => {
+    Object.values(errors).forEach((error) => {
+      if (error?.message) {
+        toast.error(error.message);
+      }
+    });
+  };
+
   return (
     <Dialog open={open} onClose={handleCancel} className="relative z-50">
       {/* Overlay */}
@@ -156,7 +164,7 @@ const AddUser = ({ open, setOpen, userData }) => {
       <div className="fixed inset-0 overflow-y-auto">
         <div className="flex min-h-full items-center justify-center p-4">
           <Dialog.Panel className="relative bg-white w-full max-w-2xl rounded-xl shadow-xl">
-            <form onSubmit={handleSubmit(handleOnSubmit)} className="space-y-6">
+            <form onSubmit={handleSubmit(handleOnSubmit, handleOnError)} className="space-y-6">
               {/* Header */}
               <div className="px-6 pt-6 pb-4 border-b border-gray-200">
                 <div className="flex items-center justify-between">
@@ -214,12 +222,13 @@ const AddUser = ({ open, setOpen, userData }) => {
                   {/* Title */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Title
+                      Title *
                     </label>
                     <input
                       type="text"
                       placeholder="Job title/position"
                       {...register("title", {
+                        required: "Title is required!",
                         maxLength: { value: 100, message: "Title too long" },
                       })}
                       className={clsx(

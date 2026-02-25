@@ -56,7 +56,7 @@ const Clients = () => {
     if (window.confirm('Are you sure you want to delete this client?')) {
       try {
         await dispatch(deleteClient(clientId)).unwrap();
-      } catch (error) {}
+      } catch (error) { }
     }
   };
 
@@ -378,7 +378,7 @@ const Clients = () => {
           <div className="bg-green-50 border border-green-200 rounded-lg p-3">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
-                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                <Icons.CheckCircle2 className="w-4 h-4 text-green-600" />
               </div>
               <div>
                 <p className="text-sm font-medium text-green-900">Success</p>
