@@ -250,10 +250,7 @@ export default function Workflow() {
       const resp = await dispatch(requestProjectClosure(payload)).unwrap();
       // Handle API responses that return success=false without throwing
       if (resp?.success === false || resp?.error) {
-        let apiError = resp?.error || resp?.message || 'Failed to request project closure';
-        if (typeof apiError === 'string' && apiError.includes('All tasks must be COMPLETED')) {
-          apiError = 'Cannot close project: All tasks must be completed first. Please ensure all project tasks are marked as completed before requesting closure.';
-        }
+        const apiError = resp?.message || resp?.error || 'Failed to request project closure';
         toast.error(apiError);
         setClosureError(apiError);
         return; // keep UI/modal open for correction
@@ -269,17 +266,13 @@ export default function Workflow() {
       setClosureReason('');
       setClosureError('');
     } catch (error) {
-      // Handle specific error messages
-      let errorMessage = 'Failed to request project closure';
-
-      if (error?.message) {
-        if (error.message.includes('All tasks must be COMPLETED')) {
-          errorMessage = 'Cannot close project: All tasks must be completed first. Please ensure all project tasks are marked as completed before requesting closure.';
-        } else {
-          errorMessage = error.message;
-        }
-      }
-      // Show as toast and retain UI state without reload
+      // Extract message from various possible error locations
+      const errorMessage = 
+        error?.message ||
+        error?.data?.message ||
+        error?.response?.data?.message ||
+        (typeof error === 'string' ? error : 'Failed to request project closure');
+      
       toast.error(errorMessage);
       setClosureError(errorMessage);
     } finally {

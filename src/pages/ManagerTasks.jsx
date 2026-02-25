@@ -859,7 +859,7 @@ const ManagerTasks = () => {
                             <div className="flex items-center gap-2">
                               <User className="tm-icon text-gray-400" />
                               <span className="text-sm text-gray-700">
-                                {getAssignedUsers(selectedTask || task)}
+                                {getAssignedUsers(task)}
                               </span>
                             </div>
                           </td>

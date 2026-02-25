@@ -434,10 +434,13 @@ export default function Tasks() {
     return project?.name || project?.title || 'Unknown Project';
   };
 
-  // Get assigned user names (single user now)
+  // Get assigned user names (handles multiple users)
   const getAssignedUsers = (task) => {
     if (!task.assignedUsers || !task.assignedUsers.length) return 'Unassigned';
-    return task.assignedUsers[0]?.name || 'Unassigned';
+    const names = task.assignedUsers.map(u => u.name).filter(Boolean);
+    if (names.length === 0) return 'Unassigned';
+    if (names.length === 1) return names[0];
+    return names.slice(0, 2).join(', ') + (names.length > 2 ? ` +${names.length - 2}` : '');
   };
 
   // Status colors
@@ -556,7 +559,7 @@ export default function Tasks() {
                       </td>
 
                       <td className="p-4">
-                        <div className="text-sm text-gray-700">{getProjectName(selectedProjectId)}</div>
+                        <div className="text-sm text-gray-700">{task.client?.name || task.clientName || '-'}</div>
                       </td>
 
                       <td className="p-4">
@@ -592,10 +595,10 @@ export default function Tasks() {
                         <div className="flex justify-end gap-2">
                           <button
                             onClick={(e) => { e.stopPropagation(); openModal(task); }}
-                            disabled={isProjectLocked}
-                            className={`p-2 rounded-lg transition-colors ${isProjectLocked ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100'
+                            disabled={isProjectLocked || (task.status || task.stage || 'pending').toLowerCase() === 'completed'}
+                            className={`p-2 rounded-lg transition-colors ${isProjectLocked || (task.status || task.stage || 'pending').toLowerCase() === 'completed' ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100'
                               }`}
-                            title={isProjectLocked ? "Project Locked" : "Edit task"}
+                            title={isProjectLocked ? "Project Locked" : (task.status || task.stage || 'pending').toLowerCase() === 'completed' ? "Cannot edit completed task" : "Edit task"}
                           >
                             <Edit2 className="tm-icon" />
                           </button>
