@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import * as Icons from '../icons';
@@ -126,7 +126,7 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentR
       {/* Project Name */}
       {task.project && (
         <div className="text-meta mb-2">
-          📁 {task.project.name || task.project.title || 'Project'}
+          ðŸ“ {task.project.name || task.project.title || 'Project'}
         </div>
       )}
 
@@ -148,7 +148,7 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentR
             {assignedUsers.slice(0, 3).map((user, index) => (
               <div
                 key={user.id || user._id || index}
-                className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium border-2 border-white"
+                className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-medium border-2 border-white"
                 title={user.name || user.email || 'User'}
               >
                 {(user.name || user.email || 'U').charAt(0).toUpperCase()}
@@ -178,7 +178,7 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentR
         <div className="flex items-center gap-2 mt-3 p-2 bg-green-100 rounded-lg">
           <Icons.CheckCircle2 className="w-4 h-4 text-green-600" />
           <div>
-            <p className="text-caption font-semibold text-green-700">✓ Task Completed</p>
+            <p className="text-caption font-semibold text-green-700">âœ“ Task Completed</p>
             <p className="text-caption text-green-600">
               Total: {task.total_time_hhmmss || formatDuration(task.total_time_seconds || 0)}
             </p>
@@ -223,7 +223,7 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentR
       {/* Completed Status Badge */}
       {isCompleted && (
         <div className="mt-2 text-xs text-green-700 bg-green-100 px-2 py-1 rounded font-semibold">
-          ✓ Completed - No Further Changes
+          âœ“ Completed - No Further Changes
         </div>
       )}
     </div>
@@ -231,3 +231,4 @@ const KanbanCard = ({ task, onClick, isDragging = false, userRole, reassignmentR
 };
 
 export default KanbanCard;
+

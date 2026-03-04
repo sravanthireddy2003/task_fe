@@ -1,4 +1,4 @@
-// App.jsx - COMPLETE FIXED
+﻿// App.jsx - COMPLETE FIXED
 import { Transition } from "@headlessui/react";
 import clsx from "clsx";
 import { Fragment, useEffect, lazy, Suspense } from "react";
@@ -115,11 +115,16 @@ function Layout() {
       {/* Sidebar */}
       <div
         className={clsx(
-          "h-screen bg-gray-900 border-r border-gray-700 hidden md:flex sticky top-0 z-40 transition-all duration-300 ease-in-out shadow-xl",
-          isSidebarCollapsed ? "w-16" : "w-64"
+          "h-screen bg-gray-900 border-r border-gray-700 hidden md:flex sticky top-0 z-50 transition-all duration-300 ease-in-out shadow-xl",
+          isSidebarCollapsed ? "w-[72px]" : "w-[240px]"
         )}
       >
-        <Sidebar />
+        <Sidebar onHoverChange={(hovered) => {
+          // If sidebar is collapsed in Redux, but they hover it, we ideally want the 
+          // sidebar to expand ABSOLUTELY without pushing the main content container.
+          // By applying `absolute top-0 left-0 h-full z-50` to the sidebar itself in its own component, 
+          // this container just holds the 72px width space.
+        }} />
       </div>
 
       {/* Main Content Area */}
@@ -229,7 +234,7 @@ const MobileNav = ({ onNavigate }) => {
             className={clsx(
               "group w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 relative text-left text-slate-300",
               isActive
-                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-900/20"
+                ? "bg-blue-600 text-white shadow-lg shadow-indigo-900/20"
                 : "hover:bg-slate-800 hover:text-white"
             )}
           >
@@ -271,7 +276,7 @@ function App() {
   const dispatch = useDispatch();
   const user = useSelector(selectUser);
 
-  // ✅ FIXED: Manager UI Preservation After Refresh + Fetch Notifications
+  // âœ… FIXED: Manager UI Preservation After Refresh + Fetch Notifications
   useEffect(() => {
     if (!user || !user.role || !user.id) return;
 
@@ -293,7 +298,7 @@ function App() {
       const fallbackSidebar = needsSidebarFallback ? getFallbackSidebar(user.role) : user.sidebar;
 
       const updatedUser = {
-        ...user, // ✅ PRESERVE original role: "Manager"
+        ...user, // âœ… PRESERVE original role: "Manager"
         modules: fallbackModules,
         sidebar: fallbackSidebar,
       };
@@ -301,14 +306,14 @@ function App() {
       dispatch(setCredentials(updatedUser));
     }
 
-    // ✅ Only fetch profile if needed (not for Manager to avoid admin override)
+    // âœ… Only fetch profile if needed (not for Manager to avoid admin override)
     if (needsModuleFallback && shouldApplyFallback(user.role) && !isManager) {
       dispatch(getProfile());
     }
 
-    // ✅ NEW: Fetch notifications after login
+    // âœ… NEW: Fetch notifications after login
     dispatch(fetchNotifications());
-  }, [dispatch, user?.id]); // ✅ Safe dependency: user.id only
+  }, [dispatch, user?.id]); // âœ… Safe dependency: user.id only
 
   return (
     <main className="w-full min-h-screen bg-gray-50 relative">
@@ -506,7 +511,7 @@ function App() {
               </Route>
             ))}
 
-            {/* ✅ NEW: Notification routes for all roles (singular & plural) */}
+            {/* âœ… NEW: Notification routes for all roles (singular & plural) */}
             <Route element={<ModuleRouteGuard moduleName="Notifications" />}>
               <Route path="/admin/notifications" element={<Notifications />} />
               <Route path="/admin/notification" element={<Notifications />} />
@@ -562,7 +567,25 @@ function App() {
         </Routes>
 
         <MobileSidebar />
-        <Toaster richColors position="top-right" />
+        <Toaster
+          position="top-right"
+          richColors={false}
+          closeButton
+          duration={4000}
+          toastOptions={{
+            className: "!w-[90vw] sm:!w-[350px] !max-w-[380px] !p-4 !bg-white !border !border-gray-100 !rounded-xl !shadow-xl !shadow-blue-900/5 !font-sans break-words !gap-3",
+            classNames: {
+              title: "!font-semibold !text-[14px] !text-gray-900 !leading-snug",
+              description: "!text-[13px] !text-gray-500 !mt-0.5 !leading-relaxed",
+              icon: "!w-5 !h-5 !mt-0.5",
+              success: "!border-l-4 !border-l-green-500 !bg-green-50/40",
+              error: "!border-l-4 !border-l-red-500 !bg-red-50/40",
+              warning: "!border-l-4 !border-l-amber-500 !bg-amber-50/40",
+              info: "!border-l-4 !border-l-blue-500 !bg-blue-50/40",
+              closeButton: "!bg-gray-50 hover:!bg-gray-100 !border !border-gray-200 !text-gray-500 !transition-colors",
+            },
+          }}
+        />
       </Suspense>
     </main>
   );

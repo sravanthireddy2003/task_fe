@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectUser } from '../redux/slices/authSlice';
 import {
@@ -77,7 +77,7 @@ const Documents = () => {
             try {
               const result = await dispatch(getProject(projectId)).unwrap();
               if (result) projectToUse = result;
-            } catch (err) {}
+            } catch (err) { }
           }
 
           if (projectToUse) {
@@ -226,7 +226,7 @@ const Documents = () => {
               placeholder="Search documents by name, type, or uploader..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="input pl-10 pr-4 py-2"
             />
           </div>
 
@@ -234,7 +234,7 @@ const Documents = () => {
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="input !w-auto"
             >
               <option value="all">All Types</option>
               <option value="PROJECT">Projects</option>
@@ -247,7 +247,7 @@ const Documents = () => {
                 value={selectedProjectId}
                 onChange={(e) => setSelectedProjectId(e.target.value)}
                 disabled={projectsLoading}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                className="input !w-auto disabled:opacity-50"
               >
                 <option value="">
                   {projectsLoading ? 'Loading projects...' : 'All Projects'}
@@ -269,7 +269,7 @@ const Documents = () => {
               <select
                 value={selectedClientId}
                 onChange={(e) => setSelectedClientId(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                className="input !w-auto disabled:opacity-50"
               >
                 <option value="">All Clients</option>
                 {clients.map(client => {
@@ -298,11 +298,11 @@ const Documents = () => {
           <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
             <AlertCircle className="w-8 h-8" />
           </div>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">Failed to Load Documents</h3>
+          <h3 className="text-section-title text-gray-900 mb-2">Failed to Load Documents</h3>
           <p className="text-gray-600 mb-8">{error}</p>
           <button
             onClick={() => dispatch(fetchDocuments({ projectId: selectedProjectId }))}
-            className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors shadow-sm"
+            className="btn btn-primary transition-colors shadow-sm"
           >
             Try Again
           </button>
@@ -312,7 +312,7 @@ const Documents = () => {
           <div className="w-20 h-20 bg-gray-50 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-6 border-2 border-dashed border-gray-200">
             <FileText className="w-10 h-10" />
           </div>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">No Documents Found</h3>
+          <h3 className="text-section-title text-gray-900 mb-2">No Documents Found</h3>
           <p className="text-gray-500 max-w-md mx-auto">
             {searchQuery
               ? "We couldn't find any documents matching your search criteria. Try adjusting your filters."
@@ -345,7 +345,7 @@ const Documents = () => {
                         {getFileIcon(doc.mimeType)}
                       </div>
                       <div>
-                        <h3 className="font-bold text-gray-900 truncate max-w-[180px] sm:max-w-[220px]" title={doc.fileName}>
+                        <h3 className="text-card-title truncate max-w-[180px] sm:max-w-[220px]" title={doc.fileName}>
                           {doc.fileName || 'Unnamed Document'}
                         </h3>
                         {doc.fileSize && (
@@ -357,9 +357,9 @@ const Documents = () => {
 
                   <div className="flex flex-wrap gap-2 mb-6">
                     <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${doc.entityType === 'PROJECT' ? 'bg-blue-50 text-blue-700 border-blue-100' :
-                        doc.entityType === 'CLIENT' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                          doc.entityType === 'TASK' ? 'bg-purple-50 text-purple-700 border-purple-100' :
-                            'bg-gray-50 text-gray-700 border-gray-200'
+                      doc.entityType === 'CLIENT' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                        doc.entityType === 'TASK' ? 'bg-purple-50 text-purple-700 border-purple-100' :
+                          'bg-gray-50 text-gray-700 border-gray-200'
                       }`}>
                       {doc.entityType || 'DOCUMENT'}
                     </span>
@@ -429,8 +429,9 @@ const Documents = () => {
             );
           })}
         </div>
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 };
 

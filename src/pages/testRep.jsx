@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import moment from "moment";
 import "./testRep.css";
 import * as Icons from "../icons";
@@ -18,7 +18,7 @@ const WeekCalendar = () => {
 
   // 
   const [fetchedTaskHours, setFetchedTaskHours] = useState([]);
-  const[fetchTaskhours,setfetchTaskhours] =useState([]);
+  const [fetchTaskhours, setfetchTaskhours] = useState([]);
   const tasksPerPage = 5;
   const startOfWeek = currentWeek.clone().startOf("week");
   const endOfWeek = currentWeek.clone().endOf("week");
@@ -65,7 +65,7 @@ const WeekCalendar = () => {
         }
         const data = await response.json();
         setTasks(data);
-      } catch (error) {}
+      } catch (error) { }
     };
     fetchTasks();
   }, []);
@@ -85,7 +85,7 @@ const WeekCalendar = () => {
         }
         const data = await response.json();
         setFetchedTaskHours(data);
-      } catch (error) {}
+      } catch (error) { }
     };
     fetchTaskHours();
   }, [currentWeek, refreshTrigger]);
@@ -98,19 +98,19 @@ const WeekCalendar = () => {
   };
 
 
-  
+
   const indexOfLastTask = currentPage * tasksPerPage;
   const indexOfFirstTask = indexOfLastTask - tasksPerPage;
   const currentTasks = tasks.slice(indexOfFirstTask, indexOfLastTask);
 
   const handleEditClick = (task, day) => {
-    if (!selectedTasks[task.id]) return; 
-    setEditingTask(task); 
-    setEditingDay(day); 
+    if (!selectedTasks[task.id]) return;
+    setEditingTask(task);
+    setEditingDay(day);
     setHours(task.hours?.[day.format("YYYY-MM-DD")] || "");
     setIsEditing(true);
   };
-  
+
   const closeDialog = () => {
     setIsEditing(false);
     setEditingTask(null);
@@ -122,14 +122,14 @@ const WeekCalendar = () => {
     if (editingTask && editingDay) {
       const userInfo = JSON.parse(localStorage.getItem("userInfo"));
       const userId = userInfo._id;
-  
+
       const data = {
         taskId: editingTask.id,
         userId,
         date: editingDay.format("YYYY-MM-DD"),
         hours: parseFloat(hours),
       };
-  
+
       const secret = "secretKeysecretK";
       const encryptedData = CryptoJS.AES.encrypt(JSON.stringify(data), secret).toString();
       try {
@@ -141,13 +141,13 @@ const WeekCalendar = () => {
             body: JSON.stringify({ encryptedData }), // Wrap encryptedData in an object
           }
         );
-  
+
         if (!response.ok) {
           throw new Error("Failed to save hours");
         }
         setRefreshTrigger(prev => prev + 1);
         closeDialog();
-  
+
         // Update the task's hours locally
         const updatedTasks = tasks.map((task) => {
           if (task.id === editingTask.id) {
@@ -161,19 +161,19 @@ const WeekCalendar = () => {
           }
           return task;
         });
-  
+
         setTasks(updatedTasks);
         closeDialog();
-      } catch (error) {}
+      } catch (error) { }
     }
   };
-  
-  
+
+
   return (
     <div className="week-calendar">
       <div className="navigation flex justify-center space-x-4 my-4 align-center">
         <button
-          className="flex bg-blue-500 text-white px-4 py-2 rounded"
+          className="flex bg-blue-600 text-white px-4 py-2 rounded"
           onClick={handlePrevWeek}
         >
           <Icons.ChevronLeft className="w-4 h-4" />
@@ -184,14 +184,14 @@ const WeekCalendar = () => {
         </h2>
 
         <button
-          className="flex bg-blue-500 text-white px-4 py-2 rounded"
+          className="flex bg-blue-600 text-white px-4 py-2 rounded"
           onClick={handleNextWeek}
         >
           <Icons.ChevronRight className="w-4 h-4" />
         </button>
       </div>
 
-<table className="calendar-table">
+      <table className="calendar-table">
         <thead>
           <tr>
             <th className="w-1/4">Task Title</th>
@@ -222,11 +222,10 @@ const WeekCalendar = () => {
                     className={isWeekend ? "bg-red-500" : ""}
                   >
                     <div className="flex justify-between items-center p-2">
-                      <h3 className="text-lg">{taskHours}</h3>
+                      <h3 className="text-card-title">{taskHours}</h3>
                       <Icons.Pencil
-                        className={`cursor-pointer text-gray-700 ${
-                          !selectedTasks[task.id] ? "opacity-50" : ""
-                        }`}
+                        className={`cursor-pointer text-gray-700 ${!selectedTasks[task.id] ? "opacity-50" : ""
+                          }`}
                         onClick={() => handleEditClick(task, day)}
                       />
                     </div>
@@ -246,8 +245,8 @@ const WeekCalendar = () => {
               const bgColor = totalHours < 8 ? 'bg-orange-500' : 'bg-green-500';
 
               return (
-                <td 
-                  key={day.format("YYYY-MM-DD")} 
+                <td
+                  key={day.format("YYYY-MM-DD")}
                   className={`font-bold text-center ${bgColor}`}
                 >
                   {totalHours}
@@ -262,7 +261,7 @@ const WeekCalendar = () => {
 
       <div className="flex justify-between items-center mt-4">
         <button
-          className="bg-blue-500 text-white px-4 py-2 rounded"
+          className="bg-blue-600 text-white px-4 py-2 rounded"
           onClick={handlePrevPage}
           disabled={currentPage === 1}
         >
@@ -272,13 +271,13 @@ const WeekCalendar = () => {
           Page {currentPage} of {Math.ceil(tasks.length / tasksPerPage)}
         </span>
         <button
-          className="bg-blue-500 text-white px-4 py-2 rounded"
+          className="bg-blue-600 text-white px-4 py-2 rounded"
           onClick={handleNextPage}
           disabled={currentPage === Math.ceil(tasks.length / tasksPerPage)}
         >
           Next
         </button>
-      </div>  
+      </div>
 
       <Dialog
         open={isEditing}
@@ -287,21 +286,21 @@ const WeekCalendar = () => {
       >
         <div className="flex items-center justify-center min-h-screen px-4">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-            <Dialog.Title as="h3" className="text-lg font-medium text-gray-900">
+            <Dialog.Title as="h3" className="text-section-title text-gray-900">
               Edit Hours for {editingDay?.format("YYYY-MM-DD")}
             </Dialog.Title>
 
             <input
-  type="number"
-  value={hours}
-  onChange={(e) => setHours(e.target.value)}
-  className="hour-input p-2 border rounded-md w-full mt-4"
-  placeholder="Enter hours"
-/>
+              type="number"
+              value={hours}
+              onChange={(e) => setHours(e.target.value)}
+              className="hour-input p-2 border rounded-md w-full mt-4"
+              placeholder="Enter hours"
+            />
             <div className="mt-6 flex justify-end space-x-4">
               <button
                 onClick={handleSave}
-                className="bg-blue-500 text-white px-4 py-2 rounded"
+                className="bg-blue-600 text-white px-4 py-2 rounded"
               >
                 Save
               </button>
@@ -320,4 +319,5 @@ const WeekCalendar = () => {
 };
 
 export default WeekCalendar;
+
 

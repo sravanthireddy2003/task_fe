@@ -22,7 +22,7 @@ const ModuleCard = ({ module }) => {
   const moduleId = module.moduleId || module.id || module._id || module.module_id;
   const moduleMeta = MODULE_MAP[module.name];
   const icon = moduleMeta?.icon || (
-    <span className="text-lg font-semibold">{module.name?.charAt(0) ?? "M"}</span>
+    <span className="text-card-title">{module.name?.charAt(0) ?? "M"}</span>
   );
   const routeLink = moduleMeta?.link;
 

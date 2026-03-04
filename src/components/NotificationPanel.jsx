@@ -1,4 +1,4 @@
-import { Fragment, useState, useEffect } from "react";
+﻿import { Fragment, useState, useEffect } from "react";
 import { Popover, Transition } from "@headlessui/react";
 import * as Icons from "../icons";
 import { useDispatch, useSelector } from "react-redux";
@@ -21,7 +21,7 @@ const NotificationPanel = () => {
   const unreadCount = useSelector(selectUnreadCount);
   const { user } = useSelector((state) => state.auth);
 
-  // ✅ NEW: Get user role to build proper navigation path
+  // âœ… NEW: Get user role to build proper navigation path
   const getUserRole = () => {
     if (!user) return "employee";
     
@@ -34,7 +34,7 @@ const NotificationPanel = () => {
 
   const notificationPath = `/${getUserRole()}/notification`;
 
-  // ✅ CHANGE: Use cached Redux state from App.jsx login flow
+  // âœ… CHANGE: Use cached Redux state from App.jsx login flow
   // No need to fetch when opening notification panel
   // Data is already populated by fetchNotifications in App.jsx on login
   // This prevents unnecessary API calls and enables real-time updates
@@ -258,3 +258,4 @@ const NotificationPanel = () => {
 };
 
 export default NotificationPanel;
+

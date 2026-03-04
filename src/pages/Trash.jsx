@@ -73,56 +73,61 @@ const Trash = () => {
       }
       // Refresh the list
       dispatch(fetchDeletedClients());
-    } catch (error) {}
+    } catch (error) { }
   };
 
   const TableHeader = () => (
-    <thead className='border-b border-gray-300'>
-      <tr className='text-black  text-left'>
-        <th className='py-2'>Client Name</th>
-        <th className='py-2'>Email</th>
-        <th className='py-2'>Phone</th>
-        <th className='py-2'>Industry</th>
-        <th className='py-2'>Deleted On</th>
+    <thead>
+      <tr>
+        <th>Client Name</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Industry</th>
+        <th>Deleted On</th>
+        <th className="text-right">Actions</th>
       </tr>
     </thead>
   );
 
   const TableRow = ({ item }) => (
-    <tr className='border-b border-gray-200 text-gray-600 hover:bg-gray-400/10'>
-      <td className='py-2'>
+    <tr className="cursor-pointer">
+      <td>
         <div className='flex items-center gap-2'>
-          <p className='w-full line-clamp-2 text-base text-black'>
+          <p className='w-full line-clamp-2 text-[14px] font-semibold text-gray-900'>
             {item?.name || item?.company}
           </p>
         </div>
       </td>
 
-      <td className='py-2'>
-        {item?.email || "N/A"}
+      <td>
+        <span className="text-[14px] text-gray-700">{item?.email || "N/A"}</span>
       </td>
 
-      <td className='py-2'>
-        {item?.phone || "N/A"}
+      <td>
+        <span className="text-[14px] text-gray-700">{item?.phone || "N/A"}</span>
       </td>
 
-      <td className='py-2'>
-        {item?.industry || "N/A"}
+      <td>
+        <span className="text-[14px] text-gray-700">{item?.industry || "N/A"}</span>
       </td>
 
-      <td className='py-2 text-sm'>
-        {item?.deletedAt ? new Date(item.deletedAt).toDateString() : "Unknown"}
+      <td>
+        <span className="text-[14px] text-gray-600">{item?.deletedAt ? new Date(item.deletedAt).toDateString() : "Unknown"}</span>
       </td>
 
-      <td className='py-2 flex gap-1 justify-end'>
-        <Button
-          icon={<Icons.RotateCcw className='text-xl text-gray-500' />}
-          onClick={() => restoreClick(item.id || item._id)}
-        />
-        <Button
-          icon={<Icons.Trash2 className='text-xl text-red-600' />}
-          onClick={() => deleteClick(item.id || item._id)}
-        />
+      <td className='text-right'>
+        <div className="flex justify-end gap-1">
+          <Button
+            icon={<Icons.RotateCcw className='text-xl text-gray-500 hover:text-blue-600 transition-colors' />}
+            onClick={() => restoreClick(item.id || item._id)}
+            className="p-1.5 hover:bg-blue-50 rounded"
+          />
+          <Button
+            icon={<Icons.Trash2 className='text-xl text-red-600 hover:text-red-700 transition-colors' />}
+            onClick={() => deleteClick(item.id || item._id)}
+            className="p-1.5 hover:bg-red-50 rounded"
+          />
+        </div>
       </td>
     </tr>
   );
@@ -140,14 +145,14 @@ const Trash = () => {
             <Button
               label='Restore All'
               icon={<Icons.RefreshCcw className='text-lg hidden md:flex' />}
-              className='flex flex-row-reverse gap-1 items-center  text-black text-sm md:text-base rounded-md 2xl:py-2.5'
+              className='btn btn-secondary flex flex-row-reverse gap-1 items-center'
               onClick={() => restoreAllClick()}
               disabled={deletedClients.length === 0}
             />
             <Button
               label='Delete All'
               icon={<Icons.Trash2 className='text-lg hidden md:flex' />}
-              className='flex flex-row-reverse gap-1 items-center  text-red-600 text-sm md:text-base rounded-md 2xl:py-2.5'
+              className='btn bg-red-50 hover:bg-red-100 text-red-600 flex flex-row-reverse gap-1 items-center'
               onClick={() => deleteAllClick()}
               disabled={deletedClients.length === 0}
             />
@@ -157,9 +162,9 @@ const Trash = () => {
         {status === 'loading' ? (
           <div className='text-center py-8'>Loading...</div>
         ) : (
-          <div className='bg-white px-2 md:px-6 py-4 shadow-md rounded'>
+          <div className="tm-list-container">
             <div className='overflow-x-auto'>
-              <table className='w-full mb-5'>
+              <table className='tm-table'>
                 <TableHeader />
                 <tbody>
                   {deletedClients?.map((client, id) => (

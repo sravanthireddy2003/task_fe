@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+﻿import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   fetchHistoryByInstance,
@@ -45,7 +45,7 @@ const WorkflowHistoryDrawer = ({ instanceId, open, onClose }) => {
         </header>
 
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-          {loading && <div className="text-sm text-gray-500">Loading history…</div>}
+          {loading && <div className="text-sm text-gray-500">Loading historyâ€¦</div>}
           {error && !loading && (
             <div className="text-sm text-red-600">{error}</div>
           )}
@@ -62,10 +62,10 @@ const WorkflowHistoryDrawer = ({ instanceId, open, onClose }) => {
               const note = it.note || it.comment || it.details;
               return (
                 <li key={idx} className="mb-6 ml-4">
-                  <div className="absolute w-2 h-2 bg-blue-500 rounded-full -left-[5px] mt-1.5" />
+                  <div className="absolute w-2 h-2 bg-blue-600 rounded-full -left-[5px] mt-1.5" />
                   <time className="mb-1 text-xs font-medium text-gray-400 flex items-center gap-2">
-                    <span>{at ? new Date(at).toLocaleString() : '—'}</span>
-                    {actor && <span className="text-gray-500">• {actor}</span>}
+                    <span>{at ? new Date(at).toLocaleString() : 'â€”'}</span>
+                    {actor && <span className="text-gray-500">â€¢ {actor}</span>}
                   </time>
                   <h3 className="text-sm font-semibold text-gray-900">{action || 'State change'}</h3>
                   {note && <p className="text-xs text-gray-600 mt-1">{note}</p>}
@@ -80,3 +80,4 @@ const WorkflowHistoryDrawer = ({ instanceId, open, onClose }) => {
 };
 
 export default WorkflowHistoryDrawer;
+

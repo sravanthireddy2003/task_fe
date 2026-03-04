@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form";
+﻿import React, { useState } from "react";
 import ModalWrapper from "../ModalWrapper";
 import { Dialog } from "@headlessui/react";
 import Textbox from "../Textbox";
@@ -7,20 +7,33 @@ import { useDispatch } from "react-redux";
 import { createSubTask } from "../../redux/slices/taskSlice";
 
 const AddSubTask = ({ open, setOpen, id }) => {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm();
+  const [formData, setFormData] = useState({ title: '', date: '', tag: '' });
+  const [errors, setErrors] = useState({});
 
-  const dispatch = useDispatch();
+  const validate = () => {
+    const newErrors = {};
+    if (!formData.title) newErrors.title = 'Title is required!';
+    if (!formData.date) newErrors.date = 'Date is required!';
+    if (!formData.tag) newErrors.tag = 'Tag is required!';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-  const handleOnSubmit = async (data) => {
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
+  };
+
+  const handleOnSubmit = async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+
     const subtaskData = {
       id,
-      title: data.title,
-      due_date: data.date,
-      tag: data.tag,
+      title: formData.title,
+      due_date: formData.date,
+      tag: formData.tag,
     };
     dispatch(createSubTask(subtaskData));
     setOpen(false);
@@ -29,7 +42,7 @@ const AddSubTask = ({ open, setOpen, id }) => {
   return (
     <>
       <ModalWrapper open={open} setOpen={setOpen}>
-        <form onSubmit={handleSubmit(handleOnSubmit)} className=''>
+        <form onSubmit={handleOnSubmit} className=''>
           <Dialog.Title
             as='h2'
             className='text-base font-bold leading-6 text-gray-900 mb-4'
@@ -43,10 +56,11 @@ const AddSubTask = ({ open, setOpen, id }) => {
               name='title'
               label='Title'
               className='w-full rounded'
-              register={register("title", {
-                required: "Title is required!",
-              })}
-              error={errors.title ? errors.title.message : ""}
+              register={{
+                value: formData.title,
+                onChange: handleChange,
+              }}
+              error={errors.title}
             />
 
             <div className='flex items-center gap-4'>
@@ -56,10 +70,11 @@ const AddSubTask = ({ open, setOpen, id }) => {
                 name='date'
                 label='Task Date'
                 className='w-full rounded'
-                register={register("date", {
-                  required: "Date is required!",
-                })}
-                error={errors.date ? errors.date.message : ""}
+                register={{
+                  value: formData.date,
+                  onChange: handleChange,
+                }}
+                error={errors.date}
               />
               <Textbox
                 placeholder='Tag'
@@ -67,10 +82,11 @@ const AddSubTask = ({ open, setOpen, id }) => {
                 name='tag'
                 label='Tag'
                 className='w-full rounded'
-                register={register("tag", {
-                  required: "Tag is required!",
-                })}
-                error={errors.tag ? errors.tag.message : ""}
+                register={{
+                  value: formData.tag,
+                  onChange: handleChange,
+                }}
+                error={errors.tag}
               />
             </div>
           </div>
@@ -95,3 +111,4 @@ const AddSubTask = ({ open, setOpen, id }) => {
 };
 
 export default AddSubTask;
+

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+﻿import { useMemo } from "react";
 import { useSelector } from "react-redux";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
@@ -31,7 +31,7 @@ const ModuleDetail = () => {
     return (
       <div className="space-y-4 rounded-2xl border border-gray-200 bg-white p-6 text-gray-700 shadow-sm">
         <p className="text-sm text-gray-500">Module ID {moduleId} is not assigned to you.</p>
-        <h1 className="text-2xl font-semibold text-gray-900">Module not found</h1>
+        <h1 className="text-page-title text-gray-900">Module not found</h1>
         <p className="text-sm text-gray-600">Check the employee workspace for available modules or contact your administrator if you believe this is an error.</p>
         <button
           onClick={() => navigate(-1)}
@@ -50,14 +50,14 @@ const ModuleDetail = () => {
     <div className="space-y-6">
       <header className="space-y-2">
         <p className="text-xs font-semibold uppercase tracking-[0.4em] text-blue-500">Module Insights</p>
-        <h1 className="text-3xl font-semibold text-gray-900">{moduleMeta.label}</h1>
+        <h1 className="text-page-title text-gray-900">{moduleMeta.label}</h1>
         <p className="text-sm text-gray-500">{moduleMeta.description || "Deep dive into the experience delivered by this module."}</p>
       </header>
 
       <section className="grid gap-4 md:grid-cols-2">
         <article className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.4em] text-gray-400">Access</p>
-          <h2 className="text-xl font-semibold text-gray-900">{moduleEntry.access || "View"} access</h2>
+          <h2 className="text-section-title text-gray-900">{moduleEntry.access || "View"} access</h2>
           <p className="mt-2 text-sm text-gray-600">Roles granted: {moduleEntry.access === "full" ? "Full" : "Limited"}</p>
           <p className="mt-4 text-xs text-gray-500">Module identifier</p>
           <p className="text-sm font-mono text-gray-700">{moduleId}</p>
@@ -97,3 +97,4 @@ const ModuleDetail = () => {
 };
 
 export default ModuleDetail;
+

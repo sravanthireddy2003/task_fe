@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import * as Icons from '../icons';
 
 const { X, Lock, Clock, CheckCircle, AlertCircle } = Icons;
@@ -19,18 +19,18 @@ const ReassignTaskRequestModal = ({ selectedTask, onClose, onSuccess }) => {
   useEffect(() => {
     const checkTaskStatus = async () => {
       if (!selectedTask?.public_id && !selectedTask?.id) return;
-      
+
       try {
         const publicId = selectedTask.public_id || selectedTask.id;
         const resp = await fetchWithTenant(`/api/tasks/${publicId}/reassign-requests`);
-        
+
         if (resp.success) {
           const requests = Array.isArray(resp.data) ? resp.data : [];
-          
+
           // Find the latest request
           const latestRequest = requests[0];
           setReassignmentRequest(latestRequest);
-          
+
           // Check request status
           if (latestRequest) {
             switch (latestRequest.status) {
@@ -65,7 +65,7 @@ const ReassignTaskRequestModal = ({ selectedTask, onClose, onSuccess }) => {
             setHasApprovedRequest(false);
             setTaskIsLocked(false);
           }
-          
+
           // Also check if task is locked from backend summary
           if (resp.summary?.task_is_locked) {
             setTaskIsLocked(true);
@@ -85,19 +85,19 @@ const ReassignTaskRequestModal = ({ selectedTask, onClose, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Prevent multiple submissions
     if (hasPendingRequest) {
       toast.error('You already have a pending reassignment request for this task');
       return;
     }
-    
+
     // Check if task is locked for other reasons
     if (taskIsLocked && !hasRejectedRequest) {
       toast.error('Task is locked and cannot be reassigned at this time');
       return;
     }
-    
+
     // Check if request was previously approved
     if (hasApprovedRequest) {
       toast.error('This task has already been reassigned. Please create a new request if needed.');
@@ -109,30 +109,35 @@ const ReassignTaskRequestModal = ({ selectedTask, onClose, onSuccess }) => {
       return;
     }
 
+    if (reason.length > 500) {
+      toast.error('Reason cannot exceed 500 characters');
+      return;
+    }
+
     setSubmitting(true);
     try {
       const publicId = selectedTask.public_id || selectedTask.id || selectedTask._id;
-      
+
       const resp = await fetchWithTenant(`/api/tasks/${publicId}/request-reassignment`, {
         method: 'POST',
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           taskId: publicId,
-          reason: reason.trim() 
+          reason: reason.trim()
         }),
       });
 
       if (resp.success) {
         toast.success(resp?.message || 'Task reassignment request submitted');
-        
+
         // Update local state
-        setReassignmentRequest({ 
-          status: 'PENDING', 
+        setReassignmentRequest({
+          status: 'PENDING',
           reason: reason.trim(),
           requested_at: new Date().toISOString()
         });
         setHasPendingRequest(true);
         setTaskIsLocked(true);
-        
+
         if (onSuccess && typeof onSuccess === 'function') {
           onSuccess(resp);
         }
@@ -140,7 +145,7 @@ const ReassignTaskRequestModal = ({ selectedTask, onClose, onSuccess }) => {
         onClose();
       } else {
         toast.error(resp?.error || 'Failed to submit request');
-        
+
         // Handle specific backend errors
         if (resp.error?.includes('pending') || resp.error?.includes('already exists')) {
           setHasPendingRequest(true);
@@ -150,7 +155,7 @@ const ReassignTaskRequestModal = ({ selectedTask, onClose, onSuccess }) => {
     } catch (err) {
       const errorMsg = err?.message || err?.error || 'Failed to submit reassignment request';
       toast.error(errorMsg);
-      
+
       if (errorMsg.includes('pending') || errorMsg.includes('already exists')) {
         setHasPendingRequest(true);
         setTaskIsLocked(true);
@@ -200,7 +205,7 @@ const ReassignTaskRequestModal = ({ selectedTask, onClose, onSuccess }) => {
       return (
         <div className="text-center py-8">
           <Clock className="h-12 w-12 text-orange-400 mx-auto mb-4 animate-pulse" />
-          <p className="text-lg font-semibold text-gray-900 mb-2">Request Already Submitted</p>
+          <p className="text-card-title mb-2">Request Already Submitted</p>
           <p className="text-gray-500 mb-6">
             You have a pending reassignment request for this task. Please wait for manager response.
           </p>
@@ -219,13 +224,13 @@ const ReassignTaskRequestModal = ({ selectedTask, onClose, onSuccess }) => {
         </div>
       );
     }
-    
+
     // Approved Request - Task already reassigned
     if (hasApprovedRequest) {
       return (
         <div className="text-center py-8">
           <CheckCircle className="h-12 w-12 text-green-400 mx-auto mb-4" />
-          <p className="text-lg font-semibold text-gray-900 mb-2">Task Already Reassigned</p>
+          <p className="text-card-title mb-2">Task Already Reassigned</p>
           <p className="text-gray-500 mb-6">
             This task has already been reassigned. You cannot submit another request for the same task.
           </p>
@@ -238,7 +243,7 @@ const ReassignTaskRequestModal = ({ selectedTask, onClose, onSuccess }) => {
         </div>
       );
     }
-    
+
     // Rejected Request - Can submit new request
     if (hasRejectedRequest) {
       return (
@@ -254,7 +259,7 @@ const ReassignTaskRequestModal = ({ selectedTask, onClose, onSuccess }) => {
               </div>
             </div>
           </div>
-          
+
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               New Reason for Reassignment <span className="text-red-500">*</span>
@@ -268,8 +273,9 @@ const ReassignTaskRequestModal = ({ selectedTask, onClose, onSuccess }) => {
               required
               maxLength={500}
             />
-            <div className="text-xs text-gray-500 mt-1 text-right">
-              {reason.length}/500 characters
+            <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500">{(reason || '').length}/500 characters</p>
+              {reason.length > 500 && <span className='text-xs text-red-500 block'>Reason cannot exceed 500 characters</span>}
             </div>
           </div>
 
@@ -277,7 +283,7 @@ const ReassignTaskRequestModal = ({ selectedTask, onClose, onSuccess }) => {
             <button
               type="submit"
               disabled={submitting || !reason.trim()}
-              className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all duration-200"
+              className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all duration-200"
             >
               {submitting ? (
                 <>
@@ -292,13 +298,13 @@ const ReassignTaskRequestModal = ({ selectedTask, onClose, onSuccess }) => {
         </form>
       );
     }
-    
+
     // Task is locked for other reasons
     if (taskIsLocked) {
       return (
         <div className="text-center py-8">
           <Lock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-lg font-semibold text-gray-900 mb-2">Task Locked</p>
+          <p className="text-card-title mb-2">Task Locked</p>
           <p className="text-gray-500 mb-6">
             This task is currently locked and cannot be reassigned at this time.
           </p>
@@ -311,7 +317,7 @@ const ReassignTaskRequestModal = ({ selectedTask, onClose, onSuccess }) => {
         </div>
       );
     }
-    
+
     // No previous requests - Show regular form
     return (
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -330,7 +336,7 @@ const ReassignTaskRequestModal = ({ selectedTask, onClose, onSuccess }) => {
           />
           <div className="flex justify-between text-xs text-gray-500 mt-1">
             <div className="flex items-center gap-1">
-              <span>•</span> Manager will review within 24 hours
+              <span>â€¢</span> Manager will review within 24 hours
             </div>
             <div>{reason.length}/500 characters</div>
           </div>
@@ -340,7 +346,7 @@ const ReassignTaskRequestModal = ({ selectedTask, onClose, onSuccess }) => {
           <button
             type="submit"
             disabled={submitting || !reason.trim()}
-            className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all duration-200"
+            className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all duration-200"
           >
             {submitting ? (
               <>
@@ -381,17 +387,17 @@ const ReassignTaskRequestModal = ({ selectedTask, onClose, onSuccess }) => {
         {/* Header */}
         <div className="text-center mb-6">
           {getStatusBadge()}
-          <h3 className="text-xl font-bold text-gray-900 mb-2 mt-3">
-            {hasPendingRequest ? 'Request Already Submitted' : 
-             hasApprovedRequest ? 'Task Reassigned' : 
-             hasRejectedRequest ? 'New Reassignment Request' : 
-             'Request Task Reassignment'}
+          <h3 className="text-section-title mb-2 mt-3">
+            {hasPendingRequest ? 'Request Already Submitted' :
+              hasApprovedRequest ? 'Task Reassigned' :
+                hasRejectedRequest ? 'New Reassignment Request' :
+                  'Request Task Reassignment'}
           </h3>
           <p className="text-sm text-gray-500">
-            {hasPendingRequest ? 'Awaiting manager response' : 
-             hasApprovedRequest ? 'This task has already been reassigned' : 
-             hasRejectedRequest ? 'Submit a new request with updated reasoning' : 
-             'Submit a request to your manager to reassign this task'}
+            {hasPendingRequest ? 'Awaiting manager response' :
+              hasApprovedRequest ? 'This task has already been reassigned' :
+                hasRejectedRequest ? 'Submit a new request with updated reasoning' :
+                  'Submit a request to your manager to reassign this task'}
           </p>
         </div>
 
@@ -403,11 +409,10 @@ const ReassignTaskRequestModal = ({ selectedTask, onClose, onSuccess }) => {
           <div className="space-y-1 text-sm">
             <p className="text-gray-900 font-medium">"{selectedTask.title}"</p>
             {selectedTask.status && (
-              <p className={`px-2 py-1 rounded-full text-xs font-medium ${
-                selectedTask.status === 'On Hold' 
-                  ? 'bg-orange-100 text-orange-800' 
-                  : 'bg-gray-100 text-gray-700'
-              }`}>
+              <p className={`px-2 py-1 rounded-full text-xs font-medium ${selectedTask.status === 'On Hold'
+                ? 'bg-orange-100 text-orange-800'
+                : 'bg-gray-100 text-gray-700'
+                }`}>
                 {selectedTask.status}
               </p>
             )}

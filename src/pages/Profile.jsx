@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+﻿import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateProfile, enable2FA, verify2FA, disable2FA } from '../redux/slices/authSlice';
+import { fetchUsers, selectUsers } from '../redux/slices/userSlice';
 import { toast } from 'sonner';
 import Button from '../components/Button';
 import Textbox from '../components/Textbox';
@@ -12,10 +12,73 @@ const { User, Mail, Phone, Camera, Save, KeyRound, QrCode, Smartphone, ShieldChe
 const Profile = () => {
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
-  const { register, handleSubmit, reset, formState: { errors } } = useForm({
-    defaultValues: user || {},
-    mode: 'onChange'
+  const allUsers = useSelector(selectUsers) || [];
+
+  useEffect(() => {
+    dispatch(fetchUsers());
+  }, [dispatch]);
+
+  const [formData, setFormData] = useState({
+    name: user?.name || "",
+    email: user?.email || "",
+    phone: user?.phone || "",
+    title: user?.title || ""
   });
+  const [errors, setErrors] = useState({});
+
+  const validate = () => {
+    const newErrors = {};
+    const nameStr = formData.name?.trim() || "";
+    if (!nameStr) newErrors.name = "Name is required";
+    else if (nameStr.length < 2) newErrors.name = "Name must be at least 2 characters";
+
+    const emailStr = formData.email?.trim() || "";
+    if (!emailStr) newErrors.email = "Email is required";
+    else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(emailStr)) {
+      newErrors.email = "Invalid email address";
+    }
+
+    const phoneStr = formData.phone?.trim() || "";
+    if (phoneStr) {
+      if (!/^[0-9]{10}$/.test(phoneStr)) {
+        newErrors.phone = "Phone must be 10 digits";
+      } else if (!/^[6-9]\d{9}$/.test(phoneStr)) {
+        newErrors.phone = "Valid phone must start with 6-9";
+      }
+    }
+
+    // Duplicate Validation
+    const currentId = user?._id || user?.id || user?.public_id;
+
+    if (emailStr && !newErrors.email) {
+      const isDuplicateEmail = allUsers.some(u =>
+        u.email?.toLowerCase() === emailStr.toLowerCase() &&
+        (u._id || u.id || u.public_id) !== currentId
+      );
+      if (isDuplicateEmail) newErrors.email = "Email already exists!";
+    }
+
+    if (phoneStr && !newErrors.phone) {
+      const isDuplicatePhone = allUsers.some(u =>
+        u.phone?.trim() === phoneStr &&
+        (u._id || u.id || u.public_id) !== currentId
+      );
+      if (isDuplicatePhone) newErrors.phone = "Phone number already exists!";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    let finalValue = value;
+    if (name === 'phone') {
+      finalValue = finalValue.replace(/\D/g, '').slice(0, 10);
+    }
+    setFormData(prev => ({ ...prev, [name]: finalValue }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
+  };
 
   const [avatarPreview, setAvatarPreview] = useState(user?.photo || null);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -33,7 +96,12 @@ const Profile = () => {
   // Initialize form with user data
   useEffect(() => {
     if (user) {
-      reset(user);
+      setFormData({
+        name: user.name || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        title: user.title || ""
+      });
       setTwoFAEnabled(!!(user?.twoFactor?.enabled || user?.twoFactor?.hasSecret || user?.twoFactorEnabled || user?.twoFaEnabled || user?.is2faEnabled || user?.twoFA));
       if (user.photo) {
         // Fix for CORP issue - use relative path if localhost:4000
@@ -47,7 +115,7 @@ const Profile = () => {
         setAvatarPreview(safeUrl);
       }
     }
-  }, [user, reset]);
+  }, [user]);
 
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
@@ -65,23 +133,25 @@ const Profile = () => {
     }
   };
 
-  const onSubmit = async (data) => {
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
     if (saving) return;
     setSaving(true);
 
     // Build multipart form data so backend multer can process `photo` file
-    const formData = new FormData();
-    formData.append('name', data.name || '');
-    formData.append('email', data.email || '');
-    formData.append('phone', data.phone || '');
+    const multipartFormData = new FormData();
+    multipartFormData.append('name', formData.name || '');
+    multipartFormData.append('email', formData.email || '');
+    multipartFormData.append('phone', formData.phone || '');
     // include title if present in form values
-    if (data.title) formData.append('title', data.title);
+    if (formData.title) multipartFormData.append('title', formData.title);
     if (selectedFile) {
-      formData.append('photo', selectedFile, selectedFile.name);
+      multipartFormData.append('photo', selectedFile, selectedFile.name);
     }
 
     try {
-      const resp = await dispatch(updateProfile(formData)).unwrap();
+      const resp = await dispatch(updateProfile(multipartFormData)).unwrap();
       toast.success(resp?.message || 'Profile updated');
       setIsEditing(false);
       // If API returned photo or user.photo, update preview immediately
@@ -206,7 +276,7 @@ const Profile = () => {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Profile Settings</h1>
+          <h1 className="text-page-title text-gray-900">Profile Settings</h1>
           <p className="text-gray-600 mt-2">Manage your account information and security settings</p>
         </div>
 
@@ -227,9 +297,9 @@ const Profile = () => {
                             className="w-full h-full rounded-full object-cover"
                           />
                         ) : null}
-                        <div className={`w-full h-full rounded-full bg-blue-500 flex items-center justify-center ${getAvatarDisplayClass()}`}>
+                        <div className={`w-full h-full rounded-full bg-blue-600 flex items-center justify-center ${getAvatarDisplayClass()}`}>
                           {user?.name ? (
-                            <span className="text-2xl font-bold text-white">
+                            <span className="text-2xl font-semibold text-white">
                               {user.name.charAt(0).toUpperCase()}
                             </span>
                           ) : (
@@ -248,17 +318,17 @@ const Profile = () => {
                       </label>
                     </div>
                     <div>
-                      <h2 className="text-xl font-semibold text-white">{user?.name || 'User Name'}</h2>
+                      <h2 className="text-section-title text-white">{user?.name || 'User Name'}</h2>
                       <p className="text-blue-100">{user?.email || 'user@example.com'}</p>
                       <p className="text-blue-100 text-sm mt-1">
-                        Member since {user?.memberSince ? new Date(user.memberSince).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : '—'}
+                        Member since {user?.memberSince ? new Date(user.memberSince).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'â€”'}
                       </p>
                     </div>
                   </div>
 
                   <button
                     onClick={() => setIsEditing(!isEditing)}
-                    className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors backdrop-blur-sm"
+                    className="btn bg-white/20 hover:bg-white/30 text-white px-4 py-2 backdrop-blur-sm"
                   >
                     {isEditing ? 'Cancel Edit' : 'Edit Profile'}
                   </button>
@@ -267,7 +337,7 @@ const Profile = () => {
 
               {/* Profile Form */}
               <div className="p-6">
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                <form onSubmit={onSubmit} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
@@ -276,11 +346,11 @@ const Profile = () => {
                       </label>
                       <Textbox
                         name="name"
-                        register={register('name', {
-                          required: 'Name is required',
-                          minLength: { value: 2, message: 'Name must be at least 2 characters' }
-                        })}
-                        error={errors.name?.message}
+                        register={{
+                          value: formData.name,
+                          onChange: handleChange,
+                        }}
+                        error={errors.name}
                         disabled={!isEditing}
                         className={!isEditing ? 'bg-gray-50' : ''}
                       />
@@ -294,14 +364,11 @@ const Profile = () => {
                       <Textbox
                         name="email"
                         type="email"
-                        register={register('email', {
-                          required: 'Email is required',
-                          pattern: {
-                            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                            message: 'Invalid email address'
-                          }
-                        })}
-                        error={errors.email?.message}
+                        register={{
+                          value: formData.email,
+                          onChange: handleChange,
+                        }}
+                        error={errors.email}
                         disabled={!isEditing}
                         className={!isEditing ? 'bg-gray-50' : ''}
                       />
@@ -314,8 +381,11 @@ const Profile = () => {
                       </label>
                       <Textbox
                         name="phone"
-                        register={register('phone')}
-                        error={errors.phone?.message}
+                        register={{
+                          value: formData.phone,
+                          onChange: handleChange,
+                        }}
+                        error={errors.phone}
                         disabled={!isEditing}
                         className={!isEditing ? 'bg-gray-50' : ''}
                       />
@@ -329,7 +399,7 @@ const Profile = () => {
                         type="text"
                         value={user?.role || 'User'}
                         disabled
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                        className="input w-full bg-gray-50 text-gray-500 cursor-not-allowed"
                       />
                     </div>
                   </div>
@@ -340,7 +410,7 @@ const Profile = () => {
                         type="submit"
                         label={saving ? "Saving..." : "Save Changes"}
                         disabled={saving}
-                        className="w-full md:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="btn btn-primary w-full md:w-auto px-8 py-3 flex items-center justify-center gap-2"
                         icon={Save}
                       />
                     </div>
@@ -358,7 +428,7 @@ const Profile = () => {
                       <ShieldCheck className="w-6 h-6 text-blue-600" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-semibold text-gray-900">Two-Factor Authentication</h3>
+                      <h3 className="text-section-title text-gray-900">Two-Factor Authentication</h3>
                       <p className="text-gray-600">Add an extra layer of security to your account</p>
                     </div>
                   </div>
@@ -386,7 +456,7 @@ const Profile = () => {
                           <KeyRound className="w-8 h-8 text-blue-600" />
                         </div>
                         <div className="flex-1">
-                          <h4 className="font-semibold text-gray-900 mb-2">Enhanced Account Security</h4>
+                          <h4 className="text-section-title text-gray-900 mb-2">Enhanced Account Security</h4>
                           <p className="text-gray-600 mb-4">
                             Protect your account with two-factor authentication. When enabled,
                             you'll need to enter both your password and a verification code from
@@ -443,7 +513,7 @@ const Profile = () => {
                     <div className="pt-4 border-t border-gray-200">
                       <button
                         onClick={handleEnable2FA}
-                        className="w-full md:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+                        className="btn btn-primary w-full md:w-auto px-8 py-3 flex items-center justify-center gap-2"
                       >
                         <KeyRound />
                         Enable Two-Factor Authentication
@@ -456,7 +526,7 @@ const Profile = () => {
                       <div className="flex items-center gap-4">
                         <CheckCircle2 className="w-8 h-8 text-green-600 flex-shrink-0" />
                         <div>
-                          <h4 className="font-semibold text-green-800">Two-Factor Authentication is Active</h4>
+                          <h4 className="text-section-title text-green-800">Two-Factor Authentication is Active</h4>
                           <p className="text-green-700 mt-1">
                             Your account is protected with an extra layer of security.
                             You'll need to enter a verification code from your authenticator app when signing in.
@@ -502,7 +572,7 @@ const Profile = () => {
           <div className="space-y-6">
             {/* Account Summary */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Account Summary</h3>
+              <h3 className="text-section-title text-gray-900 mb-4">Account Summary</h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between py-3 border-b border-gray-100">
                   <span className="text-gray-600">Account Status</span>
@@ -539,7 +609,7 @@ const Profile = () => {
             {/* Quick Actions */}
             {/* Quick Actions */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
+              <h3 className="text-section-title text-gray-900 mb-4">Quick Actions</h3>
               <div className="space-y-3">
                 <button
                   onClick={() => navigate('/change-password')}
@@ -569,7 +639,7 @@ const Profile = () => {
 
             {/* Security Tips */}
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-              <h3 className="font-semibold text-blue-900 mb-3">Security Tips</h3>
+              <h3 className="text-section-title text-blue-900 mb-3">Security Tips</h3>
               <ul className="space-y-3">
                 <li className="flex items-start gap-2 text-sm text-blue-800">
                   <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
@@ -597,12 +667,12 @@ const Profile = () => {
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold text-gray-900">Scan QR Code</h3>
+                <h3 className="text-section-title text-gray-900">Scan QR Code</h3>
                 <button
                   onClick={() => setShowVerify(false)}
                   className="text-gray-400 hover:text-gray-600"
                 >
-                  ✕
+                  âœ•
                 </button>
               </div>
 
@@ -628,7 +698,7 @@ const Profile = () => {
                     value={tokenValue}
                     onChange={(e) => setTokenValue(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     placeholder="000000"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none text-center text-2xl tracking-widest"
+                    className="input w-full text-center text-2xl tracking-widest"
                     maxLength={6}
                   />
                 </div>
@@ -636,14 +706,14 @@ const Profile = () => {
                 <div className="flex gap-3">
                   <button
                     onClick={() => setShowVerify(false)}
-                    className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                    className="btn btn-secondary flex-1 px-4 py-3"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleVerify2FA}
                     disabled={tokenValue.length !== 6}
-                    className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="btn btn-primary flex-1 px-4 py-3"
                   >
                     Verify & Enable
                   </button>
@@ -658,12 +728,12 @@ const Profile = () => {
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold text-gray-900">Backup Codes</h3>
+                <h3 className="text-section-title text-gray-900">Backup Codes</h3>
                 <button
                   onClick={() => setShowBackupCodes(false)}
                   className="text-gray-400 hover:text-gray-600"
                 >
-                  ✕
+                  âœ•
                 </button>
               </div>
 
@@ -694,14 +764,14 @@ const Profile = () => {
                 <div className="flex gap-3">
                   <button
                     onClick={() => copyToClipboard(backupCodes.join('\n'))}
-                    className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2"
+                    className="btn btn-secondary flex-1 px-4 py-3 flex items-center justify-center gap-2"
                   >
                     <Copy />
                     Copy All
                   </button>
                   <button
                     onClick={downloadBackupCodes}
-                    className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2"
+                    className="btn btn-primary flex-1 px-4 py-3 flex items-center justify-center gap-2"
                   >
                     <Download />
                     Download

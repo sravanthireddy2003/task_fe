@@ -54,7 +54,7 @@ const ManagerUsers = () => {
         onRefresh={loadEmployees}
         refreshing={loading}
       >
-        <div className="flex flex-wrap gap-3 text-sm text-gray-600">
+        <div className="flex flex-wrap gap-3 text-small-text text-gray-600">
           <div className="flex items-center gap-1">
             <Icons.Users className="h-4 w-4 text-gray-400" />
             <span>{employees.length} total</span>
@@ -75,11 +75,11 @@ const ManagerUsers = () => {
 
       {!loading && error && (
         <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-center">
-          <p className="text-lg font-semibold text-red-900">{error}</p>
+          <p className="text-section-title text-red-900">{error}</p>
           <p className="text-sm text-red-700 mb-4">Unable to retrieve employee data at the moment.</p>
           <button
             onClick={loadEmployees}
-            className="inline-flex items-center justify-center rounded-full border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100"
+            className="btn btn-secondary border-red-300 text-red-700 hover:bg-red-100"
           >
             Retry
           </button>
@@ -87,16 +87,16 @@ const ManagerUsers = () => {
       )}
 
       {!loading && !error && (
-        <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
+        <div className="tm-list-container">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-sm text-gray-700">
-              <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
+            <table className="tm-table">
+              <thead>
                 <tr>
-                  <th className="px-6 py-3 text-left">Employee</th>
-                  <th className="px-6 py-3 text-left">Email</th>
-                  <th className="px-6 py-3 text-left">Title</th>
-                  <th className="px-6 py-3 text-left">Phone</th>
-                  <th className="px-6 py-3 text-left">Status</th>
+                  <th>Employee</th>
+                  <th>Email</th>
+                  <th>Title</th>
+                  <th>Phone</th>
+                  <th>Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -110,20 +110,26 @@ const ManagerUsers = () => {
                   employees.map((employee) => (
                     <tr
                       key={employee?.id || employee?.internalId || employee?.email}
-                      className="border-b border-gray-100 transition hover:bg-blue-50/40"
+                      className="cursor-pointer"
                     >
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-gray-900">{employee?.name || "Unnamed"}</div>
-                        <div className="text-xs text-gray-500">
+                      <td>
+                        <div className="text-[14px] font-semibold text-gray-900">{employee?.name || "Unnamed"}</div>
+                        <div className="text-[12px] text-gray-500">
                           {employee?.departmentPublicId || "No department"}
                         </div>
                       </td>
-                      <td className="px-6 py-4">{employee?.email || "-"}</td>
-                      <td className="px-6 py-4">{employee?.title || "-"}</td>
-                      <td className="px-6 py-4">{employee?.phone || "-"}</td>
-                      <td className="px-6 py-4">
+                      <td>
+                        <span className="text-[14px] text-gray-700">{employee?.email || "-"}</span>
+                      </td>
+                      <td>
+                        <span className="text-[14px] text-gray-700">{employee?.title || "-"}</span>
+                      </td>
+                      <td>
+                        <span className="text-[14px] text-gray-700">{employee?.phone || "-"}</span>
+                      </td>
+                      <td>
                         <span
-                          className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${statusBadge(
+                          className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold ${statusBadge(
                             employee?.isActive
                           )}`}
                         >

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import * as Icons from "../icons";
 import WorkflowKanban from "../components/WorkflowKanban";
 import ManagerApprovalPanel from "../components/ManagerApprovalPanel";
@@ -71,6 +71,8 @@ export default function Workflow() {
 
   const [form, setForm] = useState(emptyForm);
   const [newStepName, setNewStepName] = useState("");
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // NOTE: Previous admin workflow-templates API has been removed.
   // This page now works purely with local state for admin-designed flows.
@@ -160,67 +162,87 @@ export default function Workflow() {
   const handleSave = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
 
-    if (!form.name.trim()) return;
+    const newErrors = {};
+    if (!form.name.trim()) newErrors.name = "Workflow name is required";
+    if (form.name.length > 50) newErrors.name = "Name cannot exceed 50 characters";
+    if (form.scope === 'DEPARTMENT' && !form.departmentId) newErrors.departmentId = "Department is required";
+    if (form.scope === 'PROJECT' && (!form.departmentId || !form.projectId)) {
+      if (!form.departmentId) newErrors.departmentId = "Department is required";
+      if (!form.projectId) newErrors.projectId = "Project is required";
+    }
 
-    // Local edit only (no template API)
-    if (editingFlow) {
-      setFlows((prev) =>
-        prev.map((f) =>
-          f.id === editingFlow.id
-            ? {
-              ...f,
-              name: form.name.trim(),
-              description: form.description,
-              scope: form.scope,
-              trigger_event: form.triggerEvent,
-              active: form.active,
-              department_id: form.departmentId || null,
-              project_id: form.projectId || null,
-            }
-            : f
-        )
-      );
-      closeModal();
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
-    const dept = departments.find(
-      (d) => String(d._id || d.id || d.public_id) === String(form.departmentId || '')
-    );
-    const allProjects = [currentProject, ...(projects || [])].filter(Boolean);
-    const proj = allProjects.find(
-      (p) => String(p._id || p.id || p.public_id) === String(form.projectId || '')
-    );
+    setIsSubmitting(true);
+    try {
+      // Local edit only (no template API)
+      if (editingFlow) {
+        setFlows((prev) =>
+          prev.map((f) =>
+            f.id === editingFlow.id
+              ? {
+                ...f,
+                name: form.name.trim(),
+                description: form.description,
+                scope: form.scope,
+                trigger_event: form.triggerEvent,
+                active: form.active,
+                department_id: form.departmentId || null,
+                project_id: form.projectId || null,
+              }
+              : f
+          )
+        );
+        closeModal();
+        return;
+      }
 
-    const payload = {
-      name: form.name.trim(),
-      trigger_event: form.triggerEvent,
-      scope: form.scope,
-      active: form.active,
-      department_id: form.departmentId || null,
-      department_name: dept ? dept.name || dept.department_name : null,
-      project_id: form.projectId || null,
-      project_name: proj ? proj.name || proj.project_name : null,
-      tenant_id:
-        authUser?.tenant_id ||
-        authUser?.tenantId ||
-        authUser?.tenant ||
-        authUser?.company_id ||
-        null,
-      created_by:
-        authUser?._id || authUser?.id || authUser?.public_id || authUser?.email || null,
-    };
-    // For now just append locally; backend template API was removed
-    setFlows((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        ...payload,
-        active: payload.active !== false,
-        steps: [],
-      },
-    ]);
-    closeModal();
+      const dept = departments.find(
+        (d) => String(d._id || d.id || d.public_id) === String(form.departmentId || '')
+      );
+      const allProjects = [currentProject, ...(projects || [])].filter(Boolean);
+      const proj = allProjects.find(
+        (p) => String(p._id || p.id || p.public_id) === String(form.projectId || '')
+      );
+
+      const payload = {
+        name: form.name.trim(),
+        trigger_event: form.triggerEvent,
+        scope: form.scope,
+        active: form.active,
+        department_id: form.departmentId || null,
+        department_name: dept ? dept.name || dept.department_name : null,
+        project_id: form.projectId || null,
+        project_name: proj ? proj.name || proj.project_name : null,
+        tenant_id:
+          authUser?.tenant_id ||
+          authUser?.tenantId ||
+          authUser?.tenant ||
+          authUser?.company_id ||
+          null,
+        created_by:
+          authUser?._id || authUser?.id || authUser?.public_id || authUser?.email || null,
+      };
+      // For now just append locally; backend template API was removed
+      setFlows((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          ...payload,
+          active: payload.active !== false,
+          steps: [],
+        },
+      ]);
+      toast.success(editingFlow ? "Workflow updated" : "Workflow created");
+      closeModal();
+    } catch (err) {
+      toast.error("Failed to save workflow");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Project closure handler
@@ -267,12 +289,12 @@ export default function Workflow() {
       setClosureError('');
     } catch (error) {
       // Extract message from various possible error locations
-      const errorMessage = 
+      const errorMessage =
         error?.message ||
         error?.data?.message ||
         error?.response?.data?.message ||
         (typeof error === 'string' ? error : 'Failed to request project closure');
-      
+
       toast.error(errorMessage);
       setClosureError(errorMessage);
     } finally {
@@ -358,7 +380,7 @@ export default function Workflow() {
               Promise.all([
                 dispatch(fetchQueue('ADMIN')),
                 dispatch(fetchPendingApprovals('ADMIN'))
-              ]).catch((e) => {});
+              ]).catch((e) => { });
             }}
           >
           </PageHeader>
@@ -371,10 +393,10 @@ export default function Workflow() {
             >
               <div className="flex justify-between items-center mb-2">
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900">
+                  <h3 className="text-section-title text-gray-900">
                     {editingFlow ? "Edit Workflow" : "Create Workflow"}
                   </h3>
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-small-text text-gray-500 mt-1">
                     Configure scope, trigger, and ownership for this workflow
                   </p>
                 </div>
@@ -386,19 +408,23 @@ export default function Workflow() {
               <div>
                 <label className="text-sm font-medium text-gray-700">Workflow Name *</label>
                 <input
-                  className="w-full border border-gray-200 rounded-lg p-2.5 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="input !w-full mt-1"
                   value={form.name}
-                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                  onChange={(e) => {
+                    setForm((f) => ({ ...f, name: e.target.value }));
+                    if (errors.name) setErrors(prev => ({ ...prev, name: '' }));
+                  }}
                   placeholder="e.g., HR Payroll Approval"
-                  required
+                  disabled={isSubmitting}
                 />
+                {errors.name && <span className='text-xs text-red-500 mt-1 block'>{errors.name}</span>}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-700">Scope *</label>
                   <select
-                    className="w-full border border-gray-200 rounded-lg p-2.5 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="input !w-full mt-1"
                     value={form.scope}
                     onChange={(e) => setForm((f) => ({ ...f, scope: e.target.value }))}
                   >
@@ -411,7 +437,7 @@ export default function Workflow() {
                 <div>
                   <label className="text-sm font-medium text-gray-700">Trigger Event *</label>
                   <select
-                    className="w-full border border-gray-200 rounded-lg p-2.5 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="input !w-full mt-1"
                     value={form.triggerEvent}
                     onChange={(e) => setForm((f) => ({ ...f, triggerEvent: e.target.value }))}
                   >
@@ -425,16 +451,18 @@ export default function Workflow() {
               {(form.scope === 'DEPARTMENT' || form.scope === 'PROJECT') && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Department</label>
+                    <label className="text-sm font-medium text-gray-700">Department {form.scope === 'DEPARTMENT' || form.scope === 'PROJECT' ? <span className="text-red-500">*</span> : ''}</label>
                     <select
-                      className="w-full border border-gray-200 rounded-lg p-2.5 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="input !w-full mt-1"
                       value={form.departmentId}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setForm((f) => ({
                           ...f,
                           departmentId: e.target.value,
-                        }))
-                      }
+                        }));
+                        if (errors.departmentId) setErrors(prev => ({ ...prev, departmentId: '' }));
+                      }}
+                      disabled={isSubmitting}
                     >
                       <option value="">Select Department</option>
                       {departments.map((d) => {
@@ -447,20 +475,23 @@ export default function Workflow() {
                         );
                       })}
                     </select>
+                    {errors.departmentId && <span className='text-xs text-red-500 mt-1 block'>{errors.departmentId}</span>}
                   </div>
 
                   {form.scope === 'PROJECT' && (
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Project</label>
+                      <label className="text-sm font-medium text-gray-700">Project <span className="text-red-500">*</span></label>
                       <select
-                        className="w-full border border-gray-200 rounded-lg p-2.5 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="input !w-full mt-1"
                         value={form.projectId}
-                        onChange={(e) =>
+                        onChange={(e) => {
                           setForm((f) => ({
                             ...f,
                             projectId: e.target.value,
-                          }))
-                        }
+                          }));
+                          if (errors.projectId) setErrors(prev => ({ ...prev, projectId: '' }));
+                        }}
+                        disabled={isSubmitting}
                       >
                         <option value="">Select Project</option>
                         {[currentProject, ...(projects || [])]
@@ -475,6 +506,7 @@ export default function Workflow() {
                             );
                           })}
                       </select>
+                      {errors.projectId && <span className='text-xs text-red-500 mt-1 block'>{errors.projectId}</span>}
                     </div>
                   )}
                 </div>
@@ -486,7 +518,7 @@ export default function Workflow() {
                   type="checkbox"
                   checked={form.active}
                   onChange={(e) => setForm((f) => ({ ...f, active: e.target.checked }))}
-                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600"
                 />
                 <label htmlFor="wf-active" className="text-sm text-gray-700">
                   Active
@@ -503,9 +535,16 @@ export default function Workflow() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700"
+                  disabled={isSubmitting}
+                  className={`btn btn-primary min-w-[100px] ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
                 >
-                  {editingFlow ? 'Save Changes' : 'Create Workflow'}
+                  {isSubmitting ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : editingFlow ? (
+                    "Save Changes"
+                  ) : (
+                    "Create"
+                  )}
                 </button>
               </div>
             </form>
@@ -541,7 +580,7 @@ export default function Workflow() {
                 actions.push(dispatch(fetchQueue(managerId)));
               }
 
-              Promise.all(actions).catch((e) => {});
+              Promise.all(actions).catch((e) => { });
             }}
           />
         </div>
@@ -549,8 +588,8 @@ export default function Workflow() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-xl font-semibold text-gray-900">Project Closure Requests</h3>
-              <p className="text-gray-600 mt-1">Request closure for completed projects requiring admin approval</p>
+              <h3 className="text-section-title text-gray-900">Project Closure Requests</h3>
+              <p className="text-gray-600 mt-1 text-small-text">Request closure for completed projects requiring admin approval</p>
             </div>
             <button
               onClick={() => {
@@ -558,7 +597,7 @@ export default function Workflow() {
                 setClosureError(''); // Clear any previous errors
               }}
               disabled={closureLoading || !currentProject}
-              className="bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 disabled:from-gray-400 disabled:to-gray-500 text-white px-6 py-3 rounded-xl font-medium flex items-center gap-2 shadow-lg hover:shadow-xl disabled:shadow-none transition-all duration-200"
+              className="btn btn-primary"
             >
               {closureLoading ? (
                 <Icons.Loader className="w-5 h-5 animate-spin" />
@@ -584,7 +623,7 @@ export default function Workflow() {
                   dispatch(setCurrentProject(selectedProject));
                 }
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="input !w-full"
             >
               <option value="">Choose a project...</option>
               {projects
@@ -675,8 +714,8 @@ export default function Workflow() {
         {/* Approval Queue Section */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-6 border-b border-gray-100">
-            <h3 className="text-xl font-semibold text-gray-900">Task Approval Queue</h3>
-            <p className="text-gray-600 mt-1">Review pending task completion requests from your team</p>
+            <h3 className="text-section-title text-gray-900">Task Approval Queue</h3>
+            <p className="text-gray-600 mt-1 text-small-text">Review pending task completion requests from your team</p>
           </div>
           <div className="p-6">
             <ManagerApprovalPanel />
@@ -687,7 +726,7 @@ export default function Workflow() {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Request Project Closure</h3>
+                <h3 className="text-page-title text-gray-900">Request Project Closure</h3>
                 <button
                   onClick={() => setShowClosureModal(false)}
                   className="text-gray-400 hover:text-gray-600"
@@ -727,7 +766,7 @@ export default function Workflow() {
                           if (closureError) setClosureError(''); // Clear error when user starts typing
                         }}
                         placeholder="Provide details about why this project should be closed..."
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                        className="input !w-full resize-none"
                         rows={4}
                         required
                       />
@@ -753,7 +792,7 @@ export default function Workflow() {
                       <button
                         onClick={handleProjectClosureRequest}
                         disabled={!closureReason.trim() || closureLoading}
-                        className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg font-medium transition-colors disabled:cursor-not-allowed"
+                        className="btn btn-primary flex-1 disabled:opacity-50"
                       >
                         {closureLoading ? 'Submitting...' : 'Submit Request'}
                       </button>
@@ -773,7 +812,7 @@ export default function Workflow() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="text-center py-12">
         <Icons.Shield className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Restricted</h2>
+        <h2 className="text-page-title text-gray-900 mb-2">Access Restricted</h2>
         <p className="text-gray-600">You don't have permission to access workflow management.</p>
       </div>
     </div>

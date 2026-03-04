@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+﻿import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAccessToken } from "../../utils/tokenService";
 import { useDispatch, useSelector } from "react-redux";
@@ -28,7 +28,7 @@ const ClientDocuments = ({ client }) => {
 
   const formatFileSize = (bytes) => formatFileSizeHelper(bytes);
 
-  // ✅ FIXED: Upload to backend API
+  // âœ… FIXED: Upload to backend API
   const handleFileUpload = async (event) => {
     const files = Array.from(event.target.files);
     if (files.length === 0) return;
@@ -45,7 +45,7 @@ const ClientDocuments = ({ client }) => {
 
       toast.success('Documents uploaded successfully');
 
-      // ✅ Refresh client data after all uploads
+      // âœ… Refresh client data after all uploads
       if (client?.id) {
         await dispatch(getClient(client.id)).unwrap();
       }
@@ -59,7 +59,7 @@ const ClientDocuments = ({ client }) => {
     }
   };
 
-  // ✅ FIXED: Use direct file URL only
+  // âœ… FIXED: Use direct file URL only
   const handleDownload = async (doc) => {
     try {
       const rawUrl = doc.file_url || doc.publicUrl;
@@ -88,7 +88,7 @@ const ClientDocuments = ({ client }) => {
     }
   };
 
-  // ✅ FIXED: Use direct file URL only
+  // âœ… FIXED: Use direct file URL only
   const handleView = async (doc) => {
     try {
       const rawUrl = doc.file_url || doc.publicUrl;
@@ -119,7 +119,7 @@ const ClientDocuments = ({ client }) => {
           clientId: client.id,
           documentId
         })).unwrap();
-      } catch (error) {}
+      } catch (error) { }
     }
   };
 
@@ -140,7 +140,7 @@ const ClientDocuments = ({ client }) => {
           Back
         </button>
         <div className="flex-1">
-          <h2 className="text-xl font-semibold text-gray-800">Client Documents</h2>
+          <h2 className="text-section-title text-gray-800">Client Documents</h2>
         </div>
 
         {/* Only show upload button for Admin/Manager */}
@@ -170,7 +170,7 @@ const ClientDocuments = ({ client }) => {
         {documents.length === 0 ? (
           <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
             <Icons.UploadCloud className="tm-icon mx-auto mb-4 text-gray-300" />
-            <p className="text-lg mb-2">No documents uploaded yet</p>
+            <p className="text-body-text mb-2">No documents uploaded yet</p>
             {canModify && <p className="text-sm">Click "Upload Documents" to add files</p>}
           </div>
         ) : (
@@ -240,3 +240,4 @@ const ClientDocuments = ({ client }) => {
 };
 
 export default ClientDocuments;
+

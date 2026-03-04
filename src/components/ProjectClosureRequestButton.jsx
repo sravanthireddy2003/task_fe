@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'sonner';
 import { Lock, Loader2, AlertTriangle } from 'lucide-react';
@@ -111,10 +111,10 @@ const ProjectClosureRequestButton = ({ project, tasks = [], taskSummary }) => {
         onClick={() => !isClosurePending && setShowConfirmModal(true)}
         disabled={!canRequestClosure || loading || isClosurePending}
         className={`relative group inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl shadow-sm transition-all duration-200 border ${isClosurePending
-            ? 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'
-            : canRequestClosure
-              ? 'bg-white text-orange-600 border-orange-200 hover:bg-orange-50 hover:border-orange-300 hover:shadow-md'
-              : 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed opacity-75'
+          ? 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'
+          : canRequestClosure
+            ? 'bg-white text-orange-600 border-orange-200 hover:bg-orange-50 hover:border-orange-300 hover:shadow-md'
+            : 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed opacity-75'
           }`}
         title={
           isClosurePending
@@ -152,7 +152,7 @@ const ProjectClosureRequestButton = ({ project, tasks = [], taskSummary }) => {
                 <AlertTriangle className="w-8 h-8 text-orange-500" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-gray-900">Request Project Closure</h3>
+                <h3 className="text-section-title text-gray-900">Request Project Closure</h3>
                 <p className="text-sm text-gray-600 mt-1">
                   You are about to request closure for <span className="font-semibold text-gray-900">"{project.name || project.title}"</span>.
                 </p>
@@ -177,7 +177,7 @@ const ProjectClosureRequestButton = ({ project, tasks = [], taskSummary }) => {
                 </div>
               </div>
               <p className="text-xs text-gray-500 mt-3 flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-600"></div>
                 This request will be sent to the Admin for final approval.
               </p>
             </div>

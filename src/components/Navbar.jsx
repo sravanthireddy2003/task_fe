@@ -1,16 +1,18 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setOpenSidebar } from "../redux/slices/authSlice";
-import UserAvatar from "./UserAvatar";
 import NotificationPanel from "./NotificationPanel";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Button from "./Button";
 import * as Icons from "../icons";
 
-const Navbar = ({ searchQuery, setSearchQuery, onCreateTask, onFilterClick, onViewToggle }) => {
+const Navbar = ({ searchQuery, setSearchQuery, onFilterClick, onViewToggle }) => {
   const { user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const rolePrefix = user?.role?.toLowerCase() || 'admin';
 
   // Get current page title from pathname
   const getPageTitle = () => {
@@ -23,6 +25,7 @@ const Navbar = ({ searchQuery, setSearchQuery, onCreateTask, onFilterClick, onVi
     if (path.includes('/reports')) return 'Reports';
     if (path.includes('/settings')) return 'Settings';
     if (path.includes('/chat')) return 'Chat';
+    if (path.includes('/module/')) return 'Workspace';
     return 'Task Manager';
   };
 
@@ -30,75 +33,69 @@ const Navbar = ({ searchQuery, setSearchQuery, onCreateTask, onFilterClick, onVi
     setSearchQuery?.(e.target.value);
   };
 
+  // Navigate to Tasks page and open create modal
+  const handleCreateTask = () => {
+    navigate(`/${rolePrefix}/tasks`, { state: { openCreateModal: true } });
+  };
+
   return (
-    <div className="flex justify-between items-center bg-white px-6 py-4 shadow-sm border-b border-slate-200 sticky top-0 z-40 backdrop-blur-sm bg-white/95">
+    <div className="flex justify-between items-center px-6 py-4 shadow-sm border-b border-gray-200 sticky top-0 z-40 bg-white/80 backdrop-blur-md transition-all">
       <div className="flex items-center gap-6">
         {/* Mobile Menu Button */}
         <button
           onClick={() => dispatch(setOpenSidebar(true))}
-          className="text-xl text-slate-500 block md:hidden hover:text-primary-600 transition-colors p-2 rounded-lg hover:bg-slate-100"
+          className="text-gray-500 block md:hidden hover:text-primary-600 transition-colors p-2 rounded-lg hover:bg-gray-100"
         >
-          ☰
+          <Icons.Menu className="w-6 h-6" />
         </button>
 
-        {/* Page Title */}
-        <div>
-          <h1 className="text-heading-3 font-semibold text-gray-900">{getPageTitle()}</h1>
-          <p className="text-caption text-gray-500">Manage and track your work efficiently</p>
+        {/* Page Title Context */}
+        <div className="hidden sm:block">
+          <div className="flex items-center gap-2 text-sm text-gray-500 mb-0.5 font-medium">
+            <span className="capitalize">{user?.role || 'Workspace'}</span>
+            <Icons.ChevronRight className="w-3.5 h-3.5" />
+            <span className="text-gray-900 font-semibold">{getPageTitle()}</span>
+          </div>
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        {/* Search */}
-        {/* <div className="relative hidden md:block">
-          <MdOutlineSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
-          <input
-            type="text"
-            placeholder="Search tasks, projects..."
-            value={searchQuery || ''}
-            onChange={handleSearch}
-            className="pl-10 pr-4 py-2.5 w-72 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-body placeholder:text-slate-400 transition-all"
-          />
-        </div> */}
+      <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
 
-        {/* Filter Button */}
+        {/* Mock Global Search (Command Palette) */}
+        <div className="relative hidden lg:block group">
+          <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1 opacity-60">
+            <kbd className="px-1.5 py-0.5 text-[10px] font-semibold text-gray-500 bg-white border border-gray-200 rounded shadow-sm">⌘</kbd>
+            <kbd className="px-1.5 py-0.5 text-[10px] font-semibold text-gray-500 bg-white border border-gray-200 rounded shadow-sm">K</kbd>
+          </div>
+        </div>
+
+        {/* Action Separator */}
+        <div className="hidden sm:block w-px h-6 bg-gray-200 mx-1"></div>
+
+        {/* Contextual Page Buttons (Filter / View) */}
         {onFilterClick && (
           <Button
             onClick={onFilterClick}
             variant="secondary"
-            size="sm"
             icon={Icons.Filter}
             label="Filter"
-            className="hidden md:inline-flex"
+            className="hidden md:inline-flex bg-white hover:bg-gray-50 shadow-sm border-gray-200 py-2 h-[38px]"
           />
         )}
 
-        {/* View Toggle */}
         {onViewToggle && (
           <Button
             onClick={onViewToggle}
             variant="secondary"
-            size="sm"
             icon={Icons.LayoutPanelLeft}
             label="View"
-            className="hidden md:inline-flex"
+            className="hidden md:inline-flex bg-white hover:bg-gray-50 shadow-sm border-gray-200 py-2 h-[38px]"
           />
         )}
-
-        {/* Create Task Button */}
-        {/* <button
-          onClick={onCreateTask}
-          className="flex items-center gap-2 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-5 py-2.5 rounded-xl font-medium shadow-sm hover:shadow-md transition-all transform hover:scale-105"
-        >
-          <MdOutlineAdd size={20} />
-          <span className="hidden sm:inline">Create Task</span>
-        </button> */}
-
         {/* Notifications */}
-        <NotificationPanel />
-
-        {/* User Profile */}
-        <UserAvatar />
+        <div className="ml-1 relative z-50">
+          <NotificationPanel />
+        </div>
       </div>
     </div>
   );

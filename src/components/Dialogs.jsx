@@ -10,10 +10,10 @@ export default function ConfirmatioDialog({
   open,
   setOpen,
   msg,
-  setMsg = () => {},
-  onClick = () => {},
+  setMsg = () => { },
+  onClick = () => { },
   type = "delete",
-  setType = () => {},
+  setType = () => { },
 }) {
   const closeDialog = () => {
     setType("delete");
@@ -46,10 +46,10 @@ export default function ConfirmatioDialog({
             <Button
               type='button'
               className={clsx(
-                " px-8 text-sm font-semibold text-white sm:w-auto",
+                " px-8 text-sm font-semibold !text-white sm:w-auto",
                 type === "restore" || type === "restoreAll"
-                  ? "bg-yellow-600"
-                  : "bg-red-600 hover:bg-red-500"
+                  ? "!bg-yellow-600 hover:!bg-yellow-500"
+                  : "!bg-red-600 hover:!bg-red-500"
               )}
               onClick={onClick}
               label={type === "restore" ? "Restore" : "Delete"}
@@ -57,7 +57,7 @@ export default function ConfirmatioDialog({
 
             <Button
               type='button'
-              className='bg-white px-8 text-sm font-semibold text-gray-900 sm:w-auto border'
+              className='!bg-white px-8 text-sm font-semibold !text-gray-900 sm:w-auto border hover:!bg-gray-50'
               onClick={() => closeDialog()}
               label='Cancel'
             />
@@ -68,7 +68,7 @@ export default function ConfirmatioDialog({
   );
 }
 
-export function UserAction({ open, setOpen, onClick = () => {} }) {
+export function UserAction({ open, setOpen, onClick = () => { } }) {
   const closeDialog = () => {
     setOpen(false);
   };
@@ -91,8 +91,8 @@ export function UserAction({ open, setOpen, onClick = () => {} }) {
             <Button
               type='button'
               className={clsx(
-                " px-8 text-sm font-semibold text-white sm:w-auto",
-                "bg-red-600 hover:bg-red-500"
+                " px-8 text-sm font-semibold !text-white sm:w-auto",
+                "!bg-red-600 hover:!bg-red-500"
               )}
               onClick={onClick}
               label={"Yes"}
@@ -100,7 +100,7 @@ export function UserAction({ open, setOpen, onClick = () => {} }) {
 
             <Button
               type='button'
-              className='bg-white px-8 text-sm font-semibold text-gray-900 sm:w-auto border'
+              className='!bg-white px-8 text-sm font-semibold !text-gray-900 sm:w-auto border hover:!bg-gray-50'
               onClick={() => closeDialog()}
               label='No'
             />

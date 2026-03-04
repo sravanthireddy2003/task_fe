@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import * as Icons from '../icons';
 import {
-  PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, 
+  PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
   Tooltip, ResponsiveContainer, CartesianGrid, Legend, LineChart, Line
 } from 'recharts';
 import clsx from 'clsx';
@@ -42,24 +42,24 @@ const STATIC_DATA = {
     { client: 'Digital Ventures', workload: 0.3 }
   ],
   recentActivities: [
-    { 
-      id: 1, 
-      title: 'Implement user authentication module', 
-      status: 'In Progress', 
+    {
+      id: 1,
+      title: 'Implement user authentication module',
+      status: 'In Progress',
       priority: 'Critical',
       dueDate: '25/01/2026'
     },
-    { 
-      id: 2, 
-      title: 'Build shopping cart functionality', 
-      status: 'In Progress', 
+    {
+      id: 2,
+      title: 'Build shopping cart functionality',
+      status: 'In Progress',
       priority: 'High',
       dueDate: '28/01/2026'
     },
-    { 
-      id: 3, 
-      title: 'Test payment gateway integration', 
-      status: 'Not Started', 
+    {
+      id: 3,
+      title: 'Test payment gateway integration',
+      status: 'Not Started',
       priority: 'Critical',
       dueDate: '30/01/2026'
     }
@@ -129,7 +129,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        
+
         {/* Header */}
         <PageHeader
           title="Dashboard"
@@ -140,16 +140,16 @@ const Dashboard = () => {
           <div className="flex items-center gap-3">
             <div className="relative">
               {Icons.Search && <Icons.Search className="tm-icon absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />}
-              <input 
-                type="text" 
-                placeholder="Search..." 
-                className="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+              <input
+                type="text"
+                placeholder="Search..."
+                className="input pl-10 w-64"
               />
             </div>
-            <button className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">
+            <button className="btn btn-secondary !px-2 !w-10">
               {Icons.Bell && <Icons.Bell className="tm-icon text-gray-600" />}
             </button>
-            <button className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">
+            <button className="btn btn-secondary !px-2 !w-10">
               {Icons.Settings && <Icons.Settings className="tm-icon text-gray-600" />}
             </button>
           </div>
@@ -206,8 +206,8 @@ const Dashboard = () => {
           {/* Task Distribution */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">Task Distribution</h2>
-              <button className="p-1 hover:bg-gray-100 rounded icon-center">
+              <h2 className="text-section-title text-gray-900">Task Distribution</h2>
+              <button className="btn btn-secondary !px-2 !w-8 !h-8 icon-center border-transparent shadow-none hover:bg-gray-100">
                 {Icons.MoreVertical && <Icons.MoreVertical className="tm-icon text-gray-500" />}
               </button>
             </div>
@@ -235,7 +235,7 @@ const Dashboard = () => {
             <div className="flex flex-wrap justify-center gap-4 mt-4">
               {taskDistribution.map((item, idx) => (
                 <div key={item.name + '-' + idx} className="flex items-center gap-2">
-                  <div 
+                  <div
                     className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: item.color }}
                   />
@@ -248,8 +248,8 @@ const Dashboard = () => {
           {/* Weekly Task Trends */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">Weekly Task Trends</h2>
-              <button className="p-1 hover:bg-gray-100 rounded icon-center">
+              <h2 className="text-section-title text-gray-900">Weekly Task Trends</h2>
+              <button className="btn btn-secondary !px-2 !w-8 !h-8 icon-center border-transparent shadow-none hover:bg-gray-100">
                 {Icons.MoreVertical && <Icons.MoreVertical className="tm-icon text-gray-500" />}
               </button>
             </div>
@@ -260,7 +260,7 @@ const Dashboard = () => {
                   <XAxis dataKey="day" tick={{ fill: '#6b7280', fontSize: 12 }} />
                   <YAxis tick={{ fill: '#6b7280', fontSize: 12 }} domain={[0, 'dataMax + 5']} />
                   <Tooltip wrapperStyle={{ borderRadius: 8 }} contentStyle={{ borderRadius: 8 }} />
-                  <Bar dataKey="tasks" fill="#3B82F6" stroke="#1E40AF" barSize={28} radius={[6,6,0,0]} />
+                  <Bar dataKey="tasks" fill="#3B82F6" stroke="#1E40AF" barSize={28} radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -272,8 +272,8 @@ const Dashboard = () => {
           {/* Top Performing Employees */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">Top Performing Employees</h2>
-              <button className="p-1 hover:bg-gray-100 rounded icon-center">
+              <h2 className="text-section-title text-gray-900">Top Performing Employees</h2>
+              <button className="btn btn-secondary !px-2 !w-8 !h-8 icon-center border-transparent shadow-none hover:bg-gray-100">
                 {Icons.MoreVertical && <Icons.MoreVertical className="tm-icon text-gray-500" />}
               </button>
             </div>
@@ -282,7 +282,7 @@ const Dashboard = () => {
                 <BarChart data={topEmployees}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis dataKey="name" />
-                  <YAxis 
+                  <YAxis
                     domain={[0, 2]}
                     ticks={[0, 0.5, 1, 1.5, 2]}
                   />
@@ -298,8 +298,8 @@ const Dashboard = () => {
           {/* Client-wise Workload */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">Client-wise Workload</h2>
-              <button className="p-1 hover:bg-gray-100 rounded icon-center">
+              <h2 className="text-section-title text-gray-900">Client-wise Workload</h2>
+              <button className="btn btn-secondary !px-2 !w-8 !h-8 icon-center border-transparent shadow-none hover:bg-gray-100">
                 {Icons.MoreVertical && <Icons.MoreVertical className="tm-icon text-gray-500" />}
               </button>
             </div>
@@ -308,7 +308,7 @@ const Dashboard = () => {
                 <BarChart data={clientWorkload}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis dataKey="client" />
-                  <YAxis 
+                  <YAxis
                     domain={[0, 1]}
                     ticks={[0, 0.25, 0.5, 0.75, 1]}
                   />
@@ -325,8 +325,8 @@ const Dashboard = () => {
           {/* Recent Activity */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
-              <button className="text-blue-600 text-sm font-medium flex items-center gap-1 hover:text-blue-700">
+              <h2 className="text-section-title text-gray-900">Recent Activity</h2>
+              <button className="text-primary-600 text-sm font-medium flex items-center gap-1 hover:text-primary-700">
                 View all {Icons.ChevronRight && <Icons.ChevronRight className="tm-icon" />}
               </button>
             </div>
@@ -373,8 +373,8 @@ const Dashboard = () => {
           {/* Active Projects */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">Active Projects</h2>
-              <button className="text-blue-600 text-sm font-medium flex items-center gap-1 hover:text-blue-700">
+              <h2 className="text-section-title text-gray-900">Active Projects</h2>
+              <button className="text-primary-600 text-sm font-medium flex items-center gap-1 hover:text-primary-700">
                 View all {Icons.ChevronRight && <Icons.ChevronRight className="tm-icon" />}
               </button>
             </div>
@@ -388,25 +388,25 @@ const Dashboard = () => {
                       <span>{project.members} members</span>
                     </div>
                   </div>
-                  
+
                   <div className="mb-3">
                     <div className="flex justify-between text-sm mb-1">
                       <span className="text-gray-600">Progress</span>
                       <span className="font-medium">{project.progress}%</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
+                      <div
                         className="bg-blue-600 h-2 rounded-full"
                         style={{ width: `${project.progress}%` }}
                       />
                     </div>
                   </div>
-                  
+
                   <div className="text-sm">
                     <div className="text-gray-600 mb-1">Budget</div>
                     <div className="font-medium">{project.budget}</div>
                   </div>
-                  
+
                   <div className="mt-3 text-sm text-gray-600">
                     {project.client}
                   </div>

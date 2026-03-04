@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import SlaBadge from './SlaBadge';
 
 // Card representing a single task within the workflow context.
@@ -58,13 +58,13 @@ const TaskWorkflowCard = ({ task, userRole, onSendToReview }) => {
           <span>Workflow Progress</span>
           {stepsTotal > 0 && (
             <span>
-              {stepsDone}/{stepsTotal} steps • {percent}%
+              {stepsDone}/{stepsTotal} steps â€¢ {percent}%
             </span>
           )}
         </div>
         <div className="w-full h-1.5 rounded-full bg-gray-100 overflow-hidden">
           <div
-            className="h-full bg-blue-500 transition-all"
+            className="h-full bg-blue-600 transition-all"
             style={{ width: `${Math.min(100, Math.max(0, percent))}%` }}
           />
         </div>
@@ -73,7 +73,7 @@ const TaskWorkflowCard = ({ task, userRole, onSendToReview }) => {
       {/* Footer actions */}
       <footer className="flex items-center justify-between pt-2">
         <div className="text-[11px] text-gray-400">
-          <span>Task ID: {task?.id || task?._id || task?.public_id || '—'}</span>
+          <span>Task ID: {task?.id || task?._id || task?.public_id || 'â€”'}</span>
         </div>
         {canSendToReview && (
           <button
@@ -90,3 +90,4 @@ const TaskWorkflowCard = ({ task, userRole, onSendToReview }) => {
 };
 
 export default TaskWorkflowCard;
+

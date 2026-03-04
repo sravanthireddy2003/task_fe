@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import * as Icons from '../icons';
 import ViewToggle from "../components/ViewToggle";
 
@@ -349,14 +349,14 @@ const Approvals = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div className="w-full">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">Approval Workflows</h2>
-          <p className="text-gray-600 text-sm md:text-base">Manage task reassignment requests and other approvals</p>
+          <h2 className="text-page-title text-gray-800 mb-2">Approval Workflows</h2>
+          <p className="text-gray-600 text-small-text md:text-base">Manage task reassignment requests and other approvals</p>
         </div>
         <div className="flex gap-2 w-full md:w-auto">
           <button
             onClick={loadReassignmentRequests}
             disabled={loading}
-            className="flex-1 md:flex-none p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
+            className="btn btn-primary flex-1 md:flex-none flex justify-center gap-2"
             title="Refresh"
           >
             <RefreshCw className={loading ? 'tm-icon animate-spin' : 'tm-icon'} />
@@ -414,7 +414,7 @@ const Approvals = () => {
       {view === 'card' && (
         <>
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-700">
+            <h3 className="text-section-title text-gray-700">
               Reassignment Requests ({approvals.filter(a => a.status === 'Pending').length} pending)
             </h3>
           </div>
@@ -429,7 +429,7 @@ const Approvals = () => {
               <div className="col-span-full text-center py-12">
                 <div className="max-w-md mx-auto">
                   <AlertCircle className="tm-icon-hero mx-auto text-gray-400 mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-600 mb-2">No Approval Requests</h3>
+                  <h3 className="text-section-title text-gray-600 mb-2">No Approval Requests</h3>
                   <p className="text-gray-500 mb-4">All reassignment requests have been processed.</p>
                 </div>
               </div>
@@ -518,7 +518,7 @@ const Approvals = () => {
                       <div className="flex gap-2">
                         <button
                           onClick={() => setViewDetails(a)}
-                          className="flex-1 p-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center justify-center gap-1 transition-colors"
+                          className="btn btn-secondary flex-1 flex items-center justify-center gap-1"
                         >
                           <Eye className="tm-icon" /> Details
                         </button>
@@ -562,35 +562,21 @@ const Approvals = () => {
 
       {/* ---------------- LIST VIEW ---------------- */}
       {view === 'list' && (
-        <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+        <div className="tm-list-container overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="tm-table">
+              <thead>
                 <tr>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Task
-                  </th>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Requester
-                  </th>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Current Assignee
-                  </th>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
+                  <th>Type</th>
+                  <th>Task</th>
+                  <th>Requester</th>
+                  <th>Current Assignee</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody>
                 {loading ? (
                   <tr>
                     <td colSpan="7" className="px-4 py-8 text-center">
@@ -612,53 +598,53 @@ const Approvals = () => {
                   </tr>
                 ) : (
                   approvals.map((a) => (
-                    <tr key={a.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 whitespace-nowrap">
+                    <tr key={a.id} className="cursor-pointer">
+                      <td>
                         <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full">
                           Task Reassignment
                         </span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td>
                         <div className="min-w-0 max-w-xs">
-                          <p className="text-sm font-medium text-gray-900 truncate" title={a.title}>
+                          <p className="text-[14px] font-semibold text-gray-900 truncate" title={a.title}>
                             {a.title}
                           </p>
                           <div className="flex items-center gap-2 mt-1">
-                            <span className="text-xs text-gray-500 truncate" title={a.project}>
+                            <span className="text-[12px] text-gray-500 truncate" title={a.project}>
                               {a.project}
                             </span>
                             <span className="text-gray-300">•</span>
-                            <span className="text-xs text-gray-500 truncate" title={a.department}>
+                            <span className="text-[12px] text-gray-500 truncate" title={a.department}>
                               {a.department}
                             </span>
                           </div>
                           {a.reason && (
-                            <p className="text-xs text-blue-600 truncate mt-1" title={a.reason}>
+                            <p className="text-[12px] font-medium text-blue-600 truncate mt-1" title={a.reason}>
                               {a.reason}
                             </p>
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td>
                         <div className="flex items-center">
-                          <div className="flex-shrink-0 h-8 w-8 bg-gray-200 rounded-full flex items-center justify-center mr-2">
-                            <User className="tm-icon text-gray-500" />
+                          <div className="flex-shrink-0 h-8 w-8 bg-gray-100 border border-gray-200 rounded-full flex items-center justify-center mr-2">
+                            <User className="tm-icon text-gray-400" />
                           </div>
-                          <span className="text-sm text-gray-900 truncate" title={a.requester}>
+                          <span className="text-[13px] font-medium text-gray-900 truncate" title={a.requester}>
                             {a.requester}
                           </span>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
-                        <span className="text-sm text-gray-700 line-clamp-2 max-w-xs" title={a.assignedTo}>
+                      <td>
+                        <span className="text-[13px] font-medium text-gray-700 line-clamp-2 max-w-xs" title={a.assignedTo}>
                           {a.assignedTo}
                         </span>
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{a.date}</div>
-                        <div className="text-xs text-gray-500">{a.time}</div>
+                      <td>
+                        <div className="text-[13px] font-medium text-gray-900">{a.date}</div>
+                        <div className="text-[11px] font-medium text-gray-500">{a.time}</div>
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
+                      <td>
                         <span
                           className={`px-2 py-1 rounded-full text-xs font-semibold ${a.status === 'Approved'
                             ? 'bg-green-100 text-green-800'
@@ -670,11 +656,11 @@ const Approvals = () => {
                           {a.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
+                      <td>
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => setViewDetails(a)}
-                            className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                             title="View Details"
                           >
                             <Eye className="tm-icon" />
@@ -738,7 +724,7 @@ const Approvals = () => {
               <div className="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
                 <User className="tm-icon-xl text-blue-600" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Reassign Task</h3>
+              <h3 className="text-page-title text-gray-900 mb-2">Reassign Task</h3>
               <p className="text-sm text-gray-500">
                 Select a new employee to assign this task to
               </p>
@@ -762,7 +748,7 @@ const Approvals = () => {
                 <select
                   value={selectedAssignee}
                   onChange={(e) => setSelectedAssignee(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+                  className="input !w-full"
                   disabled={reassigning}
                 >
                   <option value="">Select an employee...</option>
@@ -778,7 +764,7 @@ const Approvals = () => {
                 <button
                   onClick={handleReassignTask}
                   disabled={reassigning || !selectedAssignee}
-                  className="w-full py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
+                  className="btn btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {reassigning ? (
                     <>
@@ -836,7 +822,7 @@ const Approvals = () => {
 
               <div>
                 <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1">Project & Department</label>
-                <p className="font-medium text-gray-800">{viewDetails.project} • {viewDetails.department}</p>
+                <p className="font-medium text-gray-800">{viewDetails.project} â€¢ {viewDetails.department}</p>
               </div>
 
               <div>
@@ -887,3 +873,4 @@ const Approvals = () => {
 };
 
 export default Approvals;
+

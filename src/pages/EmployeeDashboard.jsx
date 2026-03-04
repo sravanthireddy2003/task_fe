@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+﻿import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import fetchWithTenant from '../utils/fetchWithTenant';
@@ -11,11 +11,11 @@ import GridCard from "../components/ui/GridCard";
 // Bar Chart Component
 const BarChart = ({ title, data, colors = [], showValues = true, horizontal = false }) => {
   const maxValue = Math.max(...data.map(item => item.value), 1);
-  
+
   if (horizontal) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-        <h3 className="font-semibold text-gray-800 mb-4">{title}</h3>
+      <div className="card">
+        <h3 className="text-section-title text-gray-800 mb-4">{title}</h3>
         {data.length === 0 ? (
           <div className="text-center py-8 text-gray-400">
             <p>No data available</p>
@@ -24,8 +24,8 @@ const BarChart = ({ title, data, colors = [], showValues = true, horizontal = fa
           <div className="space-y-3">
             {data.map((item, index) => {
               const percentage = (item.value / maxValue) * 100;
-              const color = colors[index] || 'bg-blue-500';
-              
+              const color = colors[index] || 'bg-blue-600';
+
               return (
                 <div key={item.label} className="group">
                   <div className="flex items-center justify-between mb-1">
@@ -39,7 +39,7 @@ const BarChart = ({ title, data, colors = [], showValues = true, horizontal = fa
                     )}
                   </div>
                   <div className="relative">
-                    <div 
+                    <div
                       className={`h-8 rounded-lg transition-all duration-300 ${color} hover:opacity-90`}
                       style={{ width: `${percentage}%` }}
                     >
@@ -59,16 +59,16 @@ const BarChart = ({ title, data, colors = [], showValues = true, horizontal = fa
 
   // Vertical bar chart
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+    <div className="card">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-gray-800">{title}</h3>
+        <h3 className="text-section-title text-gray-800">{title}</h3>
         {data.length > 0 && (
           <span className="text-xs font-medium text-gray-500">
             Total: {data.reduce((sum, item) => sum + item.value, 0)}
           </span>
         )}
       </div>
-      
+
       {data.length === 0 ? (
         <div className="text-center py-8 text-gray-400">
           <p>No data available</p>
@@ -77,13 +77,13 @@ const BarChart = ({ title, data, colors = [], showValues = true, horizontal = fa
         <div className="flex items-end h-48 space-x-2">
           {data.map((item, index) => {
             const percentage = (item.value / maxValue) * 100;
-            const color = colors[index] || 'bg-blue-500';
+            const color = colors[index] || 'bg-blue-600';
             const height = `${percentage}%`;
-            
+
             return (
               <div key={item.label} className="flex-1 flex flex-col items-center group">
                 <div className="relative w-full flex justify-center">
-                  <div 
+                  <div
                     className={`w-3/4 rounded-t-lg transition-all duration-300 hover:opacity-90 ${color}`}
                     style={{ height }}
                   >
@@ -126,8 +126,8 @@ const DonutChart = ({ title, data, size = 140 }) => {
   ];
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-      <h3 className="font-semibold text-gray-800 mb-4">{title}</h3>
+    <div className="card">
+      <h3 className="text-section-title text-gray-800 mb-4">{title}</h3>
       <div className="flex items-center">
         <div className="relative" style={{ width: size, height: size }}>
           <svg width={size} height={size}>
@@ -135,24 +135,24 @@ const DonutChart = ({ title, data, size = 140 }) => {
               const percentage = total > 0 ? (item.value / total) * 100 : 0;
               const angle = (percentage / 100) * 360;
               const endAngle = startAngle + angle;
-              
+
               const startRad = (startAngle * Math.PI) / 180;
               const endRad = (endAngle * Math.PI) / 180;
-              
+
               const x1 = center + radius * Math.cos(startRad);
               const y1 = center + radius * Math.sin(startRad);
               const x2 = center + radius * Math.cos(endRad);
               const y2 = center + radius * Math.sin(endRad);
-              
+
               const largeArcFlag = angle > 180 ? 1 : 0;
-              
+
               const pathData = [
                 `M ${center} ${center}`,
                 `L ${x1} ${y1}`,
                 `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
                 'Z'
               ].join(' ');
-              
+
               const segment = (
                 <path
                   key={item.label}
@@ -161,14 +161,14 @@ const DonutChart = ({ title, data, size = 140 }) => {
                   className="transition-all duration-300 hover:opacity-80"
                 />
               );
-              
+
               startAngle = endAngle;
               return segment;
             })}
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">{total}</div>
+              <div className="text-2xl font-semibold text-gray-900">{total}</div>
               <div className="text-xs text-gray-500">Total</div>
             </div>
           </div>
@@ -180,8 +180,8 @@ const DonutChart = ({ title, data, size = 140 }) => {
               return (
                 <div key={item.label} className="flex items-center justify-between">
                   <div className="flex items-center">
-                    <div 
-                      className="w-3 h-3 rounded-sm mr-2" 
+                    <div
+                      className="w-3 h-3 rounded-sm mr-2"
                       style={{ backgroundColor: colors[index % colors.length] }}
                     />
                     <span className="text-sm text-gray-700">{item.label}</span>
@@ -202,14 +202,14 @@ const DonutChart = ({ title, data, size = 140 }) => {
 // Stacked Bar Chart
 const StackedBarChart = ({ title, data, colors = [] }) => {
   const total = data.reduce((sum, item) => sum + item.value, 0);
-  
+
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-      <h3 className="font-semibold text-gray-800 mb-4">{title}</h3>
+    <div className="card">
+      <h3 className="text-section-title text-gray-800 mb-4">{title}</h3>
       <div className="space-y-3">
         {data.map((item, index) => {
           const percentage = (item.value / total) * 100;
-          const color = colors[index] || 'bg-blue-500';
+          const color = colors[index] || 'bg-blue-600';
 
           return (
             <div key={item.label} className="group">
@@ -230,7 +230,7 @@ const StackedBarChart = ({ title, data, colors = [] }) => {
                 </span>
               </div>
               <div className="h-6 bg-gray-100 rounded-full overflow-hidden">
-                <div 
+                <div
                   className={`h-full ${color} rounded-full transition-all duration-300`}
                   style={{ width: `${percentage}%` }}
                 >
@@ -262,7 +262,7 @@ const StatsCard = ({ title, subtitle, value, icon, color, trend }) => {
   const trendNode =
     trend && (
       <span className={`font-medium ${trend.value > 0 ? 'text-green-600' : 'text-red-600'}`}>
-        {trend.value > 0 ? '↗' : '↘'} {Math.abs(trend.value)}% {trend.label}
+        {trend.value > 0 ? 'â†—' : 'â†˜'} {Math.abs(trend.value)}% {trend.label}
       </span>
     );
 
@@ -285,10 +285,10 @@ const StatsCard = ({ title, subtitle, value, icon, color, trend }) => {
 // Progress Chart with Multiple Bars
 const ProgressChart = ({ title, data }) => {
   const total = data.reduce((sum, item) => sum + item.value, 0);
-  
+
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-      <h3 className="font-semibold text-gray-800 mb-4">{title}</h3>
+    <div className="card">
+      <h3 className="text-section-title text-gray-800 mb-4">{title}</h3>
       <div className="space-y-4">
         {data.map((item, index) => {
           const percentage = total > 0 ? Math.round((item.value / total) * 100) : 0;
@@ -299,7 +299,7 @@ const ProgressChart = ({ title, data }) => {
             'bg-gradient-to-r from-red-500 to-red-600',
             'bg-gradient-to-r from-purple-500 to-purple-600'
           ];
-          
+
           return (
             <div key={item.label}>
               <div className="flex items-center justify-between mb-1">
@@ -309,7 +309,7 @@ const ProgressChart = ({ title, data }) => {
                 </span>
               </div>
               <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div 
+                <div
                   className={`h-full ${colors[index % colors.length]} rounded-full transition-all duration-700`}
                   style={{ width: `${percentage}%` }}
                 />
@@ -342,13 +342,13 @@ const EmployeeDashboard = () => {
 
       const overviewPayload = tasksOverviewResponse?.data || tasksOverviewResponse || {};
       const boardPayload = myTasksResponse || {};
-      
+
       const boardTasks = Array.isArray(boardPayload.data)
         ? boardPayload.data
         : Array.isArray(boardPayload)
-        ? boardPayload
-        : [];
-      
+          ? boardPayload
+          : [];
+
       const boardKanban = boardPayload.kanban || [];
 
       setTasks(Array.isArray(boardTasks) ? boardTasks : []);
@@ -368,11 +368,11 @@ const EmployeeDashboard = () => {
   // Calculate all metrics and chart data
   const metrics = useMemo(() => {
     // Task Status Distribution
-    const statusData = kanban.length > 0 
+    const statusData = kanban.length > 0
       ? kanban.map(col => ({
-          label: col.status || 'Unknown',
-          value: col.count || 0
-        }))
+        label: col.status || 'Unknown',
+        value: col.count || 0
+      }))
       : [];
 
     // Priority Distribution
@@ -390,14 +390,14 @@ const EmployeeDashboard = () => {
       .map(([label, value]) => ({ label, value }));
 
     // Completion Status
-    const completedTasks = tasks.filter(t => 
+    const completedTasks = tasks.filter(t =>
       t.status?.toLowerCase().includes('complete') || t.status === 'DONE'
     ).length;
-    const inProgressTasks = tasks.filter(t => 
+    const inProgressTasks = tasks.filter(t =>
       t.status?.toLowerCase().includes('progress')
     ).length;
-    const pendingTasks = tasks.filter(t => 
-      !t.status?.toLowerCase().includes('complete') && 
+    const pendingTasks = tasks.filter(t =>
+      !t.status?.toLowerCase().includes('complete') &&
       !t.status?.toLowerCase().includes('progress') &&
       t.status !== 'DONE'
     ).length;
@@ -405,16 +405,16 @@ const EmployeeDashboard = () => {
     // Overdue Analysis
     const overdueTasks = tasks.filter(task => {
       if (!task.dueDate) return false;
-      return new Date(task.dueDate) < new Date() && 
-             !task.status?.toLowerCase().includes('complete') &&
-             task.status !== 'DONE';
+      return new Date(task.dueDate) < new Date() &&
+        !task.status?.toLowerCase().includes('complete') &&
+        task.status !== 'DONE';
     }).length;
 
     const onTimeTasks = tasks.filter(task => {
-      const isIncomplete = !task.status?.toLowerCase().includes('complete') && 
-                          task.status !== 'DONE';
+      const isIncomplete = !task.status?.toLowerCase().includes('complete') &&
+        task.status !== 'DONE';
       if (!isIncomplete) return false;
-      
+
       if (!task.dueDate) return true;
       return new Date(task.dueDate) >= new Date();
     }).length;
@@ -432,10 +432,10 @@ const EmployeeDashboard = () => {
 
     // Task Age Analysis
     const today = new Date();
-    const incompleteTasks = tasks.filter(t => 
+    const incompleteTasks = tasks.filter(t =>
       !t.status?.toLowerCase().includes('complete') && t.status !== 'DONE'
     );
-    
+
     const ageBuckets = {
       'Today': 0,
       '1-3 days': 0,
@@ -535,7 +535,7 @@ const EmployeeDashboard = () => {
     {
       key: 'blocked',
       title: 'Blocked',
-      subtitle: `Locked: ${metrics.lockedVsActive?.[1]?.value || 0} • Pending: ${metrics.pendingReassign || 0}`,
+      subtitle: `Locked: ${metrics.lockedVsActive?.[1]?.value || 0} â€¢ Pending: ${metrics.pendingReassign || 0}`,
       value: (metrics.lockedVsActive?.[1]?.value || 0) + (metrics.pendingReassign || 0),
       color: 'purple',
       icon: 'Lock'
@@ -553,15 +553,15 @@ const EmployeeDashboard = () => {
   // Tasks needing attention
   const attentionTasks = useMemo(() => {
     return tasks.filter(task => {
-      const isOverdue = task.dueDate && 
-                       new Date(task.dueDate) < new Date() && 
-                       !task.status?.toLowerCase().includes('complete') &&
-                       task.status !== 'DONE';
+      const isOverdue = task.dueDate &&
+        new Date(task.dueDate) < new Date() &&
+        !task.status?.toLowerCase().includes('complete') &&
+        task.status !== 'DONE';
       const isPendingReassign = task.lock_info?.request_status === 'PENDING';
-      const isHighPriority = task.priority === 'HIGH' && 
-                           !task.status?.toLowerCase().includes('complete') &&
-                           task.status !== 'DONE';
-      
+      const isHighPriority = task.priority === 'HIGH' &&
+        !task.status?.toLowerCase().includes('complete') &&
+        task.status !== 'DONE';
+
       return isOverdue || isPendingReassign || isHighPriority;
     }).slice(0, 5);
   }, [tasks]);
@@ -604,7 +604,7 @@ const EmployeeDashboard = () => {
         <BarChart
           title="Task Status Distribution"
           data={metrics.status}
-          colors={['bg-blue-500', 'bg-green-500', 'bg-amber-500', 'bg-red-500', 'bg-purple-500', 'bg-gray-500']}
+          colors={['bg-blue-600', 'bg-green-500', 'bg-amber-500', 'bg-red-500', 'bg-purple-500', 'bg-gray-500']}
           showValues={false}
           horizontal={false}
         />
@@ -646,7 +646,7 @@ const EmployeeDashboard = () => {
         <BarChart
           title="Task Age Analysis (Incomplete Tasks)"
           data={metrics.age}
-          colors={['bg-blue-400', 'bg-blue-500', 'bg-blue-600', 'bg-blue-700']}
+          colors={['bg-blue-400', 'bg-blue-600', 'bg-blue-600', 'bg-blue-700']}
           horizontal={true}
         />
 
@@ -662,37 +662,36 @@ const EmployeeDashboard = () => {
       </div>
       {/* Attention Needed Section */}
       {attentionTasks.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+        <div className="card !p-0">
           <div className="p-5 border-b border-gray-200">
-            <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+            <h2 className="text-section-title text-gray-800 flex items-center gap-2">
               <Icon name="AlertTriangle" className="w-5 h-5 text-amber-500" />
               Attention Needed
             </h2>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-small-text text-gray-600 mt-1">
               Tasks requiring immediate attention
             </p>
           </div>
           <div className="p-5">
             <div className="space-y-3">
               {attentionTasks.map(task => {
-                const isOverdue = task.dueDate && 
-                                 new Date(task.dueDate) < new Date() && 
-                                 !task.status?.toLowerCase().includes('complete') &&
-                                 task.status !== 'DONE';
+                const isOverdue = task.dueDate &&
+                  new Date(task.dueDate) < new Date() &&
+                  !task.status?.toLowerCase().includes('complete') &&
+                  task.status !== 'DONE';
                 const isPendingReassign = task.lock_info?.request_status === 'PENDING';
-                const isHighPriority = task.priority === 'HIGH' && 
-                                     !task.status?.toLowerCase().includes('complete') &&
-                                     task.status !== 'DONE';
-                
+                const isHighPriority = task.priority === 'HIGH' &&
+                  !task.status?.toLowerCase().includes('complete') &&
+                  task.status !== 'DONE';
+
                 return (
                   <div key={task.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                     <div className="flex items-center space-x-4">
-                      <div className={`w-2 h-12 rounded-lg ${
-                        isOverdue ? 'bg-red-500' :
+                      <div className={`w-2 h-12 rounded-lg ${isOverdue ? 'bg-red-500' :
                         isPendingReassign ? 'bg-amber-500' :
-                        isHighPriority ? 'bg-red-400' :
-                        'bg-gray-300'
-                      }`} />
+                          isHighPriority ? 'bg-red-400' :
+                            'bg-gray-300'
+                        }`} />
                       <div>
                         <h4 className="font-medium text-gray-900">{task.title}</h4>
                         <div className="flex items-center gap-2 mt-1">
@@ -722,11 +721,11 @@ const EmployeeDashboard = () => {
                         </div>
                       </div>
                     </div>
-                    <Link 
+                    <Link
                       to={`/employee/tasks/${task.id || task.public_id || task._id}`}
                       className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                     >
-                      View Details →
+                      View Details â†’
                     </Link>
                   </div>
                 );
@@ -738,36 +737,34 @@ const EmployeeDashboard = () => {
       {/* Task Summary and Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Activity */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+        <div className="lg:col-span-2 card">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-800">Recent Task Activity</h3>
+            <h3 className="text-section-title text-gray-800">Recent Task Activity</h3>
             <Link to="/employee/tasks" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-              View All Tasks →
+              View All Tasks â†’
             </Link>
           </div>
           <div className="space-y-3">
             {tasks.slice(0, 6).map(task => (
               <div key={task.id} className="flex items-center justify-between p-3 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
                 <div className="flex items-center space-x-3">
-                  <div className={`w-2 h-2 rounded-full ${
-                    task.status?.includes('COMPLETE') ? 'bg-green-500' :
-                    task.status?.includes('PROGRESS') ? 'bg-blue-500' :
-                    'bg-gray-400'
-                  }`} />
+                  <div className={`w-2 h-2 rounded-full ${task.status?.includes('COMPLETE') ? 'bg-green-500' :
+                    task.status?.includes('PROGRESS') ? 'bg-blue-600' :
+                      'bg-gray-400'
+                    }`} />
                   <div>
                     <p className="text-sm font-medium text-gray-900">{task.title}</p>
                     <p className="text-xs text-gray-500">
-                      {task.status?.replace(/_/g, ' ') || 'Unknown'} • 
+                      {task.status?.replace(/_/g, ' ') || 'Unknown'} â€¢
                       Updated {new Date(task.updatedAt || task.createdAt).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <span className={`text-xs px-2 py-1 rounded ${
-                    task.priority === 'HIGH' ? 'bg-red-100 text-red-800' :
+                  <span className={`text-xs px-2 py-1 rounded ${task.priority === 'HIGH' ? 'bg-red-100 text-red-800' :
                     task.priority === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-green-100 text-green-800'
-                  }`}>
+                      'bg-green-100 text-green-800'
+                    }`}>
                     {task.priority || 'Normal'}
                   </span>
                 </div>
@@ -781,14 +778,14 @@ const EmployeeDashboard = () => {
           {/* Efficiency Score */}
           <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-5 text-white">
             <h3 className="font-semibold mb-2">Efficiency Score</h3>
-            <div className="text-4xl font-bold mb-2">
+            <div className="text-4xl font-semibold mb-2">
               {metrics.totalTasks > 0 ? Math.round((metrics.completion.completed / metrics.totalTasks) * 100) : 0}%
             </div>
             <p className="text-sm text-blue-100">
               Based on completion rate and timeliness
             </p>
             <div className="mt-4 h-2 bg-blue-400 rounded-full overflow-hidden">
-              <div 
+              <div
                 className="h-full bg-white rounded-full transition-all duration-1000"
                 style={{ width: `${Math.min((metrics.completion.completed / metrics.totalTasks) * 100, 100)}%` }}
               />
@@ -796,8 +793,8 @@ const EmployeeDashboard = () => {
           </div>
 
           {/* Quick Actions */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-            <h3 className="font-semibold text-gray-800 mb-4">Quick Actions</h3>
+          <div className="card">
+            <h3 className="text-section-title text-gray-800 mb-4">Quick Actions</h3>
             <div className="space-y-3">
               <button className="w-full text-left p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors">
                 <div className="flex items-center">

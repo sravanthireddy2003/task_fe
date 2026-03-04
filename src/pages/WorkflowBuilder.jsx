@@ -87,7 +87,7 @@ const WorkflowBuilder = () => {
     <section className="space-y-6 p-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-semibold">Workflow Builder</h1>
+          <h1 className="text-page-title text-gray-900">Workflow Builder</h1>
           <p className="text-sm text-slate-500">Create and manage approval/workflow templates</p>
         </div>
         <div className="flex gap-2">
@@ -97,7 +97,7 @@ const WorkflowBuilder = () => {
 
       <div className="grid grid-cols-3 gap-6">
         <div className="col-span-1 bg-white border rounded-lg p-4">
-          <h3 className="font-medium">Templates</h3>
+          <h3 className="text-section-title text-gray-900">Templates</h3>
           <div className="mt-3 space-y-2">
             {loading && <div className="text-sm text-slate-500">Loading…</div>}
             {templates.map((t) => (
@@ -109,7 +109,7 @@ const WorkflowBuilder = () => {
           </div>
         </div>
 
-          <div className="col-span-2 bg-slate-50 p-6 rounded-lg">
+        <div className="col-span-2 bg-slate-50 p-6 rounded-lg">
           {selected ? (
             <WorkflowCanvas template={selected} onAddStep={handleAddStep} onSave={handleSaveSteps} />
           ) : (

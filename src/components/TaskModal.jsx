@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import * as Icons from '../icons';
 import { toast } from 'sonner';
 import TimeTracker from './TimeTracker';
@@ -140,12 +140,11 @@ const TaskModal = ({ task, onClose, onUpdate, userRole, projectId }) => {
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <div className="flex items-center gap-3">
-            <div className={`w-3 h-3 rounded-full ${
-              task.status === 'Completed' ? 'bg-green-500' :
-              task.status === 'In Progress' ? 'bg-blue-500' :
-              task.status === 'On Hold' ? 'bg-red-500' : 'bg-gray-500'
-            }`} />
-            <h2 className="text-xl font-semibold text-gray-900">
+            <div className={`w-3 h-3 rounded-full ${task.status === 'Completed' ? 'bg-green-500' :
+                task.status === 'In Progress' ? 'bg-blue-600' :
+                  task.status === 'On Hold' ? 'bg-red-500' : 'bg-gray-500'
+              }`} />
+            <h2 className="text-section-title text-gray-900">
               {task.title || task.name || 'Untitled Task'}
             </h2>
           </div>
@@ -170,8 +169,8 @@ const TaskModal = ({ task, onClose, onUpdate, userRole, projectId }) => {
                 {isEditing ? (
                   <textarea
                     value={editedTask.description || ''}
-                    onChange={(e) => setEditedTask({...editedTask, description: e.target.value})}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onChange={(e) => setEditedTask({ ...editedTask, description: e.target.value })}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                     rows={4}
                   />
                 ) : (
@@ -190,8 +189,8 @@ const TaskModal = ({ task, onClose, onUpdate, userRole, projectId }) => {
                   {isEditing ? (
                     <select
                       value={editedTask.status || 'PENDING'}
-                      onChange={(e) => setEditedTask({...editedTask, status: e.target.value})}
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      onChange={(e) => setEditedTask({ ...editedTask, status: e.target.value })}
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                     >
                       <option value="PENDING">Pending</option>
                       <option value="To Do">To Do</option>
@@ -214,8 +213,8 @@ const TaskModal = ({ task, onClose, onUpdate, userRole, projectId }) => {
                   {isEditing ? (
                     <select
                       value={editedTask.priority || 'Medium'}
-                      onChange={(e) => setEditedTask({...editedTask, priority: e.target.value})}
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      onChange={(e) => setEditedTask({ ...editedTask, priority: e.target.value })}
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                     >
                       <option value="Low">Low</option>
                       <option value="Medium">Medium</option>
@@ -239,8 +238,8 @@ const TaskModal = ({ task, onClose, onUpdate, userRole, projectId }) => {
                     <input
                       type="date"
                       value={editedTask.start_date ? new Date(editedTask.start_date).toISOString().split('T')[0] : ''}
-                      onChange={(e) => setEditedTask({...editedTask, start_date: e.target.value})}
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      onChange={(e) => setEditedTask({ ...editedTask, start_date: e.target.value })}
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                     />
                   ) : (
                     <p className="text-gray-600">{formatDate(task.start_date)}</p>
@@ -255,8 +254,8 @@ const TaskModal = ({ task, onClose, onUpdate, userRole, projectId }) => {
                     <input
                       type="date"
                       value={editedTask.due_date ? new Date(editedTask.due_date).toISOString().split('T')[0] : ''}
-                      onChange={(e) => setEditedTask({...editedTask, due_date: e.target.value})}
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      onChange={(e) => setEditedTask({ ...editedTask, due_date: e.target.value })}
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                     />
                   ) : (
                     <p className="text-gray-600">{formatDate(task.due_date)}</p>
@@ -380,7 +379,7 @@ const TaskModal = ({ task, onClose, onUpdate, userRole, projectId }) => {
 
             {/* Comments Section */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Comments</h3>
+              <h3 className="text-section-title mb-4">Comments</h3>
               <div className="space-y-3 mb-4">
                 {comments.map((comment) => (
                   <div key={comment.id} className="bg-white p-3 rounded-lg border">
@@ -400,7 +399,7 @@ const TaskModal = ({ task, onClose, onUpdate, userRole, projectId }) => {
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   placeholder="Add a comment..."
-                  className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                   onKeyPress={(e) => e.key === 'Enter' && handleAddComment()}
                 />
                 <button

@@ -57,14 +57,14 @@ const ManagerProjects = () => {
     try {
       const resp = await fetchWithTenant('api/projects/stats');
       setProjectStats(resp?.data || resp || {});
-    } catch (err) {}
+    } catch (err) { }
   }, []);
 
   const loadProjectSummary = useCallback(async (projectId) => {
     try {
       const resp = await fetchWithTenant(`api/projects/${projectId}/summary`);
       setProjectSummary(resp?.data || resp || {});
-    } catch (err) {}
+    } catch (err) { }
   }, []);
 
   const loadClients = useCallback(async () => {
@@ -141,37 +141,37 @@ const ManagerProjects = () => {
       {/* PROJECT STATS DASHBOARD */}
       {projectStats && (
         <div className="bg-white rounded-xl border p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Project Statistics</h2>
+          <h2 className="text-section-title text-gray-900 mb-4">Project Statistics</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{projectStats.projects?.total || 0}</div>
+              <div className="text-2xl font-semibold text-blue-600">{projectStats.projects?.total || 0}</div>
               <div className="text-sm text-gray-600">Total Projects</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{projectStats.tasks?.total || 0}</div>
+              <div className="text-2xl font-semibold text-green-600">{projectStats.tasks?.total || 0}</div>
               <div className="text-sm text-gray-600">Total Tasks</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">{projectStats.tasks?.totalHours || 0}h</div>
+              <div className="text-2xl font-semibold text-purple-600">{projectStats.tasks?.totalHours || 0}h</div>
               <div className="text-sm text-gray-600">Total Hours</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-indigo-600">{projectStats.subtasks?.total || 0}</div>
+              <div className="text-2xl font-semibold text-indigo-600">{projectStats.subtasks?.total || 0}</div>
               <div className="text-sm text-gray-600">Total Subtasks</div>
             </div>
             <div className="text-center">
-              <div className="text-xl font-bold text-orange-600">{projectStats.projects?.byStatus?.Planning || 0}</div>
+              <div className="text-xl font-semibold text-orange-600">{projectStats.projects?.byStatus?.Planning || 0}</div>
               <div className="text-sm text-gray-600">Planning</div>
             </div>
             <div className="text-center">
-              <div className="text-xl font-bold text-red-600">{projectStats.projects?.byStatus?.Active || 0}</div>
+              <div className="text-xl font-semibold text-red-600">{projectStats.projects?.byStatus?.Active || 0}</div>
               <div className="text-sm text-gray-600">Active</div>
             </div>
           </div>
 
           {/* Tasks by Stage Breakdown */}
           <div className="mt-6">
-            <h3 className="text-md font-semibold text-gray-900 mb-3">Tasks by Stage</h3>
+            <h3 className="text-section-title text-gray-900 mb-3">Tasks by Stage</h3>
             <div className="flex flex-wrap gap-3">
               {Object.entries(projectStats.tasks?.byStage || {}).map(([stage, count]) => (
                 <div key={stage} className="px-3 py-2 bg-gray-100 rounded-lg">
@@ -222,7 +222,7 @@ const ManagerProjects = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Project or client"
-              className="w-40 bg-transparent px-1 text-xs text-gray-600 outline-none"
+              className="input w-40"
             />
           </label>
           <label className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-600 shadow-sm">
@@ -230,7 +230,7 @@ const ManagerProjects = () => {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="bg-transparent text-xs text-gray-600 outline-none"
+              className="input bg-transparent text-xs text-gray-600 outline-none border-none py-0 shadow-none -mx-2 h-auto"
             >
               <option value="all">All Status</option>
               {statusOptions.map((status) => (
@@ -243,7 +243,7 @@ const ManagerProjects = () => {
             <select
               value={filterPriority}
               onChange={(e) => setFilterPriority(e.target.value)}
-              className="bg-transparent text-xs text-gray-600 outline-none"
+              className="input bg-transparent text-xs text-gray-600 outline-none border-none py-0 shadow-none -mx-2 h-auto"
             >
               <option value="all">All Priority</option>
               {priorityOptions.map((priority) => (
@@ -269,32 +269,40 @@ const ManagerProjects = () => {
           {/* LIST VIEW */}
           {view === "list" && (
             <div className="tm-list-container">
-              <table className="w-full table-auto">
-                <thead className="bg-gray-100 text-gray-700">
+              <table className="tm-table">
+                <thead>
                   <tr>
-                    <th className="p-3 text-left">Project</th>
-                    <th className="p-3 text-left">Client</th>
-                    <th className="p-3 text-left">Status</th>
-                    <th className="p-3 text-left">Priority</th>
-                    <th className="p-3 text-left">Duration</th>
-                    <th className="p-3 text-right">Actions</th>
+                    <th>Project</th>
+                    <th>Client</th>
+                    <th>Status</th>
+                    <th>Priority</th>
+                    <th>Duration</th>
+                    <th className="text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredProjects.map((project) => (
-                    <tr key={project.id || project._id} className="border-b hover:bg-gray-50">
-                      <td className="p-3 font-medium">{project.name}</td>
-                      <td className="p-3 text-sm">{getClientName(project.client || project.client_id || project.clientId)}</td>
-                      <td className="p-3">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[project.status] || 'bg-gray-100 text-gray-700'}`}>
+                    <tr key={project.id || project._id}>
+                      <td>
+                        <span className="text-[14px] font-semibold text-gray-900">{project.name}</span>
+                      </td>
+                      <td>
+                        <span className="text-[14px] text-gray-700">{getClientName(project.client || project.client_id || project.clientId)}</span>
+                      </td>
+                      <td>
+                        <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${statusColors[project.status] || 'bg-gray-100 text-gray-800'}`}>
                           {project.status || 'Planning'}
                         </span>
                       </td>
-                      <td className="p-3 text-sm text-gray-600 uppercase tracking-wide">{project.priority || 'Medium'}</td>
-                      <td className="p-3 text-sm text-gray-600">
-                        {formatDate(project.startDate || project.start_date)} → {formatDate(project.endDate || project.end_date)}
+                      <td>
+                        <span className="text-[14px] text-gray-700 uppercase">{project.priority || 'Medium'}</span>
                       </td>
-                      <td className="p-3 text-right">
+                      <td>
+                        <span className="text-[14px] text-gray-700">
+                          {formatDate(project.startDate || project.start_date)} → {formatDate(project.endDate || project.end_date)}
+                        </span>
+                      </td>
+                      <td className="text-right">
                         <button
                           onClick={() => handleViewSummary(project)}
                           className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg"
@@ -321,7 +329,7 @@ const ManagerProjects = () => {
                         <FolderKanban className="w-5 h-5 text-blue-600" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900">{project.name}</h3>
+                        <h3 className="text-section-title text-gray-900">{project.name}</h3>
                         <p className="text-sm text-gray-600">{getClientName(project.client || project.client_id || project.clientId)}</p>
                       </div>
                     </div>
@@ -365,7 +373,7 @@ const ManagerProjects = () => {
           {filteredProjects.length === 0 && (
             <div className="bg-white border rounded-xl p-12 text-center">
               <FolderKanban className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">No Projects Found</h3>
+              <h3 className="text-section-title text-gray-900 mb-2">No Projects Found</h3>
               <p className="text-gray-600">No projects match your current filters.</p>
             </div>
           )}
@@ -377,7 +385,7 @@ const ManagerProjects = () => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-4xl w-full p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">
+              <h2 className="text-page-title text-gray-900">
                 Project Summary - {selectedSummaryProject.name}
               </h2>
               <button
@@ -417,19 +425,19 @@ const ManagerProjects = () => {
               <h3 className="font-semibold text-gray-900 mb-4">Statistics</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{projectSummary.tasks?.total || 0}</div>
+                  <div className="text-2xl font-semibold text-blue-600">{projectSummary.tasks?.total || 0}</div>
                   <div className="text-sm text-gray-600">Total Tasks</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">{projectSummary.tasks?.completed || 0}</div>
+                  <div className="text-2xl font-semibold text-green-600">{projectSummary.tasks?.completed || 0}</div>
                   <div className="text-sm text-gray-600">Completed Tasks</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-orange-600">{projectSummary.tasks?.inProgress || 0}</div>
+                  <div className="text-2xl font-semibold text-orange-600">{projectSummary.tasks?.inProgress || 0}</div>
                   <div className="text-sm text-gray-600">In Progress</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-red-600">{(projectSummary.tasks?.total || 0) - (projectSummary.tasks?.completed || 0) - (projectSummary.tasks?.inProgress || 0)}</div>
+                  <div className="text-2xl font-semibold text-red-600">{(projectSummary.tasks?.total || 0) - (projectSummary.tasks?.completed || 0) - (projectSummary.tasks?.inProgress || 0)}</div>
                   <div className="text-sm text-gray-600">Pending Tasks</div>
                 </div>
               </div>

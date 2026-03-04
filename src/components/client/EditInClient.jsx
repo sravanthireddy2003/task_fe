@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import * as Icons from "../../icons";
 
 const Table = ({ clients, onEdit, onRowClick, onDelete }) => {
@@ -71,7 +71,7 @@ const Table = ({ clients, onEdit, onRowClick, onDelete }) => {
             placeholder="Search by name, company, or manager..."
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-sm"
           />
         </div>
         <div className="text-xs font-medium text-gray-600 whitespace-nowrap">
@@ -224,3 +224,4 @@ const Table = ({ clients, onEdit, onRowClick, onDelete }) => {
 };
 
 export default Table;
+

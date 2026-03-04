@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+﻿import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -7,21 +6,59 @@ import { resetPassword, selectAuthStatus, selectAuthError } from '../redux/slice
 import PasswordStrength from '../components/PasswordStrength';
 import Button from '../components/Button';
 import Textbox from '../components/Textbox';
+import * as Icons from '../icons';
 
 const Reset = () => {
   const dispatch = useDispatch();
   const status = useSelector(selectAuthStatus);
   const error = useSelector(selectAuthError);
   const navigate = useNavigate();
-  const { register, handleSubmit, watch, setValue } = useForm();
-  const pwd = watch('newPassword', '');
-  const location = useLocation();
+  const [formData, setFormData] = useState({ email: '', otp: '', newPassword: '', confirmPassword: '' });
+  const [errors, setErrors] = useState({});
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
-  const onSubmit = (data) => {
-    if (data.newPassword !== data.confirmPassword) {
-      toast.error('Passwords do not match');
-      return;
+  const validate = () => {
+    const newErrors = {};
+    if (!formData.email) newErrors.email = 'Email required';
+    else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(formData.email)) newErrors.email = 'Invalid email';
+
+    if (!formData.otp) newErrors.otp = 'OTP required';
+
+    if (!formData.newPassword) {
+      newErrors.newPassword = 'Password required';
+    } else if (
+      formData.newPassword.length < 8 ||
+      !/[A-Z]/.test(formData.newPassword) ||
+      !/[0-9]/.test(formData.newPassword) ||
+      !/[!@#$%^&*(),.?":{}|<>]/.test(formData.newPassword)
+    ) {
+      newErrors.newPassword = "Password must be at least 8 characters, 1 uppercase, 1 number, 1 special character";
     }
+
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = 'Confirm password required';
+    } else if (formData.newPassword !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const onSubmit = (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+
+    const data = formData;
 
     const payload = {
       email: data.email,
@@ -48,13 +85,13 @@ const Reset = () => {
   useEffect(() => {
     try {
       const q = new URLSearchParams(location.search).get('email') || location.state?.email;
-      if (q) setValue('email', q);
-    } catch (e) {}
-  }, [location, setValue]);
+      if (q) setFormData(prev => ({ ...prev, email: q }));
+    } catch (e) { }
+  }, [location]);
 
   return (
-    <div className="w-full min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md bg-white p-8 rounded-xl shadow-lg">
+    <div className="w-full min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="w-full max-w-md bg-white p-8 rounded-xl shadow-lg border border-gray-200">
         {/* Back Button */}
         <button
           type="button"
@@ -64,40 +101,53 @@ const Reset = () => {
           &#8592; Back
         </button>
 
-        <h2 className="text-2xl font-bold mb-6 text-center">Reset Password</h2>
+        <h2 className="text-page-title mb-6 text-center text-primary-700">Reset Password</h2>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
+        <form onSubmit={onSubmit} className="flex flex-col gap-5">
           <Textbox
             label="Email"
             name="email"
             placeholder="email@example.com"
-            register={register('email', { required: 'Email required' })}
+            register={{
+              value: formData.email,
+              onChange: handleChange,
+            }}
+            error={errors.email}
             className="w-full"
           />
           <Textbox
             label="OTP"
             name="otp"
             placeholder="123456"
-            register={register('otp', { required: 'OTP required' })}
+            register={{
+              value: formData.otp,
+              onChange: handleChange,
+            }}
+            error={errors.otp}
             className="w-full"
           />
           <Textbox
             label="New Password"
             name="newPassword"
             type="password"
-            register={register('newPassword', {
-              required: 'Password required',
-              minLength: { value: 6, message: 'Minimum 6 characters' },
-            })}
+            register={{ value: formData.newPassword, onChange: handleChange }}
+            error={errors.newPassword}
             className="w-full"
+            showPassword={showNew}
+            onPasswordToggle={() => setShowNew(p => !p)}
+            rightIcon={showNew ? <Icons.EyeOff className="w-4 h-4" /> : <Icons.Eye className="w-4 h-4" />}
           />
-          <PasswordStrength password={pwd} />
+          <PasswordStrength password={formData.newPassword} />
           <Textbox
             label="Confirm Password"
             name="confirmPassword"
             type="password"
-            register={register('confirmPassword', { required: 'Confirm password required' })}
+            register={{ value: formData.confirmPassword, onChange: handleChange }}
+            error={errors.confirmPassword}
             className="w-full"
+            showPassword={showConfirm}
+            onPasswordToggle={() => setShowConfirm(p => !p)}
+            rightIcon={showConfirm ? <Icons.EyeOff className="w-4 h-4" /> : <Icons.Eye className="w-4 h-4" />}
           />
 
           {status === 'failed' && error && <p className="text-red-500 text-sm">{error}</p>}
@@ -105,7 +155,7 @@ const Reset = () => {
           <Button
             type="submit"
             label={status === 'loading' ? 'Resetting...' : 'Reset Password'}
-            className="bg-blue-600 hover:bg-blue-700 text-white rounded-md w-full py-3"
+            className="btn btn-primary w-full"
           />
         </form>
       </div>
@@ -114,3 +164,4 @@ const Reset = () => {
 };
 
 export default Reset;
+

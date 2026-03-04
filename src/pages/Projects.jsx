@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, Fragment } from "react";
+﻿import React, { useState, useEffect, useCallback, Fragment } from "react";
 import { Listbox, Transition, Menu } from "@headlessui/react";
 import { Check, ChevronsUpDown, MoreVertical } from "lucide-react";
 import * as Icons from "../icons";
@@ -100,6 +100,31 @@ export default function Projects() {
     budget: "",
     project_manager_id: "",
   });
+  const [errors, setErrors] = useState({});
+
+  const validate = () => {
+    const newErrors = {};
+    if (!formData.name?.trim()) newErrors.name = 'Project name is required';
+    else {
+      const isDuplicate = projects.some(p => {
+        if (editingProject && (p.id === editingProject.id || p._id === editingProject._id || p.public_id === editingProject.public_id)) return false;
+        return p.name.trim().toLowerCase() === formData.name.trim().toLowerCase();
+      });
+      if (isDuplicate) newErrors.name = 'A project with this name already exists';
+    }
+
+    if (!formData.clientId) newErrors.clientId = 'Please select a client';
+    if (!formData.departmentIds || formData.departmentIds.length === 0) newErrors.departmentIds = 'Please select at least one department';
+    if (!formData.start_date) newErrors.start_date = 'Start date is required';
+    if (!formData.end_date) newErrors.end_date = 'End date is required';
+
+    if (formData.budget && Number(formData.budget) < 0) {
+      newErrors.budget = 'Budget must be a positive number';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   // Helper function to calculate total duration in hours (8 hours per working day, excluding weekends)
   const calculateDuration = (startDate, endDate) => {
@@ -194,6 +219,7 @@ export default function Projects() {
         budget: project.budget || "",
         project_manager_id: project.project_manager?.public_id || project.project_manager_id || project.projectManagerId || "",
       });
+      setErrors({});
     } else {
       setEditingProject(null);
       setFormData({
@@ -208,6 +234,7 @@ export default function Projects() {
         budget: "",
         project_manager_id: "",
       });
+      setErrors({});
     }
     setIsModalOpen(true);
   };
@@ -223,36 +250,9 @@ export default function Projects() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
+    if (!validate()) return;
 
     try {
-      // Validate clientId and departmentIds are selected
-      if (!formData.clientId) {
-        toast.error("Please select a client");
-        return;
-      }
-      if (!formData.departmentIds || formData.departmentIds.length === 0) {
-        toast.error("Please select at least one department");
-        return;
-      }
-      if (!formData.start_date || !formData.end_date) {
-        toast.error("Please select both start and end dates");
-        return;
-      }
-
-      // Check for duplicate project name
-      const isDuplicate = projects.some(p => {
-        // Skip current project if editing
-        if (editingProject && (p.id === editingProject.id || p._id === editingProject._id || p.public_id === editingProject.public_id)) {
-          return false;
-        }
-        return p.name.trim().toLowerCase() === formData.name.trim().toLowerCase();
-      });
-
-      if (isDuplicate) {
-        toast.error("A project with this name already exists");
-        return;
-      }
-
       setIsSubmitting(true);
 
       // Map local form fields to API payload (Postman collection format)
@@ -267,6 +267,7 @@ export default function Projects() {
         priority: formData.priority,
         description: formData.description,
         budget: formData.budget || null,
+        status: formData.status, // Ensure status is included for updates
       };
 
       // include manager name if we can resolve it (optional)
@@ -365,7 +366,7 @@ export default function Projects() {
   if (error && projects.length === 0) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-2xl p-8 text-center">
-        <h3 className="text-xl font-bold text-red-800 mb-2">Failed to load projects</h3>
+        <h3 className="text-section-title text-red-800 mb-2">Failed to load projects</h3>
         <p className="text-red-600 mb-6">{error}</p>
         <button
           onClick={() => dispatch(fetchProjects())}
@@ -391,7 +392,7 @@ export default function Projects() {
           />
           <button
             onClick={() => openModal()}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            className="btn btn-primary"
           >
             <Plus className="tm-icon" />
             Add Project
@@ -402,37 +403,37 @@ export default function Projects() {
       {/* PROJECT STATS DASHBOARD */}
       {projectStats && (
         <Card className="mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Project Statistics</h2>
+          <h2 className="text-section-title text-gray-900 mb-4">Project Statistics</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{projectStats.projects?.total || 0}</div>
+              <div className="text-2xl font-semibold text-blue-600">{projectStats.projects?.total || 0}</div>
               <div className="text-sm text-gray-600">Total Projects</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{projectStats.tasks?.total || 0}</div>
+              <div className="text-2xl font-semibold text-green-600">{projectStats.tasks?.total || 0}</div>
               <div className="text-sm text-gray-600">Total Tasks</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">{projectStats.tasks?.totalHours || 0}h</div>
+              <div className="text-2xl font-semibold text-purple-600">{projectStats.tasks?.totalHours || 0}h</div>
               <div className="text-sm text-gray-600">Total Hours</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-indigo-600">{projectStats.subtasks?.total || 0}</div>
+              <div className="text-2xl font-semibold text-indigo-600">{projectStats.subtasks?.total || 0}</div>
               <div className="text-sm text-gray-600">Total Subtasks</div>
             </div>
             <div className="text-center">
-              <div className="text-xl font-bold text-orange-600">{projectStats.projects?.byStatus?.Planning || 0}</div>
+              <div className="text-xl font-semibold text-orange-600">{projectStats.projects?.byStatus?.Planning || 0}</div>
               <div className="text-sm text-gray-600">Planning</div>
             </div>
             <div className="text-center">
-              <div className="text-xl font-bold text-red-600">{projectStats.projects?.byStatus?.Active || 0}</div>
+              <div className="text-xl font-semibold text-red-600">{projectStats.projects?.byStatus?.Active || 0}</div>
               <div className="text-sm text-gray-600">Active</div>
             </div>
           </div>
 
           {/* Tasks by Stage Breakdown */}
           <div className="mt-6">
-            <h3 className="text-md font-semibold text-gray-900 mb-3">Tasks by Stage</h3>
+            <h3 className="text-section-title text-gray-900 mb-3">Tasks by Stage</h3>
             <div className="flex flex-wrap gap-3">
               {Object.entries(projectStats.tasks?.byStage || {}).map(([stage, count]) => (
                 <div key={stage} className="px-3 py-2 bg-gray-100 rounded-lg">
@@ -468,7 +469,7 @@ export default function Projects() {
       </div>
 
       {/* FILTERS */}
-      <div className="bg-white rounded-xl border p-4 mb-6 flex items-center gap-4 flex-wrap">
+      <div className="card mb-6 flex items-center gap-4 flex-wrap">
         <div className="flex items-center gap-2">
           <Filter className="w-5 h-5 text-gray-600" />
           <span className="text-gray-700">Filters:</span>
@@ -477,7 +478,7 @@ export default function Projects() {
         <select
           value={filterDept}
           onChange={(e) => setFilterDept(e.target.value)}
-          className="px-4 py-2 border rounded-lg"
+          className="input !w-auto h-10 py-0"
         >
           <option value="all">All Departments</option>
           {departments.map((d) => (
@@ -488,7 +489,7 @@ export default function Projects() {
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="px-4 py-2 border rounded-lg"
+          className="input !w-auto h-10 py-0"
         >
           <option value="all">All Status</option>
           {statusOptions.map((s) => (
@@ -499,134 +500,136 @@ export default function Projects() {
 
       {/* --------------------------- LIST VIEW --------------------------- */}
       {view === "list" && (
-        <div className="bg-white border rounded-xl overflow-hidden overflow-x-auto">
-          <table className="w-full min-w-[800px] table-auto">
-            <thead className="bg-gray-100 text-gray-700">
-              <tr>
-                <th className="p-3 text-left">Project</th>
-                <th className="p-3 text-left">Department</th>
-                <th className="p-3 text-left">Client</th>
-                <th className="p-3 text-left">Manager</th>
-                <th className="p-3 text-left">Status</th>
-                <th className="p-3 text-left">Duration</th>
-                <th className="p-3 text-right">Actions</th>
-              </tr>
-            </thead>
+        <div className="tm-list-container">
+          <div className="overflow-x-auto min-h-[400px]">
+            <table className="tm-table">
+              <thead>
+                <tr>
+                  <th>Project</th>
+                  <th>Department</th>
+                  <th>Client</th>
+                  <th>Manager</th>
+                  <th>Status</th>
+                  <th>Duration</th>
+                  <th className="text-right">Actions</th>
+                </tr>
+              </thead>
 
-            <tbody>
-              {filteredProjects.map((project) => (
-                <React.Fragment key={project.id || project._id}>
-                  <ProjectLockBanner project={project} />
-                  <tr className="border-b hover:bg-gray-50">
-                    <td className="p-3 font-medium">{project.name}</td>
-                    <td className="p-3 text-sm">{getDepartmentName(project.departments)}</td>
-                    <td className="p-3 text-sm text-gray-600">{getClientName(project.client || project.client_id)}</td>
-                    <td className="p-3 text-sm text-gray-600">{getManagerName(project.project_manager_id, project.project_manager)}</td>
-                    <td className="p-3">
-                      {activeStatusEdit === (project.id || project._id) ? (
-                        <select
-                          value={project.status}
-                          onChange={(e) => updateStatusInline(project, e.target.value)}
-                          className="border rounded-lg px-2 py-1 text-sm"
-                        >
-                          {statusOptions.map((s) => (
-                            <option key={s} value={s}>{s}</option>
-                          ))}
-                        </select>
-                      ) : (
-                        <span
-                          onClick={() => {
-                            if (project.status === 'CLOSED') return;
-                            setActiveStatusEdit(project.id || project._id);
-                          }}
-                          className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[project.status] || 'bg-gray-100 text-gray-800'} ${project.status === 'CLOSED' ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'}`}
-                        >
-                          {project.status}
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-3 text-sm text-gray-600">{formatDate(project.start_date)} → {formatDate(project.end_date)}</td>
-                    <td className="p-3 text-right">
-                      <div className="flex justify-end gap-2 items-center relative">
-                        <ProjectClosureRequestButton
-                          project={project}
-                          taskSummary={projectSummary?.[project.id || project._id]?.tasks}
-                        />
-                        <Menu as="div" className="relative inline-block text-left">
-                          <Menu.Button className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
-                            <MoreVertical className="w-5 h-5" />
-                          </Menu.Button>
-                          <Transition
-                            as={Fragment}
-                            enter="transition ease-out duration-100"
-                            enterFrom="transform opacity-0 scale-95"
-                            enterTo="transform opacity-100 scale-100"
-                            leave="transition ease-in duration-75"
-                            leaveFrom="transform opacity-100 scale-100"
-                            leaveTo="transform opacity-0 scale-95"
+              <tbody>
+                {filteredProjects.map((project) => (
+                  <React.Fragment key={project.id || project._id}>
+                    <ProjectLockBanner project={project} />
+                    <tr key={project.id || project._id}>
+                      <td className="font-medium text-gray-900">{project.name}</td>
+                      <td>{getDepartmentName(project.departments)}</td>
+                      <td className="text-gray-600">{getClientName(project.client || project.client_id)}</td>
+                      <td className="text-gray-600">{getManagerName(project.project_manager_id, project.project_manager)}</td>
+                      <td>
+                        {activeStatusEdit === (project.id || project._id) ? (
+                          <select
+                            value={project.status}
+                            onChange={(e) => updateStatusInline(project, e.target.value)}
+                            className="input !h-8 !py-1 text-sm !w-32"
                           >
-                            <Menu.Items className="absolute right-0 mt-2 w-48 origin-top-right bg-white divide-y divide-gray-100 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
-                              <div className="px-1 py-1">
-                                <Menu.Item>
-                                  {({ active }) => (
-                                    <button
-                                      onClick={() => handleViewSummary(project)}
-                                      className={`${active ? 'bg-blue-50 text-blue-700' : 'text-gray-700'} group flex rounded-md items-center w-full px-2 py-2 text-sm`}
-                                    >
-                                      <BarChart3 className="w-4 h-4 mr-2" />
-                                      Summary
-                                    </button>
-                                  )}
-                                </Menu.Item>
-                                <Menu.Item>
-                                  {({ active }) => (
-                                    <button
-                                      onClick={() => handleOpenDocuments(project)}
-                                      className={`${active ? 'bg-blue-50 text-blue-700' : 'text-gray-700'} group flex rounded-md items-center w-full px-2 py-2 text-sm`}
-                                    >
-                                      <FileText className="w-4 h-4 mr-2" />
-                                      Documents
-                                    </button>
-                                  )}
-                                </Menu.Item>
-                                <Menu.Item>
-                                  {({ active }) => (
-                                    <button
-                                      onClick={() => {
-                                        if (project.status !== 'CLOSED') openModal(project);
-                                      }}
-                                      disabled={project.status === 'CLOSED'}
-                                      className={`${active && project.status !== 'CLOSED' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'} ${project.status === 'CLOSED' ? 'opacity-50 cursor-not-allowed hidden' : ''} group flex rounded-md items-center w-full px-2 py-2 text-sm`}
-                                    >
-                                      <Edit2 className="w-4 h-4 mr-2" />
-                                      Edit Project
-                                    </button>
-                                  )}
-                                </Menu.Item>
-                              </div>
-                              <div className="px-1 py-1">
-                                <Menu.Item>
-                                  {({ active }) => (
-                                    <button
-                                      onClick={() => handleDelete(project)}
-                                      className={`${active ? 'bg-red-50 text-red-700' : 'text-red-600'} group flex rounded-md items-center w-full px-2 py-2 text-sm`}
-                                    >
-                                      <Trash2 className="w-4 h-4 mr-2" />
-                                      Delete Project
-                                    </button>
-                                  )}
-                                </Menu.Item>
-                              </div>
-                            </Menu.Items>
-                          </Transition>
-                        </Menu>
-                      </div>
-                    </td>
-                  </tr>
-                </React.Fragment>
-              ))}
-            </tbody>
-          </table>
+                            {statusOptions.map((s) => (
+                              <option key={s} value={s}>{s}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span
+                            onClick={() => {
+                              if (project.status === 'CLOSED') return;
+                              setActiveStatusEdit(project.id || project._id);
+                            }}
+                            className={`px-3 py-1 rounded-full text-[12px] font-semibold tracking-wide ${statusColors[project.status] || 'badge-gray'} ${project.status === 'CLOSED' ? 'cursor-not-allowed opacity-75' : 'cursor-pointer hover:opacity-80 transition-opacity'}`}
+                          >
+                            {project.status}
+                          </span>
+                        )}
+                      </td>
+                      <td className="text-gray-600 text-[13px]">{formatDate(project.start_date)} - {formatDate(project.end_date)}</td>
+                      <td className="text-right">
+                        <div className="flex justify-end gap-2 items-center relative">
+                          <ProjectClosureRequestButton
+                            project={project}
+                            taskSummary={projectSummary?.[project.id || project._id]?.tasks}
+                          />
+                          <Menu as="div" className="relative inline-block text-left">
+                            <Menu.Button className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
+                              <MoreVertical className="w-5 h-5" />
+                            </Menu.Button>
+                            <Transition
+                              as={Fragment}
+                              enter="transition ease-out duration-100"
+                              enterFrom="transform opacity-0 scale-95"
+                              enterTo="transform opacity-100 scale-100"
+                              leave="transition ease-in duration-75"
+                              leaveFrom="transform opacity-100 scale-100"
+                              leaveTo="transform opacity-0 scale-95"
+                            >
+                              <Menu.Items className="absolute right-0 mt-2 w-48 origin-top-right bg-white divide-y divide-gray-100 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                                <div className="px-1 py-1">
+                                  <Menu.Item>
+                                    {({ active }) => (
+                                      <button
+                                        onClick={() => handleViewSummary(project)}
+                                        className={`${active ? 'bg-blue-50 text-blue-700' : 'text-gray-700'} group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                                      >
+                                        <BarChart3 className="w-4 h-4 mr-2" />
+                                        Summary
+                                      </button>
+                                    )}
+                                  </Menu.Item>
+                                  <Menu.Item>
+                                    {({ active }) => (
+                                      <button
+                                        onClick={() => handleOpenDocuments(project)}
+                                        className={`${active ? 'bg-blue-50 text-blue-700' : 'text-gray-700'} group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                                      >
+                                        <FileText className="w-4 h-4 mr-2" />
+                                        Documents
+                                      </button>
+                                    )}
+                                  </Menu.Item>
+                                  <Menu.Item>
+                                    {({ active }) => (
+                                      <button
+                                        onClick={() => {
+                                          if (project.status !== 'CLOSED') openModal(project);
+                                        }}
+                                        disabled={project.status === 'CLOSED'}
+                                        className={`${active && project.status !== 'CLOSED' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'} ${project.status === 'CLOSED' ? 'opacity-50 cursor-not-allowed hidden' : ''} group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                                      >
+                                        <Edit2 className="w-4 h-4 mr-2" />
+                                        Edit Project
+                                      </button>
+                                    )}
+                                  </Menu.Item>
+                                </div>
+                                <div className="px-1 py-1">
+                                  <Menu.Item>
+                                    {({ active }) => (
+                                      <button
+                                        onClick={() => handleDelete(project)}
+                                        className={`${active ? 'bg-red-50 text-red-700' : 'text-red-600'} group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                                      >
+                                        <Trash2 className="w-4 h-4 mr-2" />
+                                        Delete Project
+                                      </button>
+                                    )}
+                                  </Menu.Item>
+                                </div>
+                              </Menu.Items>
+                            </Transition>
+                          </Menu>
+                        </div>
+                      </td>
+                    </tr>
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -644,7 +647,7 @@ export default function Projects() {
                 <ProjectLockBanner project={project} />
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <h3 className="text-lg font-bold text-gray-900">{project.name}</h3>
+                    <h3 className="text-section-title text-gray-900">{project.name}</h3>
                     <p className="text-sm text-gray-600 mt-1 line-clamp-2">{project.description || "No description"}</p>
                   </div>
                   <div className="flex gap-2 relative">
@@ -785,8 +788,8 @@ export default function Projects() {
                   </div>
 
                   <div className="flex items-center justify-between text-xs text-gray-500 mt-3">
-                    <span>📅 {formatDate(project.start_date)}</span>
-                    <span>→</span>
+                    <span>ðŸ“… {formatDate(project.start_date)}</span>
+                    <span>â†’</span>
                     <span>{formatDate(project.end_date)}</span>
                   </div>
 
@@ -804,31 +807,40 @@ export default function Projects() {
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">
+            <h2 className="text-section-title text-gray-900 mb-6">
               {editingProject ? "Edit Project" : "Add Project"}
             </h2>
 
             <form onSubmit={handleSubmit}>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-gray-700 font-medium mb-2">Project Name</label>
+                  <label className="block text-gray-700 font-medium mb-2">Project Name <span className="text-red-500">*</span></label>
                   <input
                     type="text"
                     required
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    onChange={(e) => { setFormData({ ...formData, name: e.target.value }); if (errors.name) setErrors({ ...errors, name: '' }); }}
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-600"
                   />
+                  {errors.name && <span className='text-xs text-red-500 mt-1 block'>{errors.name}</span>}
                 </div>
 
                 <div>
                   <label className="block text-gray-700 font-medium mb-2">Description</label>
                   <textarea
                     value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, description: e.target.value });
+                      if (errors.description) setErrors({ ...errors, description: '' });
+                    }}
                     rows={3}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"
+                    maxLength={500}
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-600 resize-none"
                   />
+                  <div className="flex justify-between mt-1">
+                    <p className="text-xs text-gray-500">{(formData.description || '').length}/500 characters</p>
+                    {errors.description && <span className='text-xs text-red-500 block'>{errors.description}</span>}
+                  </div>
                 </div>
 
                 <div>
@@ -838,8 +850,8 @@ export default function Projects() {
                   <select
                     required
                     value={formData.clientId}
-                    onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    onChange={(e) => { setFormData({ ...formData, clientId: e.target.value }); if (errors.clientId) setErrors({ ...errors, clientId: '' }); }}
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-600"
                   >
                     <option value="">-- Select a Client --</option>
                     {clients.map((c) => (
@@ -848,6 +860,7 @@ export default function Projects() {
                       </option>
                     ))}
                   </select>
+                  {errors.clientId && <span className='text-xs text-red-500 mt-1 block'>{errors.clientId}</span>}
                 </div>
 
                 <div>
@@ -857,7 +870,7 @@ export default function Projects() {
                   <select
                     value={formData.project_manager_id}
                     onChange={(e) => setFormData({ ...formData, project_manager_id: e.target.value })}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-600"
                   >
                     <option value="">-- Select a Manager --</option>
                     {managers.map((m) => (
@@ -876,7 +889,7 @@ export default function Projects() {
                     </label>
                     <Listbox
                       value={formData.departmentIds || []}
-                      onChange={(selectedIds) => setFormData({ ...formData, departmentIds: selectedIds })}
+                      onChange={(selectedIds) => { setFormData({ ...formData, departmentIds: selectedIds }); if (errors.departmentIds) setErrors({ ...errors, departmentIds: '' }); }}
                       multiple
                     >
                       <div className="relative mt-1">
@@ -934,6 +947,7 @@ export default function Projects() {
                       </div>
                     </Listbox>
                     <p className="text-xs text-gray-500 mt-1">Select one or more departments</p>
+                    {errors.departmentIds && <span className='text-xs text-red-500 mt-1 block'>{errors.departmentIds}</span>}
                   </div>
 
                   <div>
@@ -941,7 +955,7 @@ export default function Projects() {
                     <select
                       value={formData.status}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-600"
                     >
                       {statusOptions.map((s) => (
                         <option key={s} value={s}>{s}</option>
@@ -952,23 +966,25 @@ export default function Projects() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-gray-700 font-medium mb-2">Start Date</label>
+                    <label className="block text-gray-700 font-medium mb-2">Start Date <span className="text-red-500">*</span></label>
                     <input
                       type="date"
                       value={formData.start_date}
-                      onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      onChange={(e) => { setFormData({ ...formData, start_date: e.target.value }); if (errors.start_date) setErrors({ ...errors, start_date: '' }); }}
+                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-600"
                     />
+                    {errors.start_date && <span className='text-xs text-red-500 mt-1 block'>{errors.start_date}</span>}
                   </div>
 
                   <div>
-                    <label className="block text-gray-700 font-medium mb-2">End Date</label>
+                    <label className="block text-gray-700 font-medium mb-2">End Date <span className="text-red-500">*</span></label>
                     <input
                       type="date"
                       value={formData.end_date}
-                      onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      onChange={(e) => { setFormData({ ...formData, end_date: e.target.value }); if (errors.end_date) setErrors({ ...errors, end_date: '' }); }}
+                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-600"
                     />
+                    {errors.end_date && <span className='text-xs text-red-500 mt-1 block'>{errors.end_date}</span>}
                   </div>
                 </div>
 
@@ -979,10 +995,11 @@ export default function Projects() {
                       type="number"
                       step="0.01"
                       value={formData.budget}
-                      onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      onChange={(e) => { setFormData({ ...formData, budget: e.target.value }); if (errors.budget) setErrors({ ...errors, budget: '' }); }}
+                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-600"
                       placeholder="Project budget"
                     />
+                    {errors.budget && <span className='text-xs text-red-500 mt-1 block'>{errors.budget}</span>}
                   </div>
 
                   <div>
@@ -999,7 +1016,7 @@ export default function Projects() {
                   <select
                     value={formData.priority}
                     onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-600"
                   >
                     {priorityOptions.map((p) => (
                       <option key={p} value={p}>{p}</option>
@@ -1046,7 +1063,7 @@ export default function Projects() {
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <h2 className="text-base sm:text-lg font-bold truncate">{selectedSummaryProject.name}</h2>
+                    <h2 className="text-section-title truncate">{selectedSummaryProject.name}</h2>
                     <p className="text-blue-50 text-xs hidden sm:block">{selectedSummaryProject.name}</p>
                   </div>
                 </div>
@@ -1109,7 +1126,7 @@ export default function Projects() {
                         style={{ width: `${projectSummary.progressPercentage || 0}%` }} />
                     </div>
                   </div>
-                  <div className="text-lg sm:text-xl font-bold text-indigo-500 whitespace-nowrap flex-shrink-0">
+                  <div className="text-lg sm:text-xl font-semibold text-indigo-500 whitespace-nowrap flex-shrink-0">
                     {projectSummary.totalHours || 0}h
                   </div>
                 </div>
@@ -1118,19 +1135,19 @@ export default function Projects() {
               {/* RESPONSIVE KEY STATS */}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-6">
                 <div className="bg-white border border-gray-100 rounded-md p-2 sm:p-3 text-center">
-                  <div className="text-lg sm:text-xl font-bold text-gray-900">{projectSummary.tasks?.total || 0}</div>
+                  <div className="text-lg sm:text-xl font-semibold text-gray-900">{projectSummary.tasks?.total || 0}</div>
                   <div className="text-xs text-gray-400 uppercase tracking-wide">Total</div>
                 </div>
                 <div className="bg-white border border-gray-100 rounded-md p-2 sm:p-3 text-center">
-                  <div className="text-lg sm:text-xl font-bold text-green-500">{projectSummary.tasks?.completed || 0}</div>
+                  <div className="text-lg sm:text-xl font-semibold text-green-500">{projectSummary.tasks?.completed || 0}</div>
                   <div className="text-xs text-gray-400 uppercase tracking-wide">Done</div>
                 </div>
                 <div className="bg-white border border-gray-100 rounded-md p-2 sm:p-3 text-center">
-                  <div className="text-lg sm:text-xl font-bold text-orange-500">{projectSummary.tasks?.inProgress || 0}</div>
+                  <div className="text-lg sm:text-xl font-semibold text-orange-500">{projectSummary.tasks?.inProgress || 0}</div>
                   <div className="text-xs text-gray-400 uppercase tracking-wide">Active</div>
                 </div>
                 <div className="bg-white border border-gray-100 rounded-md p-2 sm:p-3 text-center">
-                  <div className="text-lg sm:text-xl font-bold text-red-500">
+                  <div className="text-lg sm:text-xl font-semibold text-red-500">
                     {(projectSummary.tasks?.total || 0) - (projectSummary.tasks?.completed || 0) - (projectSummary.tasks?.inProgress || 0)}
                   </div>
                   <div className="text-xs text-gray-400 uppercase tracking-wide">Pending</div>
@@ -1215,4 +1232,5 @@ export default function Projects() {
     </div>
   );
 }
+
 

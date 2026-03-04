@@ -1,4 +1,4 @@
-
+﻿
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'sonner';
@@ -37,7 +37,7 @@ const ManagerApprovalPanel = () => {
   const handleApprove = async (requestId) => {
     setProcessingId(requestId);
     setActionError(null); // Clear any previous errors
-    
+
     try {
       const result = await dispatch(approveWorkflow({
         requestId,
@@ -46,11 +46,11 @@ const ManagerApprovalPanel = () => {
 
       // Handle the response - API returns { success: true, data: { message, newStatus } }
       // But workflowApi returns just the data object (resp.data), so result = { message, newStatus }
-      const isSuccess = result?.success === true || 
-                       result?.newStatus === 'APPROVED' || 
-                       result?.newStatus === 'COMPLETED' || 
-                       (result?.message && !result?.error);
-      
+      const isSuccess = result?.success === true ||
+        result?.newStatus === 'APPROVED' ||
+        result?.newStatus === 'COMPLETED' ||
+        (result?.message && !result?.error);
+
       if (isSuccess) {
         // Mark this request as approved
         setApprovedRequests(prev => new Set([...prev, requestId]));
@@ -80,9 +80,9 @@ const ManagerApprovalPanel = () => {
         toast.error(error.message);
       } else {
         // Store error as object
-        setActionError({ 
-          success: false, 
-          error: error?.message || error || 'Failed to approve task completion' 
+        setActionError({
+          success: false,
+          error: error?.message || error || 'Failed to approve task completion'
         });
         toast.error(error?.message || error || 'Failed to approve task completion');
       }
@@ -99,7 +99,7 @@ const ManagerApprovalPanel = () => {
 
     setProcessingId(selectedRequest.id);
     setActionError(null); // Clear any previous errors
-    
+
     try {
       const result = await dispatch(approveWorkflow({
         requestId: selectedRequest.id,
@@ -110,10 +110,10 @@ const ManagerApprovalPanel = () => {
       // Handle the response. Some backends return the data object directly
       // (e.g. { message, newStatus }) instead of { success: true, data: {...} }.
       const isSuccess = result?.success === true ||
-                        result?.newStatus === 'APPROVED' ||
-                        result?.newStatus === 'COMPLETED' ||
-                        result?.newStatus === 'IN_PROGRESS' ||
-                        (result?.message && !result?.error);
+        result?.newStatus === 'APPROVED' ||
+        result?.newStatus === 'COMPLETED' ||
+        result?.newStatus === 'IN_PROGRESS' ||
+        (result?.message && !result?.error);
 
       if (isSuccess) {
         const successMessage = result?.message || result?.data?.message || 'Task rejected';
@@ -140,9 +140,9 @@ const ManagerApprovalPanel = () => {
         toast.error(error.message);
       } else {
         // Store error as object
-        setActionError({ 
-          success: false, 
-          error: error?.message || error || 'Failed to reject task' 
+        setActionError({
+          success: false,
+          error: error?.message || error || 'Failed to reject task'
         });
         toast.error(error?.message || error || 'Failed to reject task');
       }
@@ -203,12 +203,12 @@ const ManagerApprovalPanel = () => {
   // Function to format and display the error object
   const renderErrorObject = (errorObj) => {
     if (!errorObj) return null;
-    
+
     // If it's already a string, just return it
     if (typeof errorObj === 'string') {
       return <p className="text-sm text-red-600">{errorObj}</p>;
     }
-    
+
     // If it's an object, display it in a formatted way
     return (
       <div className="space-y-2">
@@ -216,7 +216,7 @@ const ManagerApprovalPanel = () => {
         {errorObj.error && (
           <p className="text-sm font-medium text-red-700">{errorObj.error}</p>
         )}
-        
+
         {/* Display the full object in a code-like format */}
         <div className="bg-gray-900 text-gray-100 p-3 rounded-md font-mono text-xs overflow-x-auto">
           <div className="flex items-start">
@@ -240,7 +240,7 @@ const ManagerApprovalPanel = () => {
             <span className="text-blue-300 ml-2">{"}"}</span>
           </div>
         </div>
-        
+
         {/* Show raw JSON for debugging */}
         <details className="text-xs">
           <summary className="cursor-pointer text-gray-500 hover:text-gray-700">
@@ -258,7 +258,7 @@ const ManagerApprovalPanel = () => {
     return (
       <div className="p-6 text-center">
         <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Access Restricted</h3>
+        <h3 className="text-section-title text-gray-900 mb-2">Access Restricted</h3>
         <p className="text-gray-500">This panel is only available to managers.</p>
       </div>
     );
@@ -272,7 +272,7 @@ const ManagerApprovalPanel = () => {
           <div className="flex items-center gap-3">
             <CheckCircle className="w-8 h-8" />
             <div>
-              <h1 className="text-2xl font-bold">Task Completion Approvals</h1>
+              <h1 className="text-page-title text-gray-900">Task Completion Approvals</h1>
               <p className="text-blue-100 text-sm">Review and approve task completion requests</p>
             </div>
           </div>
@@ -295,7 +295,7 @@ const ManagerApprovalPanel = () => {
               <AlertCircle className="w-6 h-6 text-red-600 mt-0.5 flex-shrink-0" />
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-lg font-semibold text-red-800">Request Failed</h4>
+                  <h4 className="text-section-title text-red-800">Request Failed</h4>
                   <button
                     onClick={() => setActionError(null)}
                     className="text-sm text-red-700 hover:text-red-900 font-medium px-3 py-1 hover:bg-red-100 rounded transition-colors"
@@ -303,10 +303,10 @@ const ManagerApprovalPanel = () => {
                     Dismiss
                   </button>
                 </div>
-                
+
                 {/* Display the formatted error object */}
                 {renderErrorObject(actionError)}
-                
+
                 {/* Action suggestions based on error */}
                 {actionError?.error?.includes('All tasks must be COMPLETED') && (
                   <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
@@ -349,7 +349,7 @@ const ManagerApprovalPanel = () => {
             {pendingApprovals.map((request) => {
               const isApproved = isRequestApproved(request);
               const status = getRequestStatus(request);
-              
+
               return (
                 <div key={request.id} className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
                   {/* Header Section */}
@@ -358,7 +358,7 @@ const ManagerApprovalPanel = () => {
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-3">
                           <CheckCircle className="w-6 h-6 text-green-600" />
-                          <h3 className="text-xl font-bold text-gray-900">
+                          <h3 className="text-section-title text-gray-900">
                             Task Completion Request
                           </h3>
                           <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusBadgeClass(request)}`}>
@@ -429,11 +429,10 @@ const ManagerApprovalPanel = () => {
                         <button
                           onClick={() => handleApprove(request.id)}
                           disabled={processingId === request.id || isApproved}
-                          className={`inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${
-                            isApproved
+                          className={`inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${isApproved
                               ? 'bg-green-500 cursor-not-allowed'
                               : 'bg-green-600 hover:bg-green-700 disabled:bg-green-400'
-                          }`}
+                            }`}
                           title={isApproved ? "Task already approved" : "Approve task completion"}
                         >
                           {isApproved ? (
@@ -452,11 +451,10 @@ const ManagerApprovalPanel = () => {
                         <button
                           onClick={() => openRejectModal(request)}
                           disabled={processingId === request.id || isApproved}
-                          className={`inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${
-                            isApproved
+                          className={`inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${isApproved
                               ? 'bg-gray-400 cursor-not-allowed'
                               : 'bg-red-600 hover:bg-red-700 disabled:bg-red-400'
-                          }`}
+                            }`}
                           title={isApproved ? "Task already approved" : "Reject task completion"}
                         >
                           <X className="w-4 h-4" />
@@ -477,7 +475,7 @@ const ManagerApprovalPanel = () => {
                   {/* Task Details Section */}
                   {request.task_details && (
                     <div className="p-6 border-b border-gray-200">
-                      <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                      <h4 className="text-section-title mb-4 flex items-center gap-2">
                         <FileText className="w-5 h-5 text-blue-600" />
                         Task Details
                       </h4>
@@ -486,21 +484,19 @@ const ManagerApprovalPanel = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                           <div>
                             <p className="text-sm font-medium text-gray-700 mb-1">Status</p>
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                              request.task_details.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                              request.task_details.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' :
-                              'bg-gray-100 text-gray-800'
-                            }`}>
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${request.task_details.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                                request.task_details.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' :
+                                  'bg-gray-100 text-gray-800'
+                              }`}>
                               {request.task_details.status}
                             </span>
                           </div>
                           <div>
                             <p className="text-sm font-medium text-gray-700 mb-1">Priority</p>
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                              request.task_details.priority === 'HIGH' ? 'bg-red-100 text-red-800' :
-                              request.task_details.priority === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-green-100 text-green-800'
-                            }`}>
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${request.task_details.priority === 'HIGH' ? 'bg-red-100 text-red-800' :
+                                request.task_details.priority === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-green-100 text-green-800'
+                              }`}>
                               {request.task_details.priority || 'LOW'}
                             </span>
                           </div>
@@ -611,7 +607,7 @@ const ManagerApprovalPanel = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Reject Task Completion</h3>
+              <h3 className="text-section-title text-gray-900">Reject Task Completion</h3>
               <button
                 onClick={() => setShowRejectModal(false)}
                 className="text-gray-400 hover:text-gray-600"

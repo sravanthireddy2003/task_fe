@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchTasksbyId } from '../redux/slices/taskSlice';
 import { fetchHistoryByInstance, selectHistoryItems, selectHistoryLoading } from '../redux/slices/historySlice';
@@ -47,7 +47,7 @@ const ApprovalCard = ({ item, onApprove, onReject, onEscalate }) => {
         <div>
           <div className="font-semibold">{title}</div>
           <div className="text-xs text-slate-500">
-            {entityType} ID: {entityId} • Request ID: {id}
+            {entityType} ID: {entityId} â€¢ Request ID: {id}
           </div>
         </div>
         <div className="text-xs text-slate-500">
@@ -56,7 +56,7 @@ const ApprovalCard = ({ item, onApprove, onReject, onEscalate }) => {
       </div>
 
       <div className="mt-2 text-xs text-slate-500 space-y-1">
-        <div>Transition: <span className="font-medium">{fromState} → {toState}</span></div>
+        <div>Transition: <span className="font-medium">{fromState} â†’ {toState}</span></div>
         {priority && <div>Priority: <span className="font-medium capitalize">{priority}</span></div>}
         {projectName && <div>Project: <span className="font-medium">{projectName}</span></div>}
         {createdAt && <div>Requested: <span className="font-mono text-[11px]">{new Date(createdAt).toLocaleString()}</span></div>}
@@ -74,7 +74,7 @@ const ApprovalCard = ({ item, onApprove, onReject, onEscalate }) => {
             setShowHistoryModal(true);
             dispatch(fetchHistoryByInstance({ entityType, entityId }));
           }}
-          className="px-3 py-1 rounded-lg bg-blue-500 text-white text-sm hover:bg-blue-600"
+          className="px-3 py-1 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-600"
         >
           View History
         </button>
@@ -170,3 +170,4 @@ const ApprovalCard = ({ item, onApprove, onReject, onEscalate }) => {
 };
 
 export default ApprovalCard;
+

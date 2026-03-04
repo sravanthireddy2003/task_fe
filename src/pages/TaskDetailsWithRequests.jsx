@@ -40,7 +40,7 @@ const TaskDetailsWithRequests = () => {
   // Load task details if not passed in state
   const loadTaskDetails = async () => {
     if (!taskId) return;
-    
+
     setLoading(true);
     try {
       const response = await fetchWithTenant(`/api/tasks/${taskId}`);
@@ -61,7 +61,7 @@ const TaskDetailsWithRequests = () => {
   // Load reassignment requests
   const loadReassignmentRequests = async () => {
     if (!taskId) return;
-    
+
     setLoadingRequests(true);
     try {
       const response = await fetchWithTenant(`/api/tasks/${taskId}/reassign-requests`);
@@ -96,7 +96,7 @@ const TaskDetailsWithRequests = () => {
   // Get status display info
   const getStatusInfo = (status) => {
     const statusUpper = status?.toUpperCase();
-    
+
     switch (statusUpper) {
       case 'PENDING':
         return {
@@ -177,7 +177,7 @@ const TaskDetailsWithRequests = () => {
         <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm mb-6">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              <h1 className="text-page-title text-gray-900 mb-2">
                 {task?.name || task?.title || 'Task Details'}
               </h1>
               <div className="flex items-center gap-4 text-sm text-gray-600">
@@ -192,22 +192,20 @@ const TaskDetailsWithRequests = () => {
                   Due: {formatDateString(task?.due_date || task?.dueDate || task?.taskDate)}
                 </span>
                 {task?.priority && (
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    task.priority === 'High' ? 'bg-red-100 text-red-800' :
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${task.priority === 'High' ? 'bg-red-100 text-red-800' :
                     task.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-green-100 text-green-800'
-                  }`}>
+                      'bg-green-100 text-green-800'
+                    }`}>
                     <Flag className="w-3 h-3 inline mr-1" />
                     {task.priority}
                   </span>
                 )}
               </div>
             </div>
-            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-              task?.status === 'completed' ? 'bg-green-100 text-green-800' :
+            <span className={`px-3 py-1 rounded-full text-sm font-medium ${task?.status === 'completed' ? 'bg-green-100 text-green-800' :
               task?.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-              'bg-gray-100 text-gray-800'
-            }`}>
+                'bg-gray-100 text-gray-800'
+              }`}>
               {task?.status?.toUpperCase() || 'PENDING'}
             </span>
           </div>
@@ -230,7 +228,7 @@ const TaskDetailsWithRequests = () => {
                 </div>
               </div>
             )}
-            
+
             {task?.manager && (
               <div className="p-3 bg-gray-50 rounded-lg">
                 <p className="text-xs uppercase text-gray-500 mb-1">Manager</p>
@@ -240,7 +238,7 @@ const TaskDetailsWithRequests = () => {
                 </div>
               </div>
             )}
-            
+
             <div className="p-3 bg-gray-50 rounded-lg">
               <p className="text-xs uppercase text-gray-500 mb-1">Reassignment Requests</p>
               <div className="flex items-center gap-2">
@@ -256,7 +254,7 @@ const TaskDetailsWithRequests = () => {
           <div className="lg:col-span-2">
             <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                <h2 className="text-section-title text-gray-900 flex items-center gap-2">
                   <RefreshCw className="w-5 h-5" />
                   Reassignment Requests
                   {reassignRequests.length > 0 && (
@@ -277,11 +275,10 @@ const TaskDetailsWithRequests = () => {
                   <button
                     onClick={() => setReassignModalOpen(true)}
                     disabled={hasPendingRequest()}
-                    className={`px-4 py-2 text-sm font-medium rounded-lg border ${
-                      hasPendingRequest()
-                        ? 'border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed'
-                        : 'border-yellow-300 bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
-                    }`}
+                    className={`btn px-4 py-2 ${hasPendingRequest()
+                      ? 'border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed'
+                      : 'border-yellow-300 bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
+                      }`}
                   >
                     {hasPendingRequest() ? 'Request Pending' : '+ New Request'}
                   </button>
@@ -298,13 +295,13 @@ const TaskDetailsWithRequests = () => {
                   <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
                     <MessageSquare className="w-8 h-8 text-gray-400" />
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Reassignment Requests Yet</h3>
+                  <h3 className="text-section-title mb-2">No Reassignment Requests Yet</h3>
                   <p className="text-gray-600 mb-6 max-w-md mx-auto">
                     You haven't submitted any reassignment requests for this task. If you need this task reassigned, submit your first request.
                   </p>
                   <button
                     onClick={() => setReassignModalOpen(true)}
-                    className="px-4 py-2 text-sm font-medium rounded-lg border border-yellow-300 bg-yellow-50 text-yellow-700 hover:bg-yellow-100"
+                    className="btn border-yellow-300 bg-yellow-50 text-yellow-700 hover:bg-yellow-100"
                   >
                     Submit First Request
                   </button>
@@ -332,7 +329,7 @@ const TaskDetailsWithRequests = () => {
                             {request.status}
                           </span>
                         </div>
-                        
+
                         <div className="space-y-4">
                           {/* Reason */}
                           {request.reason && (
@@ -343,7 +340,7 @@ const TaskDetailsWithRequests = () => {
                               </div>
                             </div>
                           )}
-                          
+
                           {/* Request Details Grid */}
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                             <div className="p-2 bg-white/50 rounded">
@@ -365,7 +362,7 @@ const TaskDetailsWithRequests = () => {
                               </p>
                             </div>
                           </div>
-                          
+
                           {/* Timeline */}
                           <div className="mt-4 pt-4 border-t border-gray-200">
                             <div className="flex items-center justify-between text-sm">
@@ -378,15 +375,14 @@ const TaskDetailsWithRequests = () => {
                                   {formatDateTime(request.requested_at)}
                                 </p>
                               </div>
-                              
+
                               <div className="flex-1 h-0.5 bg-gray-200 mx-4"></div>
-                              
+
                               <div className="text-center">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-2 ${
-                                  request.responded_at 
-                                    ? 'bg-green-100' 
-                                    : 'bg-gray-100'
-                                }`}>
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-2 ${request.responded_at
+                                  ? 'bg-green-100'
+                                  : 'bg-gray-100'
+                                  }`}>
                                   {request.responded_at ? (
                                     <CheckCircle className="w-4 h-4 text-green-600" />
                                   ) : (
@@ -395,7 +391,7 @@ const TaskDetailsWithRequests = () => {
                                 </div>
                                 <p className="text-gray-600">Response</p>
                                 <p className="font-medium text-gray-900">
-                                  {request.responded_at 
+                                  {request.responded_at
                                     ? formatDateTime(request.responded_at)
                                     : 'Pending'
                                   }
@@ -416,7 +412,7 @@ const TaskDetailsWithRequests = () => {
           <div className="space-y-6">
             {/* Task Summary */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Task Summary</h3>
+              <h3 className="text-section-title text-gray-900 mb-4">Task Summary</h3>
               <div className="space-y-3">
                 <div className="flex justify-between items-center pb-2 border-b border-gray-100">
                   <span className="text-gray-600">Status</span>
@@ -441,16 +437,15 @@ const TaskDetailsWithRequests = () => {
 
             {/* Quick Actions */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+              <h3 className="text-section-title text-gray-900 mb-4">Quick Actions</h3>
               <div className="space-y-3">
                 <button
                   onClick={() => setReassignModalOpen(true)}
                   disabled={hasPendingRequest()}
-                  className={`w-full px-4 py-3 text-left rounded-lg border flex items-center justify-between ${
-                    hasPendingRequest()
-                      ? 'border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed'
-                      : 'border-yellow-200 bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
-                  }`}
+                  className={`w-full px-4 py-3 text-left rounded-lg border flex items-center justify-between ${hasPendingRequest()
+                    ? 'border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed'
+                    : 'border-yellow-200 bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
+                    }`}
                 >
                   <div className="flex items-center gap-3">
                     <MessageSquare className="w-5 h-5" />
@@ -461,7 +456,7 @@ const TaskDetailsWithRequests = () => {
                   </div>
                   <ChevronRight className="w-5 h-5" />
                 </button>
-                
+
                 <button
                   onClick={loadReassignmentRequests}
                   disabled={loadingRequests}
@@ -475,7 +470,7 @@ const TaskDetailsWithRequests = () => {
                     </div>
                   </div>
                 </button>
-                
+
                 <button
                   onClick={() => navigate('/employee/tasks')}
                   className="w-full px-4 py-3 text-left rounded-lg border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 flex items-center justify-between"

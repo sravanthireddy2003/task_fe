@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState, useRef, useEffect } from "react";
 import { getAccessToken } from "../../utils/tokenService";
 import { useDispatch, useSelector } from "react-redux";
@@ -103,7 +103,7 @@ const ProjectDocuments = ({ project, onClose }) => {
             {/* Header and Upload Button */}
             <div className="flex flex-col gap-4 mb-4">
                 <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-gray-800">Project Documents</h3>
+                    <h3 className="text-section-title text-gray-800">Project Documents</h3>
                     {canModify && (
                         <div className="flex gap-2">
                             <input
@@ -179,7 +179,7 @@ const ProjectDocuments = ({ project, onClose }) => {
                                     </p>
                                     <div className="flex items-center text-xs text-gray-500 gap-2">
                                         <span>{formatFileSize(doc.fileSize || doc.file_size)}</span>
-                                        <span>•</span>
+                                        <span>â€¢</span>
                                         <span>{new Date(doc.uploadedAt || doc.uploaded_at).toLocaleDateString()}</span>
                                     </div>
                                 </div>
@@ -195,3 +195,4 @@ const ProjectDocuments = ({ project, onClose }) => {
 };
 
 export default ProjectDocuments;
+

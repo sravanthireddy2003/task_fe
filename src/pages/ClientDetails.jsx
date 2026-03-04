@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import Table from '../components/task/Table';  // Reusable table component for tasks
 import Button from '../components/Button';
@@ -8,7 +8,7 @@ import { fetchClientDetails, fetchClientTasks } from '../redux/slices/clientSlic
 const ClientDetailPage = () => {
   const { clientId } = useParams();  // Fetch client ID from URL params
   const dispatch = useDispatch();
-  
+
   // Client, tasks, reports, employees state from Redux
   const clientDetails = useSelector(state => state.clients.clientDetails);
   const clientTasks = useSelector(state => state.clients.clientTasks);
@@ -31,17 +31,17 @@ const ClientDetailPage = () => {
     { id: 2, name: 'Jane Smith', role: 'Designer' },
   ];
 
-  const handleEditTask = (task) => {};
+  const handleEditTask = (task) => { };
 
-  const handleAssignEmployee = () => {};
+  const handleAssignEmployee = () => { };
 
-  const handleGenerateReport = () => {};
+  const handleGenerateReport = () => { };
 
   return (
     <div className="container mx-auto p-6">
       {/* Client Overview Section */}
       <div className="mb-8">
-        <h1 className="text-3xl font-semibold">Client: {clientDetails?.name}</h1>
+        <h1 className="text-page-title text-gray-900">Client: {clientDetails?.name}</h1>
         <p className="text-gray-700">Company: {clientDetails?.company}</p>
         <p className="text-gray-700">Email: {clientDetails?.email}</p>
         <p className="text-gray-700">Phone: {clientDetails?.phone}</p>
@@ -52,23 +52,23 @@ const ClientDetailPage = () => {
         <Button
           label="Add New Task"
           onClick={() => setTaskModalOpen(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
+          className="btn btn-primary"
         />
         <Button
           label="Generate Report"
           onClick={() => setReportModalOpen(true)}
-          className="bg-green-600 text-white px-4 py-2 rounded"
+          className="btn text-white bg-green-600 hover:bg-green-700"
         />
         <Button
           label="Assign Employees"
           onClick={() => setEmployeeModalOpen(true)}
-          className="bg-yellow-600 text-white px-4 py-2 rounded"
+          className="btn text-white bg-yellow-600 hover:bg-yellow-700"
         />
       </div>
 
       {/* Task List Section */}
       <div className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4">Tasks for {clientDetails?.name}</h2>
+        <h2 className="text-section-title text-gray-900 mb-4">Tasks for {clientDetails?.name}</h2>
         {isLoading ? (
           <p>Loading tasks...</p>
         ) : (
@@ -83,20 +83,20 @@ const ClientDetailPage = () => {
 
       {/* Reports Section */}
       <div className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4">Manage Reports</h2>
+        <h2 className="text-section-title text-gray-900 mb-4">Manage Reports</h2>
         <div>
           <p>Manage and generate reports for this client</p>
           <Button
             label="Generate New Report"
             onClick={handleGenerateReport}
-            className="bg-green-500 text-white px-4 py-2 mt-4"
+            className="btn text-white bg-green-500 hover:bg-green-600 mt-4"
           />
         </div>
       </div>
 
       {/* Employee Management Section */}
       <div className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4">Employees Assigned to Tasks</h2>
+        <h2 className="text-section-title text-gray-900 mb-4">Employees Assigned to Tasks</h2>
         <div>
           <p>Manage employees working on this client's tasks</p>
           <table className="min-w-full table-auto border-collapse mt-4">
@@ -118,7 +118,7 @@ const ClientDetailPage = () => {
           <Button
             label="Assign More Employees"
             onClick={handleAssignEmployee}
-            className="bg-blue-500 text-white px-4 py-2 mt-4"
+            className="btn btn-primary mt-4"
           />
         </div>
       </div>
@@ -132,3 +132,4 @@ const ClientDetailPage = () => {
 };
 
 export default ClientDetailPage;
+

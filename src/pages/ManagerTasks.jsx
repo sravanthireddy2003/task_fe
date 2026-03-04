@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'sonner';
 import fetchWithTenant from '../utils/fetchWithTenant';
@@ -12,7 +12,7 @@ import PageHeader from '../components/PageHeader';
 import Card from "../components/Card";
 import ApprovalCard from '../components/ApprovalCard';
 
-const { RefreshCw, AlertCircle, Calendar, Clock, User, Plus, CheckSquare, Check, Eye, Filter, Lock, UserCheck, Clock: ClockIcon, AlertTriangle, CheckCircle } = Icons;
+const { RefreshCw, AlertCircle, Calendar, Clock, User, Plus, CheckSquare, Check, Eye, Filter, Lock, UserCheck, Clock: ClockIcon, AlertTriangle, CheckCircle, X } = Icons;
 
 const ManagerTasks = () => {
   const dispatch = useDispatch();
@@ -586,7 +586,7 @@ const ManagerTasks = () => {
               value={selectedProjectId || ""}
               onChange={(e) => handleProjectChange(e.target.value)}
               disabled={projectsLoading}
-              className="border border-gray-300 rounded-lg px-4 py-2 pr-8 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none min-w-[200px]"
+              className="border border-gray-300 rounded-lg px-4 py-2 pr-8 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent appearance-none min-w-[200px]"
             >
               <option value="">Select a project</option>
               {projects.map((project) => {
@@ -644,7 +644,7 @@ const ManagerTasks = () => {
         <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-xl text-red-800 animate-fadeIn">
           <AlertTriangle className="tm-icon-md flex-shrink-0 mt-0.5" />
           <div>
-            <h3 className="font-semibold text-lg">{isProjectLocked ? 'Project Locked' : 'Error'}</h3>
+            <h3 className="text-section-title text-gray-900">{isProjectLocked ? 'Project Locked' : 'Error'}</h3>
             <p className="text-red-700 mt-1">{error}</p>
             {isProjectLocked && (
               <p className="text-red-600 text-sm mt-2">
@@ -662,12 +662,12 @@ const ManagerTasks = () => {
             <div className="flex-1">
               <div className="flex items-start gap-4 mb-4">
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <div className="text-blue-600 font-bold text-lg">
+                  <div className="text-blue-600 font-semibold text-card-title">
                     {getProjectDisplayName(projectDetails).charAt(0)}
                   </div>
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                  <h2 className="text-page-title text-gray-900 mb-1">
                     {getProjectDisplayName(projectDetails)}
                   </h2>
                   <div className="flex items-center gap-4 flex-wrap">
@@ -681,7 +681,7 @@ const ManagerTasks = () => {
                       <div className={`w-2 h-2 rounded-full ${getProjectStatus(projectDetails) === 'Active' || getProjectStatus(projectDetails) === 'In Progress'
                         ? 'bg-green-500'
                         : getProjectStatus(projectDetails) === 'Completed'
-                          ? 'bg-blue-500'
+                          ? 'bg-blue-600'
                           : 'bg-yellow-500'
                         }`} />
                       <span className="text-gray-700">
@@ -701,19 +701,19 @@ const ManagerTasks = () => {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <div className="text-sm text-gray-500 mb-1">Total Tasks</div>
-                  <div className="text-2xl font-bold text-gray-900">{tasks.length}</div>
+                  <div className="text-2xl font-semibold text-gray-900">{tasks.length}</div>
                 </div>
                 <div className="bg-yellow-50 p-4 rounded-lg">
                   <div className="text-sm text-gray-500 mb-1">Pending</div>
-                  <div className="text-2xl font-bold text-yellow-700">{getStatusCounts().pending}</div>
+                  <div className="text-2xl font-semibold text-yellow-700">{getStatusCounts().pending}</div>
                 </div>
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <div className="text-sm text-gray-500 mb-1">In Progress</div>
-                  <div className="text-2xl font-bold text-blue-700">{getStatusCounts().in_progress}</div>
+                  <div className="text-2xl font-semibold text-blue-700">{getStatusCounts().in_progress}</div>
                 </div>
                 <div className="bg-green-50 p-4 rounded-lg">
                   <div className="text-sm text-gray-500 mb-1">Completed</div>
-                  <div className="text-2xl font-bold text-green-700">{getStatusCounts().completed}</div>
+                  <div className="text-2xl font-semibold text-green-700">{getStatusCounts().completed}</div>
                 </div>
               </div>
             </div>
@@ -737,7 +737,7 @@ const ManagerTasks = () => {
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="input"
             disabled={loading}
           >
             <option value="all">All Status</option>
@@ -756,7 +756,7 @@ const ManagerTasks = () => {
       {!selectedProjectId && !projectsLoading && (
         <div className="bg-white rounded-xl border p-12 text-center">
           <AlertCircle className="tm-icon-hero mx-auto mb-4 text-gray-400" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">Select a Project</h3>
+          <h3 className="text-section-title text-gray-900 mb-2">Select a Project</h3>
           <p className="text-gray-600 mb-6">
             Please select a project from the dropdown above to view and manage tasks.
           </p>
@@ -769,7 +769,7 @@ const ManagerTasks = () => {
                 <button
                   key={projectId}
                   onClick={() => handleProjectChange(projectId)}
-                  className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors border border-blue-200"
+                  className="btn bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-4 py-2"
                 >
                   {projectName}
                 </button>
@@ -787,7 +787,7 @@ const ManagerTasks = () => {
           {selectedProjectId && !loading && tasks.length === 0 && (
             <div className="bg-white rounded-xl border p-12 text-center">
               <AlertCircle className="tm-icon-hero mx-auto mb-4 text-gray-400" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">No Tasks Found</h3>
+              <h3 className="text-section-title text-gray-900 mb-2">No Tasks Found</h3>
               <p className="text-gray-600 mb-6">
                 No tasks found for this project. Create your first task or try refreshing.
               </p>
@@ -795,9 +795,9 @@ const ManagerTasks = () => {
                 <button
                   onClick={openCreateTaskModal}
                   disabled={isProjectLocked}
-                  className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${isProjectLocked
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                  className={`btn px-4 py-2 flex items-center gap-2 ${isProjectLocked
+                    ? 'btn-secondary bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'btn-primary'
                     }`}
                 >
                   {isProjectLocked ? <Lock className="tm-icon" /> : null}
@@ -805,7 +805,7 @@ const ManagerTasks = () => {
                 </button>
                 <button
                   onClick={() => loadTasks(selectedProjectId)}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors border border-gray-300"
+                  className="btn btn-secondary border-gray-300 px-4 py-2"
                 >
                   Refresh
                 </button>
@@ -816,15 +816,15 @@ const ManagerTasks = () => {
           {/* TASKS TABLE */}
           {selectedProjectId && !loading && tasks.length > 0 && viewMode === 'list' && (
             <div className="tm-list-container">
-              <table className="w-full table-auto">
-                <thead className="bg-gray-50 text-gray-700">
+              <table className="tm-table">
+                <thead>
                   <tr>
-                    <th className="p-4 text-left">Task</th>
-                    <th className="p-4 text-left">Assigned To</th>
-                    <th className="p-4 text-left">Status</th>
-                    <th className="p-4 text-left">Priority</th>
-                    <th className="p-4 text-left">Due Date</th>
-                    <th className="p-4 text-left">Estimated Hours</th>
+                    <th>Task</th>
+                    <th>Assigned To</th>
+                    <th>Status</th>
+                    <th>Priority</th>
+                    <th>Due Date</th>
+                    <th>Estimated Hours</th>
                   </tr>
                 </thead>
 
@@ -845,26 +845,25 @@ const ManagerTasks = () => {
                         <tr
                           key={task.id || task.public_id || task._id || task.internalId}
                           onClick={() => handleRowClick(task)}
-                          className={`border-b transition-colors cursor-pointer ${isActive ? 'bg-gray-50' : 'hover:bg-gray-50'
-                            }`}
+                          className={`cursor-pointer ${isActive ? 'bg-blue-50/50' : ''}`}
                         >
-                          <td className="p-4">
-                            <div className="font-medium text-gray-900">{task.title || task.name}</div>
+                          <td>
+                            <div className="text-[14px] font-semibold text-gray-900">{task.title || task.name}</div>
                             {task.description && (
-                              <div className="text-sm text-gray-500 mt-1 line-clamp-2">{task.description}</div>
+                              <div className="text-[12px] text-gray-500 mt-1 line-clamp-2">{task.description}</div>
                             )}
                           </td>
 
-                          <td className="p-4">
+                          <td>
                             <div className="flex items-center gap-2">
                               <User className="tm-icon text-gray-400" />
-                              <span className="text-sm text-gray-700">
+                              <span className="text-[14px] text-gray-700">
                                 {getAssignedUsers(task)}
                               </span>
                             </div>
                           </td>
 
-                          <td className="p-4">
+                          <td>
                             <span className={`px-3 py-1 rounded-full text-sm font-medium ${taskStatus === 'LOCKED'
                               ? 'bg-red-100 text-red-800'
                               : taskStatus === 'COMPLETED' || taskStatus === 'Completed'
@@ -881,8 +880,8 @@ const ManagerTasks = () => {
                             </span>
                           </td>
 
-                          <td className="p-4">
-                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${(task.priority || 'MEDIUM').toUpperCase() === 'HIGH'
+                          <td>
+                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${(task.priority || 'MEDIUM').toUpperCase() === 'HIGH'
                               ? 'bg-red-100 text-red-800'
                               : (task.priority || 'MEDIUM').toUpperCase() === 'MEDIUM'
                                 ? 'bg-amber-100 text-amber-800'
@@ -892,19 +891,19 @@ const ManagerTasks = () => {
                             </span>
                           </td>
 
-                          <td className="p-4">
+                          <td>
                             <div className="flex items-center gap-2">
                               <Calendar className="tm-icon text-gray-400" />
-                              <span className="text-sm text-gray-700">
+                              <span className="text-[14px] text-gray-700">
                                 {formatDate(task.taskDate || task.dueDate)}
                               </span>
                             </div>
                           </td>
 
-                          <td className="p-4">
+                          <td>
                             <div className="flex items-center gap-2">
                               <ClockIcon className="tm-icon text-gray-400" />
-                              <span className="text-sm text-gray-700">
+                              <span className="text-[14px] text-gray-700">
                                 {task.estimatedHours || task.timeAlloted || 0}h
                               </span>
                             </div>
@@ -939,7 +938,7 @@ const ManagerTasks = () => {
                     >
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                          <h3 className="text-section-title text-gray-900 mb-1">
                             {task.title || task.name}
                           </h3>
                           {task.description && (
@@ -1006,7 +1005,7 @@ const ManagerTasks = () => {
               <div className="space-y-4">
                 {/* Task header */}
                 <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-xl font-semibold text-gray-900">{selectedTask.title}</h2>
+                  <h2 className="text-section-title text-gray-900">{selectedTask.title}</h2>
                   <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${getManagerTaskStatus(selectedTask) === 'LOCKED'
                     ? 'bg-red-100 text-red-800 border-red-200'
                     : getManagerTaskStatus(selectedTask) === 'COMPLETED' || getManagerTaskStatus(selectedTask) === 'Completed'
@@ -1030,7 +1029,7 @@ const ManagerTasks = () => {
                 {/* Task completion alert */}
                 {(getManagerTaskStatus(selectedTask) === 'COMPLETED' || getManagerTaskStatus(selectedTask) === 'Completed') && (
                   <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-                    <p className="font-semibold">✓ Task Completed</p>
+                    <p className="font-semibold">âœ“ Task Completed</p>
                     <p className="text-xs mt-1">
                       Total working hours: <span className="font-bold">{selectedTask.total_time_hhmmss || '0h 0m'}</span>
                     </p>
@@ -1041,7 +1040,7 @@ const ManagerTasks = () => {
                 {/* Locked task alert */}
                 {getManagerTaskStatus(selectedTask) === 'LOCKED' && (
                   <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                    <p className="font-semibold">🔒 Task Locked - Pending Approval</p>
+                    <p className="font-semibold">ðŸ”’ Task Locked - Pending Approval</p>
                     <p className="text-xs">Task is locked pending manager approval for reassignment request.</p>
                   </div>
                 )}
@@ -1049,7 +1048,7 @@ const ManagerTasks = () => {
                 {/* Request approved alert */}
                 {getManagerTaskStatus(selectedTask) === 'Request Approved' && (
                   <div className="rounded-lg border border-purple-200 bg-purple-50 p-3 text-sm text-purple-700">
-                    <p className="font-semibold">✅ Reassignment Approved</p>
+                    <p className="font-semibold">âœ… Reassignment Approved</p>
                     <p className="text-xs">Employee reassignment request has been approved.</p>
                   </div>
                 )}
@@ -1063,7 +1062,7 @@ const ManagerTasks = () => {
                   <button
                     onClick={() => handleRowClick(selectedTask)}
                     disabled={detailLoading}
-                    className="flex items-center gap-2 px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                    className="btn btn-secondary px-3 py-1 flex items-center gap-2 text-sm"
                   >
                     <RefreshCw className={`w-4 h-4 ${detailLoading ? 'animate-spin' : ''}`} />
                     Refresh Task
@@ -1147,7 +1146,7 @@ const ManagerTasks = () => {
                     <div className="space-y-3">
                       {selectedTask.activities.slice(0, 5).map((activity, index) => (
                         <div key={activity.id || index} className="flex items-start gap-3">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                          <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
                           <div className="flex-1">
                             <p className="text-sm text-gray-700">{activity.description || activity.action}</p>
                             <p className="text-xs text-gray-500">
@@ -1186,17 +1185,17 @@ const ManagerTasks = () => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-600 text-white rounded-lg flex items-center justify-center font-semibold">
-                  ➕
+              <h2 className="text-page-title text-gray-900 flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-600 text-white rounded-lg flex items-center justify-center">
+                  <Plus className="w-5 h-5" />
                 </div>
                 Create New Task
               </h2>
               <button
                 onClick={() => setShowCreateTaskModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
               >
-                ✕
+                <X className="w-5 h-5" />
               </button>
             </div>
 
@@ -1210,7 +1209,7 @@ const ManagerTasks = () => {
                   required
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="input w-full"
                   placeholder="Enter task title"
                 />
               </div>
@@ -1224,7 +1223,7 @@ const ManagerTasks = () => {
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  className="input w-full resize-none"
                   placeholder="Task description (optional)"
                 />
               </div>
@@ -1235,8 +1234,9 @@ const ManagerTasks = () => {
                   <label className="block text-gray-700 font-medium mb-2">
                     Project
                   </label>
-                  <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 font-medium">
-                    {projectDetails ? getProjectDisplayName(projectDetails) : 'Selected Project'} ✓
+                  <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 font-medium flex items-center gap-2">
+                    {projectDetails ? getProjectDisplayName(projectDetails) : 'Selected Project'}
+                    <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
                   </div>
                   <p className="text-xs text-gray-500 mt-1">Project selected from dropdown</p>
                 </div>
@@ -1248,7 +1248,7 @@ const ManagerTasks = () => {
                   <select
                     value={formData.priority}
                     onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input w-full"
                   >
                     <option value="LOW">Low</option>
                     <option value="MEDIUM">Medium</option>
@@ -1266,7 +1266,7 @@ const ManagerTasks = () => {
                   <select
                     value={formData.stage}
                     onChange={(e) => setFormData({ ...formData, stage: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input w-full"
                   >
                     {statusOptions.map((s) => (
                       <option key={s} value={s}>
@@ -1286,7 +1286,7 @@ const ManagerTasks = () => {
                     step="0.5"
                     value={formData.timeAlloted}
                     onChange={(e) => setFormData({ ...formData, timeAlloted: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input w-full"
                     placeholder="e.g., 8"
                   />
                 </div>
@@ -1302,7 +1302,7 @@ const ManagerTasks = () => {
                     type="date"
                     value={formData.taskDate}
                     onChange={(e) => setFormData({ ...formData, taskDate: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input w-full"
                   />
                 </div>
 
@@ -1320,7 +1320,7 @@ const ManagerTasks = () => {
                         assignedUsers: selectedUserId ? [selectedUserId] : []
                       });
                     }}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input w-full"
                   >
                     <option value="">Select an employee</option>
                     {employees.map((employee) => {
@@ -1342,14 +1342,14 @@ const ManagerTasks = () => {
                   type="button"
                   onClick={() => setShowCreateTaskModal(false)}
                   disabled={actionLoading}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors disabled:opacity-50"
+                  className="btn btn-secondary flex-1 px-4 py-2"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={actionLoading}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="btn btn-primary flex-1 px-4 py-2 flex items-center justify-center gap-2"
                 >
                   {actionLoading ? (
                     <>

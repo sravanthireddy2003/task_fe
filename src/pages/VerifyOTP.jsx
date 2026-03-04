@@ -1,6 +1,5 @@
-
+﻿
 import React, { useEffect, useState, useRef } from 'react';
-import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { verifyOtp, selectAuthError, selectAuthStatus, resendOtp, selectUser } from '../redux/slices/authSlice';
@@ -13,7 +12,6 @@ import { getDefaultLandingPath } from '../utils';
 const VerifyOTP = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { register, handleSubmit, setFocus, watch, setValue } = useForm();
   const status = useSelector(selectAuthStatus);
   const error = useSelector(selectAuthError);
   const user = useSelector(selectUser);
@@ -45,17 +43,16 @@ const VerifyOTP = () => {
 
   const handleOtpChange = (index, value) => {
     if (!/^\d*$/.test(value)) return;
-    
+
     const newOtpDigits = [...otpDigits];
     newOtpDigits[index] = value;
     setOtpDigits(newOtpDigits);
-    
+
     if (value && index < 5) {
       inputsRef.current[index + 1]?.focus();
     }
-    
-    // Join digits for form submission
-    setValue('otp', newOtpDigits.join(''));
+
+    if (friendlyError) setFriendlyError(null);
   };
 
   const handleKeyDown = (index, e) => {
@@ -76,7 +73,7 @@ const VerifyOTP = () => {
         }
       });
       setOtpDigits(newOtpDigits);
-      setValue('otp', newOtpDigits.join(''));
+      if (friendlyError) setFriendlyError(null);
       inputsRef.current[Math.min(digits.length, 5)]?.focus();
     }
   };
@@ -84,15 +81,20 @@ const VerifyOTP = () => {
   const mapOtpError = (err) => {
     const msg = (err && (err.message || err.payload || err))?.toString?.() || String(err);
     const text = msg.toLowerCase();
-    if (text.includes('expired') || text.includes('otp expired')) return 'OTP expired — please resend and try the new code.';
-    if (text.includes('invalid') || text.includes('invalid token') || text.includes('invalid otp')) return 'Invalid code — check the digits and try again.';
-    if (text.includes('too many') || text.includes('attempts')) return 'Too many attempts — please wait a moment and request a new code.';
+    if (text.includes('expired') || text.includes('otp expired')) return 'OTP expired â€” please resend and try the new code.';
+    if (text.includes('invalid') || text.includes('invalid token') || text.includes('invalid otp')) return 'Invalid code â€” check the digits and try again.';
+    if (text.includes('too many') || text.includes('attempts')) return 'Too many attempts â€” please wait a moment and request a new code.';
     return msg || 'Failed to verify code';
   };
 
-  const onSubmit = async (data) => {
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    if (otpDigits.join('').length !== 6) {
+      setFriendlyError('Please enter all 6 digits');
+      return;
+    }
     const tokenToUse = tempToken || locationTempToken;
-    const payload = { tempToken: tokenToUse, otp: data.otp };
+    const payload = { tempToken: tokenToUse, otp: otpDigits.join('') };
     setFriendlyError(null);
     try {
       const res = await dispatch(verifyOtp(payload)).unwrap();
@@ -130,26 +132,26 @@ const VerifyOTP = () => {
       <div className="w-full max-w-md">
         {/* Logo/Brand */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl shadow-lg mb-6">
-            <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-2xl shadow-sm mb-6 border border-primary-200">
+            <svg className="w-8 h-8 text-primary-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
               <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Two-Factor Verification</h1>
-          <p className="text-gray-600">
+          <h1 className="text-page-title mb-2">Two-Factor Verification</h1>
+          <p className="text-body-text text-gray-600">
             We've sent a verification code to your email
           </p>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-small-text text-gray-500 mt-1">
             Enter the 6-digit code to continue
           </p>
         </div>
 
         {/* OTP Card */}
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-200">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+          <form onSubmit={onSubmit} className="space-y-8">
             {/* OTP Input Grid */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-4 text-center">
+              <label className="text-label text-center mb-4">
                 Enter verification code
               </label>
               <div className="flex justify-center gap-3 mb-2">
@@ -164,19 +166,12 @@ const VerifyOTP = () => {
                     onChange={(e) => handleOtpChange(index, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(index, e)}
                     onPaste={handlePaste}
-                    className="w-14 h-14 text-2xl font-bold text-center bg-gray-50 border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all duration-200"
+                    className="w-14 h-14 text-2xl font-heading text-center bg-white border border-gray-300 rounded-lg focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:shadow-sm outline-none transition-all duration-200"
                     disabled={status === 'loading'}
                     autoFocus={index === 0}
                   />
                 ))}
               </div>
-              <input
-                type="hidden"
-                {...register('otp', { 
-                  required: 'Verification code is required',
-                  validate: (value) => value.length === 6 || 'Please enter all 6 digits'
-                })}
-              />
             </div>
 
             {/* Error Message */}
@@ -195,11 +190,10 @@ const VerifyOTP = () => {
             <Button
               type="submit"
               disabled={status === 'loading' || otpDigits.join('').length !== 6}
-              className={`w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all duration-200 ${
-                status === 'loading' || otpDigits.join('').length !== 6
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl'
-              }`}
+              className={`btn btn-primary w-full ${status === 'loading' || otpDigits.join('').length !== 6
+                ? 'opacity-60 cursor-not-allowed'
+                : ''
+                }`}
             >
               {status === 'loading' ? (
                 <div className="flex items-center justify-center">
@@ -230,11 +224,10 @@ const VerifyOTP = () => {
                   type="button"
                   onClick={handleResendOtp}
                   disabled={!canResend || status === 'loading'}
-                  className={`text-sm font-medium transition-colors duration-200 ${
-                    canResend
-                      ? 'text-blue-600 hover:text-blue-800'
-                      : 'text-gray-400 cursor-not-allowed'
-                  }`}
+                  className={`text-sm font-medium transition-colors duration-200 ${canResend
+                    ? 'text-blue-600 hover:text-blue-800'
+                    : 'text-gray-400 cursor-not-allowed'
+                    }`}
                 >
                   Resend verification code
                 </button>
@@ -253,7 +246,7 @@ const VerifyOTP = () => {
             onClick={() => navigate('/log-in')}
             className="mt-4 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors duration-200"
           >
-            ← Back to login
+            â† Back to login
           </button>
         </div>
       </div>
@@ -262,3 +255,4 @@ const VerifyOTP = () => {
 };
 
 export default VerifyOTP;
+

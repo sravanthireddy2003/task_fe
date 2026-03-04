@@ -63,12 +63,9 @@ const Textbox = React.forwardRef(
             disabled={disabled}
             aria-invalid={error ? "true" : "false"}
             className={clsx(
-              "w-full bg-white px-4 py-3 border border-gray-200 rounded-lg placeholder-gray-400 text-body text-gray-900 outline-none transition-all duration-200 shadow-sm",
-              "focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:shadow-md",
-              "hover:border-gray-300 hover:shadow-sm",
+              "input",
               icon && "pl-11",
-              rightIcon && "pr-12", // Extra padding for right icon
-              disabled && "bg-gray-50 cursor-not-allowed opacity-60 border-gray-200",
+              rightIcon && "pr-12",
               error && "border-red-300 focus:ring-red-500 focus:border-red-500",
               className
             )}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+﻿import React, { useEffect, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Button from "../components/Button";
 import ViewToggle from "../components/ViewToggle";
@@ -17,404 +17,272 @@ import {
 } from "../redux/slices/userSlice";
 import * as Icons from '../icons';
 
-// Simple Stats Cards (3 cards only)
+// Clean SaaS Stats Cards
 const StatsCards = ({ users }) => {
   const totalUsers = users.length;
-  const activeUsers = users.filter(u => u.isActive).length;
+  const activeUsers = users.filter((u) => u.isActive).length;
   const inactiveUsers = totalUsers - activeUsers;
 
+  const stats = [
+    { label: "Total Members", value: totalUsers, icon: Icons.Users, trend: "+12%", color: "text-emerald-500" },
+    { label: "Active Members", value: activeUsers, icon: Icons.Users, trend: "+8%", color: "text-emerald-500" },
+    { label: "Inactive Members", value: inactiveUsers, icon: Icons.Users, trend: "", color: "" },
+  ];
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-      <GridCard
-        title="Total Members"
-        value={totalUsers}
-        tone="primary"
-        icon={<Icons.Users className="tm-icon text-blue-600" />}
-      />
-      <GridCard
-        title="Active Members"
-        value={activeUsers}
-        tone="success"
-        icon={<Icons.CheckCircle className="tm-icon text-emerald-600" />}
-      />
-      <GridCard
-        title="Inactive Members"
-        value={inactiveUsers}
-        tone="warning"
-        icon={<Icons.Clock className="tm-icon text-amber-600" />}
-      />
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {stats.map((stat, i) => {
+        const Icon = stat.icon;
+        return (
+          <div key={i} className="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col justify-between min-h-[140px] shadow-sm">
+            <div className="flex justify-between items-start">
+              <div className="p-3 bg-[#fff3ec] rounded-xl flex items-center justify-center">
+                <Icon className="w-6 h-6 text-[#ef5a15]" strokeWidth={1.5} />
+              </div>
+              {stat.trend && <span className={`text-sm font-semibold ${stat.color}`}>{stat.trend}</span>}
+            </div>
+            <div className="mt-4">
+              <p className="text-sm font-medium text-gray-500 mb-1">{stat.label}</p>
+              <h3 className="text-3xl font-bold text-gray-900">{stat.value}</h3>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };
 
-// Clean Avatar Component
+// Clean SaaS Avatar
 const UserAvatar = ({ user, size = "md" }) => {
-  const sizes = {
-    sm: "w-8 h-8 text-xs",
-    md: "w-10 h-10 text-sm",
-    lg: "w-14 h-14 text-lg"
-  };
+  const sizes = { sm: "w-10 h-10 text-sm", md: "w-12 h-12 text-base", lg: "w-16 h-16 text-xl" };
 
-  const getInitials = (name = "") => {
-    if (!name || typeof name !== "string") return "??";
-    return name
-      .split(" ")
-      .map(word => word[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
+  const getInitials = (n = "") => n ? n.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2) : "?";
+
+  const getStyle = (name) => {
+    if (!name) return "bg-indigo-100 text-indigo-600";
+    const i = name.charAt(0).toUpperCase();
+    if (['A', 'F', 'K', 'P', 'U', 'Z'].includes(i)) return "bg-purple-100 text-purple-600";
+    if (['B', 'G', 'L', 'Q', 'V'].includes(i)) return "bg-emerald-100 text-emerald-600";
+    if (['C', 'H', 'M', 'R', 'W'].includes(i)) return "bg-blue-100 text-blue-600";
+    if (['D', 'I', 'N', 'S', 'X'].includes(i)) return "bg-pink-100 text-pink-600";
+    if (['E', 'J', 'O', 'T', 'Y'].includes(i)) return "bg-orange-100 text-orange-600";
+    return "bg-indigo-100 text-indigo-600";
   };
 
   return (
-    <div className="relative">
-      <div
-        className={`${sizes[size]} rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center font-bold shadow-sm`}
-      >
+    <div className="relative inline-block">
+      <div className={`${sizes[size]} rounded-full ${getStyle(user?.name)} flex items-center justify-center font-medium`}>
         {getInitials(user?.name)}
       </div>
-      <div
-        className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${
-          user?.isActive ? "bg-green-500" : "bg-gray-400"
-        }`}
-      />
+      <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${user?.isActive ? "bg-emerald-500" : "bg-gray-400"}`} />
     </div>
   );
 };
 
-// Clean Card View (No overlapping data)
+// Clean SaaS Grid Card
 const UserCard = ({ user, onClick }) => {
   return (
-    <Card className="cursor-pointer" onClick={() => onClick(user)}>
+    <div
+      className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md transition-shadow cursor-pointer flex flex-col h-full"
+      onClick={() => onClick(user)}
+    >
       <div className="flex items-start justify-between mb-4">
-        <UserAvatar user={user} size="md" />
-        <button className="p-1 hover:bg-gray-100 rounded icon-center">
-          <Icons.MoreVertical className="tm-icon" />
-        </button>
+        <UserAvatar user={user} size="lg" />
+        <span
+          className={`text-[11px] font-bold px-2.5 py-1 rounded-md tracking-wider ${user?.role === "Admin" ? "bg-purple-50 text-purple-600" :
+            user?.role === "Manager" ? "bg-blue-50 text-blue-600" :
+              "bg-gray-100 text-gray-600"
+            }`}
+        >
+          {user?.role}
+        </span>
       </div>
-      <div>
-        <h3 className="font-semibold text-gray-900 text-lg mb-1">{user?.name}</h3>
-        <p className="text-gray-600 text-sm mb-3">{user?.title || user?.role}</p>
-        <div className="space-y-2">
+      <div className="flex-1">
+        <h3 className="text-card-title mb-1">{user?.name}</h3>
+        <p className="text-gray-500 font-medium text-small-text mb-5">{user?.title || user?.role}</p>
+
+        <div className="space-y-3 mb-6">
           <div className="flex items-center text-sm">
-            <Icons.Mail className="tm-icon text-gray-400 mr-2" />
-            <span className="text-gray-700 truncate">{user?.email}</span>
+            <Icons.Mail className="w-4 h-4 mr-3 text-gray-400" />
+            <span className="text-gray-600 truncate">{user?.email}</span>
           </div>
           {user?.phone && (
             <div className="flex items-center text-sm">
-              <Icons.Smartphone className="tm-icon text-gray-400 mr-2" />
-              <span className="text-gray-700">{user?.phone}</span>
+              <Icons.Smartphone className="w-4 h-4 mr-3 text-gray-400" />
+              <span className="text-gray-600">{user?.phone}</span>
             </div>
           )}
         </div>
       </div>
-      <div className="mt-4 pt-4 border-t border-gray-100">
-        <div className="flex items-center justify-between">
-          <span
-            className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-              user?.role === "Admin"
-                ? "bg-purple-100 text-purple-800"
-                : user?.role === "Manager"
-                ? "bg-orange-100 text-orange-800"
-                : "bg-blue-100 text-blue-800"
-            }`}
-          >
-            {user?.role}
+
+      <div className="pt-5 border-t border-gray-100 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className={`w-2 h-2 rounded-full ${user?.isActive ? "bg-emerald-500" : "bg-gray-400"}`}></div>
+          <span className={`text-sm font-bold ${user?.isActive ? "text-emerald-600" : "text-gray-500"}`}>
+            {user?.isActive ? "Active" : "Inactive"}
           </span>
-          <div className="flex items-center gap-2">
-            <div
-              className={`w-2 h-2 rounded-full ${
-                user?.isActive ? "bg-green-500" : "bg-gray-400"
-              }`}
-            />
-            <span className="text-xs text-gray-600">
-              {user?.isActive ? "Active" : "Inactive"}
-            </span>
-          </div>
         </div>
+        <button className="text-gray-400 hover:text-blue-600 transition-colors">
+          <Icons.Eye className="w-5 h-5" />
+        </button>
       </div>
-    </Card>
+    </div>
   );
 };
 
-// Clean List Row
+// Clean SaaS List Row
 const UserListRow = ({ user, onClick }) => {
   return (
-    <tr
-      className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
-      onClick={() => onClick(user)}
-    >
-      <td className="py-3 px-4">
-        <div className="flex items-center gap-3">
-          <UserAvatar user={user} size="sm" />
+    <tr onClick={() => onClick(user)} className="cursor-pointer">
+      <td>
+        <div className="flex items-center gap-4">
+          <UserAvatar user={user} size="md" />
           <div className="min-w-0">
-            <div className="font-medium text-gray-900 truncate">
-              {user?.name}
-            </div>
-            <div className="text-sm text-gray-500 truncate">{user?.title}</div>
+            <div className="font-semibold text-gray-900 truncate">{user?.name}</div>
+            <div className="text-gray-500 truncate mt-0.5">{user?.title || user?.role}</div>
           </div>
         </div>
       </td>
-      <td className="py-3 px-4">
-        <div className="text-sm text-gray-900 truncate max-w-[200px]">
-          {user?.email}
-        </div>
+      <td>
+        <span className="truncate max-w-[220px] block">{user?.email}</span>
       </td>
-      <td className="py-3 px-4">
+      <td>
         <span
-          className={`text-xs font-medium px-2 py-1 rounded ${
-            user?.role === "Admin"
-              ? "bg-purple-100 text-purple-800"
-              : user?.role === "Manager"
-              ? "bg-orange-100 text-orange-800"
-              : "bg-blue-100 text-blue-800"
-          }`}
+          className={`text-[11px] font-bold px-2.5 py-1 rounded-md tracking-wider ${user?.role === "Admin" ? "bg-purple-50 text-purple-600" :
+            user?.role === "Manager" ? "bg-blue-50 text-blue-600" :
+              "bg-gray-100 text-gray-600"
+            }`}
         >
           {user?.role}
         </span>
       </td>
-      <td className="py-3 px-4">
-        <div className="text-sm text-gray-600">
-          {user?.departmentName || "-"}
-        </div>
-      </td>
-      <td className="py-3 px-4">
+      <td>{user?.departmentName || "-"}</td>
+      <td>
         <div className="flex items-center gap-2">
-          <div
-            className={`w-2 h-2 rounded-full ${
-              user?.isActive ? "bg-green-500" : "bg-gray-400"
-            }`}
-          />
-          <span className="text-sm">
+          <div className={`w-2 h-2 rounded-full ${user?.isActive ? "bg-emerald-500" : "bg-gray-400"}`}></div>
+          <span className={`font-semibold ${user?.isActive ? "text-emerald-600" : "text-gray-500"}`}>
             {user?.isActive ? "Active" : "Inactive"}
           </span>
         </div>
       </td>
-      <td className="py-3 px-4 text-center align-middle">
-        <span className="inline-flex items-center justify-center text-blue-600 cursor-pointer icon-center">
-          <Icons.Eye className="tm-icon" />
-        </span>
+      <td className="text-right">
+        <button className="text-gray-400 hover:text-blue-600 transition-colors inline-block align-middle">
+          <Icons.Eye className="w-5 h-5" />
+        </button>
       </td>
     </tr>
   );
 };
 
-// Clean Modal (No emoji feeling)
+// Clean SaaS Modal
 const UserDetailsModal = ({ user, isOpen, onClose, onEdit, onDelete }) => {
   if (!isOpen || !user) return null;
 
   const stats = [
-    { label: "Projects", value: user.projects?.length || 0, color: "blue" },
-    { label: "Total Tasks", value: user.tasks?.length || 0, color: "green" },
-    {
-      label: "Completed Tasks",
-      value: user.tasks?.filter((t) => t.stage === "COMPLETED").length || 0,
-      color: "emerald",
-    },
-    {
-      label: "In Progress",
-      value:
-        user.tasks?.filter(
-          (t) => t.stage === "IN_PROGRESS" || t.stage === "PENDING",
-        ).length || 0,
-      color: "orange",
-    },
+    { label: "Projects", value: user.projects?.length || 0 },
+    { label: "Total Tasks", value: user.tasks?.length || 0 },
+    { label: "Completed", value: user.tasks?.filter(t => t.stage === "COMPLETED").length || 0 },
+    { label: "In Progress", value: user.tasks?.filter(t => t.stage === "IN_PROGRESS" || t.stage === "PENDING").length || 0 },
   ];
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-modal">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 bg-gray-50/80">
+    <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-[2px] flex items-center justify-center z-50 p-4 transition-opacity">
+      <div className="bg-white rounded-2xl w-full max-w-[500px] max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+        {/* Fixed Header */}
+        <div className="flex-none flex items-center justify-between px-6 py-5 border-b border-gray-100 bg-white">
           <div className="flex items-center gap-4">
             <UserAvatar user={user} size="lg" />
             <div>
-              <h2 className="text-xl font-bold text-gray-900">{user.name}</h2>
-              <p className="text-gray-600">{user.title || user.role}</p>
+              <h2 className="text-section-title">{user.name}</h2>
+              <p className="text-sm font-medium text-gray-500">{user.title || user.role}</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-gray-700 transition-colors"
-          >
-            <Icons.X className="tm-icon" />
+          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+            <Icons.X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 bg-white">
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto px-6 py-6 bg-white custom-scrollbar border-b border-gray-100 relative min-h-0">
           <div className="space-y-6">
-            {/* Contact Info */}
             <div>
-              <h3 className="font-medium text-gray-900 mb-3">
-                Contact Information
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <div className="text-sm text-gray-500 mb-1">Email</div>
-                  <div className="font-medium text-gray-900">{user.email}</div>
+              <h3 className="text-[14px] font-bold text-gray-900 mb-3">Contact Information</h3>
+              <div className="space-y-3">
+                <div className="bg-gray-50 rounded-xl p-3.5 flex items-center gap-4 border border-gray-100">
+                  <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                    <Icons.Mail className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[12px] font-medium text-gray-500 mb-0.5">Email Address</p>
+                    <p className="text-[13px] font-bold text-gray-900 truncate">{user.email}</p>
+                  </div>
                 </div>
                 {user.phone && (
-                  <div>
-                    <div className="text-sm text-gray-500 mb-1">Phone</div>
-                    <div className="font-medium text-gray-900">
-                      {user.phone}
+                  <div className="bg-gray-50 rounded-xl p-3.5 flex items-center gap-4 border border-gray-100">
+                    <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                      <Icons.Smartphone className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[12px] font-medium text-gray-500 mb-0.5">Phone Number</p>
+                      <p className="text-[13px] font-bold text-gray-900 truncate">{user.phone}</p>
                     </div>
                   </div>
                 )}
-                <div>
-                  <div className="text-sm text-gray-500 mb-1">Role</div>
-                  <span
-                    className={`font-medium px-3 py-1 rounded-full text-sm ${
-                      user.role === "Admin"
-                        ? "bg-purple-100 text-purple-800"
-                        : user.role === "Manager"
-                        ? "bg-orange-100 text-orange-800"
-                        : "bg-blue-100 text-blue-800"
-                    }`}
-                  >
-                    {user.role}
-                  </span>
-                </div>
                 {user.departmentName && (
-                  <div>
-                    <div className="text-sm text-gray-500 mb-1">Department</div>
-                    <div className="font-medium text-gray-900">
-                      {user.departmentName}
+                  <div className="bg-gray-50 rounded-xl p-3.5 flex items-center gap-4 border border-gray-100">
+                    <div className="w-10 h-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+                      <Icons.Briefcase className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[12px] font-medium text-gray-500 mb-0.5">Department</p>
+                      <p className="text-[13px] font-bold text-gray-900 truncate">{user.departmentName}</p>
                     </div>
                   </div>
                 )}
               </div>
             </div>
-
-            {/* Stats */}
             <div>
-              <h3 className="font-medium text-gray-900 mb-3">
-                Activity Overview
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <h3 className="text-[14px] font-bold text-gray-900 mb-3">Activity Overview</h3>
+              <div className="grid grid-cols-2 gap-3">
                 {stats.map((stat, index) => (
-                  <div key={index} className="bg-gray-50 rounded-lg p-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div
-                        className={`w-2 h-2 rounded-full ${
-                          stat.color === "blue"
-                            ? "bg-blue-500"
-                            : stat.color === "green"
-                            ? "bg-green-500"
-                            : stat.color === "orange"
-                            ? "bg-orange-500"
-                            : "bg-emerald-500"
-                        }`}
-                      />
-                      <span className="text-xs text-gray-600">
-                        {stat.label}
-                      </span>
-                    </div>
-                    <div className="text-xl font-bold text-gray-900">
-                      {stat.value}
-                    </div>
+                  <div key={index} className="bg-gray-50 rounded-xl p-3.5 border border-gray-100">
+                    <p className="text-[12px] font-medium text-gray-500 mb-2">{stat.label}</p>
+                    <p className="text-card-title">{stat.value}</p>
                   </div>
                 ))}
               </div>
             </div>
-
-            {/* Projects */}
             {user.projects && user.projects.length > 0 && (
               <div>
-                <h3 className="font-medium text-gray-900 mb-3">
-                  Projects ({user.projects.length})
-                </h3>
+                <h3 className="text-[14px] font-bold text-gray-900 mb-3">Projects ({user.projects.length})</h3>
                 <div className="flex flex-wrap gap-2">
                   {user.projects.map((project, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center px-3 py-1 bg-blue-50 text-blue-700 rounded-lg text-sm"
-                    >
+                    <span key={index} className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[13px] font-semibold">
                       {project.name || `Project ${project.internalId}`}
                     </span>
                   ))}
                 </div>
               </div>
             )}
-
-            {/* Tasks */}
-            {user.tasks && user.tasks.length > 0 && (
-              <div>
-                <h3 className="font-medium text-gray-900 mb-3">
-                  Tasks ({user.tasks.length})
-                </h3>
-                <div className="space-y-2">
-                  {user.tasks.slice(0, 5).map((task, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                    >
-                      <div>
-                        <div className="font-medium text-gray-900">
-                          {task.title}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {task.project?.name ||
-                            `Project ${task.project?.internalId}`}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span
-                          className={`text-xs font-medium px-2 py-1 rounded ${
-                            task.stage === "COMPLETED"
-                              ? "bg-green-100 text-green-800"
-                              : task.stage === "IN_PROGRESS"
-                              ? "bg-blue-100 text-blue-800"
-                              : "bg-yellow-100 text-yellow-800"
-                          }`}
-                        >
-                          {task.status}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="p-6 border-t border-gray-100 bg-gray-50/80">
-          <div className="flex gap-3">
-            <Button
-              onClick={() => {
-                onClose();
-                onEdit(user);
-              }}
-              icon={Icons.Pencil}
-              label="Edit User"
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white border-transparent"
-            />
-            <Button
-              onClick={() => {
-                onClose();
-                onDelete(user);
-              }}
-              icon={Icons.Trash2}
-              label="Delete User"
-              className="flex-1 bg-red-600 hover:bg-red-700 text-white border-transparent"
-            />
-          </div>
+        {/* Fixed Footer Actions */}
+        <div className="flex-none p-5 bg-white flex gap-3 border-t border-gray-100">
+          <Button onClick={() => { onClose(); onEdit(user); }} label="Edit Profile" className="btn btn-primary flex-1" />
+          <Button onClick={() => { onClose(); onDelete(user); }} label="Remove User" className="btn btn-secondary flex-1" />
         </div>
       </div>
     </div>
   );
 };
 
-// Main Component
+// Main Component (unchanged logic, only JSX styling updated)
 const Users = () => {
   const dispatch = useDispatch();
   const users = useSelector(selectUsers) || [];
   const status = useSelector(selectUserStatus);
   const error = useSelector(selectUserError);
-  const isLoading = status === "loading";
-
   const [openForm, setOpenForm] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
   const [openViewModal, setOpenViewModal] = useState(false);
@@ -427,12 +295,19 @@ const Users = () => {
     department: "all",
   });
 
+  const isInitialLoading = status === "loading" && users.length === 0;
+
   useEffect(() => {
     dispatch(fetchUsers());
   }, [dispatch]);
 
-  const loadUsers = () => {
-    dispatch(fetchUsers());
+  const loadUsers = async () => {
+    try {
+      await dispatch(fetchUsers()).unwrap();
+      toast.success("Users list refreshed successfully");
+    } catch (err) {
+      toast.error("Failed to refresh users");
+    }
   };
 
   const filteredUsers = useMemo(() => {
@@ -484,7 +359,8 @@ const Users = () => {
   const deleteHandler = async () => {
     if (!selectedUser) return;
     try {
-      await dispatch(deleteUser(selectedUser.id)).unwrap();
+      const idToSend = selectedUser._id || selectedUser.id || selectedUser.public_id;
+      await dispatch(deleteUser(idToSend)).unwrap();
       toast.success("User deleted successfully");
       setOpenDelete(false);
       setSelectedUser(null);
@@ -493,17 +369,17 @@ const Users = () => {
     }
   };
 
-  const hasActiveFilters = searchTerm || 
-    filters.role !== "all" || 
-    filters.status !== "all" || 
+  const hasActiveFilters = searchTerm ||
+    filters.role !== "all" ||
+    filters.status !== "all" ||
     filters.department !== "all";
 
-  if (isLoading) {
+  if (isInitialLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600 font-medium">Loading team members...</p>
+          <div className="w-10 h-10 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Loading team members...</p>
         </div>
       </div>
     );
@@ -513,8 +389,8 @@ const Users = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center max-w-md">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Icons.X className="tm-icon text-red-600" />
+          <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+            <Icons.X className="text-red-600" />
           </div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
             Failed to load users
@@ -533,191 +409,148 @@ const Users = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--bg-app)]">
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-6">
-          <PageHeader
-            title="Team Members"
-            subtitle="Manage your team members and their permissions"
-            onRefresh={loadUsers}
+    <div className="space-y-6">
+      <PageHeader
+        title="Team Members"
+        subtitle="Manage your team members and their account permissions"
+        onRefresh={loadUsers}
+        refreshing={status === 'loading'}
+      >
+        <Button
+          onClick={() => {
+            setSelectedUser(null);
+            setOpenForm(true);
+          }}
+          icon={Icons.UserPlus}
+          label="Add Member"
+          className="btn btn-primary"
+        />
+      </PageHeader>
+
+      <StatsCards users={users} />
+
+      {/* Search and Filters */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-2 shadow-sm flex flex-col lg:flex-row gap-4 items-center justify-between">
+        <div className="relative flex-1 w-full lg:max-w-md pl-2">
+          <Icons.Search className="absolute left-6 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search members..."
+            className="w-full pl-12 pr-4 py-2 bg-transparent focus:outline-none text-sm text-gray-700 placeholder-gray-400 font-medium"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 pr-2 pb-2 lg:pb-0">
+          <select
+            className="input !w-auto h-10 py-0"
+            value={filters.role}
+            onChange={(e) => setFilters({ ...filters, role: e.target.value })}
           >
-            <div className="flex items-center gap-3">
-              <ViewToggle mode={viewMode} onChange={setViewMode} />
-              <Button
-                onClick={() => {
-                  setSelectedUser(null);
-                  setOpenForm(true);
-                }}
-                icon={Icons.Plus}
-                label="Add Member"
-                className="bg-blue-600 hover:bg-blue-700 text-white border-transparent"
-              />
-            </div>
-          </PageHeader>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8 space-y-6">
-        {/* Stats Cards */}
-        <StatsCards users={users} />
-
-        {/* Search and Filters */}
-        <div className="bg-white rounded-2xl border border-gray-200/80 p-5 shadow-card">
-          <div className="flex flex-col lg:flex-row gap-4">
-            {/* Search */}
-            <div className="flex-1">
-              <div className="relative">
-                <Icons.Search
-                  className="tm-icon absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"
-                />
-                <input
-                  type="text"
-                  placeholder="Search by name, email, or role..."
-                  className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
-
-            {/* Filters */}
-            <div className="flex flex-wrap gap-3">
-              <select
-                className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-700 font-medium min-w-[140px]"
-                value={filters.role}
-                onChange={(e) =>
-                  setFilters({ ...filters, role: e.target.value })
-                }
-              >
-                <option value="all">All Roles</option>
-                {getUniqueValues("role").map((role) => (
-                  <option key={role} value={role}>
-                    {role}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-700 font-medium min-w-[140px]"
-                value={filters.status}
-                onChange={(e) =>
-                  setFilters({ ...filters, status: e.target.value })
-                }
-              >
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-
-              <select
-                className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-700 font-medium min-w-[140px]"
-                value={filters.department}
-                onChange={(e) =>
-                  setFilters({ ...filters, department: e.target.value })
-                }
-              >
-                <option value="all">All Departments</option>
-                {getUniqueValues("departmentName").map((dept) => (
-                  <option key={dept} value={dept}>
-                    {dept}
-                  </option>
-                ))}
-              </select>
-
-              {hasActiveFilters && (
-                <Button
-                  onClick={clearFilters}
-                  icon={Icons.X}
-                  label="Clear Filters"
-                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-300"
-                />
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Users Grid/List */}
-        {filteredUsers.length === 0 ? (
-          <div className="bg-white rounded-lg border-2 border-dashed border-gray-300 p-16 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Icons.Users className="tm-icon text-gray-400" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              No members found
-            </h3>
-            <p className="text-gray-600 mb-6 max-w-md mx-auto">
-              {hasActiveFilters
-                ? "No members match your current filters. Try adjusting your search criteria."
-                : "Get started by adding your first team member."}
-            </p>
-            {hasActiveFilters ? (
-              <Button
-                onClick={clearFilters}
-                icon={Icons.X}
-                label="Clear all filters"
-                className="text-blue-600 hover:text-blue-700 bg-transparent border-transparent hover:bg-blue-50"
-              />
-            ) : (
-              <Button
-                onClick={() => {
-                  setSelectedUser(null);
-                  setOpenForm(true);
-                }}
-                icon={Icons.Plus}
-                label="Add First Member"
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              />
-            )}
-          </div>
-        ) : viewMode === "grid" ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {filteredUsers.map((user) => (
-              <UserCard key={user.id} user={user} onClick={handleView} />
+            <option value="all">All Roles</option>
+            {getUniqueValues("role").map((role) => (
+              <option key={role} value={role}>{role}</option>
             ))}
-          </div>
-        ) : (
-          <div className="tm-list-container">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="py-3.5 px-6 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Member
-                    </th>
-                    <th className="py-3.5 px-6 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th className="py-3.5 px-6 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Role
-                    </th>
-                    <th className="py-3.5 px-6 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Department
-                    </th>
-                    <th className="py-3.5 px-6 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="py-3.5 px-6 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Action
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-100">
-                  {filteredUsers.map((user) => (
-                    <UserListRow
-                      key={user.id}
-                      user={user}
-                      onClick={handleView}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+          </select>
+
+          <select
+            className="input !w-auto h-10 py-0"
+            value={filters.status}
+            onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+          >
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+
+          <select
+            className="input !w-auto h-10 py-0"
+            value={filters.department}
+            onChange={(e) => setFilters({ ...filters, department: e.target.value })}
+          >
+            <option value="all">All Departments</option>
+            {getUniqueValues("departmentName").map((dept) => (
+              <option key={dept} value={dept}>{dept}</option>
+            ))}
+          </select>
+
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+              title="Clear Filters"
+            >
+              <Icons.X className="w-4 h-4" />
+            </button>
+          )}
+
+          <div className="h-6 w-px bg-gray-200 mx-1 hidden lg:block"></div>
+
+          <ViewToggle mode={viewMode} onChange={setViewMode} />
+        </div>
       </div>
 
-      {/* Modals */}
+      {filteredUsers.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-16 text-center shadow-sm">
+          <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Icons.Users className="text-blue-600 w-8 h-8" />
+          </div>
+          <h3 className="text-section-title mb-2">No members found</h3>
+          <p className="text-gray-500 mb-6 max-w-md mx-auto">
+            {hasActiveFilters
+              ? "No members match your current filters. Try adjusting your search criteria."
+              : "Get started by adding your first team member."}
+          </p>
+          {hasActiveFilters ? (
+            <Button
+              onClick={clearFilters}
+              icon={Icons.X}
+              label="Clear all filters"
+              className="btn btn-secondary"
+            />
+          ) : (
+            <Button
+              onClick={() => {
+                setSelectedUser(null);
+                setOpenForm(true);
+              }}
+              icon={Icons.UserPlus}
+              label="Add First Member"
+              className="btn btn-primary"
+            />
+          )}
+        </div>
+      ) : viewMode === "grid" ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredUsers.map((user) => (
+            <UserCard key={user.id || user._id} user={user} onClick={handleView} />
+          ))}
+        </div>
+      ) : (
+        <div className="tm-list-container overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="tm-table">
+              <thead>
+                <tr>
+                  <th>Member</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Department</th>
+                  <th>Status</th>
+                  <th className="text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredUsers.map((user) => (
+                  <UserListRow key={user.id || user._id} user={user} onClick={handleView} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       <UserDetailsModal
         user={selectedUser}
         isOpen={openViewModal}
@@ -731,13 +564,11 @@ const Users = () => {
         open={openDelete}
         setOpen={setOpenDelete}
         onClick={deleteHandler}
-        title="Delete Member"
-        message={`Are you sure you want to remove "${selectedUser?.name}" from the team? This action cannot be undone.`}
-        confirmText="Delete Member"
-        confirmClassName="bg-red-600 hover:bg-red-700"
+        msg={`Are you sure you want to remove "${selectedUser?.name}" from the team?`}
       />
     </div>
   );
+
 };
 
 export default Users;

@@ -119,7 +119,7 @@ const TaskCard = ({ taskId, task: propTask }) => {
         </div>
 
         <div className="mb-2">
-          <h4 className="text-lg font-semibold text-gray-900 line-clamp-2 mb-1">
+          <h4 className="text-card-title text-gray-900 line-clamp-2 mb-1">
             {localTask?.title || "Untitled Task"}
           </h4>
           {localTask?.description && (

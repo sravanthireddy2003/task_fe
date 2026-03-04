@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import TaskWorkflowCard from './TaskWorkflowCard';
 import { fetchTasks } from '../redux/slices/taskSlice';
@@ -56,7 +56,7 @@ const WorkflowList = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search tasks by title or description"
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -76,7 +76,7 @@ const WorkflowList = () => {
 
       {/* States */}
       {status === 'loading' && (
-        <div className="text-sm text-gray-500">Loading tasks…</div>
+        <div className="text-sm text-gray-500">Loading tasksâ€¦</div>
       )}
       {status === 'failed' && (
         <div className="text-sm text-red-600">{error || 'Failed to load tasks'}</div>
@@ -101,3 +101,4 @@ const WorkflowList = () => {
 };
 
 export default WorkflowList;
+

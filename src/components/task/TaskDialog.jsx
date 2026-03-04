@@ -1,4 +1,4 @@
-import React, { Fragment, useState } from "react";
+﻿import React, { Fragment, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import * as Icons from "../../icons";
 
@@ -82,7 +82,7 @@ const TaskDialog = ({ task }) => {
                       <button
                         onClick={el.onClick}
                         className={`${
-                          active ? "bg-blue-500 text-white" : "text-gray-900"
+                          active ? "bg-blue-600 text-white" : "text-gray-900"
                         } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
                       >
                         {el.icon}
@@ -99,7 +99,7 @@ const TaskDialog = ({ task }) => {
                     <button
                       onClick={() => deleteClick(task?._id || task?.task_id)}
                       className={`${
-                        active ? "bg-blue-500 text-white" : "text-red-900"
+                        active ? "bg-blue-600 text-white" : "text-red-900"
                       } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
                     >
                       <Trash2 className='tm-icon mr-2 text-red-400' aria-hidden='true' />

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell
 } from 'recharts';
@@ -82,11 +82,11 @@ const Analysis = () => {
 
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <h1 className="text-2xl font-bold text-gray-800">Performance Analytics Dashboard</h1>
+        <h1 className="text-page-title text-gray-900">Performance Analytics Dashboard</h1>
         <select
           value={timeFrame}
           onChange={(e) => setTimeFrame(e.target.value)}
-          className="px-4 py-2 border rounded-md bg-white shadow-sm focus:ring-1 focus:ring-blue-500"
+          className="input px-4 py-2 bg-white"
         >
           <option value="weekly">Weekly</option>
           <option value="monthly">Monthly</option>
@@ -117,7 +117,7 @@ const Analysis = () => {
 
           {/* Project Status Overview */}
           <div className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
-            <h2 className="text-xl font-semibold mb-2 text-gray-800">Project Status Overview</h2>
+            <h2 className="text-section-title text-gray-900 mb-2">Project Status Overview</h2>
             <p className="text-gray-500 mb-4">Status breakdown by project</p>
             <div className="overflow-y-auto max-h-96">
               <ResponsiveContainer width="100%" height={projectData.length * 50}>
@@ -137,7 +137,7 @@ const Analysis = () => {
 
           {/* Task Status Overview */}
           <div className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
-            <h2 className="text-xl font-semibold mb-2 text-gray-800">Task Status Overview</h2>
+            <h2 className="text-section-title text-gray-900 mb-2">Task Status Overview</h2>
             <ResponsiveContainer width="100%" height={400}>
               <BarChart data={data} layout="vertical" margin={{ top: 20, right: 20, left: 20, bottom: 5 }}>
                 <XAxis type="number" />
@@ -153,7 +153,7 @@ const Analysis = () => {
 
           {/* Resource Allocation */}
           <div className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition md:col-span-2">
-            <h2 className="text-xl font-semibold mb-2 text-gray-800">Resource Allocation</h2>
+            <h2 className="text-section-title text-gray-900 mb-2">Resource Allocation</h2>
             <p className="text-gray-500 mb-4">Distribution across projects</p>
             <ResponsiveContainer width="100%" height={400}>
               <PieChart>
@@ -181,7 +181,7 @@ const Analysis = () => {
 
           {/* Team Performance Metrics */}
           <div className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
-            <h2 className="text-xl font-semibold mb-2 text-gray-800">Team Performance Metrics</h2>
+            <h2 className="text-section-title text-gray-900 mb-2">Team Performance Metrics</h2>
             <p className="text-gray-500 mb-4">Key performance indicators by team</p>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={teamData}>
@@ -199,7 +199,7 @@ const Analysis = () => {
 
           {/* Team Performance Trend */}
           <div className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
-            <h2 className="text-xl font-semibold mb-2 text-gray-800">Team Performance Trend</h2>
+            <h2 className="text-section-title text-gray-900 mb-2">Team Performance Trend</h2>
             <p className="text-gray-500 mb-4">Monthly performance comparison</p>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={teamPerformanceTrend}>
@@ -224,3 +224,4 @@ const Analysis = () => {
 };
 
 export default Analysis;
+

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
 import * as Icons from '../icons';
 import ViewToggle from '../components/ViewToggle';
 import fetchWithTenant from '../utils/fetchWithTenant';
@@ -511,16 +511,16 @@ export default function Tasks() {
       case 'list':
         return (
           <div className="tm-list-container overflow-x-auto">
-            <table className="w-full table-auto min-w-[800px]">
-              <thead className="bg-gray-50 text-gray-700">
+            <table className="tm-table">
+              <thead>
                 <tr>
-                  <th className="p-4 text-left">Task</th>
-                  <th className="p-4 text-left">Assigned To</th>
-                  <th className="p-4 text-left">Client</th>
-                  <th className="p-4 text-left">Priority</th>
-                  <th className="p-4 text-left">Status</th>
-                  <th className="p-4 text-left">Due Date</th>
-                  <th className="p-4 text-right">Actions</th>
+                  <th>Task</th>
+                  <th>Assigned To</th>
+                  <th>Client</th>
+                  <th>Priority</th>
+                  <th>Status</th>
+                  <th>Due Date</th>
+                  <th className="text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -528,7 +528,7 @@ export default function Tasks() {
                   <tr>
                     <td colSpan="7" className="p-12 text-center text-gray-500">
                       <AlertCircle className="tm-icon-hero mx-auto mb-3 opacity-50" />
-                      <p className="text-lg font-medium text-gray-900 mb-1">No tasks found</p>
+                      <p className="text-section-title text-gray-900 mb-1">No tasks found</p>
                       <p className="mb-6">No tasks match your selected filters.</p>
                       <div className="flex gap-3 justify-center" />
                     </td>
@@ -539,59 +539,59 @@ export default function Tasks() {
                       key={task.id || task._id || task.public_id}
                       onClick={() => handleOpenTaskDetails(task)}
                       role="button"
-                      className="border-b hover:bg-gray-50 transition-colors cursor-pointer"
+                      className="cursor-pointer"
                     >
-                      <td className="p-4">
+                      <td>
                         <div onClick={() => handleOpenTaskDetails(task)} title="View task details" className={`font-medium cursor-pointer hover:underline ${(task.status || task.stage || 'pending').toLowerCase() === 'completed'
                           ? 'text-gray-400 line-through'
                           : 'text-gray-900'
                           }`}>{task.title || task.name}</div>
                         {task.description && (
-                          <div className="text-sm text-gray-500 mt-1 line-clamp-2">{task.description}</div>
+                          <div className="text-[13px] text-gray-500 mt-1 line-clamp-2">{task.description}</div>
                         )}
                       </td>
 
-                      <td className="p-4">
+                      <td>
                         <div className="flex items-center gap-2">
                           <User className="tm-icon text-gray-400" />
-                          <span className="text-sm text-gray-700">{getAssignedUsers(task)}</span>
+                          <span className="text-[14px] text-gray-700">{getAssignedUsers(task)}</span>
                         </div>
                       </td>
 
-                      <td className="p-4">
-                        <div className="text-sm text-gray-700">{task.client?.name || task.clientName || '-'}</div>
+                      <td>
+                        <div className="text-[14px] text-gray-700">{task.client?.name || task.clientName || '-'}</div>
                       </td>
 
-                      <td className="p-4">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${priorityColors[(task.priority || 'MEDIUM').toLowerCase()]}`}>
+                      <td>
+                        <span className={`px-2 py-1 rounded text-xs font-semibold ${priorityColors[(task.priority || 'MEDIUM').toLowerCase()]}`}>
                           {(task.priority || 'MEDIUM').toUpperCase()}
                         </span>
                       </td>
 
-                      <td className="p-4">
+                      <td>
                         <div className="space-y-1">
                           <span
-                            onClick={() => setActiveStatusEdit(task.id || task._id || task.public_id)}
-                            className={`px-3 py-1 rounded-full cursor-pointer text-sm font-medium block ${statusColors[(task.status || task.stage || 'pending').toLowerCase()]}`}
+                            onClick={(e) => { e.stopPropagation(); setActiveStatusEdit(task.id || task._id || task.public_id); }}
+                            className={`px-3 py-1 rounded-full cursor-pointer text-[12px] font-semibold tracking-wide inline-block hover:opacity-80 transition-opacity ${statusColors[(task.status || task.stage || 'pending').toLowerCase()]}`}
                           >
                             {getStatusText(task.status || task.stage || 'pending')}
                           </span>
                           {task.summary?.dueStatus && (
-                            <span className={`text-xs px-2 py-0.5 rounded ${task.summary.dueStatus === 'Overdue' ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+                            <span className={`text-xs px-2 py-0.5 rounded block w-fit mt-1 ${task.summary.dueStatus === 'Overdue' ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
                               {task.summary.dueStatus}
                             </span>
                           )}
                         </div>
                       </td>
 
-                      <td className="p-4">
+                      <td>
                         <div className="flex items-center gap-2">
                           <Calendar className="tm-icon text-gray-400" />
-                          <span className="text-sm text-gray-700">{formatDate(task.taskDate || task.dueDate)}</span>
+                          <span className="text-[13px] text-gray-600">{formatDate(task.taskDate || task.dueDate)}</span>
                         </div>
                       </td>
 
-                      <td className="p-4 text-right">
+                      <td className="text-right">
                         <div className="flex justify-end gap-2">
                           <button
                             onClick={(e) => { e.stopPropagation(); openModal(task); }}
@@ -624,9 +624,9 @@ export default function Tasks() {
       case 'kanban':
         if (filteredTasks.length === 0) {
           return (
-            <div className="bg-white rounded-xl border p-12 text-center">
+            <div className="card text-center !p-12">
               <AlertCircle className="tm-icon-hero mx-auto mb-3 opacity-50" />
-              <p className="text-lg font-medium text-gray-900 mb-1">No tasks found</p>
+              <p className="text-section-title text-gray-900 mb-1">No tasks found</p>
               <p className="text-gray-600 mb-6">No tasks match your selected filters.</p>
               <div className="flex gap-3 justify-center" />
             </div>
@@ -711,13 +711,13 @@ export default function Tasks() {
 
       case 'calendar':
         return (
-          <div className="bg-white border rounded-xl p-6 overflow-x-auto">
+          <div className="card overflow-x-auto">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-              <h3 className="text-lg font-semibold">Calendar View</h3>
+              <h3 className="text-section-title">Calendar View</h3>
               <div className="flex items-center gap-2 flex-wrap">
-                <button className="px-3 py-1 border rounded-lg text-sm bg-blue-50 text-blue-700 font-medium">Today</button>
-                <button className="px-3 py-1 border rounded-lg text-sm hover:bg-gray-50">Week</button>
-                <button className="px-3 py-1 border rounded-lg text-sm hover:bg-gray-50">Month</button>
+                <button className="btn btn-secondary !px-3 !py-1 !text-sm !bg-blue-50 !text-blue-700 font-medium">Today</button>
+                <button className="btn btn-secondary !px-3 !py-1 !text-sm">Week</button>
+                <button className="btn btn-secondary !px-3 !py-1 !text-sm">Month</button>
               </div>
             </div>
             <div className="min-w-[700px]">
@@ -768,13 +768,13 @@ export default function Tasks() {
 
       case 'timeline':
         return (
-          <div className="bg-white border rounded-xl p-6">
+          <div className="card">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-              <h3 className="text-lg font-semibold">Timeline View</h3>
+              <h3 className="text-section-title">Timeline View</h3>
               <div className="flex items-center gap-2 flex-wrap">
-                <button className="px-3 py-1 border rounded-lg text-sm bg-blue-50 text-blue-700 font-medium">Day</button>
-                <button className="px-3 py-1 border rounded-lg text-sm hover:bg-gray-50">Week</button>
-                <button className="px-3 py-1 border rounded-lg text-sm hover:bg-gray-50">Month</button>
+                <button className="btn btn-secondary !px-3 !py-1 !text-sm !bg-blue-50 !text-blue-700 font-medium">Day</button>
+                <button className="btn btn-secondary !px-3 !py-1 !text-sm">Week</button>
+                <button className="btn btn-secondary !px-3 !py-1 !text-sm">Month</button>
               </div>
             </div>
             <div className="space-y-4">
@@ -791,7 +791,7 @@ export default function Tasks() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <div className={`w-3 h-3 rounded-full ${(task.status || task.stage || 'pending').toLowerCase() === 'completed' ? 'bg-green-500' :
-                        (task.status || task.stage || 'pending').toLowerCase() === 'in_progress' ? 'bg-blue-500' :
+                        (task.status || task.stage || 'pending').toLowerCase() === 'in_progress' ? 'bg-blue-600' :
                           (task.status || task.stage || 'pending').toLowerCase() === 'pending' ? 'bg-gray-400' : 'bg-red-500'}`}
                       />
                       <h4 className={`font-medium ${(task.status || task.stage || 'pending').toLowerCase() === 'completed'
@@ -854,42 +854,8 @@ export default function Tasks() {
 
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
-      {/* Task summary cards with icons */}
-      <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-        {(() => {
-          const counts = tasks.reduce((acc, t) => {
-            const s = (t.status || t.stage || '').toString().toLowerCase();
-            if (s.includes('completed')) acc.completed += 1;
-            else if (s.includes('in_progress') || s.includes('in progress') || s === 'inprogress') acc.inProgress += 1;
-            else if (s.includes('on_hold') || s.includes('on hold') || s === 'onhold') acc.onHold += 1;
-            else acc.toDo += 1;
-            return acc;
-          }, { toDo: 0, inProgress: 0, onHold: 0, completed: 0 });
-
-          const card = (title, count, bg, icon) => (
-            <div className={`p-4 rounded-xl shadow-sm bg-white border border-gray-100 flex items-center gap-4`}>
-              <div className={`p-3 rounded-lg ${bg} text-white/95`}>
-                {icon}
-              </div>
-              <div>
-                <div className="text-sm text-gray-500">{title}</div>
-                <div className="text-2xl font-semibold">{count}</div>
-              </div>
-            </div>
-          );
-
-          return (
-            <>
-              {card('To Do', counts.toDo, 'bg-slate-600', <ClipboardList className="tm-icon-xl" />)}
-              {card('In Progress', counts.inProgress, 'bg-blue-600', <Play className="tm-icon-xl" />)}
-              {card('On Hold', counts.onHold, 'bg-orange-600', <Pause className="tm-icon-xl" />)}
-              {card('Completed', counts.completed, 'bg-emerald-600', <CheckSquare className="tm-icon-xl" />)}
-            </>
-          );
-        })()}
-      </div>
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-heading-2 mb-2">Tasks</h1>
           <p className="text-body text-gray-600">Manage and track all your tasks</p>
@@ -901,7 +867,7 @@ export default function Tasks() {
             <select
               value={selectedProjectId}
               onChange={handleProjectChange}
-              className="border border-gray-300 rounded-lg px-4 py-2 pr-8 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none min-w-[200px]"
+              className="border border-gray-300 rounded-lg px-4 py-2 pr-8 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent appearance-none min-w-[200px]"
               disabled={isFetching}
             >
               <option value="all">All Projects</option>
@@ -959,12 +925,46 @@ export default function Tasks() {
           )}
         </div>
       </div>
+      {/* Task summary cards with icons */}
+      <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        {(() => {
+          const counts = tasks.reduce((acc, t) => {
+            const s = (t.status || t.stage || '').toString().toLowerCase();
+            if (s.includes('completed')) acc.completed += 1;
+            else if (s.includes('in_progress') || s.includes('in progress') || s === 'inprogress') acc.inProgress += 1;
+            else if (s.includes('on_hold') || s.includes('on hold') || s === 'onhold') acc.onHold += 1;
+            else acc.toDo += 1;
+            return acc;
+          }, { toDo: 0, inProgress: 0, onHold: 0, completed: 0 });
+
+          const card = (title, count, bg, icon) => (
+            <div className={`p-4 rounded-xl shadow-sm bg-white border border-gray-100 flex items-center gap-4`}>
+              <div className={`p-3 rounded-lg ${bg} text-white/95`}>
+                {icon}
+              </div>
+              <div>
+                <div className="text-sm text-gray-500">{title}</div>
+                <div className="text-2xl font-semibold">{count}</div>
+              </div>
+            </div>
+          );
+
+          return (
+            <>
+              {card('To Do', counts.toDo, 'bg-slate-600', <ClipboardList className="tm-icon-xl" />)}
+              {card('In Progress', counts.inProgress, 'bg-blue-600', <Play className="tm-icon-xl" />)}
+              {card('On Hold', counts.onHold, 'bg-orange-600', <Pause className="tm-icon-xl" />)}
+              {card('Completed', counts.completed, 'bg-emerald-600', <CheckSquare className="tm-icon-xl" />)}
+            </>
+          );
+        })()}
+      </div>
       {/* ERROR / LOCKED PROJECT BANNER */}
       {(error || isProjectLocked) && !isFetching && (
         <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-xl text-red-800 animate-fadeIn">
           <AlertCircle className="tm-icon-md flex-shrink-0 mt-0.5" />
           <div>
-            <h3 className="font-semibold text-lg">{isProjectLocked ? 'Project Locked' : 'Error'}</h3>
+            <h3 className="text-section-title">{isProjectLocked ? 'Project Locked' : 'Error'}</h3>
             <p className="text-red-700 mt-1">{error}</p>
             {isProjectLocked && (
               <p className="text-red-600 text-sm mt-2">
@@ -1024,7 +1024,7 @@ export default function Tasks() {
               placeholder="Search tasks..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white"
             />
           </div>
 
@@ -1038,7 +1038,7 @@ export default function Tasks() {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white"
             >
               <option value="all">All Status</option>
               {statusOptions.map(status => (
@@ -1051,7 +1051,7 @@ export default function Tasks() {
             <select
               value={filterPriority}
               onChange={(e) => setFilterPriority(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white"
             >
               <option value="all">All Priority</option>
               {priorityOptions.map(priority => (
@@ -1074,7 +1074,7 @@ export default function Tasks() {
       {selectedProjectId === 'all' && (
         <div className="bg-white rounded-xl border p-6 md:p-12 text-center">
           <AlertCircle className="tm-icon-hero mx-auto mb-4 text-gray-400" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">Select a Project</h3>
+          <h3 className="text-section-title text-gray-900 mb-2">Select a Project</h3>
           <p className="text-gray-600 mb-6">
             Please select a project from the dropdown above to view and manage tasks.
           </p>
@@ -1098,7 +1098,7 @@ export default function Tasks() {
       {selectedProjectId !== 'all' && !isFetching && tasks.length === 0 && (
         <div className="bg-white rounded-xl border p-6 md:p-12 text-center">
           <AlertCircle className="tm-icon-hero mx-auto mb-4 text-gray-400" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No Tasks Found</h3>
+          <h3 className="text-section-title text-gray-900 mb-2">No Tasks Found</h3>
           <p className="text-gray-600 mb-6">
             No tasks found for project "{getProjectName(selectedProjectId)}".
             Create your first task or try refreshing.
@@ -1140,7 +1140,7 @@ export default function Tasks() {
                 {/* Header / Summary */}
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-3">
-                    <h2 className="text-lg md:text-xl font-semibold text-gray-900">Workflow Management</h2>
+                    <h2 className="text-section-title text-gray-900">Workflow Management</h2>
                     <div className="text-sm text-gray-500">
                       {selectedTaskDetails.title || selectedTaskDetails.name || 'Untitled Task'}
                     </div>
@@ -1238,7 +1238,7 @@ export default function Tasks() {
                       ? 'On Hold'
                       : nextStep
                         ? getStatusText(nextStep)
-                        : '—';
+                        : 'â€”';
 
                     return (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
@@ -1388,7 +1388,7 @@ export default function Tasks() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">
+              <h2 className="text-section-title text-gray-900">
                 {editingTask ? 'Edit Task' : 'Create New Task'}
               </h2>
               <button
@@ -1412,7 +1412,7 @@ export default function Tasks() {
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
                     placeholder="Enter task name"
                   />
                 </div>
@@ -1426,7 +1426,7 @@ export default function Tasks() {
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     rows={3}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 resize-none"
                     placeholder="Enter task description"
                   />
                 </div>
@@ -1441,7 +1441,7 @@ export default function Tasks() {
                       required
                       value={formData.project_id}
                       onChange={(e) => setFormData({ ...formData, project_id: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
                       disabled={selectedProjectId !== 'all'}
                     >
                       {selectedProjectId === 'all' ? (
@@ -1477,7 +1477,7 @@ export default function Tasks() {
                     <select
                       value={formData.status}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
                     >
                       {statusOptions.map((s) => (
                         <option key={s} value={s}>
@@ -1497,7 +1497,7 @@ export default function Tasks() {
                     <select
                       value={formData.priority}
                       onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
                     >
                       {priorityOptions.map((p) => (
                         <option key={p} value={p}>
@@ -1518,7 +1518,7 @@ export default function Tasks() {
                           ...formData,
                           assigned_to: e.target.value ? [e.target.value] : []
                         })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 appearance-none bg-white"
                       >
                         <option value="">Select a user</option>
                         {employeeUsers.map((user) => {
@@ -1575,7 +1575,7 @@ export default function Tasks() {
                       step="0.5"
                       value={formData.estimated_hours}
                       onChange={(e) => setFormData({ ...formData, estimated_hours: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
                       placeholder="e.g., 8"
                     />
                   </div>
@@ -1588,7 +1588,7 @@ export default function Tasks() {
                       type="date"
                       value={formData.due_date}
                       onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
                     />
                   </div>
                 </div>

@@ -22,13 +22,13 @@ const ClientAnalytics = ({ client, projects = [], dashboard = {} }) => {
   // Calculate metrics from nested data
   const metrics = useMemo(() => {
     const total = allTasks.length;
-    const completed = allTasks.filter(t => 
+    const completed = allTasks.filter(t =>
       t.status?.toLowerCase() === 'completed' || t.stage?.toUpperCase() === 'COMPLETED'
     ).length;
-    const pending = allTasks.filter(t => 
+    const pending = allTasks.filter(t =>
       t.status?.toLowerCase() === 'pending' || t.stage?.toUpperCase() === 'PENDING'
     ).length;
-    const inProgress = allTasks.filter(t => 
+    const inProgress = allTasks.filter(t =>
       t.stage?.toUpperCase() === 'IN PROGRESS' || t.stage?.toUpperCase() === 'IN_PROGRESS'
     ).length;
 
@@ -56,13 +56,13 @@ const ClientAnalytics = ({ client, projects = [], dashboard = {} }) => {
   const projectBreakdown = useMemo(() => {
     return projects.map(project => {
       const tasks = Array.isArray(project.tasks) ? project.tasks : [];
-      const completed = tasks.filter(t => 
+      const completed = tasks.filter(t =>
         t.status?.toLowerCase() === 'completed' || t.stage?.toUpperCase() === 'COMPLETED'
       ).length;
-      const pending = tasks.filter(t => 
+      const pending = tasks.filter(t =>
         t.status?.toLowerCase() === 'pending' || t.stage?.toUpperCase() === 'PENDING'
       ).length;
-      const inProgress = tasks.filter(t => 
+      const inProgress = tasks.filter(t =>
         t.stage?.toUpperCase() === 'IN PROGRESS' || t.stage?.toUpperCase() === 'IN_PROGRESS'
       ).length;
       return {
@@ -96,7 +96,7 @@ const ClientAnalytics = ({ client, projects = [], dashboard = {} }) => {
     const todo = allTasks.filter(t => resolveTaskStatus(t) === "PENDING").length;
     const inProgress = allTasks.filter(t => resolveTaskStatus(t) === "IN_PROGRESS").length;
     const completed = allTasks.filter(t => resolveTaskStatus(t) === "COMPLETED").length;
-    
+
     return [
       { name: 'To Do', value: todo, color: '#F59E0B' },
       { name: 'In Progress', value: inProgress, color: '#38BDF8' },
@@ -133,7 +133,7 @@ const ClientAnalytics = ({ client, projects = [], dashboard = {} }) => {
               <Icons.ListChecks className="w-5 h-5 text-sky-600" />
             </div>
           </div>
-          <p className="text-3xl font-bold text-slate-900">{metrics.total}</p>
+          <p className="text-3xl font-semibold text-slate-900">{metrics.total}</p>
           <p className="text-xs text-slate-500 mt-2">Across {projects.length} projects</p>
         </div>
 
@@ -144,10 +144,10 @@ const ClientAnalytics = ({ client, projects = [], dashboard = {} }) => {
               <Icons.CheckCircle className="w-5 h-5 text-emerald-600" />
             </div>
           </div>
-          <p className="text-3xl font-bold text-slate-900">{metrics.completed}</p>
+          <p className="text-3xl font-semibold text-slate-900">{metrics.completed}</p>
           <div className="mt-3 bg-emerald-100 rounded-full h-2">
-            <div 
-              className="bg-emerald-500 h-2 rounded-full" 
+            <div
+              className="bg-emerald-500 h-2 rounded-full"
               style={{ width: `${metrics.total > 0 ? (metrics.completed / metrics.total) * 100 : 0}%` }}
             ></div>
           </div>
@@ -160,7 +160,7 @@ const ClientAnalytics = ({ client, projects = [], dashboard = {} }) => {
               <Icons.Clock className="w-5 h-5 text-violet-600" />
             </div>
           </div>
-          <p className="text-3xl font-bold text-slate-900">{metrics.inProgress}</p>
+          <p className="text-3xl font-semibold text-slate-900">{metrics.inProgress}</p>
           <p className="text-xs text-slate-500 mt-2">{metrics.pending} pending</p>
         </div>
 
@@ -171,7 +171,7 @@ const ClientAnalytics = ({ client, projects = [], dashboard = {} }) => {
               <Icons.Clock3 className="w-5 h-5 text-amber-600" />
             </div>
           </div>
-          <p className="text-3xl font-bold text-slate-900">{metrics.totalHours}h</p>
+          <p className="text-3xl font-semibold text-slate-900">{metrics.totalHours}h</p>
           <p className="text-xs text-slate-500 mt-2">Allocated time</p>
         </div>
       </div>
@@ -181,7 +181,7 @@ const ClientAnalytics = ({ client, projects = [], dashboard = {} }) => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Task Status Pie Chart */}
           <div className="bg-white/90 backdrop-blur p-6 rounded-2xl shadow-sm border border-slate-200">
-            <h3 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2">
+            <h3 className="text-section-title text-slate-900 mb-6 flex items-center gap-2">
               <Icons.PieChart className="w-5 h-5 text-sky-600" />
               Task Status Distribution
             </h3>
@@ -195,7 +195,7 @@ const ClientAnalytics = ({ client, projects = [], dashboard = {} }) => {
                   plugins: {
                     legend: {
                       position: 'bottom',
-                      labels: { 
+                      labels: {
                         font: { size: 13 },
                         padding: 15,
                         usePointStyle: true
@@ -209,7 +209,7 @@ const ClientAnalytics = ({ client, projects = [], dashboard = {} }) => {
 
           {/* Priority Bar Chart */}
           <div className="bg-white/90 backdrop-blur p-6 rounded-2xl shadow-sm border border-slate-200">
-            <h3 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2">
+            <h3 className="text-section-title text-slate-900 mb-6 flex items-center gap-2">
               <Icons.BarChart3 className="w-5 h-5 text-rose-500" />
               Priority Distribution
             </h3>
@@ -263,7 +263,7 @@ const ClientAnalytics = ({ client, projects = [], dashboard = {} }) => {
                     beginAtZero: true,
                     max: 100,
                     ticks: {
-                      callback: function(value) {
+                      callback: function (value) {
                         return value + '%';
                       },
                       font: { size: 11 }
@@ -295,7 +295,7 @@ const ClientAnalytics = ({ client, projects = [], dashboard = {} }) => {
                   <Icon className={clsx('w-4 h-4', item.textColor)} />
                 </div>
               </div>
-              <p className="text-2xl font-bold text-gray-900">{item.value}</p>
+              <p className="text-2xl font-semibold text-gray-900">{item.value}</p>
             </div>
           );
         })}

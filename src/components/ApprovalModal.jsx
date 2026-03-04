@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 
 // Generic modal for manager approvals: approve / reject / escalate with comment input
 
@@ -62,7 +62,7 @@ const ApprovalModal = ({
             rows={3}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-600"
             placeholder="Add a short note for the requester"
           />
         </div>
@@ -80,7 +80,7 @@ const ApprovalModal = ({
             disabled={loading}
             className={`px-4 py-2 rounded-lg text-sm font-medium text-white ${cfg.primaryClass} disabled:opacity-60 disabled:cursor-not-allowed`}
           >
-            {loading ? 'Submitting…' : cfg.primaryLabel}
+            {loading ? 'Submittingâ€¦' : cfg.primaryLabel}
           </button>
         </footer>
       </form>
@@ -89,3 +89,4 @@ const ApprovalModal = ({
 };
 
 export default ApprovalModal;
+

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+﻿import React, { useState, useEffect, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { logout, selectUser, getProfile, logoutUser, selectProfileFetched, selectProfileLoading } from "../redux/slices/authSlice";
@@ -25,7 +25,7 @@ const UserAvatar = () => {
         const urlObj = new URL(url);
         return urlObj.pathname + urlObj.search;
       }
-    } catch (e) {}
+    } catch (e) { }
     return url;
   };
 
@@ -74,7 +74,7 @@ const UserAvatar = () => {
     navigate('/log-in', { replace: true });
   };
 
-  // ✅ FIXED useEffect - NO MORE INFINITE CALLS
+  // âœ… FIXED useEffect - NO MORE INFINITE CALLS
   useEffect(() => {
     // Guards: Skip if no user, already fetched, currently loading, has modules, or has photo
     if (!user?.id || profileFetched || profileLoading || user.modules?.length > 0 || safePhotoUrl) {
@@ -129,22 +129,26 @@ const UserAvatar = () => {
       {isDropdownOpen && (
         <div className="absolute right-0 mt-4 w-80 bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl z-50 border border-white/20 ring-1 ring-black/5 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 origin-top-right">
           <div className="p-5 bg-gradient-to-br from-slate-900 to-slate-800 text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/20 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/20 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
 
             <div className="flex items-center gap-4 relative z-10">
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-lg font-bold text-white shadow-lg ring-2 ring-white/10 overflow-hidden">
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-lg font-semibold text-white shadow-lg ring-2 ring-white/10 overflow-hidden">
                 {safePhotoUrl && !imageError ? (
                   <img
                     src={safePhotoUrl}
                     alt={displayName}
                     className="w-full h-full object-cover"
+                    onError={handleImageError}
+                    onLoad={handleImageLoad}
                   />
+                ) : fallbackSrc ? (
+                  <img src={fallbackSrc} alt={displayName} className="w-full h-full object-cover" />
                 ) : (
                   initials
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-bold text-lg truncate leading-tight">{displayName}</div>
+                <div className="font-semibold text-lg truncate leading-tight">{displayName}</div>
                 <div className="text-sm text-slate-300 truncate">{user?.email}</div>
                 {user?.role && (
                   <div className="inline-flex mt-1 px-2 py-0.5 rounded-full bg-white/10 border border-white/10 text-[10px] font-medium uppercase tracking-wider text-blue-200">
@@ -206,3 +210,4 @@ const UserAvatar = () => {
 };
 
 export default UserAvatar;
+

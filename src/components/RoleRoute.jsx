@@ -13,7 +13,7 @@ const RoleRoute = ({ role, Component }) => {
   if (normalize(user.role) !== normalize(role)) {
     return (
       <div className="p-6">
-        <h2 className="text-lg font-semibold">Access denied</h2>
+        <h2 className="text-section-title">Access denied</h2>
         <p className="text-sm text-gray-500">This page is for <strong>{role}</strong> users only.</p>
       </div>
     );

@@ -24,7 +24,7 @@ const PageHeader = ({
     <div className={containerClasses}>
       <div>
         {title && (
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+          <h1 className="text-page-title text-gray-900">
             {title}
           </h1>
         )}

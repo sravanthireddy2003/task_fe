@@ -1,11 +1,10 @@
-import React, { useEffect } from "react";
-import { useForm } from "react-hook-form";
+﻿import React, { useState, useEffect } from "react";
 import { Dialog } from "@headlessui/react";
 import Textbox from "../components/Textbox";
 import Loading from "../components/Loader";
 import Button from "../components/Button";
 import { useSelector, useDispatch } from "react-redux";
-import { updateUser, createUser, fetchUsers } from "../redux/slices/userSlice";
+import { updateUser, createUser, fetchUsers, selectUsers } from "../redux/slices/userSlice";
 import {
   fetchDepartments,
   selectDepartments,
@@ -18,59 +17,112 @@ const AddUser = ({ open, setOpen, userData }) => {
   const { isLoading: authLoading } = useSelector((state) => state.auth);
   const userStatus = useSelector((state) => state.user?.status);
   const departments = useSelector(selectDepartments) || [];
+  const users = useSelector(selectUsers) || [];
 
   const isSubmitting = userStatus === "loading" || authLoading;
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-    setError,
-    clearErrors,
-    watch,
-  } = useForm({
-    defaultValues: {
-      name: "",
-      email: "",
-      title: "",
-      phone: "",
-      role: "Employee",
-      departmentId: "",
-      isGuest: false,
-      isActive: true,
-    },
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    title: "",
+    phone: "",
+    role: "Employee",
+    departmentId: "",
+    isGuest: false,
+    isActive: true,
   });
+  const [errors, setErrors] = useState({});
 
-  // ✅ Native RHF validation rules
-  const nameValidation = {
-    required: "Full name is required!",
-    minLength: { value: 2, message: "Name must be at least 2 characters" },
-    maxLength: { value: 100, message: "Name too long (max 100 chars)" },
+  const validate = () => {
+    const newErrors = {};
+    const nameStr = formData.name?.trim() || "";
+    if (!nameStr) newErrors.name = "Full name is required!";
+    else if (nameStr.length < 2) newErrors.name = "Name must be at least 2 characters";
+    else if (nameStr.length > 100) newErrors.name = "Name too long (max 100 chars)";
+
+    const emailStr = formData.email?.trim() || "";
+    if (!emailStr) newErrors.email = "Email is required!";
+    else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(emailStr)) {
+      newErrors.email = "Invalid email format";
+    }
+
+    const titleStr = formData.title?.trim() || "";
+    if (!titleStr) newErrors.title = "Title is required!";
+    else if (titleStr.length > 100) newErrors.title = "Title too long";
+
+    const phoneStr = formData.phone?.trim() || "";
+    if (phoneStr) {
+      const digitsOnly = phoneStr.replace(/\D/g, "");
+      if (digitsOnly.length !== 10) {
+        newErrors.phone = "Phone must be 10 digits";
+      } else if (!/^[6-9]\d{9}$/.test(digitsOnly)) {
+        newErrors.phone = "Valid phone must start with 6-9";
+      }
+    } else {
+      newErrors.phone = "Phone number is required!";
+    }
+
+    if (!formData.role) newErrors.role = "Role is required!";
+
+    if (!formData.departmentId) newErrors.departmentId = "Department is required!";
+
+    // Duplicate Validation
+    const currentId = userData?._id || userData?.id || userData?.public_id;
+
+    if (emailStr && !newErrors.email) {
+      const isDuplicateEmail = users.some(u =>
+        u.email?.toLowerCase() === emailStr.toLowerCase() &&
+        (u._id || u.id || u.public_id) !== currentId
+      );
+      if (isDuplicateEmail) newErrors.email = "Email already exists!";
+    }
+
+    if (phoneStr && !newErrors.phone) {
+      const isDuplicatePhone = users.some(u =>
+        u.phone?.trim() === phoneStr &&
+        (u._id || u.id || u.public_id) !== currentId
+      );
+      if (isDuplicatePhone) newErrors.phone = "Phone number already exists!";
+    }
+
+    setErrors(newErrors);
+    return newErrors;
   };
 
-  const emailValidation = {
-    required: "Email is required!",
-    pattern: {
-      value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-      message: "Invalid email format",
-    },
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    let finalValue = type === 'checkbox' ? checked : value;
+    if (name === 'phone') {
+      finalValue = finalValue.replace(/\D/g, '').slice(0, 10);
+    }
+    setFormData(prev => ({
+      ...prev,
+      [name]: finalValue
+    }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
-  const phoneValidation = {
-    maxLength: { value: 20, message: "Phone too long (max 20 chars)" },
+  const setError = (field, err) => {
+    setErrors(prev => ({ ...prev, [field]: err.message }));
+  };
+
+  const clearErrors = () => {
+    setErrors({});
   };
 
   // Populate form for edit or reset for add
   useEffect(() => {
     if (!open) {
-      reset();
+      setFormData({
+        name: "", email: "", title: "", phone: "",
+        role: "Employee", departmentId: "", isGuest: false, isActive: true
+      });
       clearErrors();
       return;
     }
 
     if (userData) {
-      reset({
+      setFormData({
         name: userData.name || "",
         email: userData.email || "",
         title: userData.title || "",
@@ -82,9 +134,12 @@ const AddUser = ({ open, setOpen, userData }) => {
       });
       clearErrors();
     } else {
-      reset();
+      setFormData({
+        name: "", email: "", title: "", phone: "",
+        role: "Employee", departmentId: "", isGuest: false, isActive: true
+      });
     }
-  }, [open, userData, reset, clearErrors]);
+  }, [open, userData]);
 
   // Load departments when modal opens
   useEffect(() => {
@@ -93,7 +148,20 @@ const AddUser = ({ open, setOpen, userData }) => {
     }
   }, [dispatch, open]);
 
-  const handleOnSubmit = async (data) => {
+  const handleOnSubmit = async (e) => {
+    e.preventDefault();
+    const currentErrors = validate();
+    if (Object.keys(currentErrors).length > 0) {
+      Object.values(currentErrors).forEach((errorMsg) => {
+        if (errorMsg) {
+          toast.error(errorMsg);
+        }
+      });
+      return;
+    }
+
+    const data = formData;
+
     try {
       clearErrors();
 
@@ -142,18 +210,15 @@ const AddUser = ({ open, setOpen, userData }) => {
   };
 
   const handleCancel = () => {
-    reset();
+    setFormData({
+      name: "", email: "", title: "", phone: "",
+      role: "Employee", departmentId: "", isGuest: false, isActive: true
+    });
     clearErrors();
     setOpen(false);
   };
 
-  const handleOnError = (errors) => {
-    Object.values(errors).forEach((error) => {
-      if (error?.message) {
-        toast.error(error.message);
-      }
-    });
-  };
+
 
   return (
     <Dialog open={open} onClose={handleCancel} className="relative z-50">
@@ -164,7 +229,7 @@ const AddUser = ({ open, setOpen, userData }) => {
       <div className="fixed inset-0 overflow-y-auto">
         <div className="flex min-h-full items-center justify-center p-4">
           <Dialog.Panel className="relative bg-white w-full max-w-2xl rounded-xl shadow-xl">
-            <form onSubmit={handleSubmit(handleOnSubmit, handleOnError)} className="space-y-6">
+            <form onSubmit={handleOnSubmit} className="space-y-6">
               {/* Header */}
               <div className="px-6 pt-6 pb-4 border-b border-gray-200">
                 <div className="flex items-center justify-between">
@@ -203,10 +268,12 @@ const AddUser = ({ open, setOpen, userData }) => {
                     </label>
                     <input
                       type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
                       placeholder="Enter full name"
-                      {...register("name", nameValidation)}
                       className={clsx(
-                        "w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors",
+                        "w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-500 transition-colors",
                         errors.name
                           ? "border-red-300 bg-red-50"
                           : "border-gray-300",
@@ -214,7 +281,7 @@ const AddUser = ({ open, setOpen, userData }) => {
                     />
                     {errors.name && (
                       <p className="mt-2 text-sm text-red-600">
-                        {errors.name.message}
+                        {errors.name}
                       </p>
                     )}
                   </div>
@@ -226,13 +293,12 @@ const AddUser = ({ open, setOpen, userData }) => {
                     </label>
                     <input
                       type="text"
+                      name="title"
+                      value={formData.title}
+                      onChange={handleChange}
                       placeholder="Job title/position"
-                      {...register("title", {
-                        required: "Title is required!",
-                        maxLength: { value: 100, message: "Title too long" },
-                      })}
                       className={clsx(
-                        "w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors",
+                        "w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-500 transition-colors",
                         errors.title
                           ? "border-red-300 bg-red-50"
                           : "border-gray-300",
@@ -240,7 +306,7 @@ const AddUser = ({ open, setOpen, userData }) => {
                     />
                     {errors.title && (
                       <p className="mt-2 text-sm text-red-600">
-                        {errors.title.message}
+                        {errors.title}
                       </p>
                     )}
                   </div>
@@ -252,10 +318,12 @@ const AddUser = ({ open, setOpen, userData }) => {
                     </label>
                     <input
                       type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
                       placeholder="user@company.com"
-                      {...register("email", emailValidation)}
                       className={clsx(
-                        "w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors",
+                        "w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-500 transition-colors",
                         errors.email
                           ? "border-red-300 bg-red-50"
                           : "border-gray-300",
@@ -263,7 +331,7 @@ const AddUser = ({ open, setOpen, userData }) => {
                     />
                     {errors.email && (
                       <p className="mt-2 text-sm text-red-600">
-                        {errors.email.message}
+                        {errors.email}
                       </p>
                     )}
                   </div>
@@ -275,10 +343,12 @@ const AddUser = ({ open, setOpen, userData }) => {
                     </label>
                     <input
                       type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
                       placeholder="+1 (555) 123-4567"
-                      {...register("phone", phoneValidation)}
                       className={clsx(
-                        "w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors",
+                        "w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-500 transition-colors",
                         errors.phone
                           ? "border-red-300 bg-red-50"
                           : "border-gray-300",
@@ -286,7 +356,7 @@ const AddUser = ({ open, setOpen, userData }) => {
                     />
                     {errors.phone && (
                       <p className="mt-2 text-sm text-red-600">
-                        {errors.phone.message}
+                        {errors.phone}
                       </p>
                     )}
                   </div>
@@ -297,12 +367,12 @@ const AddUser = ({ open, setOpen, userData }) => {
                       Role *
                     </label>
                     <select
-                      {...register("role", {
-                        required: "Role is required!",
-                      })}
+                      name="role"
+                      value={formData.role}
+                      onChange={handleChange}
                       disabled={isSubmitting}
                       className={clsx(
-                        "w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white",
+                        "w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-500 transition-colors bg-white",
                         errors.role
                           ? "border-red-300 bg-red-50"
                           : "border-gray-300",
@@ -315,7 +385,7 @@ const AddUser = ({ open, setOpen, userData }) => {
                     </select>
                     {errors.role && (
                       <p className="mt-2 text-sm text-red-600">
-                        {errors.role.message}
+                        {errors.role}
                       </p>
                     )}
                   </div>
@@ -326,9 +396,11 @@ const AddUser = ({ open, setOpen, userData }) => {
                       Department
                     </label>
                     <select
-                      {...register("departmentId")}
+                      name="departmentId"
+                      value={formData.departmentId}
+                      onChange={handleChange}
                       disabled={isSubmitting || departments.length === 0}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-500 transition-colors bg-white"
                     >
                       <option value="">-- Select Department --</option>
                       {departments.map((dept) => (
@@ -352,9 +424,11 @@ const AddUser = ({ open, setOpen, userData }) => {
                     <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer group">
                       <input
                         type="checkbox"
-                        {...register("isActive")}
+                        name="isActive"
+                        checked={formData.isActive}
+                        onChange={handleChange}
                         className={clsx(
-                          "h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-colors",
+                          "h-5 w-5 text-blue-600 focus:ring-blue-600 border-gray-300 rounded transition-colors",
                           isSubmitting && "cursor-not-allowed opacity-50",
                         )}
                         disabled={isSubmitting}
@@ -372,9 +446,11 @@ const AddUser = ({ open, setOpen, userData }) => {
                     <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer group">
                       <input
                         type="checkbox"
-                        {...register("isGuest")}
+                        name="isGuest"
+                        checked={formData.isGuest}
+                        onChange={handleChange}
                         className={clsx(
-                          "h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-colors",
+                          "h-5 w-5 text-blue-600 focus:ring-blue-600 border-gray-300 rounded transition-colors",
                           isSubmitting && "cursor-not-allowed opacity-50",
                         )}
                         disabled={isSubmitting}
@@ -392,10 +468,10 @@ const AddUser = ({ open, setOpen, userData }) => {
                 </fieldset>
 
                 {/* Server Error Display */}
-                {errors.root?.serverError && (
+                {errors["root.serverError"] && (
                   <div className="mt-6 p-3 bg-red-50 border border-red-200 rounded-lg">
                     <p className="text-sm text-red-800">
-                      {errors.root.serverError.message}
+                      {errors["root.serverError"]}
                     </p>
                   </div>
                 )}
@@ -409,7 +485,7 @@ const AddUser = ({ open, setOpen, userData }) => {
                     onClick={handleCancel}
                     disabled={isSubmitting}
                     label="Cancel"
-                    className="px-6 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 rounded-lg font-medium"
+                    className="px-6 py-2.5 !bg-white hover:!bg-gray-50 !text-gray-700 border border-gray-300 rounded-lg font-medium"
                   />
                   <Button
                     type="submit"
@@ -417,8 +493,8 @@ const AddUser = ({ open, setOpen, userData }) => {
                     className={clsx(
                       "px-8 py-2.5 font-medium rounded-lg",
                       isSubmitting
-                        ? "bg-gray-400 text-gray-600 cursor-not-allowed"
-                        : "bg-blue-500 hover:bg-blue-200 text-black-700",
+                        ? "bg-gray-400 !text-gray-600 cursor-not-allowed"
+                        : "!bg-blue-600 hover:!bg-blue-700 !text-white",
                     )}
                   >
                     {isSubmitting ? (
@@ -441,3 +517,4 @@ const AddUser = ({ open, setOpen, userData }) => {
 };
 
 export default AddUser;
+

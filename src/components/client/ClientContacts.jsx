@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 import * as Icons from "../../icons";
 import Button from "../Button";
@@ -15,11 +15,66 @@ const ClientContacts = ({ client }) => {
     position: "",
     department: "",
   });
+  const [errors, setErrors] = useState({});
+
+  const validate = () => {
+    const newErrors = {};
+    const nameStr = formData.name?.trim() || "";
+    if (!nameStr) newErrors.name = "Name is required";
+
+    const emailStr = formData.email?.trim() || "";
+    if (emailStr && !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(emailStr)) {
+      newErrors.email = "Invalid email format";
+    }
+
+    const phoneStr = formData.phone?.trim() || "";
+    if (phoneStr) {
+      if (!/^[0-9]{10}$/.test(phoneStr)) {
+        newErrors.phone = "Phone must be 10 digits";
+      } else if (!/^[6-9]\d{9}$/.test(phoneStr)) {
+        newErrors.phone = "Valid phone must start with 6-9";
+      }
+    }
+
+    // Duplicate Validation based on current contacts array
+    const contacts = client?.contacts || [];
+    const currentId = editingContact?.id || editingContact?._id || editingContact?.public_id;
+
+    if (emailStr && !newErrors.email) {
+      const isDuplicateEmail = contacts.some(c =>
+        c.email?.toLowerCase() === emailStr.toLowerCase() &&
+        (c.id || c._id || c.public_id) !== currentId
+      );
+      if (isDuplicateEmail) newErrors.email = "Email already exists!";
+    }
+
+    if (phoneStr && !newErrors.phone) {
+      const isDuplicatePhone = contacts.some(c =>
+        c.phone?.trim() === phoneStr &&
+        (c.id || c._id || c.public_id) !== currentId
+      );
+      if (isDuplicatePhone) newErrors.phone = "Phone number already exists!";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    let finalValue = value;
+    if (name === 'phone') {
+      finalValue = finalValue.replace(/\D/g, '').slice(0, 10);
+    }
+    setFormData((prev) => ({ ...prev, [name]: finalValue }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+  };
 
   const contacts = client?.contacts || [];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validate()) return;
     try {
       if (editingContact) {
         await dispatch(updateContact({
@@ -36,7 +91,7 @@ const ClientContacts = ({ client }) => {
         setShowAddForm(false);
       }
       setFormData({ name: "", email: "", phone: "", position: "", department: "" });
-    } catch (error) {}
+    } catch (error) { }
   };
 
   const handleEdit = (contact) => {
@@ -57,7 +112,7 @@ const ClientContacts = ({ client }) => {
           clientId: client.id,
           contactId
         })).unwrap();
-      } catch (error) {}
+      } catch (error) { }
     }
   };
 
@@ -67,19 +122,20 @@ const ClientContacts = ({ client }) => {
         clientId: client.id,
         contactId
       })).unwrap();
-    } catch (error) {}
+    } catch (error) { }
   };
 
   const resetForm = () => {
     setShowAddForm(false);
     setEditingContact(null);
     setFormData({ name: "", email: "", phone: "", position: "", department: "" });
+    setErrors({});
   };
 
   return (
     <div className="w-full">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-800">Client Contacts</h2>
+        <h2 className="text-section-title text-gray-800">Client Contacts</h2>
         <Button
           label="Add Contact"
           icon={<Icons.Plus />}
@@ -92,7 +148,7 @@ const ClientContacts = ({ client }) => {
       {(showAddForm || editingContact) && (
         <div className="bg-white p-6 rounded-lg shadow-md mb-6 border">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-medium">
+            <h3 className="text-card-title">
               {editingContact ? "Edit Contact" : "Add New Contact"}
             </h3>
             <button
@@ -111,11 +167,12 @@ const ClientContacts = ({ client }) => {
                 </label>
                 <input
                   type="text"
+                  name="name"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600"
                 />
+                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
               </div>
 
               <div>
@@ -124,10 +181,12 @@ const ClientContacts = ({ client }) => {
                 </label>
                 <input
                   type="email"
+                  name="email"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600"
                 />
+                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
               </div>
 
               <div>
@@ -136,10 +195,12 @@ const ClientContacts = ({ client }) => {
                 </label>
                 <input
                   type="tel"
+                  name="phone"
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600"
                 />
+                {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
               </div>
 
               <div>
@@ -148,9 +209,10 @@ const ClientContacts = ({ client }) => {
                 </label>
                 <input
                   type="text"
+                  name="position"
                   value={formData.position}
-                  onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600"
                 />
               </div>
 
@@ -160,9 +222,10 @@ const ClientContacts = ({ client }) => {
                 </label>
                 <input
                   type="text"
+                  name="department"
                   value={formData.department}
-                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600"
                 />
               </div>
             </div>

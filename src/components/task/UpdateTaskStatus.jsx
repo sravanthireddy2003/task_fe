@@ -1,22 +1,27 @@
-import { useForm } from "react-hook-form";
+﻿import React, { useState } from "react";
 import ModalWrapper from "../ModalWrapper";
 import { Dialog } from "@headlessui/react";
 import Button from "../Button";
 
 const UpdateTaskStatus = ({ openStage, setOpenStage, id, onStatusUpdate }) => {
-  const { register, handleSubmit, formState: { errors } } = useForm();
+  const [status, setStatus] = useState("");
+  const [error, setError] = useState("");
 
-const handleOnSubmit = (data) => {
-  if (!data.status) return;
-  
-  onStatusUpdate(data.status);  
-  setOpenStage(false);
-};
+  const handleOnSubmit = (e) => {
+    e.preventDefault();
+    if (!status) {
+      setError("Status is required!");
+      return;
+    }
+
+    onStatusUpdate(status);
+    setOpenStage(false);
+  };
 
   return (
     <>
       <ModalWrapper open={openStage} setOpen={setOpenStage}>
-        <form onSubmit={handleSubmit(handleOnSubmit)} className=''>
+        <form onSubmit={handleOnSubmit} className=''>
           <Dialog.Title
             as='h2'
             className='text-base font-bold leading-6 text-gray-900 mb-4'
@@ -33,17 +38,19 @@ const handleOnSubmit = (data) => {
                 id='status'
                 name='status'
                 className='w-full rounded border-gray-300'
-                {...register("status", {
-                  required: "Status is required!",
-                })}
+                value={status}
+                onChange={(e) => {
+                  setStatus(e.target.value);
+                  setError("");
+                }}
               >
                 <option value=''>Select status</option>
                 <option value='IN PROGRESS'>IN PROGRESS</option>
                 <option value='COMPLETED'>COMPLETED</option>
                 <option value='TODO'>TODO</option>
               </select>
-              {errors.status && (
-                <span className='text-red-600'>{errors.status.message}</span>
+              {error && (
+                <span className='text-red-600'>{error}</span>
               )}
             </div>
           </div>

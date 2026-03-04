@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectUser } from '../redux/slices/authSlice';
 import fetchWithTenant from '../utils/fetchWithTenant';
@@ -158,7 +158,7 @@ const TwoFactorAuth = () => {
   }, []);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+    <div className="tm-card-shell mb-6">
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -166,7 +166,7 @@ const TwoFactorAuth = () => {
             <KeyRound className="w-6 h-6 text-blue-600" />
           </div>
           <div>
-            <h3 className="text-xl font-semibold text-gray-900">Two-Factor Authentication (2FA)</h3>
+            <h3 className="text-section-title text-gray-900">Two-Factor Authentication (2FA)</h3>
             <p className="text-gray-600 mt-1">Add an extra layer of security using TOTP authenticator apps</p>
           </div>
         </div>
@@ -187,7 +187,7 @@ const TwoFactorAuth = () => {
                 <ShieldCheck className="w-8 h-8 text-blue-600" />
               </div>
               <div className="flex-1">
-                <h4 className="font-semibold text-gray-900 mb-2">Enhanced Account Security</h4>
+                <h4 className="text-section-title text-gray-900 mb-2">Enhanced Account Security</h4>
                 <p className="text-gray-600 mb-4">
                   Two-factor authentication adds an extra layer of security to your account.
                   When enabled, you'll need to enter both your password and a verification code from
@@ -246,7 +246,7 @@ const TwoFactorAuth = () => {
               <button
                 onClick={handleEnable2FA}
                 disabled={loading}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn btn-primary inline-flex items-center gap-2 px-6 py-3"
               >
                 {loading ? (
                   <>
@@ -264,7 +264,7 @@ const TwoFactorAuth = () => {
               <button
                 onClick={handleDisable2FA}
                 disabled={loading}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn btn-secondary inline-flex items-center gap-2 px-6 py-3 border-red-600 text-red-600 hover:bg-red-50"
               >
                 {loading ? (
                   <>
@@ -277,7 +277,7 @@ const TwoFactorAuth = () => {
               </button>
             )}
 
-            <button className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+            <button className="btn btn-secondary px-6 py-3 border-gray-300">
               Learn More About 2FA
             </button>
           </div>
@@ -302,7 +302,7 @@ const TwoFactorAuth = () => {
             {/* QR Code Section */}
             <div className="space-y-6">
               <div>
-                <h4 className="font-semibold text-gray-900 mb-3">Step 1: Scan QR Code</h4>
+                <h4 className="text-section-title text-gray-900 mb-3">Step 1: Scan QR Code</h4>
                 <div className="bg-white border-2 border-gray-300 rounded-lg p-6 flex items-center justify-center">
                   {qrCode ? (
                     <img
@@ -320,14 +320,14 @@ const TwoFactorAuth = () => {
               </div>
 
               <div>
-                <h4 className="font-semibold text-gray-900 mb-3">Step 2: Enter Verification Code</h4>
+                <h4 className="text-section-title text-gray-900 mb-3">Step 2: Enter Verification Code</h4>
                 <div className="space-y-3">
                   <input
                     type="text"
                     value={verificationCode}
                     onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     placeholder="Enter 6-digit code"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none text-center text-2xl tracking-widest"
+                    className="input w-full text-center text-2xl tracking-widest"
                     maxLength={6}
                   />
                   <p className="text-sm text-gray-500 text-center">
@@ -340,7 +340,7 @@ const TwoFactorAuth = () => {
                 <button
                   onClick={handleVerify2FA}
                   disabled={loading || verificationCode.length !== 6}
-                  className="flex-1 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn btn-primary flex-1 px-6 py-3"
                 >
                   {loading ? (
                     <>
@@ -353,7 +353,7 @@ const TwoFactorAuth = () => {
                 </button>
                 <button
                   onClick={() => setStep('initial')}
-                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="btn btn-secondary px-6 py-3 border-gray-300"
                 >
                   Cancel
                 </button>
@@ -363,7 +363,7 @@ const TwoFactorAuth = () => {
             {/* Instructions Section */}
             <div className="space-y-6">
               <div>
-                <h4 className="font-semibold text-gray-900 mb-4">Setup Instructions</h4>
+                <h4 className="text-section-title text-gray-900 mb-4">Setup Instructions</h4>
                 <div className="space-y-4">
                   <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
                     <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
@@ -461,7 +461,7 @@ const TwoFactorAuth = () => {
               </div>
               <button
                 onClick={downloadBackupCodes}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                className="btn btn-primary px-4 py-2 flex items-center gap-2"
               >
                 <Copy />
                 Download Codes
@@ -497,14 +497,14 @@ const TwoFactorAuth = () => {
             <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
               <button
                 onClick={() => copyToClipboard(backupCodes.join('\n'))}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+                className="btn btn-secondary px-4 py-2 flex items-center gap-2"
               >
                 <Copy />
                 Copy All Codes
               </button>
               <button
                 onClick={() => setStep('initial')}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="btn btn-primary px-6 py-2"
               >
                 Done
               </button>
@@ -542,7 +542,7 @@ const Settings = () => {
       const access = getAccessToken();
       const refresh = getRefreshToken();
       if (access) setAuthToken(access, refresh || null, 'local');
-    } catch (e) {}
+    } catch (e) { }
   }, []);
 
   const [showToken, setShowToken] = useState(false);
@@ -638,7 +638,7 @@ const Settings = () => {
   };
 
   const SettingCard = ({ title, icon: Icon, children, sectionKey }) => (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
+    <div className="tm-card-shell mb-6 overflow-hidden p-0">
       <button
         onClick={() => setExpandedSection(expandedSection === sectionKey ? null : sectionKey)}
         className="w-full flex items-center justify-between p-6 hover:bg-gray-50 transition-colors"
@@ -647,7 +647,7 @@ const Settings = () => {
           <div className="p-2 bg-blue-50 rounded-lg">
             <Icon className="text-blue-600 w-5 h-5" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          <h3 className="text-section-title text-gray-900">{title}</h3>
         </div>
         <svg
           className={`w-5 h-5 text-gray-400 transform transition-transform ${expandedSection === sectionKey ? 'rotate-180' : ''
@@ -676,7 +676,7 @@ const Settings = () => {
       </div>
       <button
         type="button"
-        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${checked ? 'bg-blue-600' : 'bg-gray-300'
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${checked ? 'bg-blue-600' : 'bg-gray-300'
           }`}
         onClick={() => onChange(!checked)}
       >
@@ -696,7 +696,7 @@ const Settings = () => {
         type={type}
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+        className="input mt-1 block w-full rounded-lg"
         placeholder={placeholder}
       />
     </div>
@@ -725,11 +725,11 @@ const Settings = () => {
         <div className="max-w-md text-center">
           <div className="bg-red-50 border border-red-200 rounded-xl p-8">
             <XCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-red-800 mb-2">Error Loading Settings</h3>
+            <h3 className="text-section-title text-red-800 mb-2">Error Loading Settings</h3>
             <p className="text-red-600">{error}</p>
             <button
               onClick={() => window.location.reload()}
-              className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              className="btn btn-primary mt-4 inline-flex items-center gap-2 px-4 py-2"
             >
               Try Again
             </button>
@@ -768,7 +768,7 @@ const Settings = () => {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn btn-primary inline-flex items-center gap-2 px-6 py-3"
               >
                 {saving ? (
                   <>
@@ -793,8 +793,8 @@ const Settings = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Navigation */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Settings Sections</h3>
+            <div className="tm-card-shell p-6 sticky top-6">
+              <h3 className="text-section-title text-gray-900 mb-4">Settings Sections</h3>
               <nav className="space-y-2">
                 {[
                   { key: 'general', label: 'General Settings', icon: SettingsIcon },

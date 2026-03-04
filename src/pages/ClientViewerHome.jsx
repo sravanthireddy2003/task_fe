@@ -44,7 +44,7 @@ const ClientViewerHome = () => {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blue-500">Modules</p>
-            <h2 className="text-xl font-semibold text-gray-900">Accessible features</h2>
+            <h2 className="text-section-title text-gray-900">Accessible features</h2>
           </div>
           <Link to="/projects" className="text-sm font-semibold text-blue-600">Open projects →</Link>
         </div>

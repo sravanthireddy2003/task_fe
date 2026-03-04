@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+﻿import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'sonner';
@@ -39,7 +39,7 @@ const normalizeId = (entity) => {
 };
 
 const formatDateString = (value) => {
-  if (!value) return '—';
+  if (!value) return 'â€”';
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return value;
   return parsed.toLocaleDateString('en-US', {
@@ -257,8 +257,10 @@ const EmployeeTasks = () => {
 
   // New checklist functionality states
   const [checklistForm, setChecklistForm] = useState({ title: '', dueDate: '' });
+  const [checklistError, setChecklistError] = useState("");
   const [editingChecklistId, setEditingChecklistId] = useState('');
   const [editingChecklistValues, setEditingChecklistValues] = useState({ title: '', dueDate: '' });
+  const [editingChecklistError, setEditingChecklistError] = useState("");
   const [actionRunning, setActionRunning] = useState(false);
 
   // Existing states
@@ -936,7 +938,7 @@ const EmployeeTasks = () => {
 
       const result = await dispatch(requestTaskCompletion({ taskId, projectId })).unwrap();
 
-      toast.success('Review requested — sent for manager approval');
+      toast.success('Review requested â€” sent for manager approval');
 
       const updateData = {
         status: 'REVIEW',
@@ -1050,12 +1052,17 @@ const EmployeeTasks = () => {
   // NEW CHECKLIST FUNCTIONS - updated for your API
   const handleAddChecklist = async (event) => {
     event.preventDefault();
+    setChecklistError("");
     if (!selectedTask) {
       toast.error('Select a task before adding checklist items');
       return;
     }
     if (!checklistForm.title.trim()) {
-      toast.error('Checklist title is required');
+      setChecklistError('Checklist title is required');
+      return;
+    }
+    if (checklistForm.title.length > 100) {
+      setChecklistError('Checklist title cannot exceed 100 characters');
       return;
     }
     setActionRunning(true);
@@ -1108,17 +1115,24 @@ const EmployeeTasks = () => {
       title: item.title || '',
       dueDate: formatForInput(item.dueDate),
     });
+    setEditingChecklistError(""); // Clear any previous error
   };
 
   const cancelEditing = () => {
     setEditingChecklistId('');
     setEditingChecklistValues({ title: '', dueDate: '' });
+    setEditingChecklistError(""); // Clear error on cancel
   };
 
   const handleUpdateChecklist = async () => {
+    setEditingChecklistError("");
     if (!editingChecklistId || !selectedTask) return;
     if (!editingChecklistValues.title.trim()) {
-      toast.error('Checklist title cannot be empty');
+      setEditingChecklistError('Checklist title cannot be empty');
+      return;
+    }
+    if (editingChecklistValues.title.length > 100) {
+      setEditingChecklistError('Checklist title cannot exceed 100 characters');
       return;
     }
     setActionRunning(true);
@@ -1425,9 +1439,9 @@ const EmployeeTasks = () => {
   // Get selected task details
   const detailProject = selectedTask?.project || selectedTask?.meta?.project;
   const formattedDue = useMemo(() => {
-    if (!selectedTask) return '—';
+    if (!selectedTask) return 'â€”';
     const raw = selectedTask.taskDate || selectedTask.dueDate;
-    if (!raw) return '—';
+    if (!raw) return 'â€”';
     return formatDateString(raw);
   }, [selectedTask]);
 
@@ -1459,10 +1473,10 @@ const EmployeeTasks = () => {
       {/* HEADER */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          <h1 className="text-page-title text-gray-900 mb-2">
             {userRole === 'employee' ? 'My Tasks' : 'Tasks'}
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 text-small-text md:text-base">
             {userRole === 'employee'
               ? 'Track your assignments and keep checklists aligned with manager expectations.'
               : 'Manage and track all tasks across projects.'}
@@ -1476,7 +1490,7 @@ const EmployeeTasks = () => {
               <select
                 value={selectedProjectId || ""}
                 onChange={(e) => setSelectedProjectId(e.target.value)}
-                className="border border-gray-300 rounded-lg px-4 py-2 pr-8 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none min-w-[200px]"
+                className="input min-w-[200px]"
               >
                 <option value="">Select a project</option>
                 {projects.map((project) => {
@@ -1499,9 +1513,9 @@ const EmployeeTasks = () => {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setView('list')}
-                className={`px-3 py-2 rounded-lg border ${view === 'list'
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                className={`btn px-3 ${view === 'list'
+                  ? 'btn-primary'
+                  : 'btn-secondary bg-white border-gray-300'
                   }`}
               >
                 <List className="tm-icon mr-2 inline" />
@@ -1509,9 +1523,9 @@ const EmployeeTasks = () => {
               </button>
               <button
                 onClick={() => setView('kanban')}
-                className={`px-3 py-2 rounded-lg border ${view === 'kanban'
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                className={`btn px-3 ${view === 'kanban'
+                  ? 'btn-primary'
+                  : 'btn-secondary bg-white border-gray-300'
                   }`}
               >
                 <Kanban className="tm-icon mr-2 inline" />
@@ -1524,9 +1538,9 @@ const EmployeeTasks = () => {
           <button
             onClick={refreshAllTasks}
             disabled={loading || (userRole !== 'employee' && !selectedProjectId)}
-            className={`p-2 rounded-lg border ${loading || (userRole !== 'employee' && !selectedProjectId)
-              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              : 'bg-white text-blue-600 hover:bg-blue-50 border-blue-200'
+            className={`btn p-2 text-blue-600 border-blue-200 hover:bg-blue-50 ${loading || (userRole !== 'employee' && !selectedProjectId)
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
+              : 'bg-white'
               }`}
             title="Refresh tasks"
           >
@@ -1582,7 +1596,7 @@ const EmployeeTasks = () => {
       {/* PROJECT INFO */}
       {selectedProjectId && tasks.length > 0 && selectedProject && (
         <div className="bg-white rounded-xl border p-4 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">
+          <h2 className="text-section-title text-gray-900 mb-2">
             {selectedProject.name} - Tasks ({tasks.length})
           </h2>
           <p className="text-gray-600">
@@ -1602,7 +1616,7 @@ const EmployeeTasks = () => {
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
             disabled={loading}
           >
             <option value="all">All Status</option>
@@ -1646,7 +1660,7 @@ const EmployeeTasks = () => {
       {userRole !== 'employee' && !selectedProjectId && !loading && (
         <div className="bg-white rounded-xl border p-12 text-center">
           <AlertCircle className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">Select a Project</h3>
+          <h3 className="text-section-title text-gray-900 mb-2">Select a Project</h3>
           <p className="text-gray-600 mb-6">
             Please select a project from the dropdown above to view and manage tasks.
           </p>
@@ -1657,7 +1671,7 @@ const EmployeeTasks = () => {
                 <button
                   key={projectId}
                   onClick={() => setSelectedProjectId(projectId)}
-                  className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors border border-blue-200"
+                  className="btn bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-4 py-2"
                 >
                   {project.name}
                 </button>
@@ -1688,15 +1702,15 @@ const EmployeeTasks = () => {
           <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Assigned tasks</h2>
-                <p className="text-xs text-gray-500">{loading ? 'Refreshing tasks…' : `${tasks.length} total tasks`}</p>
+                <h2 className="text-section-title text-gray-900">Assigned tasks</h2>
+                <p className="text-xs text-gray-500">{loading ? 'Refreshing tasksâ€¦' : `${tasks.length} total tasks`}</p>
               </div>
               <div className="flex items-center gap-2 text-xs text-gray-500">
                 <button
                   type="button"
                   onClick={refreshAllTasks}
                   disabled={loading || (userRole !== 'employee' && !selectedProjectId)}
-                  className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 hover:bg-gray-100 disabled:opacity-50 flex items-center gap-1"
+                  className="btn btn-secondary px-3 py-1 flex items-center gap-1 text-xs"
                 >
                   <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
                   Refresh
@@ -1705,7 +1719,7 @@ const EmployeeTasks = () => {
             </div>
 
             {loading ? (
-              <div className="mt-6 text-sm text-gray-500">Loading tasks…</div>
+              <div className="mt-6 text-sm text-gray-500">Loading tasksâ€¦</div>
             ) : error ? (
               <div className="mt-6 text-sm text-red-500">Error: {error}</div>
             ) : tasks.length === 0 ? (
@@ -1747,7 +1761,7 @@ const EmployeeTasks = () => {
                           )}
                           <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
                             <span>Priority: <span className={`font-medium ${getPriorityClasses(task.priority)}`}>{task.priority || 'Medium'}</span></span>
-                            <span>•</span>
+                            <span>â€¢</span>
                             <span>Status: <span className={`font-medium ${getStatusClasses(task.status || task.stage)}`}>{getStatusText(task.status || task.stage)}</span></span>
                           </div>
                           {task.taskDate && (
@@ -1798,27 +1812,27 @@ const EmployeeTasks = () => {
                         )}
                         {isCompleted && (
                           <span className="rounded-full border border-green-200 bg-green-50 px-3 py-0.5 text-green-600 font-medium">
-                            ✓ No Further Changes
+                            âœ“ No Further Changes
                           </span>
                         )}
                         {hasPending && (
                           <span className="rounded-full border border-orange-200 bg-orange-50 px-3 py-0.5 text-orange-600 font-medium">
-                            🔒 Reassignment Pending
+                            ðŸ”’ Reassignment Pending
                           </span>
                         )}
                         {isApproved && (
                           <span className="rounded-full border border-green-200 bg-green-50 px-3 py-0.5 text-green-600 font-medium">
-                            ✅ Reassignment Approved
+                            âœ… Reassignment Approved
                           </span>
                         )}
                         {isDenied && (
                           <span className="rounded-full border border-red-200 bg-red-50 px-3 py-0.5 text-red-600 font-medium">
-                            ❌ Reassignment Denied
+                            âŒ Reassignment Denied
                           </span>
                         )}
                         {isTaskInReview(task) && (
                           <span className="rounded-full border border-purple-200 bg-purple-50 px-3 py-0.5 text-purple-600 font-medium">
-                            👁️ Under Review - Readonly
+                            ðŸ‘ï¸ Under Review - Readonly
                           </span>
                         )}
                       </div>
@@ -1840,7 +1854,7 @@ const EmployeeTasks = () => {
               <div className="space-y-4">
                 {/* Task header */}
                 <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-xl font-semibold text-gray-900">{selectedTask.title}</h2>
+                  <h2 className="text-section-title text-gray-900">{selectedTask.title}</h2>
                   <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${getStatusClasses(selectedTask.status || selectedTask.stage)}`}>
                     {getStatusText(selectedTask.status || selectedTask.stage)}
                   </span>
@@ -1850,7 +1864,7 @@ const EmployeeTasks = () => {
                 {/* Completion Alert */}
                 {isTaskCompleted(selectedTask) && (
                   <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-                    <p className="font-semibold">✓ Task Completed</p>
+                    <p className="font-semibold">âœ“ Task Completed</p>
                     <p className="text-xs mt-1">Total working hours: <span className="font-bold">{selectedTask.total_time_hhmmss || '0h 0m'}</span></p>
                     <p className="text-xs mt-1">This task is locked and cannot be modified further.</p>
                   </div>
@@ -1864,7 +1878,7 @@ const EmployeeTasks = () => {
                   if (state === 'pending') {
                     return (
                       <div className="rounded-lg border border-orange-200 bg-orange-50 p-3 text-sm text-orange-700">
-                        <p className="font-semibold">🔒 Reassignment Request Pending</p>
+                        <p className="font-semibold">ðŸ”’ Reassignment Request Pending</p>
                         <p className="text-xs">Your manager is reviewing your reassignment request. Task is locked until they respond.</p>
                       </div>
                     );
@@ -1872,7 +1886,7 @@ const EmployeeTasks = () => {
                   if (state === 'approved') {
                     return (
                       <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-                        <p className="font-semibold">✅ Reassignment Approved</p>
+                        <p className="font-semibold">âœ… Reassignment Approved</p>
                         <p className="text-xs">Your manager has approved your reassignment request.</p>
                       </div>
                     );
@@ -1880,7 +1894,7 @@ const EmployeeTasks = () => {
                   if (state === 'denied') {
                     return (
                       <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                        <p className="font-semibold">❌ Reassignment Denied</p>
+                        <p className="font-semibold">âŒ Reassignment Denied</p>
                         <p className="text-xs">Your manager has denied your reassignment request.</p>
                       </div>
                     );
@@ -1891,7 +1905,7 @@ const EmployeeTasks = () => {
                 {/* Review helper: when a task is in review show strict read-only notice */}
                 {isTaskInReview(selectedTask) && (
                   <div className="rounded-lg border border-purple-200 bg-purple-50 p-3 text-sm text-purple-700 mt-3">
-                    <p className="font-semibold">🔎 Task Under Review</p>
+                    <p className="font-semibold">ðŸ”Ž Task Under Review</p>
                     <p className="text-xs">Task is under review. No actions are allowed.</p>
                   </div>
                 )}
@@ -1978,7 +1992,7 @@ const EmployeeTasks = () => {
                         value={selectedAssignee}
                         onChange={(e) => setSelectedAssignee(e.target.value)}
                         disabled={employees.length === 0 || isTaskReadOnly(selectedTask)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white text-sm"
                       >
                         <option value="">Select employee</option>
                         {employees.map((employee) => {
@@ -2033,7 +2047,7 @@ const EmployeeTasks = () => {
                   </div>
                   {isTaskCompleted(selectedTask) && (
                     <div className="rounded-lg border border-green-200 bg-green-50 p-3 mb-3 text-sm text-green-700">
-                      <p className="font-semibold">✓ Task Completed</p>
+                      <p className="font-semibold">âœ“ Task Completed</p>
                       <p className="text-xs mt-1">Checklist is locked. No new items can be added to a completed task.</p>
                     </div>
                   )}
@@ -2051,16 +2065,20 @@ const EmployeeTasks = () => {
                           return (
                             <li key={itemId} className="rounded-2xl border border-gray-200 bg-white p-3">
                               <div className="space-y-2 text-sm">
-                                <input
-                                  type="text"
-                                  placeholder="Checklist title"
-                                  value={editingChecklistValues.title}
-                                  onChange={(e) =>
-                                    setEditingChecklistValues((prev) => ({ ...prev, title: e.target.value }))
-                                  }
-                                  className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm"
-                                  disabled={isTaskCompleted(selectedTask)}
-                                />
+                                <div>
+                                  <input
+                                    type="text"
+                                    value={editingChecklistValues.title}
+                                    onChange={(e) => {
+                                      setEditingChecklistValues((prev) => ({ ...prev, title: e.target.value }));
+                                      if (editingChecklistError) setEditingChecklistError("");
+                                    }}
+                                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-2 py-1 border"
+                                    autoFocus
+                                    disabled={actionRunning || isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending'}
+                                  />
+                                  {editingChecklistError && <span className="text-xs text-red-500 block mt-1">{editingChecklistError}</span>}
+                                </div>
                                 <input
                                   type="date"
                                   value={editingChecklistValues.dueDate}
@@ -2075,9 +2093,9 @@ const EmployeeTasks = () => {
                                     type="button"
                                     onClick={handleUpdateChecklist}
                                     disabled={actionRunning}
-                                    className="rounded-full bg-indigo-600 px-4 py-1.5 text-white disabled:opacity-60 text-sm"
+                                    className="rounded-full bg-blue-600 px-4 py-1.5 text-white disabled:opacity-60 text-sm"
                                   >
-                                    {actionRunning ? 'Saving…' : 'Save'}
+                                    {actionRunning ? 'Savingâ€¦' : 'Save'}
                                   </button>
                                   <button
                                     type="button"
@@ -2169,14 +2187,20 @@ const EmployeeTasks = () => {
 
                   {/* Add checklist item form */}
                   <form onSubmit={handleAddChecklist} className="mt-4 flex flex-col gap-2">
-                    <input
-                      type="text"
-                      value={checklistForm.title}
-                      onChange={(e) => setChecklistForm((prev) => ({ ...prev, title: e.target.value }))}
-                      placeholder="New checklist item"
-                      disabled={isTaskCompleted(selectedTask) || isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending'}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
-                    />
+                    <div>
+                      <input
+                        type="text"
+                        value={checklistForm.title}
+                        onChange={(e) => {
+                          setChecklistForm((prev) => ({ ...prev, title: e.target.value }));
+                          if (checklistError) setChecklistError("");
+                        }}
+                        placeholder="New checklist item"
+                        disabled={isTaskCompleted(selectedTask) || isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending'}
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                      />
+                      {checklistError && <span className="text-xs text-red-500 block mt-1">{checklistError}</span>}
+                    </div>
                     <input
                       type="date"
                       value={checklistForm.dueDate}
@@ -2187,7 +2211,7 @@ const EmployeeTasks = () => {
                     <button
                       type="submit"
                       disabled={actionRunning || isTaskCompleted(selectedTask) || isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending'}
-                      className="rounded-full bg-indigo-600 px-4 py-2 text-white disabled:opacity-60 disabled:cursor-not-allowed text-sm"
+                      className="rounded-full bg-blue-600 px-4 py-2 text-white disabled:opacity-60 disabled:cursor-not-allowed text-sm hover:bg-blue-700"
                     >
                       {actionRunning ? 'Adding…' : isTaskCompleted(selectedTask) ? 'Task Completed - Cannot Add Items' : 'Add checklist'}
                     </button>
@@ -2243,3 +2267,4 @@ const EmployeeTasks = () => {
 };
 
 export default EmployeeTasks;
+

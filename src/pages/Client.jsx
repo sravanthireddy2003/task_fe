@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import * as Icons from "../icons";
 import { useDispatch, useSelector } from "react-redux";
 import Table from "../components/client/EditInClient";
@@ -241,7 +241,7 @@ const Clients = () => {
                 setSelectedClient(null);
                 setOpenClientForm(true);
               }}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5"
+              className="btn btn-primary inline-flex items-center gap-1.5"
             >
               <Icons.Plus className="tm-icon" />
               Add Client
@@ -311,7 +311,7 @@ const Clients = () => {
                   placeholder="Search by name, company, or email..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-sm"
                 />
               </div>
             </div>
@@ -321,7 +321,7 @@ const Clients = () => {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full pl-3 pr-9 py-2.5 border border-gray-300 rounded-lg appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-medium"
+                  className="input !w-full pr-9 py-2.5 appearance-none bg-white font-medium"
                 >
                   <option value="all">All Status</option>
                   <option value="active">Active</option>
@@ -334,7 +334,7 @@ const Clients = () => {
                 <select
                   value={managerFilter}
                   onChange={(e) => setManagerFilter(e.target.value)}
-                  className="w-full pl-3 pr-9 py-2.5 border border-gray-300 rounded-lg appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-medium"
+                  className="input !w-full pr-9 py-2.5 appearance-none bg-white font-medium"
                 >
                   <option value="all">All Managers</option>
                   {managers.map((manager, idx) => {
@@ -405,7 +405,7 @@ const Clients = () => {
                 : "Add your first client to get started"}
             </p>
             <Link to="/add-client">
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5">
+              <button className="btn btn-primary inline-flex items-center gap-1.5">
                 <Icons.Plus className="tm-icon" />
                 Add First Client
               </button>

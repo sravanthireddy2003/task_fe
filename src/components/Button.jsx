@@ -8,10 +8,9 @@ const Button = ({
   className,
   label,
   type = "button",
-  onClick = () => {},
+  onClick = () => { },
   disabled = false,
   variant = "primary", // primary | secondary | danger
-  size = "md", // sm | md | lg
   ...rest
 }) => {
   // Defensive icon rendering: always render as JSX, never as a component reference
@@ -19,7 +18,7 @@ const Button = ({
     if (!icon) return null;
     // If icon is a valid React element, render as is
     if (React.isValidElement(icon)) {
-        return <span className="inline-flex items-center">{React.cloneElement(icon, { className: clsx(icon.props?.className, 'tm-icon') })}</span>;
+      return <span className="inline-flex items-center">{React.cloneElement(icon, { className: clsx(icon.props?.className, 'tm-icon') })}</span>;
     }
     // If icon is a string and matches an exported icon, render from Icons
     if (typeof icon === "string" && Icons[icon]) {
@@ -56,11 +55,7 @@ const Button = ({
     focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-gray-50
   `;
 
-  const sizeClasses = {
-    sm: "h-9 px-3 text-xs",
-    md: "h-11 px-5 text-sm",
-    lg: "h-12 px-6 text-sm",
-  }[size] || "h-11 px-5 text-sm";
+  const sizeClasses = ""; // Defers to index.css strictly defining 42px height
 
   const variantClasses = {
     primary:

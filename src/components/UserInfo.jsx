@@ -1,4 +1,4 @@
-import { Popover, Transition } from "@headlessui/react";
+﻿import { Popover, Transition } from "@headlessui/react";
 import React, { Fragment } from "react";
 import { getInitials } from "../utils";
 
@@ -46,3 +46,4 @@ const UserInfo = ({ user }) => {
 };
 
 export default UserInfo;
+

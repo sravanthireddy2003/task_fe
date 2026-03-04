@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import ModalWrapper from "../ModalWrapper";
 import { Dialog, Listbox } from "@headlessui/react";
 import Textbox from "../Textbox";
-import { useForm } from "react-hook-form";
 import SelectList from "../SelectList";
 import Button from "../Button";
 import { useDispatch, useSelector } from "react-redux";
-import { updateTask, selectTaskById } from "../../redux/slices/taskSlice";
+import { updateTask, selectTaskById, selectTasks } from "../../redux/slices/taskSlice";
 import { httpGetService } from "../../App/httpHandler";
 import { fetchUsers, selectUsers } from "../../redux/slices/userSlice";
 
@@ -15,16 +14,43 @@ const PRIORITY = ["HIGH", "MEDIUM", "LOW"];
 
 const UpdateTask = ({ open, setOpen, taskId }) => {
   const dispatch = useDispatch();
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    formState: { errors },
-    reset,
-  } = useForm();
+  const [formData, setFormData] = useState({ title: '', date: '', time_alloted: '', description: '' });
+  const [errors, setErrors] = useState({});
+
+  const validate = () => {
+    const newErrors = {};
+    const titleStr = formData.title?.trim() || '';
+    if (!titleStr) newErrors.title = 'Title is required';
+    else {
+      const currentId = task?.id || task?._id || taskId;
+      const isDuplicate = tasks.some(t =>
+        t.title?.toLowerCase() === titleStr.toLowerCase() &&
+        (t.id || t._id) !== currentId
+      );
+      if (isDuplicate) newErrors.title = "Task title already exists!";
+    }
+    if (!formData.date) newErrors.date = 'Date is required';
+    if (formData.time_alloted !== "" && formData.time_alloted !== null && formData.time_alloted !== undefined) {
+      if (isNaN(Number(formData.time_alloted))) {
+        newErrors.time_alloted = 'Must be a valid number';
+      } else if (Number(formData.time_alloted) < 0) {
+        newErrors.time_alloted = 'Must be a positive number';
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
+  };
 
   const task = useSelector((state) => selectTaskById(state, taskId));
   const users = useSelector(selectUsers);
+  const tasks = useSelector(selectTasks);
 
   const [team, setTeam] = useState([]);
   const [stage, setStage] = useState(LISTS[0]);
@@ -41,12 +67,14 @@ const UpdateTask = ({ open, setOpen, taskId }) => {
       setPriority(task.priority || PRIORITY[2]);
       setClientId(task.client_id || "");
 
-      setValue("title", task.title || "");
-      setValue("date", task.taskDate?.split("T")[0] || "");
-      setValue("time_alloted", task.time_alloted || "");
-      setValue("description", task.description || "");
+      setFormData({
+        title: task.title || "",
+        date: task.taskDate?.split("T")[0] || "",
+        time_alloted: task.time_alloted || "",
+        description: task.description || "",
+      });
     }
-  }, [task, setValue]);
+  }, [task]);
 
   // Fetch client list
   useEffect(() => {
@@ -54,7 +82,7 @@ const UpdateTask = ({ open, setOpen, taskId }) => {
       try {
         const response = await httpGetService("api/clients");
         setClients(response);
-      } catch (error) {}
+      } catch (error) { }
     };
     fetchClients();
   }, []);
@@ -66,11 +94,16 @@ const UpdateTask = ({ open, setOpen, taskId }) => {
 
   const selectedUserObjects = users.filter((u) => team.includes(u._id));
 
-  const submitHandler = async (data) => {
+  const submitHandler = async (e) => {
+    e.preventDefault();
     if (!taskId) {
       alert("Task ID is missing. Please try again.");
       return;
     }
+
+    if (!validate()) return;
+
+    const data = formData;
 
     const updatedTaskData = {
       stage,
@@ -90,7 +123,7 @@ const UpdateTask = ({ open, setOpen, taskId }) => {
 
       if (updateTask.fulfilled.match(result)) {
         setOpen(false);
-        reset();
+        setFormData({ title: '', date: '', time_alloted: '', description: '' });
       } else if (updateTask.rejected.match(result)) {
         alert(`Update failed: ${result.payload || result.error}`);
       }
@@ -105,7 +138,7 @@ const UpdateTask = ({ open, setOpen, taskId }) => {
 
   return (
     <ModalWrapper open={open} setOpen={setOpen}>
-      <form onSubmit={handleSubmit(submitHandler)}>
+      <form onSubmit={submitHandler}>
         <Dialog.Title className="text-base font-bold leading-6 text-gray-900 mb-4">
           UPDATE TASK
         </Dialog.Title>
@@ -131,8 +164,11 @@ const UpdateTask = ({ open, setOpen, taskId }) => {
             name="title"
             label="Task Title"
             className="w-full rounded"
-            register={register("title", { required: "Title is required" })}
-            error={errors.title?.message}
+            register={{
+              value: formData.title,
+              onChange: handleChange,
+            }}
+            error={errors.title}
           />
 
           <div className="flex gap-4">
@@ -162,8 +198,11 @@ const UpdateTask = ({ open, setOpen, taskId }) => {
                 name="date"
                 label="Task Date"
                 className="w-full rounded"
-                register={register("date", { required: "Date is required" })}
-                error={errors.date?.message}
+                register={{
+                  value: formData.date,
+                  onChange: handleChange,
+                }}
+                error={errors.date}
               />
             </div>
             <div className="w-1/2">
@@ -173,11 +212,11 @@ const UpdateTask = ({ open, setOpen, taskId }) => {
                 name="time_alloted"
                 label="Time Alloted"
                 className="w-full rounded"
-                register={register("time_alloted", {
-                  valueAsNumber: true,
-                  min: { value: 0, message: "Must be a positive number" },
-                })}
-                error={errors.time_alloted?.message}
+                register={{
+                  value: formData.time_alloted,
+                  onChange: handleChange,
+                }}
+                error={errors.time_alloted}
               />
             </div>
           </div>
@@ -195,7 +234,7 @@ const UpdateTask = ({ open, setOpen, taskId }) => {
                       : "Select users"}
                   </span>
                   <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400">
-                    ▼
+                    â–¼
                   </span>
                 </Listbox.Button>
                 <Listbox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
@@ -204,8 +243,7 @@ const UpdateTask = ({ open, setOpen, taskId }) => {
                       key={user._id}
                       value={user}
                       className={({ active }) =>
-                        `relative cursor-default select-none py-2 pl-10 pr-4 ${
-                          active ? "bg-indigo-600 text-white" : "text-gray-900"
+                        `relative cursor-default select-none py-2 pl-10 pr-4 ${active ? "bg-blue-600 text-white" : "text-gray-900"
                         }`
                       }
                     >
@@ -215,7 +253,7 @@ const UpdateTask = ({ open, setOpen, taskId }) => {
                             {user.name || "Unnamed User"}
                           </span>
                           {selected && (
-                            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-green-600">✓</span>
+                            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-green-600">âœ“</span>
                           )}
                         </>
                       )}
@@ -235,7 +273,9 @@ const UpdateTask = ({ open, setOpen, taskId }) => {
               placeholder="Enter task description (optional)"
               className="w-full rounded border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
               rows="3"
-              {...register("description")}
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
             />
           </div>
 
@@ -243,9 +283,8 @@ const UpdateTask = ({ open, setOpen, taskId }) => {
             <Button
               label={uploading ? "Updating..." : "Update"}
               type="submit"
-              className={`${
-                uploading ? "opacity-50 cursor-not-allowed" : ""
-              } bg-green-600 px-8 text-sm font-semibold text-white hover:bg-green-700 sm:w-auto`}
+              className={`${uploading ? "opacity-50 cursor-not-allowed" : ""
+                } bg-green-600 px-8 text-sm font-semibold text-white hover:bg-green-700 sm:w-auto`}
               disabled={uploading}
             />
             <Button
@@ -262,3 +301,4 @@ const UpdateTask = ({ open, setOpen, taskId }) => {
 };
 
 export default UpdateTask;
+

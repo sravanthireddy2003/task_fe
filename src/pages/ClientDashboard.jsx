@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import * as Icons from "../icons";
@@ -55,7 +55,7 @@ const ClientDashboard = () => {
     });
     return acc;
   }, { total: 0, completed: 0, pending: 0, inProgress: 0 });
-  
+
   // Use dashboard stats from API response
   const dashboard = client?.dashboard || {};
   const projectCount = dashboard.projectCount ?? clientProjects.length;
@@ -140,7 +140,7 @@ const ClientDashboard = () => {
             {/* Manager Info */}
             {dashboard.assignedManager && (
               <div className="bg-white p-4 shadow-md rounded-md">
-                <h3 className="text-lg font-semibold text-gray-700 mb-3">Assigned Manager</h3>
+                <h3 className="text-section-title text-gray-900 mb-3">Assigned Manager</h3>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                     <Icons.User2 className="w-5 h-5 text-blue-600" />
@@ -155,7 +155,7 @@ const ClientDashboard = () => {
 
             {/* Client Info */}
             <div className="bg-white p-4 shadow-md rounded-md">
-              <h3 className="text-lg font-semibold text-gray-700 mb-3">Client Information</h3>
+              <h3 className="text-section-title text-gray-900 mb-3">Client Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-start gap-3">
                   <Icons.Building2 className="w-5 h-5 text-gray-400 mt-0.5" />
@@ -193,7 +193,7 @@ const ClientDashboard = () => {
             {/* Projects & Tasks Section */}
             <div className="bg-white p-4 shadow-md rounded-md">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-700">Projects & Tasks</h3>
+                <h3 className="text-section-title text-gray-900">Projects & Tasks</h3>
                 <span className="text-sm text-gray-500">{projectCount} projects</span>
               </div>
               {clientProjects.length === 0 ? (
@@ -362,6 +362,7 @@ const ClientDashboard = () => {
 };
 
 export default ClientDashboard;
+
 
 
 

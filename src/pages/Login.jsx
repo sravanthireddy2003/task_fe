@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+﻿import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { toast } from "sonner";
@@ -27,12 +26,32 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    formState: { errors },
-  } = useForm();
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [errors, setErrors] = useState({});
+
+  const validate = () => {
+    const newErrors = {};
+    if (!formData.email) {
+      newErrors.email = "Email is required";
+    } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(formData.email)) {
+      newErrors.email = "Invalid email address";
+    }
+
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+  };
 
   // Load saved credentials on mount
   useEffect(() => {
@@ -41,15 +60,19 @@ const Login = () => {
     const savedRemember = localStorage.getItem("rememberMe") === "true";
 
     if (savedEmail) {
-      setValue("email", savedEmail);
+      setFormData((prev) => ({ ...prev, email: savedEmail }));
       setRememberMe(savedRemember);
     }
     if (savedPassword && savedRemember) {
-      setValue("password", savedPassword);
+      setFormData((prev) => ({ ...prev, password: savedPassword }));
     }
-  }, [setValue]);
+  }, []);
 
-  const onSubmit = async (data) => {
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+
+    const data = formData;
     try {
       // Save if remember me checked
       if (rememberMe) {
@@ -114,41 +137,38 @@ const Login = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center px-4">
       <div className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden">
         <div className="grid grid-cols-1 lg:grid-cols-2">
-          {/* LEFT – LOGIN FORM */}
+          {/* LEFT â€“ LOGIN FORM */}
           <div className="p-12 md:p-14">
             <div className="mb-10">
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              <h1 className="text-page-title mb-2">
                 Welcome back
               </h1>
-              <p className="text-gray-600 text-lg">
+              <p className="text-body-text">
                 Sign in to continue to Task Manager Pro
               </p>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+            <form onSubmit={onSubmit} className="space-y-8">
               <div className="space-y-1">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="text-label">
                   Email address
                 </label>
                 <Textbox
                   type="email"
                   name="email"
                   placeholder="korapatishwini@gmail.com"
-                  register={register("email", {
-                    required: "Email is required",
-                    pattern: {
-                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: "Invalid email address",
-                    },
-                  })}
-                  error={errors.email?.message}
-                  className="h-14 text-base rounded-xl"
+                  register={{
+                    value: formData.email,
+                    onChange: handleChange,
+                  }}
+                  error={errors.email}
+                  className="input"
                 />
               </div>
 
               <div className="space-y-1">
                 <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-semibold text-gray-700">
+                  <label className="text-label mb-0">
                     Password
                   </label>
                   <Link
@@ -161,15 +181,12 @@ const Login = () => {
                 <Textbox
                   type="password"
                   name="password"
-                  placeholder="••••••••"
-                  register={register("password", {
-                    required: "Password is required",
-                    minLength: {
-                      value: 6,
-                      message: "Password must be at least 6 characters",
-                    },
-                  })}
-                  error={errors.password?.message}
+                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                  register={{
+                    value: formData.password,
+                    onChange: handleChange,
+                  }}
+                  error={errors.password}
                   showPassword={showPassword}
                   onPasswordToggle={() => setShowPassword(!showPassword)}
                   rightIcon={showPassword ? (
@@ -188,7 +205,7 @@ const Login = () => {
                     id="remember"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
-                    className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 transition-all cursor-pointer"
+                    className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-600 focus:ring-offset-0 transition-all cursor-pointer"
                   />
                 </div>
                 <label
@@ -211,12 +228,12 @@ const Login = () => {
                 type="submit"
                 label={authStatus === "loading" ? "Signing in..." : "Sign in"}
                 disabled={authStatus === "loading"}
-                className="w-full h-14 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold text-lg rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-md"
+                className="btn btn-primary w-full shadow-md"
               />
             </form>
           </div>
 
-          {/* RIGHT – ILLUSTRATION & INFO */}
+          {/* RIGHT â€“ ILLUSTRATION & INFO */}
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-12 md:p-14 flex flex-col items-center justify-center">
             <div className="mb-10">
               <img
@@ -227,12 +244,12 @@ const Login = () => {
             </div>
 
             <div className="text-center max-w-md">
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+              <h3 className="text-section-title mb-4">
                 Secure & organized workflow
               </h3>
-              <p className="text-gray-700 leading-relaxed">
+              <p className="text-body-text">
                 Manage tasks efficiently with role-based access, OTP verification,
-                and real-time tracking — all in one place.
+                and real-time tracking â€” all in one place.
               </p>
             </div>
           </div>

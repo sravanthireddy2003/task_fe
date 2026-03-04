@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as Icons from './icons';
 
@@ -270,8 +270,9 @@ const modules = [
       </section>
 
       <footer className="py-8 bg-white text-center text-gray-500 border-t border-gray-200">
-        © 2025 TaskFlow Enterprise. All rights reserved.
+        Â© 2025 TaskFlow Enterprise. All rights reserved.
       </footer>
     </div>
   );
 }
+

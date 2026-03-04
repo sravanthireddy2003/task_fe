@@ -1,4 +1,4 @@
-import clsx from "clsx";
+﻿import clsx from "clsx";
 import moment from "moment";
 import React, { useState, useEffect } from "react";
 import * as Icons from '../icons';
@@ -92,15 +92,15 @@ const TaskDetails = () => {
   const [error, setError] = useState(null);
   const [subtasks, setsubTask] = useState([]);
   const [totalWorkingHours, setTotalWorkingHours] = useState(null);
-  const [Activitiesdata,setActivitiesdata]=useState(null);
+  const [Activitiesdata, setActivitiesdata] = useState(null);
 
   const [file, setFile] = useState(null);
   const [message, setMessage] = useState("");
-  const [getfile,setgetfile]=useState(null);
+  const [getfile, setgetfile] = useState(null);
 
 
 
-  const task_id=id;
+  const task_id = id;
 
   useEffect(() => {
     const fetchTaskActivities = async () => {
@@ -112,15 +112,15 @@ const TaskDetails = () => {
         setError("Failed to load task activities.");
       }
     };
-  
+
     if (task_id) {
       fetchTaskActivities(); // Fetch immediately
       const interval = setInterval(fetchTaskActivities, 5000); // Fetch every 5 seconds
-  
+
       return () => clearInterval(interval); // Cleanup on unmount
     }
   }, [task_id]); // Re-run when task_id changes
-  
+
 
   useEffect(() => {
     const fetchTotalWorkingHours = async (task_id) => {
@@ -147,21 +147,21 @@ const TaskDetails = () => {
 
     getTotalWorkingHours();
   }, [task_id]);
-  
-    useEffect(() => {
-      const fetchupload = async () => {
-        try {
-          const result = await httpGetService(`api/uploads/getuploads/${task_id}`);
-          setgetfile(Array.isArray(result) ? result : result?.data || []);
-        } catch (err) {
-          setError("Failed to load uploads.");
-        }
-      };
-  
-      if (task_id) {
-        fetchupload();
+
+  useEffect(() => {
+    const fetchupload = async () => {
+      try {
+        const result = await httpGetService(`api/uploads/getuploads/${task_id}`);
+        setgetfile(Array.isArray(result) ? result : result?.data || []);
+      } catch (err) {
+        setError("Failed to load uploads.");
       }
-    }, [task_id]);
+    };
+
+    if (task_id) {
+      fetchupload();
+    }
+  }, [task_id]);
 
 
   useEffect(() => {
@@ -170,25 +170,25 @@ const TaskDetails = () => {
         setLoading(true);
         const response = await dispatch(fetchTasksbyId({ task_id: id })).unwrap();
         setTask(response);
-        } catch (err) {
-          setError(err.message);
-          toast.error("Failed to fetch task details");
-          } finally {
-            setLoading(false);
-            }
-            };
-            fetchTask();
-            }, [dispatch, id]);
+      } catch (err) {
+        setError(err.message);
+        toast.error("Failed to fetch task details");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTask();
+  }, [dispatch, id]);
 
-            useEffect(() => {
-              const fetchsubTask = async () => {
-                try {
-                  const response = await dispatch(getSubTask(id)).unwrap();
-                  setsubTask(response);
-                } catch (err) {}
-                  };
-                fetchsubTask();
-                 }, [dispatch, id]);
+  useEffect(() => {
+    const fetchsubTask = async () => {
+      try {
+        const response = await dispatch(getSubTask(id)).unwrap();
+        setsubTask(response);
+      } catch (err) { }
+    };
+    fetchsubTask();
+  }, [dispatch, id]);
 
   if (loading) return <Loading />;
   if (error) return <p>Error: {error}</p>;
@@ -201,8 +201,8 @@ const TaskDetails = () => {
 
   // Handle file upload
   const handleUpload = async () => {
-    const user_id = JSON.parse(localStorage.getItem('userInfo'))?._id  
-    
+    const user_id = JSON.parse(localStorage.getItem('userInfo'))?._id
+
     if (!file) {
       setMessage('Please select a file before uploading.');
       return;
@@ -241,10 +241,10 @@ const TaskDetails = () => {
 
   return (
     <div className='w-full flex flex-col gap-3 mb-4 overflow-y-hidden'>
-<h1 className="font-bold">
-  <span className="text-2xl text-gray-600">{task?.title}</span> -{" "}
-  <span className="text-sm text-green-600">{task?.client_name}</span>
-</h1>
+      <h1 className="text-page-title text-gray-900">
+        {task?.title} -{" "}
+        <span className="text-sm text-green-600 font-medium">{task?.client_name}</span>
+      </h1>
 
 
       <Tabs tabs={TABS} setSelected={setSelected}>
@@ -340,7 +340,7 @@ const TaskDetails = () => {
                     SUB-TASKS
                   </p>
                   <div className='space-y-8'>
-                    
+
                     {subtasks?.map((el, index) => (
                       <div key={index} className='flex gap-3'>
                         <div className='w-10 h-10 flex items-center justify-center rounded-full bg-violet-50-200'>
@@ -367,60 +367,60 @@ const TaskDetails = () => {
               </div>
               {/* RIGHT */}
               <div className="w-full md:w-1/2 space-y-8">
-  {/* Section Title */}
+                {/* Section Title */}
 
-  {/* Task Description */}
-  <div className="w-full">
-    <div className="mb-4 text-gray-700">
-      <p className="text-lg font-semibold">TASK DESCRIPTION</p>
-      <p>{task?.description || "No description provided."}</p>
-    </div>
-    
-    <div className="flex flex-col items-center justify-center bg-gray-100 p-4 rounded-lg shadow-md max-w-md mx-auto mt-10">
-  <h2 className="text-xl font-bold text-gray-700 mb-3">Upload Your File</h2>
-  <div className="flex items-center justify-between w-full space-x-4">
-    <label
-      htmlFor="file-input"
-      className="flex flex-col items-center justify-center w-2/3 h-24 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 cursor-pointer hover:bg-gray-100"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="w-10 h-10 text-gray-400 mb-1"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-        <polyline points="17 8 12 3 7 8" />
-        <line x1="12" y1="3" x2="12" y2="15" />
-      </svg>
-      <span className="text-xs text-gray-500">Click to upload or drag files</span>
-    </label>
-    <input
-      id="file-input"
-      type="file"
-      onChange={handleFileChange}
-      className="hidden"
-    />
-    <button
-      onClick={handleUpload}
-      className="px-5 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75"
-    >
-      Upload
-    </button>
-  </div>
-  <p className="mt-3 text-sm text-gray-500">{message}</p>
-</div>
+                {/* Task Description */}
+                <div className="w-full">
+                  <div className="mb-4 text-gray-700">
+                    <p className="text-section-title text-gray-900 mb-2">TASK DESCRIPTION</p>
+                    <p>{task?.description || "No description provided."}</p>
+                  </div>
+
+                  <div className="flex flex-col items-center justify-center bg-gray-100 p-4 rounded-lg shadow-md max-w-md mx-auto mt-10">
+                    <h2 className="text-section-title text-gray-900 mb-3">Upload Your File</h2>
+                    <div className="flex items-center justify-between w-full space-x-4">
+                      <label
+                        htmlFor="file-input"
+                        className="flex flex-col items-center justify-center w-2/3 h-24 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 cursor-pointer hover:bg-gray-100"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="w-10 h-10 text-gray-400 mb-1"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                          <polyline points="17 8 12 3 7 8" />
+                          <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
+                        <span className="text-xs text-gray-500">Click to upload or drag files</span>
+                      </label>
+                      <input
+                        id="file-input"
+                        type="file"
+                        onChange={handleFileChange}
+                        className="hidden"
+                      />
+                      <button
+                        onClick={handleUpload}
+                        className="btn btn-primary px-5 py-2 shadow-sm"
+                      >
+                        Upload
+                      </button>
+                    </div>
+                    <p className="mt-3 text-sm text-gray-500">{message}</p>
+                  </div>
 
 
-    {/* Image Grid */}
-    <p className="text-lg font-semibold">ASSETS</p>
-{/* 
+                  {/* Image Grid */}
+                  <p className="text-section-title text-gray-900 mb-4">ASSETS</p>
+                  {/* 
     <div className="mt-6">
-      <h3 className="text-xl font-bold text-gray-700">Uploaded Files</h3>
+      <h3 className="text-section-title text-gray-700">Uploaded Files</h3>
       <p className="text-sm text-gray-500">{message}</p>
 
       {getfile.length > 0 ? (
@@ -448,61 +448,61 @@ const TaskDetails = () => {
       )}
     </div> */}
 
-<div className="mt-6">
-  <h3 className="text-xl font-bold text-gray-700">Uploaded Files</h3>
-  <p className="text-sm text-gray-500">{message}</p>
+                  <div className="mt-6">
+                    <h3 className="text-section-title text-gray-900">Uploaded Files</h3>
+                    <p className="text-sm text-gray-500">{message}</p>
 
-{getfile && getfile.length > 0    ? ( <div className="space-y-4 mt-4">
-      {getfile.map((file) => (
-        <div key={file.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg shadow-sm">
-          <div className="flex flex-col">
-            <p className="font-semibold text-gray-700">{file.file_name}</p>
-            <p className="text-sm text-gray-500">{file.file_type}</p>
-            <p className="text-sm text-gray-500">{(file.file_size / 1024).toFixed(2)} KB</p>
+                    {getfile && getfile.length > 0 ? (<div className="space-y-4 mt-4">
+                      {getfile.map((file) => (
+                        <div key={file.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg shadow-sm">
+                          <div className="flex flex-col">
+                            <p className="font-semibold text-gray-700">{file.file_name}</p>
+                            <p className="text-sm text-gray-500">{file.file_type}</p>
+                            <p className="text-sm text-gray-500">{(file.file_size / 1024).toFixed(2)} KB</p>
 
-            {/* Preview for image files */}
-            {file.file_type.startsWith('image') && (
-              <div className="mt-2">
-                <img 
-                  src={resolveFileUrl(file.file_url)} 
-                  alt={file.file_name} 
-                  className="w-32 h-32 object-cover rounded-md" 
-                />
+                            {/* Preview for image files */}
+                            {file.file_type.startsWith('image') && (
+                              <div className="mt-2">
+                                <img
+                                  src={resolveFileUrl(file.file_url)}
+                                  alt={file.file_name}
+                                  className="w-32 h-32 object-cover rounded-md"
+                                />
+                              </div>
+                            )}
+                          </div>
+
+                          <a
+                            href={resolveFileUrl(file.file_url)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-500 hover:text-blue-700"
+                          >
+                            Download
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                    ) : (
+                      <p className="text-sm text-gray-500 mt-4">No files uploaded for this task.</p>
+                    )}
+                  </div>
+
+
+
+
+                  <div className="grid grid-cols-2 gap-4">
+                    {assets?.map((el, index) => (
+                      <img
+                        key={index}
+                        src={el}
+                        alt={task?.title}
+                        className="w-full rounded h-28 md:h-36 2xl:h-52 cursor-pointer transition-all duration-700 hover:scale-125 hover:z-50"
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
-            )}
-          </div>  
-
-          <a
-            href={resolveFileUrl(file.file_url)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-500 hover:text-blue-700"
-          >
-            Download
-          </a>
-        </div>
-      ))}
-    </div>
-  ) : (
-    <p className="text-sm text-gray-500 mt-4">No files uploaded for this task.</p>
-  )}
-</div>
-
-
-
-
-    <div className="grid grid-cols-2 gap-4">
-      {assets?.map((el, index) => (
-        <img
-          key={index}
-          src={el}
-          alt={task?.title}
-          className="w-full rounded h-28 md:h-36 2xl:h-52 cursor-pointer transition-all duration-700 hover:scale-125 hover:z-50"
-        />
-      ))}
-    </div>
-  </div>
-</div>
 
 
             </div>
@@ -517,7 +517,7 @@ const TaskDetails = () => {
 
 
 
-const Activities = ({ activity, taskId}) => {
+const Activities = ({ activity, taskId }) => {
   const [selected, setSelected] = useState(act_types[0]);
   const [text, setText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -543,7 +543,7 @@ const Activities = ({ activity, taskId}) => {
 
       // Reset form
       setText("");
-      setSelected(act_types[0]); 
+      setSelected(act_types[0]);
 
     } catch (err) {
       setError("Failed to submit activity");
@@ -608,7 +608,7 @@ const Activities = ({ activity, taskId}) => {
   return (
     <div className='w-full flex gap-10 2xl:gap-20 min-h-screen px-10 py-8 bg-white shadow rounded-md justify-between overflow-y-auto'>
       <div className='w-full md:w-1/2'>
-        <h4 className='text-gray-600 font-semibold text-lg mb-5'>Activities</h4>
+        <h4 className='text-section-title text-gray-900 mb-5'>Activities</h4>
 
         <div className='w-full'>
           {activity?.map((el, index) => (
@@ -618,7 +618,7 @@ const Activities = ({ activity, taskId}) => {
       </div>
 
       <div className='w-full md:w-1/3'>
-        <h4 className='text-gray-600 font-semibold text-lg mb-5'>
+        <h4 className='text-section-title text-gray-900 mb-5'>
           Add Activity
         </h4>
         <div className='w-full flex flex-wrap gap-5'>
@@ -638,7 +638,7 @@ const Activities = ({ activity, taskId}) => {
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder='Type activity details...'
-            className='bg-white w-full mt-10 border border-gray-300 outline-none p-4 rounded-md focus:ring-2 ring-blue-500'
+            className='input bg-white w-full mt-10 p-4 rounded-md'
           ></textarea>
           {isLoading ? (
             <Loading />
@@ -647,7 +647,7 @@ const Activities = ({ activity, taskId}) => {
               type='button'
               label='Submit'
               onClick={handleSubmit}
-              className='bg-blue-600 text-white rounded'
+              className='btn btn-primary'
             />
           )}
           {error && <p className='text-red-500'>{error}</p>}

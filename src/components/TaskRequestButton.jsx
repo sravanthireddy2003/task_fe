@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'sonner';
 import { Send, Loader2 } from 'lucide-react';
@@ -94,7 +94,7 @@ const TaskRequestButton = ({ task, projectId, onSuccess, disabled }) => {
       {showReasonModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold mb-4">Request Task Completion</h3>
+            <h3 className="text-section-title mb-4">Request Task Completion</h3>
             <p className="text-sm text-gray-600 mb-4">
               Please provide a reason for requesting completion approval:
             </p>
@@ -102,7 +102,7 @@ const TaskRequestButton = ({ task, projectId, onSuccess, disabled }) => {
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Explain why this task is ready for completion..."
-              className="w-full p-3 border border-gray-300 rounded-md resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full p-3 border border-gray-300 rounded-md resize-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
               rows={4}
               maxLength={500}
             />

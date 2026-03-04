@@ -52,7 +52,7 @@ const ModalWrapper = ({ isOpen, open, onClose, setOpen, title, children, panelCl
 
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-                  <Dialog.Title as="h3" className="text-lg font-semibold leading-6 text-gray-900">
+                  <Dialog.Title as="h3" className="text-section-title leading-6 text-gray-900">
                     {title}
                   </Dialog.Title>
                   <button

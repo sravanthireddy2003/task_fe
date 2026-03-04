@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+﻿import React, { useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import moment from 'moment';
 import html2canvas from 'html2canvas';
@@ -9,6 +9,7 @@ import { Chart } from '../components/Chart';
 import PageHeader from '../components/PageHeader';
 import { fetchProjects } from '../redux/slices/reportsSlice';
 import { httpGetService, httpPostService } from '../App/httpHandler';
+import { toast } from 'sonner';
 
 const ReportPage = () => {
   const dispatch = useDispatch();
@@ -79,6 +80,11 @@ const ReportPage = () => {
 
   const handleGenerate = async (e) => {
     e.preventDefault();
+    if (moment(endDate).isBefore(moment(startDate))) {
+      setError("End Date cannot be before Start Date");
+      toast.error("End Date cannot be before Start Date");
+      return;
+    }
     await generateReport();
   };
 
@@ -188,7 +194,7 @@ const ReportPage = () => {
             <button
               type="submit"
               disabled={!projectId || !startDate || !endDate || loading}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="btn btn-primary px-5 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Generating...' : 'Generate'}
             </button>
@@ -196,7 +202,7 @@ const ReportPage = () => {
             <button
               type="button"
               onClick={handleReset}
-              className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg font-medium transition"
+              className="btn btn-secondary px-4 transition"
             >
               Reset
             </button>
@@ -205,7 +211,7 @@ const ReportPage = () => {
               type="button"
               onClick={downloadPDF}
               disabled={!report}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="btn px-4 bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
               Download PDF
             </button>
@@ -235,15 +241,15 @@ const ReportPage = () => {
             {/* PROJECT HEADER */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
               <div>
-                <h2 className="text-xl font-semibold text-gray-800">
+                <h2 className="text-page-title text-gray-800">
                   {report?.project?.projectName ?? 'Project Report'}
                 </h2>
-                <p className="text-sm text-gray-500">
-                  {moment(startDate).format('MM/DD/YYYY')} —{' '}
+                <p className="text-small-text text-gray-500">
+                  {moment(startDate).format('MM/DD/YYYY')} â€”{' '}
                   {moment(endDate).format('MM/DD/YYYY')}
                 </p>
               </div>
-              <div className="text-sm text-gray-400 mt-2 md:mt-0">
+              <div className="text-small-text text-gray-400 mt-2 md:mt-0">
                 Generated on {moment().format('MM/DD/YYYY')}
               </div>
             </div>
@@ -271,7 +277,7 @@ const ReportPage = () => {
             {/* ANALYTICS */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-6">
               <div className="bg-white border rounded-xl p-4">
-                <h3 className="text-sm font-semibold text-gray-600 mb-3">
+                <h3 className="text-section-title text-gray-600 mb-3">
                   Status Distribution
                 </h3>
                 <div className="space-y-2 text-sm text-gray-700">
@@ -282,7 +288,7 @@ const ReportPage = () => {
               </div>
 
               <div className="bg-white border rounded-xl p-4 lg:col-span-2">
-                <h3 className="text-sm font-semibold text-gray-600 mb-3">
+                <h3 className="text-section-title text-gray-600 mb-3">
                   User Productivity
                 </h3>
 
@@ -344,10 +350,10 @@ const ReportPage = () => {
                         className="border-t hover:bg-gray-50 transition"
                       >
                         <td className="p-3 font-medium">
-                          {t.taskName || t.title || '—'}
+                          {t.taskName || t.title || 'â€”'}
                         </td>
                         <td className="p-3">
-                          {t.assignedTo || '—'}
+                          {t.assignedTo || 'â€”'}
                         </td>
                         <td className="p-3">
                           <span className="px-2 py-1 rounded-full bg-gray-200 text-xs">
@@ -360,7 +366,7 @@ const ReportPage = () => {
                         <td className="p-3">
                           {t.dueDate
                             ? moment(t.dueDate).format('MM/DD/YYYY')
-                            : '—'}
+                            : 'â€”'}
                         </td>
                       </tr>
                     ))}
@@ -381,116 +387,116 @@ const ReportPage = () => {
           </div>
         ) : overview ? (
           <div id="report-content" className="mt-8">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <SummaryCard title="Tasks Created" value={(overview.summary?.tasksCreated ?? 0)} />
-                <SummaryCard title="Tasks Completed" value={(overview.summary?.tasksCompleted ?? 0)} color="text-green-600" />
-                <SummaryCard title="Hours Logged" value={`${(overview.summary?.hoursLogged ?? 0)}h`} color="text-purple-600" />
-                <SummaryCard title="Active Projects" value={(overview.summary?.activeProjects ?? 0)} />
-              </div>
-
-              <div className="mt-6">
-                <div className="flex gap-3 mb-4">
-                  <button
-                    onClick={() => setActiveTab('taskStatus')}
-                    className={`px-4 py-2 rounded-full border ${activeTab === 'taskStatus' ? 'bg-blue-600 text-white' : 'bg-white'}`}>
-                    Task Status
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('userProductivity')}
-                    className={`px-4 py-2 rounded-full border ${activeTab === 'userProductivity' ? 'bg-blue-600 text-white' : 'bg-white'}`}>
-                    User Productivity
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('clientSummary')}
-                    className={`px-4 py-2 rounded-full border ${activeTab === 'clientSummary' ? 'bg-blue-600 text-white' : 'bg-white'}`}>
-                    Client Summary
-                  </button>
-                </div>
-
-                {activeTab === 'taskStatus' && (
-                  <div className="bg-white border rounded-xl p-4">
-                    <h3 className="text-sm font-semibold text-gray-600 mb-3">Task Status Distribution</h3>
-                    <Chart
-                      data={[
-                        { name: 'Completed', total: overview.taskStatus?.completed ?? 0 },
-                        { name: 'In Progress', total: overview.taskStatus?.inProgress ?? 0 },
-                        { name: 'Not Started', total: overview.taskStatus?.notStarted ?? 0 },
-                        { name: 'Overdue', total: overview.taskStatus?.overdue ?? 0 },
-                      ]}
-                      dataKey='total'
-                      height={280}
-                    />
-                  </div>
-                )}
-
-                {activeTab === 'userProductivity' && (
-                  <div className="mt-6 bg-white border rounded-xl p-4">
-                    <h3 className="text-sm font-semibold text-gray-600 mb-3">User Productivity Report</h3>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead className="text-left text-gray-600">
-                          <tr>
-                            <th className="p-3">User</th>
-                            <th className="p-3">Role</th>
-                            <th className="p-3">Total Tasks</th>
-                            <th className="p-3">Completed</th>
-                            <th className="p-3">In Progress</th>
-                            <th className="p-3">Hours Logged</th>
-                            <th className="p-3">Completion Rate</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {overview.userProductivity && overview.userProductivity.map((u) => (
-                            <tr key={u.userId} className="border-t">
-                              <td className="p-3">{u.userName}</td>
-                              <td className="p-3">{u.role}</td>
-                              <td className="p-3">{u.totalTasks ?? 0}</td>
-                              <td className="p-3 text-green-600">{u.completed ?? 0}</td>
-                              <td className="p-3 text-blue-600">{u.inProgress ?? 0}</td>
-                              <td className="p-3">{u.hoursLogged ?? 0}h</td>
-                              <td className="p-3"><span className="px-2 py-1 bg-red-100 rounded-full text-xs">{u.completionRate ?? 0}%</span></td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-
-                {activeTab === 'clientSummary' && (
-                  <div className="mt-6 bg-white border rounded-xl p-4">
-                    <h3 className="text-sm font-semibold text-gray-600 mb-3">Client Task Summary</h3>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead className="text-left text-gray-600">
-                          <tr>
-                            <th className="p-3">Client</th>
-                            <th className="p-3">Projects</th>
-                            <th className="p-3">Total Tasks</th>
-                            <th className="p-3">Completed</th>
-                            <th className="p-3">In Progress</th>
-                            <th className="p-3">Overdue</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {clientSummary.map((c) => (
-                            <tr key={c.clientId} className="border-t">
-                              <td className="p-3">{c.clientName}</td>
-                              <td className="p-3">{c.projects}</td>
-                              <td className="p-3">{c.totalTasks}</td>
-                              <td className="p-3 text-green-600">{c.completed}</td>
-                              <td className="p-3 text-blue-600">{c.inProgress}</td>
-                              <td className="p-3 text-red-600">{c.overdue}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <SummaryCard title="Tasks Created" value={(overview.summary?.tasksCreated ?? 0)} />
+              <SummaryCard title="Tasks Completed" value={(overview.summary?.tasksCompleted ?? 0)} color="text-green-600" />
+              <SummaryCard title="Hours Logged" value={`${(overview.summary?.hoursLogged ?? 0)}h`} color="text-purple-600" />
+              <SummaryCard title="Active Projects" value={(overview.summary?.activeProjects ?? 0)} />
             </div>
-          ) : null}
+
+            <div className="mt-6">
+              <div className="flex gap-3 mb-4">
+                <button
+                  onClick={() => setActiveTab('taskStatus')}
+                  className={`px-4 py-2 rounded-full border ${activeTab === 'taskStatus' ? 'bg-blue-600 text-white' : 'bg-white'}`}>
+                  Task Status
+                </button>
+                <button
+                  onClick={() => setActiveTab('userProductivity')}
+                  className={`px-4 py-2 rounded-full border ${activeTab === 'userProductivity' ? 'bg-blue-600 text-white' : 'bg-white'}`}>
+                  User Productivity
+                </button>
+                <button
+                  onClick={() => setActiveTab('clientSummary')}
+                  className={`px-4 py-2 rounded-full border ${activeTab === 'clientSummary' ? 'bg-blue-600 text-white' : 'bg-white'}`}>
+                  Client Summary
+                </button>
+              </div>
+
+              {activeTab === 'taskStatus' && (
+                <div className="bg-white border rounded-xl p-4">
+                  <h3 className="text-section-title text-gray-600 mb-3">Task Status Distribution</h3>
+                  <Chart
+                    data={[
+                      { name: 'Completed', total: overview.taskStatus?.completed ?? 0 },
+                      { name: 'In Progress', total: overview.taskStatus?.inProgress ?? 0 },
+                      { name: 'Not Started', total: overview.taskStatus?.notStarted ?? 0 },
+                      { name: 'Overdue', total: overview.taskStatus?.overdue ?? 0 },
+                    ]}
+                    dataKey='total'
+                    height={280}
+                  />
+                </div>
+              )}
+
+              {activeTab === 'userProductivity' && (
+                <div className="mt-6 bg-white border rounded-xl p-4">
+                  <h3 className="text-section-title text-gray-600 mb-3">User Productivity Report</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="text-left text-gray-600">
+                        <tr>
+                          <th className="p-3">User</th>
+                          <th className="p-3">Role</th>
+                          <th className="p-3">Total Tasks</th>
+                          <th className="p-3">Completed</th>
+                          <th className="p-3">In Progress</th>
+                          <th className="p-3">Hours Logged</th>
+                          <th className="p-3">Completion Rate</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {overview.userProductivity && overview.userProductivity.map((u) => (
+                          <tr key={u.userId} className="border-t">
+                            <td className="p-3">{u.userName}</td>
+                            <td className="p-3">{u.role}</td>
+                            <td className="p-3">{u.totalTasks ?? 0}</td>
+                            <td className="p-3 text-green-600">{u.completed ?? 0}</td>
+                            <td className="p-3 text-blue-600">{u.inProgress ?? 0}</td>
+                            <td className="p-3">{u.hoursLogged ?? 0}h</td>
+                            <td className="p-3"><span className="px-2 py-1 bg-red-100 rounded-full text-xs">{u.completionRate ?? 0}%</span></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'clientSummary' && (
+                <div className="mt-6 bg-white border rounded-xl p-4">
+                  <h3 className="text-section-title text-gray-600 mb-3">Client Task Summary</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="text-left text-gray-600">
+                        <tr>
+                          <th className="p-3">Client</th>
+                          <th className="p-3">Projects</th>
+                          <th className="p-3">Total Tasks</th>
+                          <th className="p-3">Completed</th>
+                          <th className="p-3">In Progress</th>
+                          <th className="p-3">Overdue</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {clientSummary.map((c) => (
+                          <tr key={c.clientId} className="border-t">
+                            <td className="p-3">{c.clientName}</td>
+                            <td className="p-3">{c.projects}</td>
+                            <td className="p-3">{c.totalTasks}</td>
+                            <td className="p-3 text-green-600">{c.completed}</td>
+                            <td className="p-3 text-blue-600">{c.inProgress}</td>
+                            <td className="p-3 text-red-600">{c.overdue}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -504,3 +510,4 @@ const SummaryCard = ({ title, value, color = 'text-gray-800' }) => (
 );
 
 export default ReportPage;
+

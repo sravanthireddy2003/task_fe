@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import ModalWrapper from "../ModalWrapper";
 import { Dialog, Listbox } from "@headlessui/react";
 import Textbox from "../Textbox";
-import { useForm } from "react-hook-form";
 import SelectList from "../SelectList";
 import Button from "../Button";
 import { useDispatch, useSelector } from "react-redux";
 import { createTask } from "../../redux/slices/taskSlice";
 import { fetchClients, selectClients } from "../../redux/slices/clientSlice";
 import { fetchUsers, selectUsers } from "../../redux/slices/userSlice";
+import { selectTasks } from "../../redux/slices/taskSlice";
 
 const LISTS = ["TODO", "IN PROGRESS", "COMPLETED"];
 const PRIORITY = ["HIGH", "MEDIUM", "LOW"];
@@ -17,13 +17,35 @@ const AddTask = ({ open, setOpen }) => {
   const dispatch = useDispatch();
   const clients = useSelector(selectClients);
   const users = useSelector(selectUsers);
+  const tasks = useSelector(selectTasks);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm();
+  const [formData, setFormData] = useState({ title: '', date: '', time_alloted: '', description: '' });
+  const [errors, setErrors] = useState({});
+
+  const validate = () => {
+    const newErrors = {};
+    const titleStr = formData.title?.trim() || '';
+    if (!titleStr) newErrors.title = 'Title is required';
+    else {
+      const isDuplicate = tasks.some(t => t.title?.toLowerCase() === titleStr.toLowerCase());
+      if (isDuplicate) newErrors.title = "Task title already exists!";
+    }
+    if (!formData.date) newErrors.date = 'Date is required';
+    if (formData.time_alloted && isNaN(Number(formData.time_alloted))) {
+      newErrors.time_alloted = 'Must be a valid number';
+    } else if (Number(formData.time_alloted) < 0) {
+      newErrors.time_alloted = 'Must be a positive number';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
+  };
 
   const [team, setTeam] = useState([]);
   const [stage, setStage] = useState(LISTS[0]);
@@ -36,8 +58,11 @@ const AddTask = ({ open, setOpen }) => {
     dispatch(fetchUsers());
   }, [dispatch]);
 
-  const submitHandler = async (data) => {
-    const { title, date, time_alloted, description } = data;
+  const submitHandler = async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+
+    const { title, date, time_alloted, description } = formData;
 
     const taskData = {
       title,
@@ -56,13 +81,13 @@ const AddTask = ({ open, setOpen }) => {
       const result = await dispatch(createTask(taskData));
       if (result.meta.requestStatus === "fulfilled") {
         setOpen(false);
-        reset();
+        setFormData({ title: '', date: '', time_alloted: '', description: '' });
         setClientId("");
         setTeam([]);
         setStage(LISTS[0]);
         setPriority(PRIORITY[2]);
       }
-    } catch (error) {}
+    } catch (error) { }
 
     setUploading(false);
   };
@@ -77,7 +102,7 @@ const AddTask = ({ open, setOpen }) => {
 
   return (
     <ModalWrapper open={open} setOpen={setOpen}>
-      <form onSubmit={handleSubmit(submitHandler)}>
+      <form onSubmit={submitHandler}>
         <Dialog.Title as="h2" className="text-base font-bold leading-6 text-gray-900 mb-4">
           ADD TASK
         </Dialog.Title>
@@ -99,8 +124,11 @@ const AddTask = ({ open, setOpen }) => {
             name="title"
             label="Task Title"
             className="w-full rounded"
-            register={register("title", { required: "Title is required" })}
-            error={errors.title ? errors.title.message : ""}
+            register={{
+              value: formData.title,
+              onChange: handleChange,
+            }}
+            error={errors.title}
           />
 
           <div className="flex gap-4">
@@ -120,8 +148,11 @@ const AddTask = ({ open, setOpen }) => {
                 name="date"
                 label="Task Date"
                 className="w-full rounded"
-                register={register("date", { required: "Date is required!" })}
-                error={errors.date ? errors.date.message : ""}
+                register={{
+                  value: formData.date,
+                  onChange: handleChange,
+                }}
+                error={errors.date}
               />
             </div>
             <div className="w-1/2">
@@ -131,7 +162,11 @@ const AddTask = ({ open, setOpen }) => {
                 name="time_alloted"
                 label="Time Alloted"
                 className="w-full rounded"
-                register={register("time_alloted")}
+                register={{
+                  value: formData.time_alloted,
+                  onChange: handleChange,
+                }}
+                error={errors.time_alloted}
               />
             </div>
           </div>
@@ -147,7 +182,7 @@ const AddTask = ({ open, setOpen }) => {
                       : "Select users"}
                   </span>
                   <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400">
-                    ▼
+                    â–¼
                   </span>
                 </Listbox.Button>
 
@@ -157,8 +192,7 @@ const AddTask = ({ open, setOpen }) => {
                       key={user._id}
                       value={user}
                       className={({ active }) =>
-                        `relative cursor-default select-none py-2 pl-10 pr-4 ${
-                          active ? "bg-indigo-600 text-white" : "text-gray-900"
+                        `relative cursor-default select-none py-2 pl-10 pr-4 ${active ? "bg-blue-600 text-white" : "text-gray-900"
                         }`
                       }
                     >
@@ -168,7 +202,7 @@ const AddTask = ({ open, setOpen }) => {
                             {user?.name || "Unnamed User"}
                           </span>
                           {selected && (
-                            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-green-600">✓</span>
+                            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-green-600">âœ“</span>
                           )}
                         </>
                       )}
@@ -188,7 +222,9 @@ const AddTask = ({ open, setOpen }) => {
               placeholder="Enter task description (optional)"
               className="w-full rounded border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
               rows="3"
-              {...register("description")}
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
             />
           </div>
 
@@ -217,3 +253,5 @@ const AddTask = ({ open, setOpen }) => {
 };
 
 export default AddTask;
+
+

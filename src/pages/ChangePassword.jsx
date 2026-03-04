@@ -1,5 +1,4 @@
-import React from "react";
-import { useForm } from "react-hook-form";
+﻿import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -8,6 +7,7 @@ import PasswordStrength from "../components/PasswordStrength";
 import Button from "../components/Button";
 import Textbox from "../components/Textbox";
 import { getDefaultLandingPath } from "../utils";
+import * as Icons from "../icons";
 
 const ChangePassword = () => {
   const dispatch = useDispatch();
@@ -16,10 +16,47 @@ const ChangePassword = () => {
   const user = useSelector(selectUser);
   const navigate = useNavigate();
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm();
-  const newPassword = watch("newPassword", "");
+  const [formData, setFormData] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' });
+  const [errors, setErrors] = useState({});
+  const [showOld, setShowOld] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
-  const onSubmit = async (data) => {
+  const validate = () => {
+    const newErrors = {};
+    if (!formData.oldPassword) newErrors.oldPassword = "Old password required";
+
+    // Check password rules: min 8 chars, 1 uppercase, 1 number, 1 special character
+    if (!formData.newPassword) {
+      newErrors.newPassword = "New password required";
+    } else if (
+      formData.newPassword.length < 8 ||
+      !/[A-Z]/.test(formData.newPassword) ||
+      !/[0-9]/.test(formData.newPassword) ||
+      !/[!@#$%^&*(),.?":{}|<>]/.test(formData.newPassword)
+    ) {
+      newErrors.newPassword = "Password must be at least 8 characters, 1 uppercase, 1 number, 1 special character";
+    }
+
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "Please confirm new password";
+    } else if (formData.confirmPassword !== formData.newPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
+  };
+
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+    const data = formData;
     try {
       // Normalize payload to support different backend key expectations
       const payload = {
@@ -43,30 +80,33 @@ const ChangePassword = () => {
   };
 
   return (
-    <div className='w-full min-h-screen flex items-center justify-center flex-col lg:flex-row bg-[#f3f4f6] dark:bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#302943] via-slate-900 to-black'>
+    <div className='w-full min-h-screen flex items-center justify-center flex-col lg:flex-row bg-gray-50'>
       <div className='w-full md:w-auto flex gap-0 md:gap-40 flex-col md:flex-row items-center justify-center'>
         {/* Left Side (Optional - keep simple centered card for now) */}
 
         {/* Form Card */}
-        <div className='w-full md:w-[450px] p-4 md:p-8 flex flex-col justify-center items-center bg-white dark:bg-black/20 dark:backdrop-blur-3xl rounded-3xl shadow-2xl border border-gray-200 dark:border-white/10'>
+        <div className='w-full md:w-[450px] p-4 md:p-8 flex flex-col justify-center items-center bg-white rounded-3xl shadow-2xl border border-gray-200'>
           <div className="w-full flex-col mb-6">
-            <h2 className='text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-tr from-blue-600 to-indigo-500 mb-2'>
+            <h2 className='text-page-title text-gray-900 mb-2'>
               Change Password
             </h2>
-            <p className='text-sm text-gray-500 dark:text-gray-400'>
+            <p className='text-sm text-gray-500'>
               Ensure your account stays secure by updating your password.
             </p>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className='w-full flex flex-col gap-5'>
+          <form onSubmit={onSubmit} className='w-full flex flex-col gap-5'>
             <Textbox
               label="Old Password"
               placeholder="Enter your current password"
               name="oldPassword"
               type="password"
               className="w-full rounded-xl"
-              register={register("oldPassword", { required: "Old password required" })}
-              error={errors.oldPassword?.message}
+              register={{ value: formData.oldPassword, onChange: handleChange }}
+              error={errors.oldPassword}
+              showPassword={showOld}
+              onPasswordToggle={() => setShowOld(p => !p)}
+              rightIcon={showOld ? <Icons.EyeOff className="w-4 h-4" /> : <Icons.Eye className="w-4 h-4" />}
             />
 
             <Textbox
@@ -75,11 +115,14 @@ const ChangePassword = () => {
               name="newPassword"
               type="password"
               className="w-full rounded-xl"
-              register={register("newPassword", { required: "New password required" })}
-              error={errors.newPassword?.message}
+              register={{ value: formData.newPassword, onChange: handleChange }}
+              error={errors.newPassword}
+              showPassword={showNew}
+              onPasswordToggle={() => setShowNew(p => !p)}
+              rightIcon={showNew ? <Icons.EyeOff className="w-4 h-4" /> : <Icons.Eye className="w-4 h-4" />}
             />
 
-            <PasswordStrength password={newPassword} />
+            <PasswordStrength password={formData.newPassword} />
 
             <Textbox
               label="Confirm Password"
@@ -87,11 +130,11 @@ const ChangePassword = () => {
               name="confirmPassword"
               type="password"
               className="w-full rounded-xl"
-              register={register("confirmPassword", {
-                required: "Please confirm new password",
-                validate: (val) => val === newPassword || "Passwords do not match"
-              })}
-              error={errors.confirmPassword?.message}
+              register={{ value: formData.confirmPassword, onChange: handleChange }}
+              error={errors.confirmPassword}
+              showPassword={showConfirm}
+              onPasswordToggle={() => setShowConfirm(p => !p)}
+              rightIcon={showConfirm ? <Icons.EyeOff className="w-4 h-4" /> : <Icons.Eye className="w-4 h-4" />}
             />
 
             {status === "failed" && error && (
@@ -103,7 +146,7 @@ const ChangePassword = () => {
             <Button
               type="submit"
               label={status === "loading" ? "Updating..." : "Update Password"}
-              className='w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]'
+              className='btn btn-primary w-full h-12'
               disabled={status === "loading"}
             />
           </form>
@@ -115,9 +158,9 @@ const ChangePassword = () => {
                 const target = getDefaultLandingPath(user);
                 navigate(target, { replace: true });
               }}
-              className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors flex items-center justify-center gap-2"
+              className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors flex items-center justify-center gap-2"
             >
-              ← Back to Dashboard
+              â† Back to Dashboard
             </button>
           </div>
         </div>
@@ -128,3 +171,4 @@ const ChangePassword = () => {
 // yhujjjjj
 export default ChangePassword;
 // change passwors\
+

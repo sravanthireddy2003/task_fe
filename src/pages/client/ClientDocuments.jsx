@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAccessToken } from "../../utils/tokenService";
@@ -28,7 +28,7 @@ const ClientDocuments = ({ client }) => {
 
   const formatFileSize = (bytes) => formatFileSizeHelper(bytes);
 
-  // ✅ FIXED: Upload to backend API
+  // âœ… FIXED: Upload to backend API
   const handleFileUpload = async (event) => {
     const files = Array.from(event.target.files);
     if (files.length === 0) return;
@@ -56,7 +56,7 @@ const ClientDocuments = ({ client }) => {
 
         const result = await response.json();
 
-        // ✅ Add new document with publicUrl (NOT blob URL)
+        // âœ… Add new document with publicUrl (NOT blob URL)
         await dispatch(attachDocument({
           clientId: client.id,
           document: {
@@ -64,12 +64,12 @@ const ClientDocuments = ({ client }) => {
             file_name: result.data.fileName,
             file_type: result.data.mimeType,
             file_size: result.data.fileSize,
-            file_url: result.data.publicUrl,  // ✅ Backend public URL
+            file_url: result.data.publicUrl,  // âœ… Backend public URL
             uploaded_at: new Date().toISOString()
           }
         })).unwrap();
       }
-      // ✅ Refresh client data after all uploads
+      // âœ… Refresh client data after all uploads
       if (client?.id) {
         await dispatch(getClient(client.id)).unwrap();
       }
@@ -83,7 +83,7 @@ const ClientDocuments = ({ client }) => {
     }
   };
 
-  // ✅ FIXED: Use direct file URL only
+  // âœ… FIXED: Use direct file URL only
   const handleDownload = async (doc) => {
     try {
       const rawUrl = doc.file_url || doc.publicUrl;
@@ -112,7 +112,7 @@ const ClientDocuments = ({ client }) => {
     }
   };
 
-  // ✅ FIXED: Use direct file URL only
+  // âœ… FIXED: Use direct file URL only
   const handleView = async (doc) => {
     try {
       const rawUrl = doc.file_url || doc.publicUrl;
@@ -247,4 +247,5 @@ const ClientDocuments = ({ client }) => {
 };
 
 export default ClientDocuments;
+
 
