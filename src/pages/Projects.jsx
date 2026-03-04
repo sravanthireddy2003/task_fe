@@ -499,6 +499,7 @@ export default function Projects() {
       </div>
 
       {/* --------------------------- LIST VIEW --------------------------- */}
+<<<<<<< HEAD
       {view === "list" && (
         <div className="tm-list-container">
           <div className="overflow-x-auto min-h-[400px]">
@@ -628,10 +629,276 @@ export default function Projects() {
                   </React.Fragment>
                 ))}
               </tbody>
+=======
+      {/* {view === "list" && (
+        <div className="bg-white border rounded-xl" style={{ overflow: 'visible' }}>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[800px] table-auto">
+            <thead className="bg-gray-100 text-gray-700">
+              <tr>
+                <th className="p-3 text-left">Project</th>
+                <th className="p-3 text-left">Department</th>
+                <th className="p-3 text-left">Client</th>
+                <th className="p-3 text-left">Manager</th>
+                <th className="p-3 text-left">Status</th>
+                <th className="p-3 text-left">Duration</th>
+                <th className="p-3 text-right">Actions</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {filteredProjects.map((project) => (
+                <React.Fragment key={project.id || project._id}>
+                  <ProjectLockBanner project={project} />
+                  <tr className="border-b hover:bg-gray-50">
+                    <td className="p-3 font-medium">{project.name}</td>
+                    <td className="p-3 text-sm">{getDepartmentName(project.departments)}</td>
+                    <td className="p-3 text-sm text-gray-600">{getClientName(project.client || project.client_id)}</td>
+                    <td className="p-3 text-sm text-gray-600">{getManagerName(project.project_manager_id, project.project_manager)}</td>
+                    <td className="p-3">
+                      {activeStatusEdit === (project.id || project._id) ? (
+                        <select
+                          value={project.status}
+                          onChange={(e) => updateStatusInline(project, e.target.value)}
+                          className="border rounded-lg px-2 py-1 text-sm"
+                        >
+                          {statusOptions.map((s) => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span
+                          onClick={() => {
+                            if (project.status === 'CLOSED') return;
+                            setActiveStatusEdit(project.id || project._id);
+                          }}
+                          className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[project.status] || 'bg-gray-100 text-gray-800'} ${project.status === 'CLOSED' ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'}`}
+                        >
+                          {project.status}
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-3 text-sm text-gray-600">{formatDate(project.start_date)} → {formatDate(project.end_date)}</td>
+                    <td className="p-3 text-right" style={{ overflow: 'visible' }}>
+                      <div className="flex justify-end gap-2 items-center relative">
+                        <ProjectClosureRequestButton
+                          project={project}
+                          taskSummary={projectSummary?.[project.id || project._id]?.tasks}
+                        />
+                        <Menu as="div" className="relative inline-block text-left">
+                          <Menu.Button className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
+                            <MoreVertical className="w-5 h-5" />
+                          </Menu.Button>
+                          <Transition
+                            as={Fragment}
+                            enter="transition ease-out duration-100"
+                            enterFrom="transform opacity-0 scale-95"
+                            enterTo="transform opacity-100 scale-100"
+                            leave="transition ease-in duration-75"
+                            leaveFrom="transform opacity-100 scale-100"
+                            leaveTo="transform opacity-0 scale-95"
+                          >
+                            <Menu.Items className="absolute right-0 mt-2 w-48 origin-top-right bg-white divide-y divide-gray-100 rounded-md shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none z-[9999]">
+                              <div className="px-1 py-1">
+                                <Menu.Item>
+                                  {({ active }) => (
+                                    <button
+                                      onClick={() => handleViewSummary(project)}
+                                      className={`${active ? 'bg-blue-50 text-blue-700' : 'text-gray-700'} group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                                    >
+                                      <BarChart3 className="w-4 h-4 mr-2" />
+                                      Summary
+                                    </button>
+                                  )}
+                                </Menu.Item>
+                                <Menu.Item>
+                                  {({ active }) => (
+                                    <button
+                                      onClick={() => handleOpenDocuments(project)}
+                                      className={`${active ? 'bg-blue-50 text-blue-700' : 'text-gray-700'} group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                                    >
+                                      <FileText className="w-4 h-4 mr-2" />
+                                      Documents
+                                    </button>
+                                  )}
+                                </Menu.Item>
+                                <Menu.Item>
+                                  {({ active }) => (
+                                    <button
+                                      onClick={() => {
+                                        if (project.status !== 'CLOSED') openModal(project);
+                                      }}
+                                      disabled={project.status === 'CLOSED'}
+                                      className={`${active && project.status !== 'CLOSED' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'} ${project.status === 'CLOSED' ? 'opacity-50 cursor-not-allowed hidden' : ''} group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                                    >
+                                      <Edit2 className="w-4 h-4 mr-2" />
+                                      Edit Project
+                                    </button>
+                                  )}
+                                </Menu.Item>
+                              </div>
+                              <div className="px-1 py-1">
+                                <Menu.Item>
+                                  {({ active }) => (
+                                    <button
+                                      onClick={() => handleDelete(project)}
+                                      className={`${active ? 'bg-red-50 text-red-700' : 'text-red-600'} group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                                    >
+                                      <Trash2 className="w-4 h-4 mr-2" />
+                                      Delete Project
+                                    </button>
+                                  )}
+                                </Menu.Item>
+                              </div>
+                            </Menu.Items>
+                          </Transition>
+                        </Menu>
+                      </div>
+                    </td>
+                  </tr>
+                </React.Fragment>
+              ))}
+            </tbody>
+>>>>>>> e88151dfc7f693da9ecd440ae899dc2033ef4485
             </table>
           </div>
         </div>
-      )}
+      )} */}
+
+{/* --------------------------- LIST VIEW --------------------------- */}
+{view === "list" && (
+  <div className="bg-white border rounded-xl relative" style={{ overflow: 'visible' }}>
+    <div className="overflow-x-auto" style={{ overflow: 'visible' }}>
+      <table className="w-full min-w-[800px] table-auto">
+      <thead className="bg-gray-100 text-gray-700">
+        <tr>
+          <th className="p-3 text-left">Project</th>
+          <th className="p-3 text-left">Department</th>
+          <th className="p-3 text-left">Client</th>
+          <th className="p-3 text-left">Manager</th>
+          <th className="p-3 text-left">Status</th>
+          <th className="p-3 text-left">Duration</th>
+          <th className="p-3 text-right">Actions</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {filteredProjects.map((project) => (
+          <React.Fragment key={project.id || project._id}>
+            <ProjectLockBanner project={project} />
+            <tr className="border-b hover:bg-gray-50">
+              <td className="p-3 font-medium">{project.name}</td>
+              <td className="p-3 text-sm">{getDepartmentName(project.departments)}</td>
+              <td className="p-3 text-sm text-gray-600">{getClientName(project.client || project.client_id)}</td>
+              <td className="p-3 text-sm text-gray-600">{getManagerName(project.project_manager_id, project.project_manager)}</td>
+              <td className="p-3">
+                {activeStatusEdit === (project.id || project._id) ? (
+                  <select
+                    value={project.status}
+                    onChange={(e) => updateStatusInline(project, e.target.value)}
+                    className="border rounded-lg px-2 py-1 text-sm"
+                  >
+                    {statusOptions.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <span
+                    onClick={() => {
+                      if (project.status === 'CLOSED') return;
+                      setActiveStatusEdit(project.id || project._id);
+                    }}
+                    className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[project.status] || 'bg-gray-100 text-gray-800'} ${project.status === 'CLOSED' ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'}`}
+                  >
+                    {project.status}
+                  </span>
+                )}
+              </td>
+              <td className="p-3 text-sm text-gray-600">{formatDate(project.start_date)} → {formatDate(project.end_date)}</td>
+              <td className="p-3 text-right relative" style={{ overflow: 'visible' }}>
+                <div className="flex justify-end gap-2 items-center relative" style={{ overflow: 'visible' }}>
+                  <ProjectClosureRequestButton
+                    project={project}
+                    taskSummary={projectSummary?.[project.id || project._id]?.tasks}
+                  />
+                  <Menu as="div" className="relative inline-block text-left" style={{ overflow: 'visible' }}>
+                    <Menu.Button className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
+                      <MoreVertical className="w-5 h-5" />
+                    </Menu.Button>
+                    <Transition
+                      as={Fragment}
+                      enter="transition ease-out duration-100"
+                      enterFrom="transform opacity-0 scale-95"
+                      enterTo="transform opacity-100 scale-100"
+                      leave="transition ease-in duration-75"
+                      leaveFrom="transform opacity-100 scale-100"
+                      leaveTo="transform opacity-0 scale-95"
+                    >
+                      <Menu.Items className="absolute right-0 mt-2 w-48 origin-top-right bg-white divide-y divide-gray-100 rounded-md shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none z-[9999]">
+                        <div className="px-1 py-1">
+                          <Menu.Item>
+                            {({ active }) => (
+                              <button
+                                onClick={() => handleViewSummary(project)}
+                                className={`${active ? 'bg-blue-50 text-blue-700' : 'text-gray-700'} group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                              >
+                                <BarChart3 className="w-4 h-4 mr-2" />
+                                Summary
+                              </button>
+                            )}
+                          </Menu.Item>
+                          <Menu.Item>
+                            {({ active }) => (
+                              <button
+                                onClick={() => handleOpenDocuments(project)}
+                                className={`${active ? 'bg-blue-50 text-blue-700' : 'text-gray-700'} group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                              >
+                                <FileText className="w-4 h-4 mr-2" />
+                                Documents
+                              </button>
+                            )}
+                          </Menu.Item>
+                          <Menu.Item>
+                            {({ active }) => (
+                              <button
+                                onClick={() => {
+                                  if (project.status !== 'CLOSED') openModal(project);
+                                }}
+                                disabled={project.status === 'CLOSED'}
+                                className={`${active && project.status !== 'CLOSED' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'} ${project.status === 'CLOSED' ? 'opacity-50 cursor-not-allowed hidden' : ''} group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                              >
+                                <Edit2 className="w-4 h-4 mr-2" />
+                                Edit Project
+                              </button>
+                            )}
+                          </Menu.Item>
+                        </div>
+                        <div className="px-1 py-1">
+                          <Menu.Item>
+                            {({ active }) => (
+                              <button
+                                onClick={() => handleDelete(project)}
+                                className={`${active ? 'bg-red-50 text-red-700' : 'text-red-600'} group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Delete Project
+                              </button>
+                            )}
+                          </Menu.Item>
+                        </div>
+                      </Menu.Items>
+                    </Transition>
+                  </Menu>
+                </div>
+              </td>
+            </tr>
+          </React.Fragment>
+        ))}
+      </tbody>
+      </table>
+    </div>
+  </div>
+)}
 
       {/* CARD VIEW */}
       {view === "card" && (
