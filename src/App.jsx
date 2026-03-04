@@ -113,18 +113,8 @@ function Layout() {
   return user ? (
     <div className="w-full h-screen flex flex-row bg-gray-100">
       {/* Sidebar */}
-      <div
-        className={clsx(
-          "h-screen bg-gray-900 border-r border-gray-700 hidden md:flex sticky top-0 z-50 transition-all duration-300 ease-in-out shadow-xl",
-          isSidebarCollapsed ? "w-[72px]" : "w-[240px]"
-        )}
-      >
-        <Sidebar onHoverChange={(hovered) => {
-          // If sidebar is collapsed in Redux, but they hover it, we ideally want the 
-          // sidebar to expand ABSOLUTELY without pushing the main content container.
-          // By applying `absolute top-0 left-0 h-full z-50` to the sidebar itself in its own component, 
-          // this container just holds the 72px width space.
-        }} />
+      <div className="hidden md:flex h-screen sticky top-0 z-50 flex-shrink-0">
+        <Sidebar />
       </div>
 
       {/* Main Content Area */}

@@ -70,7 +70,9 @@ export default function Tasks() {
       selectedTaskDetails?.check_items ||
       []);
 
-  const detailChecklistCompleted = detailChecklistItems.filter((c) => c && c.completed).length;
+  const detailChecklistCompleted = detailChecklistItems.filter((c) =>
+    c && (c.completed || String(c.status).toUpperCase() === 'COMPLETED')
+  ).length;
 
   const detailActivities =
     (selectedTaskDetails?.activities ||
@@ -1284,9 +1286,9 @@ export default function Tasks() {
                             >
                               <input
                                 type="checkbox"
-                                checked={!!item?.completed}
+                                checked={!!(item?.completed || String(item?.status).toUpperCase() === 'COMPLETED')}
                                 readOnly
-                                className="mt-1 w-4 h-4 rounded border-gray-300 text-blue-600"
+                                className="mt-1 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                               />
                               <div>
                                 <div className="font-medium text-gray-900">

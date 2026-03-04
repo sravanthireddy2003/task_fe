@@ -1,8 +1,10 @@
-import React from "react";
+import React, { Fragment } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { setOpenSidebar } from "../redux/slices/authSlice";
+import { setOpenSidebar, logoutUser, logout } from "../redux/slices/authSlice";
 import NotificationPanel from "./NotificationPanel";
 import { useLocation, useNavigate } from "react-router-dom";
+import { Menu, Transition } from '@headlessui/react';
+import clsx from "clsx";
 import Button from "./Button";
 import * as Icons from "../icons";
 
@@ -36,6 +38,19 @@ const Navbar = ({ searchQuery, setSearchQuery, onFilterClick, onViewToggle }) =>
   // Navigate to Tasks page and open create modal
   const handleCreateTask = () => {
     navigate(`/${rolePrefix}/tasks`, { state: { openCreateModal: true } });
+  };
+
+  const handleLogout = async () => {
+    try {
+      if (logoutUser) {
+        await dispatch(logoutUser());
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      dispatch(logout());
+      navigate("/log-in");
+    }
   };
 
   return (
@@ -96,6 +111,82 @@ const Navbar = ({ searchQuery, setSearchQuery, onFilterClick, onViewToggle }) =>
         <div className="ml-1 relative z-50">
           <NotificationPanel />
         </div>
+
+        {/* Profile Dropdown */}
+        <Menu as="div" className="relative ml-2 z-50">
+          <Menu.Button className="flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full">
+            <div
+              className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 cursor-pointer shadow-sm hover:scale-105 transition-transform"
+              style={{ background: 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)' }}
+            >
+              <span className="text-sm font-bold text-white">
+                {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+              </span>
+            </div>
+          </Menu.Button>
+          <Transition
+            as={Fragment}
+            enter="transition ease-out duration-100"
+            enterFrom="transform opacity-0 scale-95"
+            enterTo="transform opacity-100 scale-100"
+            leave="transition ease-in duration-75"
+            leaveFrom="transform opacity-100 scale-100"
+            leaveTo="transform opacity-0 scale-95"
+          >
+            <Menu.Items className="absolute right-0 mt-3 w-56 origin-top-right rounded-xl bg-white shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none border border-gray-100 overflow-hidden divide-y divide-gray-100">
+              <div className="px-4 py-3 bg-gray-50/50">
+                <p className="text-sm font-semibold text-gray-900 truncate">{user?.name || "User"}</p>
+                <p className="text-xs text-gray-500 truncate mt-0.5 capitalize">{user?.role || "Role"}</p>
+              </div>
+              <div className="py-1">
+                <Menu.Item>
+                  {({ active }) => (
+                    <button
+                      onClick={() => navigate('/profile')}
+                      className={clsx(
+                        active ? 'bg-gray-50 text-indigo-600' : 'text-gray-700',
+                        'group flex w-full items-center px-4 py-2 text-sm font-medium transition-colors'
+                      )}
+                    >
+                      <Icons.User2 className="mr-3 h-4 w-4 text-gray-400 group-hover:text-indigo-500 transition-colors" />
+                      Profile / Settings
+                    </button>
+                  )}
+                </Menu.Item>
+                <Menu.Item>
+                  {({ active }) => (
+                    <button
+                      onClick={() => navigate('/change-password')}
+                      className={clsx(
+                        active ? 'bg-gray-50 text-indigo-600' : 'text-gray-700',
+                        'group flex w-full items-center px-4 py-2 text-sm font-medium transition-colors'
+                      )}
+                    >
+                      <Icons.Key className="mr-3 h-4 w-4 text-gray-400 group-hover:text-indigo-500 transition-colors" />
+                      Change Password
+                    </button>
+                  )}
+                </Menu.Item>
+              </div>
+              <div className="py-1">
+                <Menu.Item>
+                  {({ active }) => (
+                    <button
+                      onClick={handleLogout}
+                      className={clsx(
+                        active ? 'bg-red-50 text-red-700' : 'text-red-600',
+                        'group flex w-full items-center px-4 py-2 text-sm font-medium transition-colors'
+                      )}
+                    >
+                      <Icons.LogOut className="mr-3 h-4 w-4 text-red-500 transition-colors" />
+                      Logout
+                    </button>
+                  )}
+                </Menu.Item>
+              </div>
+            </Menu.Items>
+          </Transition>
+        </Menu>
       </div>
     </div>
   );
