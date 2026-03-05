@@ -1,0 +1,781 @@
+import React, { useEffect, useState } from "react";
+import * as Icons from "../icons";
+import WorkflowKanban from "../components/WorkflowKanban";
+import ManagerApprovalPanel from "../components/ManagerApprovalPanel";
+import AdminApprovalPanel from "../components/AdminApprovalPanel";
+import { Navigate } from "react-router-dom";
+import { useDispatch, useSelector } from 'react-redux';
+import { toast } from 'sonner';
+import { selectDepartments } from '../redux/slices/departmentSlice';
+import { selectProjects, selectCurrentProject, setCurrentProject, fetchProjects, fetchManagerProjects } from '../redux/slices/projectSlice';
+import { fetchQueue } from '../redux/slices/approvalSlice';
+import { requestProjectClosure, fetchPendingApprovals } from '../redux/slices/workflowSlice';
+import PageHeader from "../components/PageHeader";
+
+export default function Workflow() {
+  const dispatch = useDispatch();
+  const authStatus = useSelector((s) => s.auth?.status);
+  const authUser = useSelector((s) => s.auth?.user);
+  const departments = useSelector(selectDepartments);
+  const projects = useSelector(selectProjects);
+  const currentProject = useSelector(selectCurrentProject);
+  const [flows, setFlows] = useState([]);
+
+  // UI states
+  const [viewMode, setViewMode] = useState("table");
+  const [showModal, setShowModal] = useState(false);
+  const [editingFlow, setEditingFlow] = useState(null);
+  const [previewFlow, setPreviewFlow] = useState(null);
+  const [selectedWorkflowForKanban, setSelectedWorkflowForKanban] = useState(null);
+  const [query, setQuery] = useState("");
+  const [activeFilters, setActiveFilters] = useState({
+    scope: "all",
+    status: "all",
+    department: "all"
+  });
+
+  // Project closure states
+  const [showClosureModal, setShowClosureModal] = useState(false);
+  const [closureReason, setClosureReason] = useState("");
+  const [closureLoading, setClosureLoading] = useState(false);
+  const [closureError, setClosureError] = useState("");
+  const [projectsWithPendingClosure, setProjectsWithPendingClosure] = useState(new Set());
+
+  const role = authUser?.role;
+  const isAdmin = role === 'Admin';
+  const isManager = role === 'Manager';
+  const isEmployee = role === 'Employee';
+
+  // Loading state handling for auth
+  if (authStatus === 'loading' || !authUser) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-500 font-medium">Loading workflows...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Modal states
+  const emptyForm = {
+    name: "",
+    description: "",
+    scope: 'GLOBAL',
+    triggerEvent: 'TASK_REVIEW',
+    active: true,
+    departmentId: "",
+    projectId: "",
+  };
+
+  const [form, setForm] = useState(emptyForm);
+  const [newStepName, setNewStepName] = useState("");
+
+  // NOTE: Previous admin workflow-templates API has been removed.
+  // This page now works purely with local state for admin-designed flows.
+
+  const approvalQueue = useSelector((s) => s.approval?.queue);
+
+  // For admin workflow page: load admin workflow queue instead of departments/projects
+  useEffect(() => {
+    if (isAdmin) {
+      // Do not trigger departments/projects network calls from this page.
+      // Instead, fetch admin workflow queue (pending admin-level requests)
+      dispatch(fetchQueue('ADMIN')).catch((e) => { });
+    } else if (isManager && authUser) {
+      // For managers, fetch queue filtered by manager numeric ID (not public_id)
+      const managerId = authUser.user_id || authUser.userId || authUser.numeric_id || authUser.id;
+      if (managerId) {
+        dispatch(fetchQueue(managerId)).catch((e) => { });
+      }
+    }
+  }, [dispatch, isAdmin, isManager, authUser]);
+
+  // Sync fetched queue to flows state for display
+  useEffect(() => {
+    if (isAdmin && Array.isArray(approvalQueue)) {
+      setFlows(approvalQueue);
+    }
+  }, [approvalQueue, isAdmin]);
+
+  // For manager workflow page: load projects for closure requests
+  useEffect(() => {
+    if (isManager) {
+      dispatch(fetchManagerProjects()).catch((e) => { });
+    }
+  }, [dispatch, isManager]);
+
+  // Clear current project if it has pending closure request
+  useEffect(() => {
+    if (isManager && currentProject) {
+      const projectId = currentProject.id || currentProject._id || currentProject.public_id;
+      if (projectsWithPendingClosure.has(projectId)) {
+        dispatch(setCurrentProject(null));
+      }
+    }
+  }, [isManager, currentProject, projectsWithPendingClosure, dispatch]);
+
+  // -------- Modal & CRUD Handlers --------
+
+  const closeModal = () => {
+    setShowModal(false);
+    setEditingFlow(null);
+    setForm(emptyForm);
+  };
+
+  const openCreate = () => {
+    setEditingFlow(null);
+    setForm({
+      ...emptyForm,
+      scope: 'GLOBAL',
+      triggerEvent: 'TASK_REVIEW',
+      active: true,
+      departmentId: '',
+      projectId: '',
+    });
+    setShowModal(true);
+  };
+
+  const openEdit = (flow) => {
+    if (!flow) return;
+    setEditingFlow(flow);
+    setForm({
+      name: flow.name || '',
+      description: flow.description || '',
+      scope: (flow.scope || 'GLOBAL').toUpperCase(),
+      triggerEvent: flow.trigger_event || flow.triggerEvent || 'TASK_REVIEW',
+      active: flow.active !== false,
+      departmentId: (flow.department_id || flow.departmentId || '').toString(),
+      projectId: (flow.project_id || flow.projectId || '').toString(),
+    });
+    setShowModal(true);
+  };
+
+  const handleDelete = (flow) => {
+    if (!flow) return;
+    setFlows((prev) => prev.filter((f) => f.id !== flow.id));
+  };
+
+  const handleSave = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+
+    if (!form.name.trim()) return;
+
+    // Local edit only (no template API)
+    if (editingFlow) {
+      setFlows((prev) =>
+        prev.map((f) =>
+          f.id === editingFlow.id
+            ? {
+              ...f,
+              name: form.name.trim(),
+              description: form.description,
+              scope: form.scope,
+              trigger_event: form.triggerEvent,
+              active: form.active,
+              department_id: form.departmentId || null,
+              project_id: form.projectId || null,
+            }
+            : f
+        )
+      );
+      closeModal();
+      return;
+    }
+
+    const dept = departments.find(
+      (d) => String(d._id || d.id || d.public_id) === String(form.departmentId || '')
+    );
+    const allProjects = [currentProject, ...(projects || [])].filter(Boolean);
+    const proj = allProjects.find(
+      (p) => String(p._id || p.id || p.public_id) === String(form.projectId || '')
+    );
+
+    const payload = {
+      name: form.name.trim(),
+      trigger_event: form.triggerEvent,
+      scope: form.scope,
+      active: form.active,
+      department_id: form.departmentId || null,
+      department_name: dept ? dept.name || dept.department_name : null,
+      project_id: form.projectId || null,
+      project_name: proj ? proj.name || proj.project_name : null,
+      tenant_id:
+        authUser?.tenant_id ||
+        authUser?.tenantId ||
+        authUser?.tenant ||
+        authUser?.company_id ||
+        null,
+      created_by:
+        authUser?._id || authUser?.id || authUser?.public_id || authUser?.email || null,
+    };
+    // For now just append locally; backend template API was removed
+    setFlows((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        ...payload,
+        active: payload.active !== false,
+        steps: [],
+      },
+    ]);
+    closeModal();
+  };
+
+  // Project closure handler
+  const handleProjectClosureRequest = async () => {
+    if (!closureReason.trim()) {
+      setClosureError('Please provide a reason for project closure');
+      return;
+    }
+
+    if (!currentProject) {
+      setClosureError('No project selected');
+      return;
+    }
+
+    setClosureLoading(true);
+    setClosureError(''); // Clear any previous errors
+
+    try {
+      const payload = {
+        projectId: currentProject.id || currentProject._id,
+        projectPublicId: currentProject.public_id || currentProject.id || currentProject._id,
+        reason: closureReason.trim(),
+        attachments: [],
+        notify: true
+      };
+
+      const resp = await dispatch(requestProjectClosure(payload)).unwrap();
+      // Handle API responses that return success=false without throwing
+      if (resp?.success === false || resp?.error) {
+        const apiError = resp?.message || resp?.error || 'Failed to request project closure';
+        toast.error(apiError);
+        setClosureError(apiError);
+        return; // keep UI/modal open for correction
+      }
+
+      toast.success(resp?.message || 'Project closure request submitted successfully');
+
+      // Mark project as having pending closure request
+      const projectId = currentProject.id || currentProject._id || currentProject.public_id;
+      setProjectsWithPendingClosure(prev => new Set([...prev, projectId]));
+
+      setShowClosureModal(false);
+      setClosureReason('');
+      setClosureError('');
+    } catch (error) {
+      // Extract message from various possible error locations
+      const errorMessage = 
+        error?.message ||
+        error?.data?.message ||
+        error?.response?.data?.message ||
+        (typeof error === 'string' ? error : 'Failed to request project closure');
+      
+      toast.error(errorMessage);
+      setClosureError(errorMessage);
+    } finally {
+      setClosureLoading(false);
+    }
+  };
+
+  // Filter workflows based on search and active filters
+  const filtered = flows.filter((flow) => {
+    if (!flow) return false;
+    const name = (flow.name || '').toString();
+    const desc = (flow.description || '').toString();
+    const matchesSearch = name.toLowerCase().includes(query.toLowerCase()) || desc.toLowerCase().includes(query.toLowerCase());
+
+    const matchesScope = activeFilters.scope === "all" ||
+      (flow.scope || '').toString().toLowerCase() === activeFilters.scope.toLowerCase();
+
+    const matchesStatus = activeFilters.status === "all" ||
+      (activeFilters.status === "active" ? flow.active !== false : flow.active === false);
+
+    const deptVal = (flow.department_id || flow.departmentId || '').toString();
+    const matchesDepartment = activeFilters.department === "all" || deptVal === activeFilters.department;
+
+    return matchesSearch && matchesScope && matchesStatus && matchesDepartment;
+  });
+
+  // Toggle filter function
+  const toggleFilter = (filterType, value) => {
+    setActiveFilters(prev => ({
+      ...prev,
+      [filterType]: prev[filterType] === value ? "all" : value
+    }));
+  };
+
+  // Clear all filters
+  const clearFilters = () => {
+    setActiveFilters({
+      scope: "all",
+      status: "all",
+      department: "all"
+    });
+    setQuery("");
+  };
+
+  // Get scope badge styling
+  const getScopeBadgeStyle = (scope) => {
+    switch (scope?.toUpperCase()) {
+      case 'PROJECT': return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'DEPARTMENT': return 'bg-purple-100 text-purple-700 border-purple-200';
+      case 'GLOBAL': return 'bg-gray-100 text-gray-700 border-gray-200';
+      default: return 'bg-gray-100 text-gray-700 border-gray-200';
+    }
+  };
+
+
+  // Get status badge styling
+  const getStatusBadgeStyle = (active) => {
+    return active !== false
+      ? 'bg-green-50 text-green-700 border-green-200'
+      : 'bg-gray-50 text-gray-600 border-gray-200';
+  };
+
+  // Count statistics
+  const stats = {
+    total: flows.length,
+    active: flows.filter(f => f.active !== false).length,
+    project: flows.filter(f => f.scope?.toUpperCase() === 'PROJECT').length,
+    department: flows.filter(f => f.scope?.toUpperCase() === 'DEPARTMENT').length,
+    global: flows.filter(f => f.scope?.toUpperCase() === 'GLOBAL' || !f.scope).length,
+  };
+
+  // Admin View - Redesigned Dashboard
+  if (isAdmin) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        {/* Header Section */}
+        <div className="mb-8">
+          <PageHeader
+            title="Workflow Management"
+            subtitle="Design, automate, and monitor approval workflows across your organization"
+            onRefresh={() => {
+              // Refresh admin workflow queue AND pending approvals
+              Promise.all([
+                dispatch(fetchQueue('ADMIN')),
+                dispatch(fetchPendingApprovals('ADMIN'))
+              ]).catch((e) => {});
+            }}
+          >
+          </PageHeader>
+        </div>
+        {showModal && (
+          <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
+            <form
+              onSubmit={handleSave}
+              className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md space-y-4"
+            >
+              <div className="flex justify-between items-center mb-2">
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    {editingFlow ? "Edit Workflow" : "Create Workflow"}
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Configure scope, trigger, and ownership for this workflow
+                  </p>
+                </div>
+                <button onClick={closeModal} type="button" className="text-gray-400 hover:text-gray-600">
+                  <Icons.X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700">Workflow Name *</label>
+                <input
+                  className="w-full border border-gray-200 rounded-lg p-2.5 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={form.name}
+                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                  placeholder="e.g., HR Payroll Approval"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Scope *</label>
+                  <select
+                    className="w-full border border-gray-200 rounded-lg p-2.5 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={form.scope}
+                    onChange={(e) => setForm((f) => ({ ...f, scope: e.target.value }))}
+                  >
+                    <option value="GLOBAL">Global</option>
+                    <option value="DEPARTMENT">Department</option>
+                    <option value="PROJECT">Project</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Trigger Event *</label>
+                  <select
+                    className="w-full border border-gray-200 rounded-lg p-2.5 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={form.triggerEvent}
+                    onChange={(e) => setForm((f) => ({ ...f, triggerEvent: e.target.value }))}
+                  >
+                    <option value="TASK_CREATED">Task Created</option>
+                    <option value="TASK_REVIEW">Task Review</option>
+                    <option value="TASK_COMPLETED">Task Completed</option>
+                  </select>
+                </div>
+              </div>
+
+              {(form.scope === 'DEPARTMENT' || form.scope === 'PROJECT') && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Department</label>
+                    <select
+                      className="w-full border border-gray-200 rounded-lg p-2.5 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      value={form.departmentId}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          departmentId: e.target.value,
+                        }))
+                      }
+                    >
+                      <option value="">Select Department</option>
+                      {departments.map((d) => {
+                        const id = String(d._id || d.id || d.public_id);
+                        const name = d.name || d.department_name || 'Unnamed Department';
+                        return (
+                          <option key={id} value={id}>
+                            {name}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+
+                  {form.scope === 'PROJECT' && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Project</label>
+                      <select
+                        className="w-full border border-gray-200 rounded-lg p-2.5 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        value={form.projectId}
+                        onChange={(e) =>
+                          setForm((f) => ({
+                            ...f,
+                            projectId: e.target.value,
+                          }))
+                        }
+                      >
+                        <option value="">Select Project</option>
+                        {[currentProject, ...(projects || [])]
+                          .filter(Boolean)
+                          .map((p) => {
+                            const id = String(p._id || p.id || p.public_id);
+                            const name = p.name || p.project_name || 'Unnamed Project';
+                            return (
+                              <option key={id} value={id}>
+                                {name}
+                              </option>
+                            );
+                          })}
+                      </select>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  id="wf-active"
+                  type="checkbox"
+                  checked={form.active}
+                  onChange={(e) => setForm((f) => ({ ...f, active: e.target.checked }))}
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <label htmlFor="wf-active" className="text-sm text-gray-700">
+                  Active
+                </label>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700"
+                >
+                  {editingFlow ? 'Save Changes' : 'Create Workflow'}
+                </button>
+              </div>
+            </form>
+          </div >
+        )
+        }
+        {/* Admin Approvals Section */}
+        <div className="mt-8">
+          <AdminApprovalPanel />
+        </div>
+      </div >
+    );
+  }
+
+  // Manager View - Project Closure Requests
+  if (isManager) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        {/* Header Section */}
+        <div className="mb-8">
+          <PageHeader
+            title="Project Management"
+            subtitle="Request project closures and manage workflow approvals"
+            onRefresh={() => {
+              // Refresh manager workflow queue, pending approvals, and projects
+              const actions = [
+                dispatch(fetchPendingApprovals('MANAGER')),
+                dispatch(fetchManagerProjects())
+              ];
+
+              if (authUser) {
+                const managerId = authUser.user_id || authUser.userId || authUser.numeric_id || authUser.id;
+                actions.push(dispatch(fetchQueue(managerId)));
+              }
+
+              Promise.all(actions).catch((e) => {});
+            }}
+          />
+        </div>
+        {/* Project Closure Section */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900">Project Closure Requests</h3>
+              <p className="text-gray-600 mt-1">Request closure for completed projects requiring admin approval</p>
+            </div>
+            <button
+              onClick={() => {
+                setShowClosureModal(true);
+                setClosureError(''); // Clear any previous errors
+              }}
+              disabled={closureLoading || !currentProject}
+              className="bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 disabled:from-gray-400 disabled:to-gray-500 text-white px-6 py-3 rounded-xl font-medium flex items-center gap-2 shadow-lg hover:shadow-xl disabled:shadow-none transition-all duration-200"
+            >
+              {closureLoading ? (
+                <Icons.Loader className="w-5 h-5 animate-spin" />
+              ) : (
+                <Icons.Archive className="w-5 h-5" />
+              )}
+              Request Project Closure
+            </button>
+          </div>
+
+          {/* Project Selection */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select Project to Close *
+            </label>
+            <select
+              value={currentProject?.id || currentProject?._id || ''}
+              onChange={(e) => {
+                const selectedProject = projects.find(p =>
+                  (p.id || p._id) === e.target.value
+                );
+                if (selectedProject) {
+                  dispatch(setCurrentProject(selectedProject));
+                }
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            >
+              <option value="">Choose a project...</option>
+              {projects
+                .filter(project => {
+                  const status = project.status?.toUpperCase();
+                  const projectId = project.id || project._id || project.public_id;
+                  const hasPendingClosure = projectsWithPendingClosure.has(projectId);
+                  return (status === 'ACTIVE' || status === 'REVIEW' || status === 'PENDING_FINAL_APPROVAL') && !hasPendingClosure;
+                })
+                .map((project) => (
+                  <option key={project.id || project._id} value={project.id || project._id}>
+                    {project.name || project.title || `Project ${project.id || project._id}`}
+                    {project.status && `(${project.status})`}
+                  </option>
+                ))}
+            </select>
+            {projects.filter(project => {
+              const status = project.status?.toUpperCase();
+              const projectId = project.id || project._id || project.public_id;
+              const hasPendingClosure = projectsWithPendingClosure.has(projectId);
+              return (status === 'ACTIVE' || status === 'REVIEW' || status === 'PENDING_FINAL_APPROVAL') && !hasPendingClosure;
+            }).length === 0 && (
+                <p className="text-sm text-gray-500 mt-1">No projects available for closure. Projects with pending closure requests are hidden. Please contact admin if you believe this is an error.</p>
+              )}
+          </div>
+
+          {/* Project Selection Info */}
+          {currentProject && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Icons.Info className="w-5 h-5 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-800">Selected Project:</span>
+                  <span className="text-sm text-blue-700">{currentProject.name || currentProject.title}</span>
+                </div>
+                <span className={`px-2 py-1 text-xs font-medium rounded-full ${currentProject.status?.toUpperCase() === 'ACTIVE'
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-gray-100 text-gray-800'
+                  }`}>
+                  {currentProject.status || 'Unknown Status'}
+                </span>
+              </div>
+              <p className="text-xs text-blue-600 mt-1">
+                Closure requests will be submitted for the selected project.
+              </p>
+            </div>
+          )}
+
+          {/* Projects with Pending Closure Requests */}
+          {projectsWithPendingClosure.size > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Icons.Clock className="w-5 h-5 text-amber-600" />
+                <span className="text-sm font-medium text-amber-800">Projects with Pending Closure Requests</span>
+              </div>
+              <div className="space-y-2">
+                {Array.from(projectsWithPendingClosure).map(projectId => {
+                  const project = projects.find(p => (p.id || p._id || p.public_id) === projectId);
+                  return (
+                    <div key={projectId} className="flex items-center justify-between bg-white rounded-md p-3 border border-amber-200">
+                      <div className="flex items-center gap-2">
+                        <Icons.Archive className="w-4 h-4 text-amber-600" />
+                        <span className="text-sm font-medium text-gray-900">
+                          {project?.name || project?.title || `Project ${projectId}`}
+                        </span>
+                      </div>
+                      <span className="px-2 py-1 text-xs font-medium bg-amber-100 text-amber-800 rounded-full">
+                        Pending Approval
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-amber-600 mt-2">
+                These projects have closure requests pending admin approval and cannot be submitted again.
+              </p>
+            </div>
+          )}
+
+          {/* Recent Closure Requests or Status */}
+          {projectsWithPendingClosure.size === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              <Icons.Archive className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <p>Project closure requests will appear here once submitted</p>
+            </div>
+          )}
+        </div>
+        {/* Approval Queue Section */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="p-6 border-b border-gray-100">
+            <h3 className="text-xl font-semibold text-gray-900">Task Approval Queue</h3>
+            <p className="text-gray-600 mt-1">Review pending task completion requests from your team</p>
+          </div>
+          <div className="p-6">
+            <ManagerApprovalPanel />
+          </div>
+        </div>
+        {/* Project Closure Modal */}
+        {showClosureModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Request Project Closure</h3>
+                <button
+                  onClick={() => setShowClosureModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <Icons.X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {!currentProject ? (
+                  <div className="text-center py-6">
+                    <Icons.AlertTriangle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
+                    <p className="text-gray-700 mb-4">No project is currently selected.</p>
+                    <p className="text-sm text-gray-500">Please select a project first to request its closure.</p>
+                    <button
+                      onClick={() => setShowClosureModal(false)}
+                      className="mt-4 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors"
+                    >
+                      Close
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="text-sm font-medium text-gray-700">Project to Close:</p>
+                      <p className="text-sm text-gray-900 mt-1">{currentProject.name || currentProject.title}</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Reason for Closure *
+                      </label>
+                      <textarea
+                        value={closureReason}
+                        onChange={(e) => {
+                          setClosureReason(e.target.value);
+                          if (closureError) setClosureError(''); // Clear error when user starts typing
+                        }}
+                        placeholder="Provide details about why this project should be closed..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                        rows={4}
+                        required
+                      />
+                    </div>
+
+                    {/* Error Message */}
+                    {closureError && (
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                        <div className="flex items-start gap-2">
+                          <Icons.AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                          <p className="text-sm text-red-800">{closureError}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex gap-3 pt-4">
+                      <button
+                        onClick={() => setShowClosureModal(false)}
+                        className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleProjectClosureRequest}
+                        disabled={!closureReason.trim() || closureLoading}
+                        className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg font-medium transition-colors disabled:cursor-not-allowed"
+                      >
+                        {closureLoading ? 'Submitting...' : 'Submit Request'}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Other non-admin roles: simple access restricted message
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="text-center py-12">
+        <Icons.Shield className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Restricted</h2>
+        <p className="text-gray-600">You don't have permission to access workflow management.</p>
+      </div>
+    </div>
+  );
+}

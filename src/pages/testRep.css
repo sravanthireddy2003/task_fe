@@ -1,0 +1,26 @@
+.week-calendar {
+    width: 100%;
+  }
+  
+  .calendar-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .calendar-table th,
+  .calendar-table td {
+    border: 1px solid #ddd;
+    padding: 5px;
+    text-align: center;
+  }
+  
+  .task-input,
+  .hour-input {
+    width: 100%;
+    padding: 4px;
+    box-sizing: border-box;
+  }
+  
+  button {
+    margin-right: 10px;
+  }

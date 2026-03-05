@@ -1,0 +1,94 @@
+import io from 'socket.io-client';
+import { fetchQueue } from '../redux/slices/approvalSlice';
+import { fetchHistoryByInstance } from '../redux/slices/historySlice';
+import { WS_BASE_URL } from '../utils/envConfig';
+
+let socket = null;
+
+export function initWorkflowSocket(store) {
+  if (socket) return socket;
+  const base = WS_BASE_URL;
+  const url = base ? `${base.replace(/\/$/, '')}` : undefined;
+  socket = io(url || '/', { transports: ['websocket'] });
+
+  socket.on('connect', () => {
+    // console.log('workflow socket connected', socket.id);
+  });
+
+  socket.on('workflow:created', () => {
+    // New workflow template or instance created – refresh core views
+    const state = store.getState();
+    const user = state.auth?.user;
+    const userRole = user?.role;
+    
+    // Use numeric user ID for managers (not public_id), role for admins
+    const managerId = user?.user_id || user?.userId || user?.numeric_id || user?.id;
+    const queueParam = (userRole === 'Manager' && managerId) ? managerId : (userRole || 'MANAGER');
+    store.dispatch(fetchQueue(queueParam));
+  });
+
+  // Transition event for instance moving between steps/states
+  socket.on('workflow:transition', (payload) => {
+    const state = store.getState();
+    const user = state.auth?.user;
+    const userRole = user?.role;
+    
+    const managerId = user?.user_id || user?.userId || user?.numeric_id || user?.id;
+    const queueParam = (userRole === 'Manager' && managerId) ? managerId : (userRole || 'MANAGER');
+    store.dispatch(fetchQueue(queueParam));
+    if (payload && payload.instanceId) {
+      store.dispatch(fetchHistoryByInstance(payload.instanceId));
+    }
+  });
+
+  // Backwards compatibility: some servers may still emit `workflow:updated`
+  socket.on('workflow:updated', (payload) => {
+    const state = store.getState();
+    const user = state.auth?.user;
+    const userRole = user?.role;
+    
+    const managerId = user?.user_id || user?.userId || user?.numeric_id || user?.id;
+    const queueParam = (userRole === 'Manager' && managerId) ? managerId : (userRole || 'MANAGER');
+    store.dispatch(fetchQueue(queueParam));
+    if (payload && payload.instanceId) {
+      store.dispatch(fetchHistoryByInstance(payload.instanceId));
+    }
+  });
+
+  socket.on('workflow:escalated', (payload) => {
+    const state = store.getState();
+    const user = state.auth?.user;
+    const userRole = user?.role;
+    
+    const managerId = user?.user_id || user?.userId || user?.numeric_id || user?.id;
+    const queueParam = (userRole === 'Manager' && managerId) ? managerId : (userRole || 'MANAGER');
+    store.dispatch(fetchQueue(queueParam));
+    if (payload && payload.instanceId) {
+      store.dispatch(fetchHistoryByInstance(payload.instanceId));
+    }
+  });
+
+  socket.on('workflow:closed', (payload) => {
+    // Closed instances should disappear from manager queue but remain in history
+    const state = store.getState();
+    const user = state.auth?.user;
+    const userRole = user?.role;
+    
+    const managerId = user?.user_id || user?.userId || user?.numeric_id || user?.id;
+    const queueParam = (userRole === 'Manager' && managerId) ? managerId : (userRole || 'MANAGER');
+    store.dispatch(fetchQueue(queueParam));
+    if (payload && payload.instanceId) {
+      store.dispatch(fetchHistoryByInstance(payload.instanceId));
+    }
+  });
+
+  socket.on('disconnect', () => {
+    // console.log('workflow socket disconnected');
+  });
+
+  return socket;
+}
+
+export function getWorkflowSocket() {
+  return socket;
+}

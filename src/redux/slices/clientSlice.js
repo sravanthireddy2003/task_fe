@@ -1,0 +1,517 @@
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { httpGetService, httpPutService, httpPostService, httpDeleteService } from "../../App/httpHandler";
+import { fetchNotifications } from "./notificationSlice";
+
+const initialState = {
+  clients: [],
+  deletedClients: [],
+  currentClient: null, // Store fetched single client details
+  status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
+  error: null,
+};
+
+export const fetchClients = createAsyncThunk(
+  'clients/fetchClients',
+  async (_, thunkAPI) => {
+    try {
+      const response = await httpGetService('api/clients');
+      return response;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.message);
+    }
+  }
+);
+
+export const fetchDeletedClients = createAsyncThunk(
+  'clients/fetchDeletedClients',
+  async (_, thunkAPI) => {
+    try {
+      const response = await httpGetService('api/clients/deleted');
+      return response;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.message);
+    }
+  }
+);
+
+export const deleteClient = createAsyncThunk(
+  'clients/deleteClient',
+  async (clientId, thunkAPI) => {
+    try {
+      await httpDeleteService(`api/clients/${clientId}`);
+
+      // ✅ NEW: Refresh notifications after successful client deletion
+      await new Promise(resolve => setTimeout(resolve, 500));
+      thunkAPI.dispatch(fetchNotifications());
+
+      return clientId;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.message);
+    }
+  }
+);
+
+export const updateClient = createAsyncThunk(
+  'clients/updateClient',
+  async ({ clientId, clientData }, thunkAPI) => {
+    try {
+      const response = await httpPutService(`api/clients/${clientId}`, clientData);
+
+      // ✅ NEW: Refresh notifications after successful client update
+      await new Promise(resolve => setTimeout(resolve, 500));
+      thunkAPI.dispatch(fetchNotifications());
+
+      return response;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.message);
+    }
+  }
+);
+
+export const createClient = createAsyncThunk(
+  'clients/createClient',
+  async (clientData, thunkAPI) => {
+    try {
+      if (!clientData || typeof clientData !== 'object') return thunkAPI.rejectWithValue('Invalid client payload');
+
+      // Build payload to match backend expectations.
+      // Allow passing managerId and managerName together, and an optional documents array of {file_url, file_name, file_type}
+      const {
+        managerId,
+        managerName,
+        documents,
+        // rest of client fields
+        ...rest
+      } = clientData;
+
+      const payload = { ...rest };
+      if (managerId) payload.managerId = managerId;
+      if (managerName) payload.managerName = managerName;
+
+      if (Array.isArray(documents) && documents.length > 0) {
+        // send documents as documented by backend: { documents: [...] }
+        payload.documents = documents.map(d => ({
+          file_url: d.file_url || d.fileUrl || d.url || null,
+          file_name: d.file_name || d.fileName || d.name || null,
+          file_type: d.file_type || d.fileType || d.type || null,
+        }));
+      }
+
+      const response = await httpPostService('api/clients', payload);
+
+      // If backend returns a structured error like { success: false, error: '...' }
+      if (response && (response.success === false || response.error)) {
+        const msg = response.error || response.message || (response.data && response.data.error) || 'Failed to create client';
+        return thunkAPI.rejectWithValue(msg);
+      }
+
+      // ✅ NEW: Refresh notifications after successful client creation
+      await new Promise(resolve => setTimeout(resolve, 500));
+      thunkAPI.dispatch(fetchNotifications());
+
+      return response;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.message || error);
+    }
+  }
+);
+
+export const getClient = createAsyncThunk(
+  'clients/getClient',
+  async (clientId, thunkAPI) => {
+    try {
+      const response = await httpGetService(`api/clients/${clientId}`);
+      // Backend returns: { success: true, data: { client, documents, contacts, activities, projects, tasks, dashboard } }
+      // Normalize to return a single client object with all related data merged in
+      if (response) {
+        // If response.data exists (fetchWithTenant returns parsed body), handle both shapes
+        const body = response.data || response;
+        // If body contains nested 'client' object, merge all related arrays into it
+        if (body && body.client) {
+          const projects = Array.isArray(body.projects)
+            ? body.projects
+            : (body.client.projects || []);
+          const bodyTasks = Array.isArray(body.tasks)
+            ? body.tasks
+            : (Array.isArray(body.client.tasks) ? body.client.tasks : []);
+          const merged = {
+            ...body.client,
+            documents: Array.isArray(body.documents) ? body.documents : (body.client.documents || []),
+            contacts: Array.isArray(body.contacts) ? body.contacts : (body.client.contacts || []),
+            activities: Array.isArray(body.activities) ? body.activities : (body.client.activities || []),
+            projects,
+            tasks: bodyTasks,
+            dashboard: body.dashboard || body.client.dashboard || {},
+          };
+          return merged;
+        }
+        // If the response itself is the client object, return it directly
+        if (body && (body.id || body._id || body.public_id)) {
+          return body;
+        }
+      }
+      return response;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.message);
+    }
+  }
+);
+
+export const restoreClient = createAsyncThunk(
+  'clients/restoreClient',
+  async (clientId, thunkAPI) => {
+    try {
+      const response = await httpPostService(`api/clients/${clientId}/restore`);
+      return response;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.message);
+    }
+  }
+);
+
+export const permanentDeleteClient = createAsyncThunk(
+  'clients/permanentDeleteClient',
+  async (clientId, thunkAPI) => {
+    try {
+      await httpDeleteService(`api/clients/${clientId}/permanent`);
+      return clientId;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.message);
+    }
+  }
+);
+
+export const assignManager = createAsyncThunk(
+  'clients/assignManager',
+  async ({ clientId, managerId }, thunkAPI) => {
+    try {
+      const response = await httpPostService(`api/clients/${clientId}/assign-manager`, { managerId });
+      return response;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.message);
+    }
+  }
+);
+
+// Contacts
+export const addContact = createAsyncThunk(
+  'clients/addContact',
+  async ({ clientId, contact }, thunkAPI) => {
+    try {
+      const response = await httpPostService(`api/clients/${clientId}/contacts`, contact);
+      return response;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.message);
+    }
+  }
+);
+
+export const updateContact = createAsyncThunk(
+  'clients/updateContact',
+  async ({ clientId, contactId, contact }, thunkAPI) => {
+    try {
+      const response = await httpPutService(`api/clients/${clientId}/contacts/${contactId}`, contact);
+      return response;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.message);
+    }
+  }
+);
+
+export const deleteContact = createAsyncThunk(
+  'clients/deleteContact',
+  async ({ clientId, contactId }, thunkAPI) => {
+    try {
+      await httpDeleteService(`api/clients/${clientId}/contacts/${contactId}`);
+      return { clientId, contactId };
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.message);
+    }
+  }
+);
+
+export const setPrimaryContact = createAsyncThunk(
+  'clients/setPrimaryContact',
+  async ({ clientId, contactId }, thunkAPI) => {
+    try {
+      const response = await httpPostService(`api/clients/${clientId}/contacts/${contactId}/set-primary`);
+      return response;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.message);
+    }
+  }
+);
+
+// Documents
+export const attachDocument = createAsyncThunk(
+  'clients/attachDocument',
+  async ({ clientId, document, file }, thunkAPI) => {
+    try {
+      if (!clientId) return thunkAPI.rejectWithValue('Missing clientId');
+
+      // ✅ FIX: Handle raw File object (preferred to avoid FormData serialization issues in Redux)
+      if (file) {
+        const formData = new FormData();
+        formData.append('file', file); // Backend expects 'file' for upload.single('file')
+        document = formData;
+      }
+
+      // Shape the payload according to backend examples:
+      // - single: { file_url, file_name, file_type }
+      // - multiple: { documents: [ { file_url, file_name }, ... ] }
+      // If caller passed a FormData (file upload), send it as-is so multipart is used
+      if (typeof FormData !== 'undefined' && document instanceof FormData) {
+        const response = await httpPostService(`api/clients/${clientId}/documents`, document);
+
+        // Normalize server response: if backend returns { success: true, data: [...] }
+        if (response && response.success && Array.isArray(response.data)) {
+          return { clientId, documents: response.data };
+        }
+
+        return response;
+      }
+
+      let payload;
+      if (Array.isArray(document)) {
+        payload = { documents: document };
+      } else if (document && typeof document === 'object') {
+        if (document.documents && Array.isArray(document.documents)) {
+          payload = document;
+        } else {
+          payload = {
+            file_url: document.file_url || document.fileUrl || document.url || null,
+            file_name: document.file_name || document.fileName || document.name || null,
+            file_type: document.file_type || document.fileType || document.type || null,
+          };
+        }
+      } else {
+        return thunkAPI.rejectWithValue('Invalid document payload');
+      }
+
+      const response = await httpPostService(`api/clients/${clientId}/documents`, payload);
+
+      // Normalize server response: if backend returns { success: true, data: [...] }
+      if (response && response.success && Array.isArray(response.data)) {
+        return { clientId, documents: response.data };
+      }
+
+      // If backend returns updated client object, keep backward compatibility
+      return response;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.message || error);
+    }
+  }
+);
+
+export const deleteDocument = createAsyncThunk(
+  'clients/deleteDocument',
+  async ({ clientId, documentId }, thunkAPI) => {
+    try {
+      await httpDeleteService(`api/clients/${clientId}/documents/${documentId}`);
+      return { clientId, documentId };
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.message);
+    }
+  }
+);
+
+const clientSlice = createSlice({
+  name: 'clients',
+  initialState,
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchClients.pending, (state) => {
+        state.status = 'loading';
+      })
+      .addCase(fetchClients.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        // Normalize API response shapes:
+        // - Some APIs return { success: true, data: [...], meta: {...} }
+        // - Others return the array directly
+        const payload = action.payload;
+        if (!payload) {
+          state.clients = [];
+          return;
+        }
+        if (Array.isArray(payload)) {
+          state.clients = payload;
+          return;
+        }
+        // support { success, data, meta }
+        if (payload.data && Array.isArray(payload.data)) {
+          state.clients = payload.data;
+          return;
+        }
+        // support { clients: [...] }
+        if (payload.clients && Array.isArray(payload.clients)) {
+          state.clients = payload.clients;
+          return;
+        }
+        // fallback: try to coerce to array
+        state.clients = Array.isArray(payload) ? payload : [];
+      })
+      .addCase(fetchClients.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload;
+      })
+
+      .addCase(fetchDeletedClients.pending, (state) => {
+        state.status = 'loading';
+      })
+      .addCase(fetchDeletedClients.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        // Normalize API response shapes for deleted clients
+        const payload = action.payload;
+        if (!payload) {
+          state.deletedClients = [];
+          return;
+        }
+        if (Array.isArray(payload)) {
+          state.deletedClients = payload;
+          return;
+        }
+        // support { success, data, meta }
+        if (payload.data && Array.isArray(payload.data)) {
+          state.deletedClients = payload.data;
+          return;
+        }
+        // support { deletedClients: [...] }
+        if (payload.deletedClients && Array.isArray(payload.deletedClients)) {
+          state.deletedClients = payload.deletedClients;
+          return;
+        }
+        // fallback: try to coerce to array
+        state.deletedClients = Array.isArray(payload) ? payload : [];
+      })
+      .addCase(fetchDeletedClients.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload;
+      })
+      .addCase(deleteClient.fulfilled, (state, action) => {
+        state.clients = state.clients.filter(client => client.id !== action.payload);
+      })
+      .addCase(updateClient.fulfilled, (state, action) => {
+        const index = state.clients.findIndex(client => client.id === action.payload.id);
+        if (index !== -1) {
+          state.clients[index] = action.payload;
+        }
+      });
+
+    // create client
+    builder
+      .addCase(createClient.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(createClient.fulfilled, (state, action) => {
+        if (!action.payload) return;
+        // Normalize created client shape: support { success, data } or raw object
+        const payload = action.payload;
+        const created = (payload.data && typeof payload.data === 'object') ? payload.data : payload;
+        // prepend newly created client
+        state.clients = [created, ...state.clients];
+        state.status = 'succeeded';
+      })
+      .addCase(createClient.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload || action.error?.message || 'Failed to create client';
+      });
+
+    // get single client (upsert)
+    builder.addCase(getClient.fulfilled, (state, action) => {
+      const client = action.payload;
+      if (!client) return;
+      // Store in currentClient for immediate access in ClientDashboard
+      state.currentClient = client;
+      const id = client.id || client._id || client.public_id;
+      const idx = state.clients.findIndex(c => (c.id === id || c._id === id || c.public_id === id));
+      if (idx !== -1) state.clients[idx] = client;
+      else state.clients.unshift(client);
+    });
+
+    // restore client
+    builder.addCase(restoreClient.fulfilled, (state, action) => {
+      const client = action.payload;
+      if (!client) return;
+      const id = client.id || client._id || client.public_id;
+      const idx = state.clients.findIndex(c => (c.id === id || c._id === id || c.public_id === id));
+      if (idx !== -1) state.clients[idx] = client;
+      else state.clients.unshift(client);
+    });
+
+    // permanent delete
+    builder.addCase(permanentDeleteClient.fulfilled, (state, action) => {
+      state.clients = state.clients.filter(client => client.id !== action.payload);
+    });
+
+    // assign manager (server returns updated client)
+    builder.addCase(assignManager.fulfilled, (state, action) => {
+      const client = action.payload;
+      if (!client) return;
+      const id = client.id || client._id || client.public_id;
+      const idx = state.clients.findIndex(c => (c.id === id || c._id === id || c.public_id === id));
+      if (idx !== -1) state.clients[idx] = client;
+    });
+
+    // contacts / documents — expect server returns updated client
+    builder.addCase(addContact.fulfilled, (state, action) => {
+      const client = action.payload;
+      if (!client) return;
+      const id = client.id || client._id || client.public_id;
+      const idx = state.clients.findIndex(c => (c.id === id || c._id === id || c.public_id === id));
+      if (idx !== -1) state.clients[idx] = client;
+    });
+
+    builder.addCase(updateContact.fulfilled, (state, action) => {
+      const client = action.payload;
+      if (!client) return;
+      const id = client.id || client._id || client.public_id;
+      const idx = state.clients.findIndex(c => (c.id === id || c._id === id || c.public_id === id));
+      if (idx !== -1) state.clients[idx] = client;
+    });
+
+    builder.addCase(deleteContact.fulfilled, (state, action) => {
+      const { clientId, contactId } = action.payload || {};
+      if (!clientId || !contactId) return;
+      const idx = state.clients.findIndex(c => (c.id === clientId || c._id === clientId || c.public_id === clientId));
+      if (idx === -1) return;
+      const client = state.clients[idx];
+      if (Array.isArray(client.contacts)) {
+        client.contacts = client.contacts.filter(ct => (ct.id !== contactId && ct._id !== contactId && ct.public_id !== contactId));
+        state.clients[idx] = client;
+      }
+    });
+
+    builder.addCase(setPrimaryContact.fulfilled, (state, action) => {
+      const client = action.payload;
+      if (!client) return;
+      const id = client.id || client._id || client.public_id;
+      const idx = state.clients.findIndex(c => (c.id === id || c._id === id || c.public_id === id));
+      if (idx !== -1) state.clients[idx] = client;
+    });
+
+    builder.addCase(deleteDocument.fulfilled, (state, action) => {
+      const { clientId, documentId } = action.payload || {};
+      if (!clientId || !documentId) return;
+      const idx = state.clients.findIndex(c => (c.id === clientId || c._id === clientId || c.public_id === clientId));
+      if (idx === -1) return;
+      const client = state.clients[idx];
+      if (Array.isArray(client.documents)) {
+        client.documents = client.documents.filter(doc => (doc.id !== documentId && doc._id !== documentId && doc.public_id !== documentId));
+        state.clients[idx] = client;
+      }
+    });
+  },
+});
+
+// Thunks are exported where they are declared above (no bulk re-export here).
+
+export const selectClients = (state) => state.clients.clients || [];
+export const selectDeletedClients = (state) => state.clients.deletedClients || [];
+export const selectClientStatus = (state) => state.clients.status;
+export const selectClientError = (state) => state.clients.error;
+
+export default clientSlice.reducer;
+
+// Thunks for adding a new client
