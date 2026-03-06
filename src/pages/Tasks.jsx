@@ -20,6 +20,7 @@ import {
 } from '../redux/slices/taskSlice';
 import { fetchProjects, selectProjects } from '../redux/slices/projectSlice';
 import { fetchUsers, selectUsers, selectCurrentUser } from '../redux/slices/userSlice';
+import { validateForm } from '../utils/validationUtils';
 
 export default function Tasks() {
   const dispatch = useDispatch();
@@ -50,6 +51,7 @@ export default function Tasks() {
     priority: 'medium',
     status: 'pending',
   });
+  const [formErrors, setFormErrors] = useState({});
 
   const [isProjectLocked, setIsProjectLocked] = useState(false);
 
@@ -216,6 +218,7 @@ export default function Tasks() {
         status: 'pending',
       });
     }
+    setFormErrors({});
     setIsModalOpen(true);
   };
 
@@ -232,10 +235,18 @@ export default function Tasks() {
         (p) => (p.id || p._id || p.public_id) === formData.project_id
       );
 
-      if (!formData.name || !formData.project_id) {
-        toast.error('Please provide a task name and select a project');
+      const rules = {
+        name: { required: 'Task Name is required' },
+        project_id: { required: 'Project is required' }
+      };
+
+      const errors = validateForm(formData, rules);
+      if (Object.keys(errors).length > 0) {
+        setFormErrors(errors);
+        toast.error('Please fix the errors in the form');
         return;
       }
+      setFormErrors({});
 
       // Prepare payload according to backend API
       const projectId = selectedProject?.id ?? selectedProject?._id ?? null;
@@ -1305,10 +1316,14 @@ export default function Tasks() {
                     type="text"
                     required
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={(e) => {
+                      setFormData({ ...formData, name: e.target.value });
+                      if (formErrors.name) setFormErrors({ ...formErrors, name: null });
+                    }}
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.name ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
                     placeholder="Enter task name"
                   />
+                  {formErrors.name && <p className="mt-1 text-sm text-red-500">{formErrors.name}</p>}
                 </div>
 
                 {/* Description */}
@@ -1334,8 +1349,11 @@ export default function Tasks() {
                     <select
                       required
                       value={formData.project_id}
-                      onChange={(e) => setFormData({ ...formData, project_id: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onChange={(e) => {
+                        setFormData({ ...formData, project_id: e.target.value });
+                        if (formErrors.project_id) setFormErrors({ ...formErrors, project_id: null });
+                      }}
+                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.project_id ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
                       disabled={selectedProjectId !== 'all'}
                     >
                       {selectedProjectId === 'all' ? (
@@ -1362,6 +1380,7 @@ export default function Tasks() {
                         )))
                       )}
                     </select>
+                    {formErrors.project_id && <p className="mt-1 text-sm text-red-500">{formErrors.project_id}</p>}
                   </div>
 
                   <div>

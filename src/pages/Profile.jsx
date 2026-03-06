@@ -3,14 +3,17 @@ import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateProfile, enable2FA, verify2FA, disable2FA } from '../redux/slices/authSlice';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import Button from '../components/Button';
 import Textbox from '../components/Textbox';
 import * as Icons from '../icons';
+import { validateEmail, validatePhone } from '../utils/validationUtils';
 
 const { User, Mail, Phone, Camera, Save, KeyRound, QrCode, Smartphone, ShieldCheck, CheckCircle2, XCircle, AlertTriangle, Copy, Download } = Icons;
 
 const Profile = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const user = useSelector((state) => state.auth.user);
   const { register, handleSubmit, reset, formState: { errors } } = useForm({
     defaultValues: user || {},
@@ -269,69 +272,49 @@ const Profile = () => {
               <div className="p-6">
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                        <User className="text-gray-400" />
-                        Full Name
-                      </label>
-                      <Textbox
-                        name="name"
-                        register={register('name', {
-                          required: 'Name is required',
-                          minLength: { value: 2, message: 'Name must be at least 2 characters' }
-                        })}
-                        error={errors.name?.message}
-                        disabled={!isEditing}
-                        className={!isEditing ? 'bg-gray-50' : ''}
-                      />
-                    </div>
+                    <Textbox
+                      label="Full Name"
+                      icon={<Icons.User className="text-gray-400" />}
+                      {...register('name', {
+                        required: 'Name is required',
+                        minLength: { value: 2, message: 'Name must be at least 2 characters' }
+                      })}
+                      error={errors.name?.message}
+                      disabled={!isEditing}
+                      className={!isEditing ? 'bg-gray-50' : ''}
+                    />
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                        <Mail className="text-gray-400" />
-                        Email Address
-                      </label>
-                      <Textbox
-                        name="email"
-                        type="email"
-                        register={register('email', {
-                          required: 'Email is required',
-                          pattern: {
-                            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                            message: 'Invalid email address'
-                          }
-                        })}
-                        error={errors.email?.message}
-                        disabled={!isEditing}
-                        className={!isEditing ? 'bg-gray-50' : ''}
-                      />
-                    </div>
+                    <Textbox
+                      label="Email Address"
+                      icon={<Icons.Mail className="text-gray-400" />}
+                      type="email"
+                      {...register('email', {
+                        required: 'Email is required',
+                        validate: (val) => validateEmail(val) || 'Invalid email address'
+                      })}
+                      error={errors.email?.message}
+                      disabled={!isEditing}
+                      className={!isEditing ? 'bg-gray-50' : ''}
+                    />
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                        <Phone className="text-gray-400" />
-                        Phone Number
-                      </label>
-                      <Textbox
-                        name="phone"
-                        register={register('phone')}
-                        error={errors.phone?.message}
-                        disabled={!isEditing}
-                        className={!isEditing ? 'bg-gray-50' : ''}
-                      />
-                    </div>
+                    <Textbox
+                      label="Phone Number"
+                      icon={<Icons.Phone className="text-gray-400" />}
+                      placeholder="e.g. +1 555-0123"
+                      {...register('phone', {
+                        validate: (val) => !val || validatePhone(val) || 'Invalid phone number format'
+                      })}
+                      error={errors.phone?.message}
+                      disabled={!isEditing}
+                      className={!isEditing ? 'bg-gray-50' : ''}
+                    />
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Account Role
-                      </label>
-                      <input
-                        type="text"
-                        value={user?.role || 'User'}
-                        disabled
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
-                      />
-                    </div>
+                    <Textbox
+                      label="Account Role"
+                      value={user?.role || 'User'}
+                      disabled
+                      className="bg-gray-50 text-gray-500 cursor-not-allowed"
+                    />
                   </div>
 
                   {isEditing && (

@@ -11,6 +11,9 @@ import {
 } from "../../redux/slices/clientSlice";
 import { fetchUsers, selectUsers } from "../../redux/slices/userSlice";
 import ModalWrapper from "../ModalWrapper";
+import Textbox from "../Textbox";
+import FormField from "../ui/FormField";
+import { validateEmail, validatePhone } from "../../utils/validationUtils";
 
 const indianStates = [
   "Andhra Pradesh",
@@ -274,89 +277,58 @@ const ClientForm = ({
           Basic Information
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              Name *
-            </label>
-            <input
-              {...register("name", {
-                required: "Name is required",
-                minLength: { value: 2, message: "Name must be at least 2 characters" },
-                maxLength: { value: 100, message: "Name must be less than 100 characters" }
-              })}
-              className="w-full px-5 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
-              placeholder="Enter client name"
-            />
-            {errors.name && (
-              <p className="text-red-500 text-sm mt-2 font-medium">{errors.name.message}</p>
-            )}
-          </div>
+          <Textbox
+            label="Name"
+            required
+            placeholder="Enter client name"
+            icon={<Icons.User className="text-gray-400" />}
+            {...register("name", {
+              required: "Name is required",
+              minLength: { value: 2, message: "Name must be at least 2 characters" },
+              maxLength: { value: 100, message: "Name must be less than 100 characters" }
+            })}
+            error={errors.name?.message}
+          />
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              Email *
-            </label>
-            <input
-              {...register("email", {
-                required: "Email is required",
-                pattern: {
-                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                  message: "Invalid email",
-                },
-              })}
-              className="w-full px-5 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
-              placeholder="Enter email address"
-              type="email"
-            />
-            {errors.email && (
-              <p className="text-red-500 text-sm mt-2 font-medium">
-                {errors.email.message}
-              </p>
-            )}
-          </div>
+          <Textbox
+            label="Email"
+            required
+            type="email"
+            placeholder="Enter email address"
+            icon={<Icons.Mail className="text-gray-400" />}
+            {...register("email", {
+              required: "Email is required",
+              validate: (value) => validateEmail(value) || "Invalid email format",
+            })}
+            error={errors.email?.message}
+          />
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              Phone *
-            </label>
-            <input
-              {...register("phone", {
-                required: "Phone is required",
-                pattern: {
-                  value: /^[0-9]{10}$/,
-                  message: "Valid 10 digit phone number required",
-                },
-              })}
-              className="w-full px-5 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
-              placeholder="Enter 10-digit phone"
-              maxLength="10"
-              onInput={(e) => {
-                e.target.value = e.target.value.replace(/[^0-9]/g, "").slice(0, 10);
-              }}
-            />
-            {errors.phone && (
-              <p className="text-red-500 text-sm mt-2 font-medium">
-                {errors.phone.message}
-              </p>
-            )}
-          </div>
+          <Textbox
+            label="Phone"
+            required
+            placeholder="Enter 10-digit phone"
+            maxLength="10"
+            icon={<Icons.Phone className="text-gray-400" />}
+            {...register("phone", {
+              required: "Phone is required",
+              validate: (value) => validatePhone(value) || "Valid 10 digit phone number required",
+            })}
+            onInput={(e) => {
+              e.target.value = e.target.value.replace(/[^0-9]/g, "").slice(0, 10);
+            }}
+            error={errors.phone?.message}
+          />
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              Company
-            </label>
-            <input
-              {...register("company", {
-                minLength: { value: 2, message: "Company name must be at least 2 characters" },
-                maxLength: { value: 100, message: "Company name must be less than 100 characters" }
-              })}
-              className="w-full px-5 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
-              placeholder="Enter company name"
-            />
-            {errors.company && (
-              <p className="text-red-500 text-sm mt-2 font-medium">{errors.company.message}</p>
-            )}
-          </div>
+          <Textbox
+            label="Company"
+            placeholder="Enter company name"
+            icon={<Icons.Briefcase className="text-gray-400" />}
+            {...register("company", {
+              minLength: { value: 2, message: "Company name must be at least 2 characters" },
+              maxLength: { value: 100, message: "Company name must be less than 100 characters" }
+            })}
+            error={errors.company?.message}
+          />
         </div>
       </div>
 
@@ -364,71 +336,51 @@ const ClientForm = ({
       <div className="space-y-5">
         <h4 className="text-2xl font-bold text-gray-900">Address</h4>
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-3">
-            Street Address
-          </label>
-          <textarea
-            {...register("address")}
-            className="w-full px-5 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
-            placeholder="Enter street address"
-            rows="4"
-          />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              District
-            </label>
-            <input
+          <FormField label="Street Address">
+            <textarea
+              {...register("address")}
+              className="w-full px-5 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white"
+              placeholder="Enter street address"
+              rows="4"
+            />
+          </FormField>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Textbox
+              label="District"
+              placeholder="Enter district"
               {...register("district", {
                 pattern: {
                   value: /^[a-zA-Z\s]*$/,
                   message: "Only alphabets are allowed",
                 }
               })}
-              className="w-full px-5 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
-              placeholder="Enter district"
+              error={errors.district?.message}
             />
-            {errors.district && (
-              <p className="text-red-500 text-sm mt-2 font-medium">{errors.district.message}</p>
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              State
-            </label>
-            <select
-              {...register("state")}
-              className="w-full px-5 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
-            >
-              <option value="">Select State</option>
-              {indianStates.map((state) => (
-                <option key={state} value={state}>
-                  {state}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              Pincode
-            </label>
-            <input
+            <FormField label="State">
+              <select
+                {...register("state")}
+                className="w-full px-5 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white"
+              >
+                <option value="">Select State</option>
+                {indianStates.map((state) => (
+                  <option key={state} value={state}>
+                    {state}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+            <Textbox
+              label="Pincode"
+              placeholder="Enter pincode"
+              maxLength="6"
               {...register("pincode", {
                 pattern: { value: /^[0-9]{6}$/, message: "Valid 6 digit pincode required" },
               })}
-              className="w-full px-5 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
-              placeholder="Enter pincode"
-              maxLength="6"
               onInput={(e) => {
                 e.target.value = e.target.value.replace(/[^0-9]/g, "").slice(0, 6);
               }}
+              error={errors.pincode?.message}
             />
-            {errors.pincode && (
-              <p className="text-red-500 text-sm mt-2 font-medium">
-                {errors.pincode.message}
-              </p>
-            )}
           </div>
         </div>
       </div>
@@ -437,86 +389,60 @@ const ClientForm = ({
       <div className="space-y-5">
         <h4 className="text-2xl font-bold text-gray-900">Details</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              GST/Tax ID
-            </label>
-            <input
-              {...register("taxId", {
-                pattern: {
-                  value: /^[a-zA-Z0-9]{15}$/,
-                  message: "GST must be exactly 15 alphanumeric characters",
-                }
-              })}
-              className="w-full px-5 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
-              placeholder="Enter GST ID (e.g., 22AAAAA0000A1Z5)"
-              maxLength="15"
-              style={{ textTransform: "uppercase" }}
-              onInput={(e) => {
-                e.target.value = e.target.value.toUpperCase();
-              }}
-            />
-            {errors.taxId && (
-              <p className="text-red-500 text-sm mt-2 font-medium">
-                {errors.taxId.message}
-              </p>
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              Industry
-            </label>
-            <input
-              {...register("industry", {
-                minLength: { value: 2, message: "Industry must be at least 2 characters" },
-                maxLength: { value: 50, message: "Industry must be less than 50 characters" },
-                pattern: {
-                  value: /^[a-zA-Z\s]*$/,
-                  message: "Only alphabets are allowed",
-                }
-              })}
-              className="w-full px-5 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
-              placeholder="Enter industry"
-            />
-            {errors.industry && (
-              <p className="text-red-500 text-sm mt-2 font-medium">
-                {errors.industry.message}
-              </p>
-            )}
-          </div>
+          <Textbox
+            label="GST/Tax ID"
+            placeholder="Enter GST ID (e.g., 22AAAAA0000A1Z5)"
+            maxLength="15"
+            style={{ textTransform: "uppercase" }}
+            {...register("taxId", {
+              pattern: {
+                value: /^[a-zA-Z0-9]{15}$/,
+                message: "GST must be exactly 15 alphanumeric characters",
+              }
+            })}
+            onInput={(e) => {
+              e.target.value = e.target.value.toUpperCase();
+            }}
+            error={errors.taxId?.message}
+          />
+
+          <Textbox
+            label="Industry"
+            placeholder="Enter industry"
+            {...register("industry", {
+              minLength: { value: 2, message: "Industry must be at least 2 characters" },
+              maxLength: { value: 50, message: "Industry must be less than 50 characters" },
+              pattern: {
+                value: /^[a-zA-Z\s]*$/,
+                message: "Only alphabets are allowed",
+              }
+            })}
+            error={errors.industry?.message}
+          />
         </div>
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-3">
-            Notes
-          </label>
+        <FormField label="Notes">
           <textarea
             {...register("notes")}
-            className="w-full px-5 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
+            className="w-full px-5 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white"
             placeholder="Enter additional notes"
             rows="4"
           />
-        </div>
+        </FormField>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              Status
-            </label>
+          <FormField label="Status">
             <select
               {...register("status")}
-              className="w-full px-5 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
+              className="w-full px-5 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white"
             >
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
               <option value="Lead">Lead</option>
             </select>
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              Manager
-            </label>
+          </FormField>
+          <FormField label="Manager">
             <select
               {...register("managerId")}
-              className="w-full px-5 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
+              className="w-full px-5 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base bg-white"
             >
               <option value="">-- Select Manager (optional) --</option>
               {managers.map((m) => (
@@ -528,7 +454,7 @@ const ClientForm = ({
                 </option>
               ))}
             </select>
-          </div>
+          </FormField>
         </div>
       </div>
 

@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
 import ChatInterface from '../components/ChatInterface';
 import { httpGetService } from '../App/httpHandler';
 import ChatPageLayout from '../components/ChatPageLayout';
 import { ChatLoadingScreen, ChatEmptyState } from '../components/ChatStates';
+import * as Icons from '../icons';
+
+const { MessageCircle } = Icons;
 
 const Chat = () => {
-  const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const [projects, setProjects] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
@@ -31,7 +33,7 @@ const Chat = () => {
     } finally {
       setLoading(false);
     }
-  }, [dispatch]);
+  }, []);
 
   useEffect(() => {
     fetchProjects();
@@ -47,7 +49,7 @@ const Chat = () => {
         title="No projects found"
         description="Create a project to start team collaboration"
         actionLabel="Create New Project"
-        onAction={() => {}}
+        onAction={() => { }}
       />
     );
   }

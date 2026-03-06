@@ -5,6 +5,9 @@ import ChatInterface from '../components/ChatInterface';
 import { httpGetService } from '../App/httpHandler';
 import ChatPageLayout from '../components/ChatPageLayout';
 import { ChatLoadingScreen, ChatEmptyState } from '../components/ChatStates';
+import * as Icons from '../icons';
+
+const { MessageCircle } = Icons;
 
 const ManagerChat = () => {
   const { user } = useSelector((state) => state.auth);
@@ -32,7 +35,7 @@ const ManagerChat = () => {
           const fallbackRes = await httpGetService(`api/tasks?assignedTo=${user?.id}`);
           if (fallbackRes?.success && fallbackRes.data) userTasks = fallbackRes.data;
         }
-      } catch (e) {}
+      } catch (e) { }
 
       const assignedProjectIds = new Set();
       userTasks.forEach(task => {

@@ -6,13 +6,14 @@ import { toast } from 'sonner';
 import { forgotPassword, selectAuthStatus, selectAuthError } from '../redux/slices/authSlice';
 import Button from '../components/Button';
 import Textbox from '../components/Textbox';
+import { validateEmail } from '../utils/validationUtils';
 
 const Forgot = () => {
   const dispatch = useDispatch();
   const status = useSelector(selectAuthStatus);
   const error = useSelector(selectAuthError);
   const navigate = useNavigate();
-  const { register, handleSubmit, setValue } = useForm();
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm();
 
   const onSubmit = (data) => {
     dispatch(forgotPassword(data))
@@ -38,7 +39,7 @@ const Forgot = () => {
       const emailFromQuery = params.get('email');
       const emailToSet = emailFromQuery || (s && s.email) || null;
       if (emailToSet) setValue('email', emailToSet);
-    } catch (e) {}
+    } catch (e) { }
   }, [setValue]);
 
   return (
@@ -55,7 +56,11 @@ const Forgot = () => {
             name="email"
             placeholder="email@example.com"
             className="w-full h-12 rounded-full border border-gray-300 px-4 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
-            register={register('email', { required: 'Email is required' })}
+            register={register('email', {
+              required: 'Email is required',
+              validate: (val) => validateEmail(val) || 'Please enter a valid email address'
+            })}
+            error={errors.email?.message}
           />
           {status === 'failed' && error && (
             <p className="text-sm text-red-500 text-center">{error}</p>

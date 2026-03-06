@@ -17,8 +17,11 @@ import ViewToggle from "../components/ViewToggle";
 import PageHeader from "../components/PageHeader";
 import Card from "../components/Card";
 import clsx from 'clsx';
+import { validateForm } from '../utils/validationUtils';
+import Textbox from '../components/Textbox';
+import FormField from '../components/ui/FormField';
 
-function DepartmentsModal({ show, onClose, form, setForm, onSubmit, editing, managers = [] }) {
+function DepartmentsModal({ show, onClose, form, setForm, onSubmit, editing, managers = [], formErrors = {}, setFormErrors }) {
   if (!show) return null;
 
   return (
@@ -44,19 +47,22 @@ function DepartmentsModal({ show, onClose, form, setForm, onSubmit, editing, man
         </div>
 
         <div className="space-y-5">
-          <div>
-            <label className="block text-gray-700 font-medium mb-2 text-sm">Name</label>
-            <input
-              required
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter department name"
-            />
-          </div>
+          <Textbox
+            label="Department Name"
+            placeholder="Enter department name"
+            required
+            icon={<Icons.Building2 className="text-gray-400" />}
+            value={form.name}
+            onChange={(e) => {
+              setForm({ ...form, name: e.target.value });
+              if (formErrors.name && setFormErrors) setFormErrors({});
+            }}
+            error={formErrors.name}
+          />
 
-          <div>
-            <label className="block text-gray-700 font-medium mb-2 text-sm">Manager (optional)</label>
+          <FormField
+            label="Manager (optional)"
+          >
             <select
               value={form.managerId || ''}
               onChange={(e) => setForm({ ...form, managerId: e.target.value })}
@@ -69,17 +75,14 @@ function DepartmentsModal({ show, onClose, form, setForm, onSubmit, editing, man
                 </option>
               ))}
             </select>
-          </div>
+          </FormField>
 
-          <div>
-            <label className="block text-gray-700 font-medium mb-2 text-sm">Head Department ID (optional)</label>
-            <input
-              value={form.headId}
-              onChange={(e) => setForm({ ...form, headId: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter parent department ID"
-            />
-          </div>
+          <Textbox
+            label="Head Department ID (optional)"
+            placeholder="Enter parent department ID"
+            value={form.headId}
+            onChange={(e) => setForm({ ...form, headId: e.target.value })}
+          />
         </div>
 
         <div className="flex gap-3 mt-8 justify-end">
@@ -117,6 +120,7 @@ const Departments = () => {
   const [showModal, setShowModal] = useState(false);
   const [editDept, setEditDept] = useState(null);
   const [form, setForm] = useState({ name: '', managerId: '', headId: '' });
+  const [formErrors, setFormErrors] = useState({});
   const [viewMode, setViewMode] = useState('list');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -167,6 +171,16 @@ const Departments = () => {
       e.stopPropagation();
     }
 
+    const errors = validateForm(form, {
+      name: { required: true, requiredMessage: "Department name is required" }
+    });
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+    setFormErrors({});
+
     try {
       if (editDept) {
         await dispatch(updateDepartment({
@@ -203,6 +217,7 @@ const Departments = () => {
   const handleCreate = () => {
     setEditDept(null);
     setForm({ name: '', managerId: '', headId: '' });
+    setFormErrors({});
     setShowModal(true);
   };
 
@@ -213,6 +228,7 @@ const Departments = () => {
       managerId: d.managerId || d.manager_id || '',
       headId: d.headId || ''
     });
+    setFormErrors({});
     setShowModal(true);
   };
 
@@ -526,12 +542,17 @@ const Departments = () => {
 
         <DepartmentsModal
           show={showModal}
-          onClose={() => setShowModal(false)}
+          onClose={() => {
+            setShowModal(false);
+            setFormErrors({});
+          }}
           form={form}
           setForm={setForm}
           onSubmit={handleSubmit}
           editing={!!editDept}
           managers={managers}
+          formErrors={formErrors}
+          setFormErrors={setFormErrors}
         />
       </div>
     </div>

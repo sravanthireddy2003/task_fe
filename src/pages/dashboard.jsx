@@ -1,11 +1,13 @@
- 
+
 import React, { useEffect, useState, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import moment from "moment";
 import * as Icons from "../icons";
 import { fetchUsers, selectUsers } from "../redux/slices/userSlice";
-import { fetchTasks, selectTasks } from "../redux/slices/taskSlice";
- 
+import { selectTasks } from "../redux/slices/taskSlice";
+
+const { Settings, MoreVertical, BarChart3, ListChecks, AlertTriangle, Crown, Database } = Icons;
+
 // Helper for initials
 const getInitials = (name = "") =>
   name
@@ -13,28 +15,28 @@ const getInitials = (name = "") =>
     .map(n => n[0]?.toUpperCase() || "")
     .join("")
     .slice(0, 2);
- 
+
 // **UNIFIED KPI CARD** - All cards match "Total Users" style
 const KPI = ({ label, value, icon: Icon, trend, variant = "primary" }) => {
   const base =
     "group relative overflow-hidden rounded-2xl border bg-white " +
     "shadow-sm hover:shadow-md transition-all duration-200 " +
     "hover:-translate-y-0.5 p-5 flex flex-col gap-3 min-h-[120px]";
- 
+
   const variants = {
     primary: "border-gray-200 hover:border-gray-300",
     success: "border-emerald-200 bg-emerald-50/60 hover:border-emerald-300",
     warning: "border-amber-200 bg-amber-50/60 hover:border-amber-300",
     critical: "border-red-200 bg-red-50/60 hover:border-red-300"
   };
- 
+
   return (
     <div className={`${base} ${variants[variant]}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="p-2.5 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
           <Icon className="w-5 h-5 text-gray-700 flex-shrink-0" />
         </div>
- 
+
         {trend !== undefined && (
           <span
             className={
@@ -48,7 +50,7 @@ const KPI = ({ label, value, icon: Icon, trend, variant = "primary" }) => {
           </span>
         )}
       </div>
- 
+
       <div className="flex flex-col gap-1 flex-1 justify-end">
         <span className="text-2xl font-bold text-gray-900 leading-tight">
           {value}
@@ -60,7 +62,7 @@ const KPI = ({ label, value, icon: Icon, trend, variant = "primary" }) => {
     </div>
   );
 };
- 
+
 // Non-Sticky Header
 const Header = ({ timeFilter, onFilterChange, onSearch, systemStatus }) => (
   <div className="bg-white/80 border-b border-gray-200 shadow-sm backdrop-blur-sm">
@@ -75,17 +77,16 @@ const Header = ({ timeFilter, onFilterChange, onSearch, systemStatus }) => (
             <p className="text-sm text-gray-500 mt-1 font-medium">System overview & management</p>
           </div>
         </div>
-       
+
         <div className="flex items-center space-x-3">
-          <div className={`flex items-center space-x-2.5 px-4 py-2.5 rounded-xl border text-sm font-semibold shadow-sm ${
-            systemStatus === 'healthy'
+          <div className={`flex items-center space-x-2.5 px-4 py-2.5 rounded-xl border text-sm font-semibold shadow-sm ${systemStatus === 'healthy'
               ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
               : 'bg-red-50 border-red-200 text-red-800'
-          }`}>
+            }`}>
             <div className={`w-3 h-3 rounded-full shadow-sm ${systemStatus === 'healthy' ? 'bg-emerald-500' : 'bg-red-500'} animate-pulse`} />
             <span>{systemStatus === 'healthy' ? 'System Healthy' : 'System Alert'}</span>
           </div>
-         
+
           <div className="relative flex-1 max-w-md">
             <Icons.Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 z-10" />
             <input
@@ -95,7 +96,7 @@ const Header = ({ timeFilter, onFilterChange, onSearch, systemStatus }) => (
               onChange={onSearch}
             />
           </div>
-         
+
           <select
             className="border border-gray-200 text-sm px-4 py-2.5 rounded-xl bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold min-w-[90px]"
             value={timeFilter}
@@ -110,7 +111,7 @@ const Header = ({ timeFilter, onFilterChange, onSearch, systemStatus }) => (
     </div>
   </div>
 );
- 
+
 // **ALL KPI CARDS MATCH "Total Users" STYLE**
 const MetricsGrid = ({ users, tasks }) => {
   const totalUsers = users.length;
@@ -120,7 +121,7 @@ const MetricsGrid = ({ users, tasks }) => {
     if (!t.dueDate || t.stage === 'COMPLETED') return false;
     return moment(t.dueDate).isBefore(moment(), 'day');
   }).length;
- 
+
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
@@ -132,7 +133,7 @@ const MetricsGrid = ({ users, tasks }) => {
     </div>
   );
 };
- 
+
 // Professional ControlPanel Cards (Different style - Executive)
 const ControlPanel = () => (
   <div className="max-w-7xl mx-auto px-6 py-8">
@@ -181,7 +182,7 @@ const ControlPanel = () => (
     </div>
   </div>
 );
- 
+
 // Users Table
 const UsersTable = ({ users }) => (
   <div className="bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden mb-8">
@@ -196,7 +197,7 @@ const UsersTable = ({ users }) => (
         </button>
       </div>
     </div>
-   
+
     <div className="overflow-x-auto">
       <table className="w-full">
         <thead className="bg-gray-50 border-b border-gray-100">
@@ -213,11 +214,10 @@ const UsersTable = ({ users }) => (
             <tr key={user._id || index} className="hover:bg-gray-50/50 transition-all group">
               <td className="px-8 py-6">
                 <div className="flex items-center space-x-4">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-sm font-bold shadow-md border-2 flex-shrink-0 ${
-                    user.isActive
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-sm font-bold shadow-md border-2 flex-shrink-0 ${user.isActive
                       ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white border-emerald-400'
                       : 'bg-gray-100 text-gray-500 border-gray-200'
-                  }`}>
+                    }`}>
                     {getInitials(user.name)}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -227,20 +227,18 @@ const UsersTable = ({ users }) => (
                 </div>
               </td>
               <td className="px-8 py-6">
-                <span className={`px-4 py-1.5 rounded-full text-xs font-bold shadow-sm whitespace-nowrap ${
-                  user.role?.toLowerCase() === 'admin'
+                <span className={`px-4 py-1.5 rounded-full text-xs font-bold shadow-sm whitespace-nowrap ${user.role?.toLowerCase() === 'admin'
                     ? 'bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-800 border border-indigo-200'
                     : 'bg-gray-100 text-gray-800 border border-gray-200'
-                }`}>
+                  }`}>
                   {user.role?.toUpperCase() || 'USER'}
                 </span>
               </td>
               <td className="px-8 py-6">
-                <span className={`px-4 py-1.5 rounded-full text-xs font-bold shadow-sm whitespace-nowrap ${
-                  user.isActive
+                <span className={`px-4 py-1.5 rounded-full text-xs font-bold shadow-sm whitespace-nowrap ${user.isActive
                     ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                     : 'bg-red-100 text-red-800 border border-red-200'
-                }`}>
+                  }`}>
                   {user.isActive ? 'Active' : 'Inactive'}
                 </span>
               </td>
@@ -266,7 +264,7 @@ const UsersTable = ({ users }) => (
     </div>
   </div>
 );
- 
+
 // **TASK ANALYTICS - ALL USE UNIFIED KPI**
 const TaskAnalytics = ({ tasks }) => {
   const stats = useMemo(() => ({
@@ -278,7 +276,7 @@ const TaskAnalytics = ({ tasks }) => {
     }).length,
     highPriority: tasks.filter(t => t.priority === 'HIGH').length
   }), [tasks]);
- 
+
   return (
     <div className="bg-white border border-gray-200 rounded-2xl shadow-xl p-8 mb-8">
       <div className="flex items-center justify-between mb-8">
@@ -288,7 +286,7 @@ const TaskAnalytics = ({ tasks }) => {
         </div>
         <BarChart3 className="w-8 h-8 text-gray-400" />
       </div>
-     
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
         <KPI label="Total Tasks" value={stats.total.toLocaleString()} icon={ListChecks} />
         <KPI label="Completed" value={stats.completed.toLocaleString()} icon={ListChecks} variant="success" />
@@ -298,16 +296,17 @@ const TaskAnalytics = ({ tasks }) => {
     </div>
   );
 };
- 
+
 // Main Dashboard
 const Dashboard = () => {
   const dispatch = useDispatch();
   const tasks = useSelector(selectTasks) || [];
   const users = useSelector(selectUsers) || [];
   const [timeFilter, setTimeFilter] = useState("week");
+  // eslint-disable-next-line react-hooks/exhaustive-deps, no-unused-vars
   const [searchTerm, setSearchTerm] = useState("");
   const [systemStatus, setSystemStatus] = useState('healthy');
- 
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -318,10 +317,10 @@ const Dashboard = () => {
     };
     loadData();
   }, [dispatch]);
- 
+
   const handleSearch = (e) => setSearchTerm(e.target.value);
   const handleFilterChange = (e) => setTimeFilter(e.target.value);
- 
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <Header
@@ -330,18 +329,18 @@ const Dashboard = () => {
         onSearch={handleSearch}
         systemStatus={systemStatus}
       />
-     
+
       <main>
         <MetricsGrid users={users} tasks={tasks} />
         <ControlPanel />
-       
+
         <div className="max-w-7xl mx-auto px-6 pb-12">
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
             <TaskAnalytics tasks={tasks} />
             <UsersTable users={users} />
           </div>
         </div>
- 
+
         <div className="border-t border-gray-200/50 bg-white/70 backdrop-blur-sm shadow-lg">
           <div className="max-w-7xl mx-auto px-6 py-6">
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
@@ -369,6 +368,5 @@ const Dashboard = () => {
     </div>
   );
 };
- 
+
 export default Dashboard;
- 

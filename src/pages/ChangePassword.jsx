@@ -8,6 +8,7 @@ import PasswordStrength from "../components/PasswordStrength";
 import Button from "../components/Button";
 import Textbox from "../components/Textbox";
 import { getDefaultLandingPath } from "../utils";
+import { validatePassword } from "../utils/validationUtils";
 
 const ChangePassword = () => {
   const dispatch = useDispatch();
@@ -75,7 +76,10 @@ const ChangePassword = () => {
               name="newPassword"
               type="password"
               className="w-full rounded-xl"
-              register={register("newPassword", { required: "New password required" })}
+              register={register("newPassword", {
+                required: "New password required",
+                validate: (val) => validatePassword(val) || "Password must be at least 8 characters"
+              })}
               error={errors.newPassword?.message}
             />
 

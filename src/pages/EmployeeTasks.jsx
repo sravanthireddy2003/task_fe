@@ -260,6 +260,8 @@ const EmployeeTasks = () => {
   const [editingChecklistId, setEditingChecklistId] = useState('');
   const [editingChecklistValues, setEditingChecklistValues] = useState({ title: '', dueDate: '' });
   const [actionRunning, setActionRunning] = useState(false);
+  const [checklistErrors, setChecklistErrors] = useState({});
+  const [checklistEditErrors, setChecklistEditErrors] = useState({});
 
   // Existing states
   const [selectedTask, setSelectedTask] = useState(null);
@@ -1055,9 +1057,10 @@ const EmployeeTasks = () => {
       return;
     }
     if (!checklistForm.title.trim()) {
-      toast.error('Checklist title is required');
+      setChecklistErrors({ title: 'Checklist title is required' });
       return;
     }
+    setChecklistErrors({});
     setActionRunning(true);
     try {
       const writable = await ensureTaskWritable(selectedTask);
@@ -1113,14 +1116,16 @@ const EmployeeTasks = () => {
   const cancelEditing = () => {
     setEditingChecklistId('');
     setEditingChecklistValues({ title: '', dueDate: '' });
+    setChecklistEditErrors({});
   };
 
   const handleUpdateChecklist = async () => {
     if (!editingChecklistId || !selectedTask) return;
     if (!editingChecklistValues.title.trim()) {
-      toast.error('Checklist title cannot be empty');
+      setChecklistEditErrors({ title: 'Checklist title cannot be empty' });
       return;
     }
+    setChecklistEditErrors({});
     setActionRunning(true);
     try {
       const writable = await ensureTaskWritable(selectedTask);
@@ -2055,12 +2060,14 @@ const EmployeeTasks = () => {
                                   type="text"
                                   placeholder="Checklist title"
                                   value={editingChecklistValues.title}
-                                  onChange={(e) =>
-                                    setEditingChecklistValues((prev) => ({ ...prev, title: e.target.value }))
-                                  }
-                                  className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm"
+                                  onChange={(e) => {
+                                    setEditingChecklistValues((prev) => ({ ...prev, title: e.target.value }));
+                                    if (checklistEditErrors.title) setChecklistEditErrors({});
+                                  }}
+                                  className={`w-full rounded-lg border px-3 py-1.5 text-sm ${checklistEditErrors.title ? 'border-red-500 bg-red-50' : 'border-gray-200'}`}
                                   disabled={isTaskCompleted(selectedTask)}
                                 />
+                                {checklistEditErrors.title && <p className="text-xs text-red-500">{checklistEditErrors.title}</p>}
                                 <input
                                   type="date"
                                   value={editingChecklistValues.dueDate}
@@ -2172,11 +2179,15 @@ const EmployeeTasks = () => {
                     <input
                       type="text"
                       value={checklistForm.title}
-                      onChange={(e) => setChecklistForm((prev) => ({ ...prev, title: e.target.value }))}
+                      onChange={(e) => {
+                        setChecklistForm((prev) => ({ ...prev, title: e.target.value }));
+                        if (checklistErrors.title) setChecklistErrors({});
+                      }}
                       placeholder="New checklist item"
                       disabled={isTaskCompleted(selectedTask) || isTaskReadOnly(selectedTask) || getReassignmentState(selectedTask) === 'pending'}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                      className={`w-full rounded-lg border px-3 py-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed ${checklistErrors.title ? 'border-red-500 bg-red-50' : 'border-gray-200'}`}
                     />
+                    {checklistErrors.title && <p className="text-xs text-red-500">{checklistErrors.title}</p>}
                     <input
                       type="date"
                       value={checklistForm.dueDate}

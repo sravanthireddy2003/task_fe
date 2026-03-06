@@ -3,6 +3,7 @@ import { useDispatch } from "react-redux";
 import * as Icons from "../../icons";
 import Button from "../Button";
 import { addContact, updateContact, deleteContact, setPrimaryContact } from "../../redux/slices/clientSlice";
+import { validateForm } from "../../utils/validationUtils";
 
 const ClientContacts = ({ client }) => {
   const dispatch = useDispatch();
@@ -15,11 +16,25 @@ const ClientContacts = ({ client }) => {
     position: "",
     department: "",
   });
+  const [formErrors, setFormErrors] = useState({});
 
   const contacts = client?.contacts || [];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const errors = validateForm(formData, {
+      name: { required: true, requiredMessage: "Name is required" },
+      email: { email: true, emailMessage: "Invalid email format" },
+      phone: { phone: true, phoneMessage: "Invalid phone number format" },
+    });
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+    setFormErrors({});
+
     try {
       if (editingContact) {
         await dispatch(updateContact({
@@ -36,7 +51,7 @@ const ClientContacts = ({ client }) => {
         setShowAddForm(false);
       }
       setFormData({ name: "", email: "", phone: "", position: "", department: "" });
-    } catch (error) {}
+    } catch (error) { }
   };
 
   const handleEdit = (contact) => {
@@ -57,7 +72,7 @@ const ClientContacts = ({ client }) => {
           clientId: client.id,
           contactId
         })).unwrap();
-      } catch (error) {}
+      } catch (error) { }
     }
   };
 
@@ -67,13 +82,14 @@ const ClientContacts = ({ client }) => {
         clientId: client.id,
         contactId
       })).unwrap();
-    } catch (error) {}
+    } catch (error) { }
   };
 
   const resetForm = () => {
     setShowAddForm(false);
     setEditingContact(null);
     setFormData({ name: "", email: "", phone: "", position: "", department: "" });
+    setFormErrors({});
   };
 
   return (
@@ -112,10 +128,13 @@ const ClientContacts = ({ client }) => {
                 <input
                   type="text"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
+                  onChange={(e) => {
+                    setFormData({ ...formData, name: e.target.value });
+                    if (formErrors.name) setFormErrors((prev) => ({ ...prev, name: null }));
+                  }}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.name ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
                 />
+                {formErrors.name && <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>}
               </div>
 
               <div>
@@ -125,9 +144,13 @@ const ClientContacts = ({ client }) => {
                 <input
                   type="email"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => {
+                    setFormData({ ...formData, email: e.target.value });
+                    if (formErrors.email) setFormErrors((prev) => ({ ...prev, email: null }));
+                  }}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.email ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
                 />
+                {formErrors.email && <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>}
               </div>
 
               <div>
@@ -137,9 +160,13 @@ const ClientContacts = ({ client }) => {
                 <input
                   type="tel"
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => {
+                    setFormData({ ...formData, phone: e.target.value });
+                    if (formErrors.phone) setFormErrors((prev) => ({ ...prev, phone: null }));
+                  }}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.phone ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
                 />
+                {formErrors.phone && <p className="text-red-500 text-xs mt-1">{formErrors.phone}</p>}
               </div>
 
               <div>

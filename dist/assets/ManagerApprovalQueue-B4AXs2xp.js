@@ -1,0 +1,1 @@
+import{j as e,al as a}from"./index-DrfzhPrW.js";import{M as s}from"./ManagerApprovalPanel-GazvuQHU.js";const o=()=>e.jsxs("div",{className:"space-y-6",children:[e.jsx(a,{title:"Task Approvals",description:"Review and approve employee task completion requests"}),e.jsx(s,{})]});export{o as default};

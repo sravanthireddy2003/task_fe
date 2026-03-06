@@ -7,6 +7,7 @@ import taskManagerLogo from "../assets/task1.png";
 import * as Icons from "../icons";
 import Textbox from "../components/Textbox";
 import Button from "../components/Button";
+import { validateEmail, validatePassword } from "../utils/validationUtils";
 
 import {
   authLogin,
@@ -133,13 +134,11 @@ const Login = () => {
                 <Textbox
                   type="email"
                   name="email"
-                  placeholder="korapatishwini@gmail.com"
+                  placeholder="name@email.com"
                   register={register("email", {
                     required: "Email is required",
-                    pattern: {
-                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: "Invalid email address",
-                    },
+                    validate: (value) =>
+                      validateEmail(value) || "Please enter a valid email address",
                   })}
                   error={errors.email?.message}
                   className="h-14 text-base rounded-xl"
@@ -164,10 +163,8 @@ const Login = () => {
                   placeholder="••••••••"
                   register={register("password", {
                     required: "Password is required",
-                    minLength: {
-                      value: 6,
-                      message: "Password must be at least 6 characters",
-                    },
+                    validate: (value) =>
+                      validatePassword(value) || "Password must be at least 8 characters",
                   })}
                   error={errors.password?.message}
                   showPassword={showPassword}

@@ -13,11 +13,12 @@ const Textbox = React.forwardRef(
       error,
       disabled,
       icon,
-      rightIcon, // New: for password eye
+      rightIcon,
       helperText,
       required,
-      showPassword, // New: controlled password state
-      onPasswordToggle, // New: toggle handler
+      showPassword,
+      onPasswordToggle,
+      ...props
     },
     ref
   ) => {
@@ -55,11 +56,12 @@ const Textbox = React.forwardRef(
           )}
 
           <input
+            {...props}
             type={inputType}
             name={name}
             placeholder={placeholder}
             ref={ref}
-            {...register}
+            {...(register || {})}
             disabled={disabled}
             aria-invalid={error ? "true" : "false"}
             className={clsx(

@@ -12,6 +12,9 @@ import {
 } from "../redux/slices/departmentSlice";
 import { toast } from "sonner";
 import clsx from "clsx";
+import FormField from "./ui/FormField";
+import * as Icons from "../icons";
+import { validateEmail, validatePhone } from "../utils/validationUtils";
 
 const AddUser = ({ open, setOpen, userData }) => {
   const dispatch = useDispatch();
@@ -51,13 +54,11 @@ const AddUser = ({ open, setOpen, userData }) => {
 
   const emailValidation = {
     required: "Email is required!",
-    pattern: {
-      value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-      message: "Invalid email format",
-    },
+    validate: (val) => validateEmail(val) || "Invalid email format"
   };
 
   const phoneValidation = {
+    validate: (val) => !val || validatePhone(val) || "Invalid phone format",
     maxLength: { value: 20, message: "Phone too long (max 20 chars)" },
   };
 
@@ -196,106 +197,51 @@ const AddUser = ({ open, setOpen, userData }) => {
               {/* Scrollable form content */}
               <div className="px-6 pb-6 max-h-[calc(100vh-200px)] overflow-y-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {/* Full Name */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Full Name *
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Enter full name"
-                      {...register("name", nameValidation)}
-                      className={clsx(
-                        "w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors",
-                        errors.name
-                          ? "border-red-300 bg-red-50"
-                          : "border-gray-300",
-                      )}
-                    />
-                    {errors.name && (
-                      <p className="mt-2 text-sm text-red-600">
-                        {errors.name.message}
-                      </p>
-                    )}
-                  </div>
+                  <Textbox
+                    label="Full Name"
+                    placeholder="Enter full name"
+                    required
+                    icon={<Icons.User className="text-gray-400" />}
+                    {...register("name", nameValidation)}
+                    error={errors.name?.message}
+                  />
 
-                  {/* Title */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Title *
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Job title/position"
-                      {...register("title", {
-                        required: "Title is required!",
-                        maxLength: { value: 100, message: "Title too long" },
-                      })}
-                      className={clsx(
-                        "w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors",
-                        errors.title
-                          ? "border-red-300 bg-red-50"
-                          : "border-gray-300",
-                      )}
-                    />
-                    {errors.title && (
-                      <p className="mt-2 text-sm text-red-600">
-                        {errors.title.message}
-                      </p>
-                    )}
-                  </div>
+                  <Textbox
+                    label="Title"
+                    placeholder="Job title/position"
+                    required
+                    icon={<Icons.Briefcase className="text-gray-400" />}
+                    {...register("title", {
+                      required: "Title is required!",
+                      maxLength: { value: 100, message: "Title too long" },
+                    })}
+                    error={errors.title?.message}
+                  />
 
-                  {/* Email */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email Address *
-                    </label>
-                    <input
-                      type="email"
-                      placeholder="user@company.com"
-                      {...register("email", emailValidation)}
-                      className={clsx(
-                        "w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors",
-                        errors.email
-                          ? "border-red-300 bg-red-50"
-                          : "border-gray-300",
-                      )}
-                    />
-                    {errors.email && (
-                      <p className="mt-2 text-sm text-red-600">
-                        {errors.email.message}
-                      </p>
-                    )}
-                  </div>
+                  <Textbox
+                    label="Email Address"
+                    type="email"
+                    placeholder="user@company.com"
+                    required
+                    icon={<Icons.Mail className="text-gray-400" />}
+                    {...register("email", emailValidation)}
+                    error={errors.email?.message}
+                  />
 
-                  {/* Phone */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Phone Number
-                    </label>
-                    <input
-                      type="tel"
-                      placeholder="+1 (555) 123-4567"
-                      {...register("phone", phoneValidation)}
-                      className={clsx(
-                        "w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors",
-                        errors.phone
-                          ? "border-red-300 bg-red-50"
-                          : "border-gray-300",
-                      )}
-                    />
-                    {errors.phone && (
-                      <p className="mt-2 text-sm text-red-600">
-                        {errors.phone.message}
-                      </p>
-                    )}
-                  </div>
+                  <Textbox
+                    label="Phone Number"
+                    type="tel"
+                    placeholder="+1 (555) 123-4567"
+                    icon={<Icons.Phone className="text-gray-400" />}
+                    {...register("phone", phoneValidation)}
+                    error={errors.phone?.message}
+                  />
 
-                  {/* Role */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Role *
-                    </label>
+                  <FormField
+                    label="Role"
+                    required
+                    error={errors.role?.message}
+                  >
                     <select
                       {...register("role", {
                         required: "Role is required!",
@@ -313,18 +259,11 @@ const AddUser = ({ open, setOpen, userData }) => {
                       <option value="Manager">Manager</option>
                       <option value="Employee">Employee</option>
                     </select>
-                    {errors.role && (
-                      <p className="mt-2 text-sm text-red-600">
-                        {errors.role.message}
-                      </p>
-                    )}
-                  </div>
+                  </FormField>
 
-                  {/* Department */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Department
-                    </label>
+                  <FormField
+                    label="Department"
+                  >
                     <select
                       {...register("departmentId")}
                       disabled={isSubmitting || departments.length === 0}
@@ -340,7 +279,7 @@ const AddUser = ({ open, setOpen, userData }) => {
                         </option>
                       ))}
                     </select>
-                  </div>
+                  </FormField>
                 </div>
 
                 {/* Status Checkboxes */}

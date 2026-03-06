@@ -11,6 +11,7 @@ import RefreshButton from '../components/RefreshButton';
 import PageHeader from '../components/PageHeader';
 import Card from "../components/Card";
 import ApprovalCard from '../components/ApprovalCard';
+import { validateForm } from '../utils/validationUtils';
 
 const { RefreshCw, AlertCircle, Calendar, Clock, User, Plus, CheckSquare, Check, Eye, Filter, Lock, UserCheck, Clock: ClockIcon, AlertTriangle, CheckCircle } = Icons;
 
@@ -51,6 +52,7 @@ const ManagerTasks = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [viewMode, setViewMode] = useState('list');
   const [detailLoading, setDetailLoading] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
 
   const [projectDetails, setProjectDetails] = useState(null);
   const [isProjectLocked, setIsProjectLocked] = useState(false);
@@ -424,18 +426,28 @@ const ManagerTasks = () => {
   const handleCreateTask = async (event) => {
     event.preventDefault();
 
-    // Validate required fields
-    if (!formData.title || !selectedProjectId) {
-      toast.error('Title and project are required');
-      return;
+    const rules = {
+      title: { required: 'Task Title is required' },
+      assignedUsers: {
+        validate: (val) => {
+          if (!val || val.length === 0) return 'Task must be assigned to one employee';
+          if (val.length > 1) return 'Only one employee can be assigned to a task';
+          return true;
+        }
+      }
+    };
+
+    const errors = validateForm(formData, rules);
+    if (!selectedProjectId) {
+      errors.projectId = 'Project is required';
     }
 
-    // Validate single user assignment
-    const assignmentValidation = validateAssignment(formData.assignedUsers);
-    if (!assignmentValidation.valid) {
-      toast.error(assignmentValidation.error);
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      toast.error('Please fix the errors in the form');
       return;
     }
+    setFormErrors({});
 
     setActionLoading(true);
     try {
@@ -475,12 +487,18 @@ const ManagerTasks = () => {
         body: JSON.stringify(payload),
       });
 
-      if (resp && resp.error) {
-        if (resp.error.includes('assigned_to') && resp.error.includes('exactly one')) {
+      if (resp && !resp.success) {
+        if (resp.error && typeof resp.error === 'string' && resp.error.includes('assigned_to') && resp.error.includes('exactly one')) {
           toast.error('Error: Task must be assigned to exactly one user');
           return;
         }
-        throw new Error(resp.error || 'Unable to create task');
+
+        // Handle specific error codes or message from backend object
+        if (resp.error?.code === 'ASSIGNEE_ALREADY_ASSIGNED' && resp.message) {
+          throw new Error(resp.message);
+        }
+
+        throw new Error(resp.message || resp.error?.message || (typeof resp.error === 'string' ? resp.error : 'Unable to create task'));
       }
 
       const successMessage = resp?.message || 'Task created successfully';
@@ -497,13 +515,16 @@ const ManagerTasks = () => {
         timeAlloted: 8,
         projectId: selectedProjectId
       });
+      setFormErrors({});
 
       // Close modal and refresh tasks
       setShowCreateTaskModal(false);
       loadTasks(selectedProjectId);
     } catch (err) {
-      if (err.response && err.response.message && err.response.message.includes('successfully')) {
-        toast.success(err.response.message || 'Task created successfully');
+      const errorMessage = err?.message || err?.response?.data?.message || err?.data?.message || 'Unable to create task';
+      // Prevent success messages falling into catch blocks from old legacy interceptors
+      if (errorMessage.toLowerCase().includes('successfully')) {
+        toast.success(errorMessage);
         setFormData({
           title: '',
           description: '',
@@ -517,7 +538,6 @@ const ManagerTasks = () => {
         setShowCreateTaskModal(false);
         loadTasks(selectedProjectId);
       } else {
-        const errorMessage = typeof err === 'string' ? err : err?.response?.data?.message || err?.message || err?.data?.message || 'Unable to create task';
         toast.error(errorMessage);
       }
     } finally {
@@ -531,6 +551,7 @@ const ManagerTasks = () => {
       toast.error('Please select a project first');
       return;
     }
+    setFormErrors({});
     setShowCreateTaskModal(true);
   };
 
@@ -1209,10 +1230,14 @@ const ManagerTasks = () => {
                 <input
                   required
                   value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => {
+                    setFormData({ ...formData, title: e.target.value });
+                    if (formErrors.title) setFormErrors({ ...formErrors, title: null });
+                  }}
+                  className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.title ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
                   placeholder="Enter task title"
                 />
+                {formErrors.title && <p className="mt-1 text-sm text-red-500">{formErrors.title}</p>}
               </div>
 
               {/* Description */}
@@ -1319,8 +1344,9 @@ const ManagerTasks = () => {
                         ...formData,
                         assignedUsers: selectedUserId ? [selectedUserId] : []
                       });
+                      if (formErrors.assignedUsers) setFormErrors({ ...formErrors, assignedUsers: null });
                     }}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${formErrors.assignedUsers ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
                   >
                     <option value="">Select an employee</option>
                     {employees.map((employee) => {
@@ -1332,7 +1358,11 @@ const ManagerTasks = () => {
                       );
                     })}
                   </select>
-                  <p className="text-xs text-gray-500 mt-1">Only one employee can be assigned</p>
+                  {formErrors.assignedUsers ? (
+                    <p className="mt-1 text-sm text-red-500">{formErrors.assignedUsers}</p>
+                  ) : (
+                    <p className="text-xs text-gray-500 mt-1">Only one employee can be assigned</p>
+                  )}
                 </div>
               </div>
 

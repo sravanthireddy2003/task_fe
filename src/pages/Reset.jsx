@@ -7,22 +7,18 @@ import { resetPassword, selectAuthStatus, selectAuthError } from '../redux/slice
 import PasswordStrength from '../components/PasswordStrength';
 import Button from '../components/Button';
 import Textbox from '../components/Textbox';
+import { validateEmail, validatePassword } from '../utils/validationUtils';
 
 const Reset = () => {
   const dispatch = useDispatch();
   const status = useSelector(selectAuthStatus);
   const error = useSelector(selectAuthError);
   const navigate = useNavigate();
-  const { register, handleSubmit, watch, setValue } = useForm();
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm();
   const pwd = watch('newPassword', '');
   const location = useLocation();
 
   const onSubmit = (data) => {
-    if (data.newPassword !== data.confirmPassword) {
-      toast.error('Passwords do not match');
-      return;
-    }
-
     const payload = {
       email: data.email,
       otp: data.otp,
@@ -49,7 +45,7 @@ const Reset = () => {
     try {
       const q = new URLSearchParams(location.search).get('email') || location.state?.email;
       if (q) setValue('email', q);
-    } catch (e) {}
+    } catch (e) { }
   }, [location, setValue]);
 
   return (
@@ -71,7 +67,11 @@ const Reset = () => {
             label="Email"
             name="email"
             placeholder="email@example.com"
-            register={register('email', { required: 'Email required' })}
+            register={register('email', {
+              required: 'Email required',
+              validate: (val) => validateEmail(val) || 'Invalid email address'
+            })}
+            error={errors.email?.message}
             className="w-full"
           />
           <Textbox
@@ -79,6 +79,7 @@ const Reset = () => {
             name="otp"
             placeholder="123456"
             register={register('otp', { required: 'OTP required' })}
+            error={errors.otp?.message}
             className="w-full"
           />
           <Textbox
@@ -87,8 +88,9 @@ const Reset = () => {
             type="password"
             register={register('newPassword', {
               required: 'Password required',
-              minLength: { value: 6, message: 'Minimum 6 characters' },
+              validate: (val) => validatePassword(val) || 'Password must be at least 8 characters',
             })}
+            error={errors.newPassword?.message}
             className="w-full"
           />
           <PasswordStrength password={pwd} />
@@ -96,7 +98,11 @@ const Reset = () => {
             label="Confirm Password"
             name="confirmPassword"
             type="password"
-            register={register('confirmPassword', { required: 'Confirm password required' })}
+            register={register('confirmPassword', {
+              required: 'Confirm password required',
+              validate: (val) => val === pwd || 'Passwords do not match'
+            })}
+            error={errors.confirmPassword?.message}
             className="w-full"
           />
 

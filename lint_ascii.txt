@@ -1,0 +1,1674 @@
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\App.jsx
+  211:22  error    'onNavigate' is missing in props validation                                                              react/prop-types
+  311:6   warning  React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\App\apiClient.js
+  43:15  error  Empty block statement  no-empty
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\App\httpHandler.js
+   41:48  error  Empty block statement  no-empty
+  135:80  error  Empty block statement  no-empty
+  136:17  error  Empty block statement  no-empty
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\App\moduleMap.jsx
+  1:8  error  'React' is defined but never used  no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\Landingpage.jsx
+  1:8   error  'React' is defined but never used      no-unused-vars
+  1:27  error  'useEffect' is defined but never used  no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\api\workflowApi.js
+  1:43  error  'httpPatchService' is defined but never used  no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\AddUser.jsx
+    1:8   error  'React' is defined but never used                             no-unused-vars
+    4:8   error  'Textbox' is defined but never used                           no-unused-vars
+    5:8   error  'Loading' is defined but never used                           no-unused-vars
+   17:20  error  'open' is missing in props validation                         react/prop-types
+   17:26  error  'setOpen' is missing in props validation                      react/prop-types
+   17:35  error  'userData' is missing in props validation                     react/prop-types
+   32:5   error  'watch' is assigned a value but never used                    no-unused-vars
+   73:24  error  'userData.name' is missing in props validation                react/prop-types
+   74:25  error  'userData.email' is missing in props validation               react/prop-types
+   75:25  error  'userData.title' is missing in props validation               react/prop-types
+   76:25  error  'userData.phone' is missing in props validation               react/prop-types
+   77:24  error  'userData.role' is missing in props validation                react/prop-types
+   78:32  error  'userData.departmentPublicId' is missing in props validation  react/prop-types
+   79:27  error  'userData.isGuest' is missing in props validation             react/prop-types
+   80:28  error  'userData.isActive' is missing in props validation            react/prop-types
+   99:33  error  'userData._id' is missing in props validation                 react/prop-types
+   99:49  error  'userData.id' is missing in props validation                  react/prop-types
+   99:64  error  'userData.public_id' is missing in props validation           react/prop-types
+  101:35  error  'userData._id' is missing in props validation                 react/prop-types
+  101:51  error  'userData.id' is missing in props validation                  react/prop-types
+  101:66  error  'userData.public_id' is missing in props validation           react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\AddWH.jsx
+   7:28  error  'open' is missing in props validation           react/prop-types
+   7:34  error  'setOpen' is missing in props validation        react/prop-types
+   7:43  error  'idWH' is missing in props validation           react/prop-types
+  30:15  error  'result' is assigned a value but never used     no-unused-vars
+  33:15  error  'errorData' is assigned a value but never used  no-unused-vars
+  35:21  error  Empty block statement                           no-empty
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\AdminApprovalPanel.jsx
+    1:8    error  'React' is defined but never used                             no-unused-vars
+    4:17   error  'Eye' is defined but never used                               no-unused-vars
+   83:10   error  'closedProjects' is assigned a value but never used           no-unused-vars
+  305:32   error  'request' is missing in props validation                      react/prop-types
+  305:41   error  'isReadyToApprove' is missing in props validation             react/prop-types
+  305:59   error  'processingId' is missing in props validation                 react/prop-types
+  305:73   error  'onApprove' is missing in props validation                    react/prop-types
+  305:84   error  'onReject' is missing in props validation                     react/prop-types
+  305:94   error  'approvedRequests' is missing in props validation             react/prop-types
+  307:9    error  'isPendingApproval' is assigned a value but never used        no-unused-vars
+  308:9    error  'isApproved' is assigned a value but never used               no-unused-vars
+  337:77   error  'request.project_name' is missing in props validation         react/prop-types
+  337:112  error  'request.entity_id' is missing in props validation            react/prop-types
+  338:67   error  'request.project_public_id' is missing in props validation    react/prop-types
+  338:96   error  'request.entity_id' is missing in props validation            react/prop-types
+  346:77   error  'request.client_name' is missing in props validation          react/prop-types
+  347:63   error  'request.client_email' is missing in props validation         react/prop-types
+  355:77   error  'request.productivity_score' is missing in props validation   react/prop-types
+  356:76   error  'request.total_project_hours' is missing in props validation  react/prop-types
+  364:28   error  'request.requested_by_name' is missing in props validation    react/prop-types
+  364:57   error  'request.requestedByName' is missing in props validation      react/prop-types
+  364:92   error  'request.requested_by' is missing in props validation         react/prop-types
+  364:128  error  'request.requested_by' is missing in props validation         react/prop-types
+  364:142  error  'request.requested_by.name' is missing in props validation    react/prop-types
+  364:157  error  'request.requested_by' is missing in props validation         react/prop-types
+  369:52   error  'request.created_at' is missing in props validation           react/prop-types
+  384:52   error  'request.id' is missing in props validation                   react/prop-types
+  385:54   error  'request.id' is missing in props validation                   react/prop-types
+  389:45   error  'request.id' is missing in props validation                   react/prop-types
+  399:54   error  'request.id' is missing in props validation                   react/prop-types
+  418:16   error  'request.reason' is missing in props validation               react/prop-types
+  421:88   error  'request.reason' is missing in props validation               react/prop-types
+  467:26   error  'request.approved_by_name' is missing in props validation     react/prop-types
+  467:62   error  'request.approved_by' is missing in props validation          react/prop-types
+  467:97   error  'request.approved_by' is missing in props validation          react/prop-types
+  467:110  error  'request.approved_by.name' is missing in props validation     react/prop-types
+  467:125  error  'request.approved_by' is missing in props validation          react/prop-types
+  470:26   error  'request.approved_by_email' is missing in props validation    react/prop-types
+  470:63   error  'request.approved_by' is missing in props validation          react/prop-types
+  470:98   error  'request.approved_by' is missing in props validation          react/prop-types
+  470:111  error  'request.approved_by.email' is missing in props validation    react/prop-types
+  479:26   error  'request.approved_at' is missing in props validation          react/prop-types
+  479:57   error  'request.approved_at' is missing in props validation          react/prop-types
+  484:20   error  'request.approval_reason' is missing in props validation      react/prop-types
+  490:62   error  'request.approval_reason' is missing in props validation      react/prop-types
+  497:16   error  'request.tasks' is missing in props validation                react/prop-types
+  497:33   error  'request.tasks' is missing in props validation                react/prop-types
+  497:39   error  'request.tasks.length' is missing in props validation         react/prop-types
+  501:37   error  'request.tasks' is missing in props validation                react/prop-types
+  501:43   error  'request.tasks.length' is missing in props validation         react/prop-types
+  505:22   error  'request.tasks' is missing in props validation                react/prop-types
+  505:28   error  'request.tasks.map' is missing in props validation            react/prop-types
+  573:16   error  'request.attachments' is missing in props validation          react/prop-types
+  573:39   error  'request.attachments' is missing in props validation          react/prop-types
+  573:51   error  'request.attachments.length' is missing in props validation   react/prop-types
+  577:35   error  'request.attachments' is missing in props validation          react/prop-types
+  577:47   error  'request.attachments.length' is missing in props validation   react/prop-types
+  580:22   error  'request.attachments' is missing in props validation          react/prop-types
+  580:34   error  'request.attachments.map' is missing in props validation      react/prop-types
+  593:44   error  'request.created_at' is missing in props validation           react/prop-types
+  594:20   error  'request.updated_at' is missing in props validation           react/prop-types
+  595:46   error  'request.updated_at' is missing in props validation           react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\ApprovalCard.jsx
+    1:8    error  'React' is defined but never used                        no-unused-vars
+    7:25   error  'item' is missing in props validation                    react/prop-types
+    7:31   error  'onApprove' is missing in props validation               react/prop-types
+    7:42   error  'onReject' is missing in props validation                react/prop-types
+    7:52   error  'onEscalate' is missing in props validation              react/prop-types
+   14:20   error  'item.id' is missing in props validation                 react/prop-types
+   14:32   error  'item._id' is missing in props validation                react/prop-types
+   14:45   error  'item.instanceId' is missing in props validation         react/prop-types
+   15:28   error  'item.entity_type' is missing in props validation        react/prop-types
+   15:49   error  'item.entityType' is missing in props validation         react/prop-types
+   16:26   error  'item.entity_id' is missing in props validation          react/prop-types
+   16:45   error  'item.entityId' is missing in props validation           react/prop-types
+   17:27   error  'item.from_state' is missing in props validation         react/prop-types
+   17:47   error  'item.fromState' is missing in props validation          react/prop-types
+   18:25   error  'item.to_state' is missing in props validation           react/prop-types
+   18:43   error  'item.toState' is missing in props validation            react/prop-types
+   20:11   error  'item.requestedByName' is missing in props validation    react/prop-types
+   21:11   error  'item.requested_by_name' is missing in props validation  react/prop-types
+   22:12   error  'item.requested_by' is missing in props validation       react/prop-types
+   22:34   error  'item.requested_by' is missing in props validation       react/prop-types
+   22:47   error  'item.requested_by.name' is missing in props validation  react/prop-types
+   22:60   error  'item.requested_by' is missing in props validation       react/prop-types
+   23:12   error  'item.requestedBy' is missing in props validation        react/prop-types
+   23:33   error  'item.requestedBy' is missing in props validation        react/prop-types
+   23:45   error  'item.requestedBy.name' is missing in props validation   react/prop-types
+   23:58   error  'item.requestedBy' is missing in props validation        react/prop-types
+   34:17   error  'err' is defined but never used                          no-unused-vars
+   41:28   error  'item.status' is missing in props validation             react/prop-types
+   41:44   error  'item.currentStatus' is missing in props validation      react/prop-types
+   62:10   error  'createdAt' is not defined                               no-undef
+   62:89   error  'createdAt' is not defined                               no-undef
+   65:8    error  'reason' is not defined                                  no-undef
+   67:37   error  'reason' is not defined                                  no-undef
+  138:98   error  'item.status' is missing in props validation             react/prop-types
+  138:114  error  'item.currentStatus' is missing in props validation      react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\ApprovalModal.jsx
+   1:8  error  'React' is defined but never used          no-unused-vars
+  27:3  error  'open' is missing in props validation      react/prop-types
+  28:3  error  'mode' is missing in props validation      react/prop-types
+  29:3  error  'loading' is missing in props validation   react/prop-types
+  30:3  error  'onCancel' is missing in props validation  react/prop-types
+  31:3  error  'onSubmit' is missing in props validation  react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\AuditDrawer.jsx
+  1:8   error  'React' is defined but never used         no-unused-vars
+  3:24  error  'open' is missing in props validation     react/prop-types
+  3:30  error  'onClose' is missing in props validation  react/prop-types
+  3:39  error  'items' is missing in props validation    react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\BoardView.jsx
+  1:8   error  'React' is defined but never used           no-unused-vars
+  4:22  error  'tasks' is missing in props validation      react/prop-types
+  7:14  error  'tasks.map' is missing in props validation  react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\Button.jsx
+   6:3    error  'icon' is missing in props validation                  react/prop-types
+   7:3    error  'iconPosition' is missing in props validation          react/prop-types
+   8:3    error  'className' is missing in props validation             react/prop-types
+   9:3    error  'label' is missing in props validation                 react/prop-types
+  10:3    error  'type' is missing in props validation                  react/prop-types
+  11:3    error  'onClick' is missing in props validation               react/prop-types
+  12:3    error  'disabled' is missing in props validation              react/prop-types
+  13:3    error  'variant' is missing in props validation               react/prop-types
+  14:3    error  'size' is missing in props validation                  react/prop-types
+  22:108  error  'icon.props' is missing in props validation            react/prop-types
+  22:115  error  'icon.props.className' is missing in props validation  react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\Card.jsx
+  1:8   error  'React' is defined but never used           no-unused-vars
+  5:17  error  'as' is missing in props validation         react/prop-types
+  5:33  error  'className' is missing in props validation  react/prop-types
+  5:49  error  'children' is missing in props validation   react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\Chart.jsx
+   1:8   error  'React' is defined but never used             no-unused-vars
+  17:25  error  'type' is missing in props validation         react/prop-types
+  17:39  error  'data' is missing in props validation         react/prop-types
+  17:57  error  'dataKey' is missing in props validation      react/prop-types
+  17:57  error  'dataKey' is assigned a value but never used  no-unused-vars
+  17:76  error  'height' is missing in props validation       react/prop-types
+  17:90  error  'options' is missing in props validation      react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\ChatInterface.jsx
+    1:8   error  'React' is defined but never used                        no-unused-vars
+   21:26  error  'projectId' is missing in props validation               react/prop-types
+   21:37  error  'projectName' is missing in props validation             react/prop-types
+   21:50  error  'authToken' is missing in props validation               react/prop-types
+   21:61  error  'currentUserId' is missing in props validation           react/prop-types
+   21:76  error  'currentUserName' is missing in props validation         react/prop-types
+   42:9   error  'messageCountRef' is assigned a value but never used     no-unused-vars
+   45:11  error  'sendMessage' is assigned a value but never used         no-unused-vars
+   57:16  error  'result' is defined but never used                       no-unused-vars
+   58:17  error  'err' is defined but never used                          no-unused-vars
+  192:13  error  'result' is assigned a value but never used              no-unused-vars
+  351:17  error  Empty block statement                                    no-empty
+  361:33  error  'authToken.split' is missing in props validation         react/prop-types
+  373:19  error  Empty block statement                                    no-empty
+  694:41  error  'currentUserName.charAt' is missing in props validation  react/prop-types
+  715:35  error  'currentUserName.charAt' is missing in props validation  react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\ChatPageLayout.jsx
+   1:8   error  'React' is defined but never used                   no-unused-vars
+   9:3   error  'title' is missing in props validation              react/prop-types
+  10:3   error  'projects' is missing in props validation           react/prop-types
+  11:3   error  'selectedProjectId' is missing in props validation  react/prop-types
+  12:3   error  'onSelectProject' is missing in props validation    react/prop-types
+  13:3   error  'onRefresh' is missing in props validation          react/prop-types
+  14:3   error  'user' is missing in props validation               react/prop-types
+  15:3   error  'children' is missing in props validation           react/prop-types
+  52:25  error  'projects.map' is missing in props validation       react/prop-types
+  68:34  error  'user.name' is missing in props validation          react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\ChatStates.jsx
+   1:8   error  'React' is defined but never used             no-unused-vars
+   6:37  error  'message' is missing in props validation      react/prop-types
+  21:3   error  'title' is missing in props validation        react/prop-types
+  22:3   error  'description' is missing in props validation  react/prop-types
+  23:3   error  'helperText' is missing in props validation   react/prop-types
+  24:3   error  'actionLabel' is missing in props validation  react/prop-types
+  25:3   error  'onAction' is missing in props validation     react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\DashboardRouter.jsx
+  1:8  error  'React' is defined but never used  no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\DatePicker.jsx
+  1:8   error  'React' is defined but never used          no-unused-vars
+  2:8   error  'moment' is defined but never used         no-unused-vars
+  4:23  error  'id' is missing in props validation        react/prop-types
+  4:27  error  'label' is missing in props validation     react/prop-types
+  4:34  error  'value' is missing in props validation     react/prop-types
+  4:41  error  'onChange' is missing in props validation  react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\Dialogs.jsx
+  10:3   error  'open' is missing in props validation     react/prop-types
+  11:3   error  'setOpen' is missing in props validation  react/prop-types
+  12:3   error  'msg' is missing in props validation      react/prop-types
+  13:3   error  'setMsg' is missing in props validation   react/prop-types
+  14:3   error  'onClick' is missing in props validation  react/prop-types
+  15:3   error  'type' is missing in props validation     react/prop-types
+  16:3   error  'setType' is missing in props validation  react/prop-types
+  71:30  error  'open' is missing in props validation     react/prop-types
+  71:36  error  'setOpen' is missing in props validation  react/prop-types
+  71:45  error  'onClick' is missing in props validation  react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\Icon.jsx
+  1:8   error  'React' is defined but never used           no-unused-vars
+  5:17  error  'name' is missing in props validation       react/prop-types
+  5:23  error  'as' is missing in props validation         react/prop-types
+  5:31  error  'className' is missing in props validation  react/prop-types
+  5:42  error  'size' is missing in props validation       react/prop-types
+  5:42  error  'size' is defined but never used            no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\KanbanBoard.jsx
+    1:8   error  'React' is defined but never used                        no-unused-vars
+    1:27  error  'useEffect' is defined but never used                    no-unused-vars
+   12:3   error  'arrayMove' is defined but never used                    no-unused-vars
+   13:3   error  'SortableContext' is defined but never used              no-unused-vars
+   15:3   error  'verticalListSortingStrategy' is defined but never used  no-unused-vars
+   20:8   error  'TaskModal' is defined but never used                    no-unused-vars
+   22:10  error  'httpPatchService' is defined but never used             no-unused-vars
+   22:28  error  'httpPostService' is defined but never used              no-unused-vars
+   25:7   error  'normalizeId' is assigned a value but never used         no-unused-vars
+   48:7   error  'getProjectIdForApi' is assigned a value but never used  no-unused-vars
+   56:3   error  'tasks' is missing in props validation                   react/prop-types
+   57:3   error  'kanbanData' is missing in props validation              react/prop-types
+   58:3   error  'onUpdateTask' is missing in props validation            react/prop-types
+   58:3   error  'onUpdateTask' is defined but never used                 no-unused-vars
+   59:3   error  'onStartTask' is missing in props validation             react/prop-types
+   60:3   error  'onPauseTask' is missing in props validation             react/prop-types
+   61:3   error  'onResumeTask' is missing in props validation            react/prop-types
+   62:3   error  'onCompleteTask' is missing in props validation          react/prop-types
+   63:3   error  'onLoadTasks' is missing in props validation             react/prop-types
+   63:3   error  'onLoadTasks' is defined but never used                  no-unused-vars
+   64:3   error  'userRole' is missing in props validation                react/prop-types
+   65:3   error  'projectId' is missing in props validation               react/prop-types
+   65:3   error  'projectId' is assigned a value but never used           no-unused-vars
+   66:3   error  'reassignmentRequests' is missing in props validation    react/prop-types
+   67:3   error  'isTaskReadOnly' is missing in props validation          react/prop-types
+   70:10  error  'selectedTask' is assigned a value but never used        no-unused-vars
+   71:10  error  'showTaskModal' is assigned a value but never used       no-unused-vars
+  108:63  error  'kanbanData.length' is missing in props validation       react/prop-types
+  109:18  error  'kanbanData.forEach' is missing in props validation      react/prop-types
+  270:9   error  'handleCloseModal' is assigned a value but never used    no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\KanbanCard.jsx
+    1:8    error  'React' is defined but never used                          no-unused-vars
+    6:23   error  'task' is missing in props validation                      react/prop-types
+    6:29   error  'onClick' is missing in props validation                   react/prop-types
+    6:38   error  'isDragging' is missing in props validation                react/prop-types
+    6:58   error  'userRole' is missing in props validation                  react/prop-types
+    6:58   error  'userRole' is defined but never used                       no-unused-vars
+    6:68   error  'reassignmentRequests' is missing in props validation      react/prop-types
+    6:68   error  'reassignmentRequests' is assigned a value but never used  no-unused-vars
+    6:95   error  'isReadOnly' is missing in props validation                react/prop-types
+    7:49   error  'task.total_duration' is missing in props validation       react/prop-types
+   11:25   error  'task.status' is missing in props validation               react/prop-types
+   11:40   error  'task.stage' is missing in props validation                react/prop-types
+   14:41   error  'task.timer_running' is missing in props validation        react/prop-types
+   14:93   error  'task.started_at' is missing in props validation           react/prop-types
+   14:112  error  'task.timer_started_at' is missing in props validation     react/prop-types
+   15:26   error  'task.timer_started_at' is missing in props validation     react/prop-types
+   15:51   error  'task.started_at' is missing in props validation           react/prop-types
+   16:31   error  'task.total_duration' is missing in props validation       react/prop-types
+   16:54   error  'task.total_time_seconds' is missing in props validation   react/prop-types
+   16:81   error  'task.timeSpent' is missing in props validation            react/prop-types
+   31:12   error  'task.status' is missing in props validation               react/prop-types
+   31:25   error  'task.stage' is missing in props validation                react/prop-types
+   31:37   error  'task.total_duration' is missing in props validation       react/prop-types
+   31:58   error  'task.total_time_seconds' is missing in props validation   react/prop-types
+   31:83   error  'task.timeSpent' is missing in props validation            react/prop-types
+   31:99   error  'task.started_at' is missing in props validation           react/prop-types
+   31:116  error  'task.timer_started_at' is missing in props validation     react/prop-types
+   31:139  error  'task.timer_running' is missing in props validation        react/prop-types
+   41:14   error  'task.id' is missing in props validation                   react/prop-types
+   41:25   error  'task._id' is missing in props validation                  react/prop-types
+   41:37   error  'task.public_id' is missing in props validation            react/prop-types
+   70:24   error  'task.assignedUsers' is missing in props validation        react/prop-types
+   70:46   error  'task.assigned_users' is missing in props validation       react/prop-types
+   75:9    error  'taskId' is assigned a value but never used                no-unused-vars
+   75:23   error  'task.id' is missing in props validation                   react/prop-types
+   75:34   error  'task._id' is missing in props validation                  react/prop-types
+   75:46   error  'task.public_id' is missing in props validation            react/prop-types
+   78:25   error  'task.lock_info' is missing in props validation            react/prop-types
+   79:27   error  'task.task_status' is missing in props validation          react/prop-types
+   85:29   error  'task.status' is missing in props validation               react/prop-types
+  116:15   error  'task.title' is missing in props validation                react/prop-types
+  116:29   error  'task.name' is missing in props validation                 react/prop-types
+  120:13   error  'task.description' is missing in props validation          react/prop-types
+  122:17   error  'task.description' is missing in props validation          react/prop-types
+  127:13   error  'task.project' is missing in props validation              react/prop-types
+  129:20   error  'task.project' is missing in props validation              react/prop-types
+  129:28   error  'task.project.name' is missing in props validation         react/prop-types
+  129:41   error  'task.project' is missing in props validation              react/prop-types
+  129:49   error  'task.project.title' is missing in props validation        react/prop-types
+  134:13   error  'task.priority' is missing in props validation             react/prop-types
+  136:67   error  'task.priority' is missing in props validation             react/prop-types
+  137:98   error  'task.priority' is missing in props validation             react/prop-types
+  138:19   error  'task.priority' is missing in props validation             react/prop-types
+  167:13   error  'task.due_date' is missing in props validation             react/prop-types
+  171:34   error  'task.due_date' is missing in props validation             react/prop-types
+  183:28   error  'task.total_time_hhmmss' is missing in props validation    react/prop-types
+  183:69   error  'task.total_time_seconds' is missing in props validation   react/prop-types
+  187:34   error  'task.status' is missing in props validation               react/prop-types
+  187:49   error  'task.stage' is missing in props validation                react/prop-types
+  189:52   error  'task.status' is missing in props validation               react/prop-types
+  189:67   error  'task.stage' is missing in props validation                react/prop-types
+  190:62   error  'task.status' is missing in props validation               react/prop-types
+  190:77   error  'task.stage' is missing in props validation                react/prop-types
+  197:13   error  'task.checklist' is missing in props validation            react/prop-types
+  197:31   error  'task.checklist' is missing in props validation            react/prop-types
+  197:41   error  'task.checklist.length' is missing in props validation     react/prop-types
+  201:19   error  'task.checklist' is missing in props validation            react/prop-types
+  201:29   error  'task.checklist.filter' is missing in props validation     react/prop-types
+  201:81   error  'task.checklist' is missing in props validation            react/prop-types
+  201:91   error  'task.checklist.length' is missing in props validation     react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\KanbanColumn.jsx
+    1:8   error  'React' is defined but never used                      no-unused-vars
+   10:25  error  'id' is missing in props validation                    react/prop-types
+   10:29  error  'title' is missing in props validation                 react/prop-types
+   10:36  error  'tasks' is missing in props validation                 react/prop-types
+   10:43  error  'onTaskClick' is missing in props validation           react/prop-types
+   10:56  error  'userRole' is missing in props validation              react/prop-types
+   10:66  error  'reassignmentRequests' is missing in props validation  react/prop-types
+   10:93  error  'onAddTask' is missing in props validation             react/prop-types
+   89:24  error  'tasks.length' is missing in props validation          react/prop-types
+  115:22  error  'tasks.filter' is missing in props validation          react/prop-types
+  118:18  error  'tasks.some' is missing in props validation            react/prop-types
+  122:24  error  'tasks.filter' is missing in props validation          react/prop-types
+  139:24  error  'tasks.map' is missing in props validation             react/prop-types
+  142:18  error  'tasks.map' is missing in props validation             react/prop-types
+  153:16  error  'tasks.length' is missing in props validation          react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\ManagerApprovalPanel.jsx
+    2:8   error  'React' is defined but never used                                no-unused-vars
+    5:17  error  'Eye' is defined but never used                                  no-unused-vars
+  231:53  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  231:59  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  234:54  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  234:62  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\ModalWrapper.jsx
+  9:25  error  'isOpen' is missing in props validation          react/prop-types
+  9:33  error  'open' is missing in props validation            react/prop-types
+  9:39  error  'onClose' is missing in props validation         react/prop-types
+  9:48  error  'setOpen' is missing in props validation         react/prop-types
+  9:57  error  'title' is missing in props validation           react/prop-types
+  9:64  error  'children' is missing in props validation        react/prop-types
+  9:74  error  'panelClassName' is missing in props validation  react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\ModuleRouteGuard.jsx
+  4:44  error  'moduleName' is missing in props validation  react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\Navbar.jsx
+   1:8   error  'React' is defined but never used                  no-unused-vars
+  10:19  error  'searchQuery' is missing in props validation       react/prop-types
+  10:19  error  'searchQuery' is defined but never used            no-unused-vars
+  10:32  error  'setSearchQuery' is missing in props validation    react/prop-types
+  10:48  error  'onCreateTask' is missing in props validation      react/prop-types
+  10:48  error  'onCreateTask' is defined but never used           no-unused-vars
+  10:62  error  'onFilterClick' is missing in props validation     react/prop-types
+  10:77  error  'onViewToggle' is missing in props validation      react/prop-types
+  11:11  error  'user' is assigned a value but never used          no-unused-vars
+  29:9   error  'handleSearch' is assigned a value but never used  no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\NotificationBell.jsx
+  1:8   error  'React' is defined but never used         no-unused-vars
+  4:29  error  'onClick' is missing in props validation  react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\NotificationPanel.jsx
+   1:30  error  'useEffect' is defined but never used           no-unused-vars
+  17:10  error  'isOpen' is assigned a value but never used     no-unused-vars
+  17:18  error  'setIsOpen' is assigned a value but never used  no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\PageHeader.jsx
+   1:8  error  'React' is defined but never used            no-unused-vars
+   6:3  error  'title' is missing in props validation       react/prop-types
+   7:3  error  'subtitle' is missing in props validation    react/prop-types
+   8:3  error  'onRefresh' is missing in props validation   react/prop-types
+   9:3  error  'refreshing' is missing in props validation  react/prop-types
+  10:3  error  'children' is missing in props validation    react/prop-types
+  11:3  error  'className' is missing in props validation   react/prop-types
+  12:3  error  'align' is missing in props validation       react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\PageWrapper.jsx
+  1:8   error  'React' is defined but never used           no-unused-vars
+  5:24  error  'children' is missing in props validation   react/prop-types
+  5:34  error  'className' is missing in props validation  react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\PasswordStrength.jsx
+   1:8   error    'React' is defined but never used                                                                                               no-unused-vars
+  12:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  23:29  error    'password' is missing in props validation                                                                                       react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\ProjectClosureRequestButton.jsx
+    1:8    error  'React' is defined but never used                                no-unused-vars
+   16:40   error  'project' is missing in props validation                         react/prop-types
+   16:49   error  'tasks' is missing in props validation                           react/prop-types
+   16:61   error  'taskSummary' is missing in props validation                     react/prop-types
+   32:35   error  'project.status' is missing in props validation                  react/prop-types
+   32:66   error  'project.status' is missing in props validation                  react/prop-types
+   38:33   error  'taskSummary.total' is missing in props validation               react/prop-types
+   39:37   error  'taskSummary.completed' is missing in props validation           react/prop-types
+   40:38   error  'taskSummary.inProgress' is missing in props validation          react/prop-types
+   52:37   error  'project.status' is missing in props validation                  react/prop-types
+   52:85   error  'project.status' is missing in props validation                  react/prop-types
+   55:36   error  'project.status' is missing in props validation                  react/prop-types
+   55:68   error  'project.status' is missing in props validation                  react/prop-types
+   68:28   error  'project.id' is missing in props validation                      react/prop-types
+   68:42   error  'project._id' is missing in props validation                     react/prop-types
+  157:102  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  157:112  error  'project.name' is missing in props validation                    react/prop-types
+  157:128  error  'project.title' is missing in props validation                   react/prop-types
+  157:134  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\ProjectDropdown.jsx
+  1:8   error  'React' is defined but never used          no-unused-vars
+  3:28  error  'projects' is missing in props validation  react/prop-types
+  3:43  error  'value' is missing in props validation     react/prop-types
+  3:50  error  'onChange' is missing in props validation  react/prop-types
+  3:60  error  'id' is missing in props validation        react/prop-types
+  3:79  error  'label' is missing in props validation     react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\ProjectLockBanner.jsx
+   1:8   error  'React' is defined but never used                no-unused-vars
+   9:30  error  'project' is missing in props validation         react/prop-types
+  11:29  error  'project.status' is missing in props validation  react/prop-types
+  11:61  error  'project.status' is missing in props validation  react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\ProtectedRoute.jsx
+   1:8   error  'React' is defined but never used                       no-unused-vars
+   6:27  error  'allowedRoles' is missing in props validation           react/prop-types
+  13:36  error  'allowedRoles.length' is missing in props validation    react/prop-types
+  14:30  error  'allowedRoles.includes' is missing in props validation  react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\RefreshButton.jsx
+  1:8   error  'React' is defined but never used           no-unused-vars
+  6:26  error  'onClick' is missing in props validation    react/prop-types
+  6:35  error  'loading' is missing in props validation    react/prop-types
+  6:52  error  'disabled' is missing in props validation   react/prop-types
+  6:70  error  'title' is missing in props validation      react/prop-types
+  6:89  error  'className' is missing in props validation  react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\RoleRedirect.jsx
+  1:8  error  'React' is defined but never used  no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\RoleRoute.jsx
+  1:8   error  'React' is defined but never used           no-unused-vars
+  8:22  error  'role' is missing in props validation       react/prop-types
+  8:28  error  'Component' is missing in props validation  react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\SelectList.jsx
+   2:8   error  'React' is defined but never used             no-unused-vars
+   7:23  error  'lists' is missing in props validation        react/prop-types
+   7:30  error  'selected' is missing in props validation     react/prop-types
+   7:40  error  'setSelected' is missing in props validation  react/prop-types
+   7:53  error  'label' is missing in props validation        react/prop-types
+  32:24  error  'lists.map' is missing in props validation    react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\SlaBadge.jsx
+  1:8   error  'React' is defined but never used       no-unused-vars
+  6:21  error  'dueAt' is missing in props validation  react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\SlaTimer.jsx
+  1:8   error  'React' is defined but never used       no-unused-vars
+  3:21  error  'dueAt' is missing in props validation  react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\Tabs.jsx
+   7:32  error  'tabs' is missing in props validation         react/prop-types
+   7:38  error  'setSelected' is missing in props validation  react/prop-types
+   7:51  error  'children' is missing in props validation     react/prop-types
+  12:17  error  'tabs.map' is missing in props validation     react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\TaskCard.jsx
+   1:8   error    'React' is defined but never used                                                                        no-unused-vars
+   9:15  error    'PRIOTITYSTYELS' is defined but never used                                                               no-unused-vars
+   9:31  error    'TASK_TYPE' is defined but never used                                                                    no-unused-vars
+  25:21  error    'taskId' is missing in props validation                                                                  react/prop-types
+  25:29  error    'task' is missing in props validation                                                                    react/prop-types
+  41:6   warning  React Hook useEffect has a missing dependency: 'task'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\TaskModal.jsx
+    1:8    error  'React' is defined but never used                     no-unused-vars
+    8:22   error  'task' is missing in props validation                 react/prop-types
+    8:28   error  'onClose' is missing in props validation              react/prop-types
+    8:37   error  'onUpdate' is missing in props validation             react/prop-types
+    8:47   error  'userRole' is missing in props validation             react/prop-types
+    8:57   error  'projectId' is missing in props validation            react/prop-types
+    8:57   error  'projectId' is defined but never used                 no-unused-vars
+   10:9    error  'authUser' is assigned a value but never used         no-unused-vars
+   31:27   error  'task.id' is missing in props validation              react/prop-types
+   31:38   error  'task._id' is missing in props validation             react/prop-types
+   31:50   error  'task.public_id' is missing in props validation       react/prop-types
+   44:27   error  'task.id' is missing in props validation              react/prop-types
+   44:38   error  'task._id' is missing in props validation             react/prop-types
+   44:50   error  'task.public_id' is missing in props validation       react/prop-types
+  144:20   error  'task.status' is missing in props validation          react/prop-types
+  145:20   error  'task.status' is missing in props validation          react/prop-types
+  146:20   error  'task.status' is missing in props validation          react/prop-types
+  149:21   error  'task.title' is missing in props validation           react/prop-types
+  149:35   error  'task.name' is missing in props validation            react/prop-types
+  179:27   error  'task.description' is missing in props validation     react/prop-types
+  204:116  error  'task.status' is missing in props validation          react/prop-types
+  205:29   error  'task.status' is missing in props validation          react/prop-types
+  225:118  error  'task.priority' is missing in props validation        react/prop-types
+  226:29   error  'task.priority' is missing in props validation        react/prop-types
+  246:67   error  'task.start_date' is missing in props validation      react/prop-types
+  262:67   error  'task.due_date' is missing in props validation        react/prop-types
+  273:26   error  'task.assignedUsers' is missing in props validation   react/prop-types
+  273:48   error  'task.assigned_users' is missing in props validation  react/prop-types
+  275:24   error  'User' is not defined                                 react/jsx-no-undef
+  279:26   error  'task.assignedUsers' is missing in props validation   react/prop-types
+  279:48   error  'task.assigned_users' is missing in props validation  react/prop-types
+  299:21   error  'task.status' is missing in props validation          react/prop-types
+  305:22   error  'Square' is not defined                               react/jsx-no-undef
+  312:22   error  'Play' is not defined                                 react/jsx-no-undef
+  319:21   error  'task.status' is missing in props validation          react/prop-types
+  324:20   error  'Play' is not defined                                 react/jsx-no-undef
+  330:21   error  'task.status' is missing in props validation          react/prop-types
+  336:22   error  'Pause' is not defined                                react/jsx-no-undef
+  343:22   error  'Square' is not defined                               react/jsx-no-undef
+  350:22   error  'Square' is not defined                               react/jsx-no-undef
+  357:21   error  'task.status' is missing in props validation          react/prop-types
+  362:20   error  'Play' is not defined                                 react/jsx-no-undef
+  368:21   error  'task.status' is missing in props validation          react/prop-types
+  373:20   error  'Square' is not defined                               react/jsx-no-undef
+  388:24   error  'User' is not defined                                 react/jsx-no-undef
+  410:20   error  'MessageSquare' is not defined                        react/jsx-no-undef
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\TaskRequestButton.jsx
+   1:8   error  'React' is defined but never used                     no-unused-vars
+  13:30  error  'task' is missing in props validation                 react/prop-types
+  13:36  error  'projectId' is missing in props validation            react/prop-types
+  13:47  error  'onSuccess' is missing in props validation            react/prop-types
+  13:58  error  'disabled' is missing in props validation             react/prop-types
+  22:29  error  'task.status' is missing in props validation          react/prop-types
+  22:46  error  'task.stage' is missing in props validation           react/prop-types
+  28:27  error  'task.assignedUsers' is missing in props validation   react/prop-types
+  28:49  error  'task.assigned_users' is missing in props validation  react/prop-types
+  28:72  error  'task.assigned_to' is missing in props validation     react/prop-types
+  38:9   error  'canRequest' is assigned a value but never used       no-unused-vars
+  56:13  error  'result' is assigned a value but never used           no-unused-vars
+  57:22  error  'task.id' is missing in props validation              react/prop-types
+  57:33  error  'task._id' is missing in props validation             react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\TaskTitle.jsx
+  2:8   error  'React' is defined but never used           no-unused-vars
+  7:22  error  'label' is missing in props validation      react/prop-types
+  7:29  error  'className' is missing in props validation  react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\TaskWorkflowCard.jsx
+   1:8   error  'React' is defined but never used                               no-unused-vars
+   7:29  error  'task' is missing in props validation                           react/prop-types
+   7:35  error  'userRole' is missing in props validation                       react/prop-types
+   7:45  error  'onSendToReview' is missing in props validation                 react/prop-types
+   8:23  error  'task.title' is missing in props validation                     react/prop-types
+   8:38  error  'task.name' is missing in props validation                      react/prop-types
+   9:29  error  'task.description' is missing in props validation               react/prop-types
+  10:24  error  'task.status' is missing in props validation                    react/prop-types
+  10:40  error  'task.task_status' is missing in props validation               react/prop-types
+  11:31  error  'task.workflow_state' is missing in props validation            react/prop-types
+  11:55  error  'task.workflowStatus' is missing in props validation            react/prop-types
+  12:26  error  'task.sla_deadline' is missing in props validation              react/prop-types
+  12:48  error  'task.due_date' is missing in props validation                  react/prop-types
+  12:66  error  'task.dueDate' is missing in props validation                   react/prop-types
+  32:28  error  'task.workflow_steps_total' is missing in props validation      react/prop-types
+  32:58  error  'task.stepsTotal' is missing in props validation                react/prop-types
+  33:27  error  'task.workflow_steps_completed' is missing in props validation  react/prop-types
+  33:61  error  'task.stepsCompleted' is missing in props validation            react/prop-types
+  76:33  error  'task.id' is missing in props validation                        react/prop-types
+  76:45  error  'task._id' is missing in props validation                       react/prop-types
+  76:58  error  'task.public_id' is missing in props validation                 react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\TenantSelector.jsx
+   1:8   error  'React' is defined but never used          no-unused-vars
+   3:27  error  'onChange' is missing in props validation  react/prop-types
+  16:19  error  Empty block statement                      no-empty
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\Textbox.jsx
+   7:7  error  'type' is missing in props validation              react/prop-types
+   8:7  error  'placeholder' is missing in props validation       react/prop-types
+   9:7  error  'label' is missing in props validation             react/prop-types
+  10:7  error  'className' is missing in props validation         react/prop-types
+  11:7  error  'register' is missing in props validation          react/prop-types
+  12:7  error  'name' is missing in props validation              react/prop-types
+  13:7  error  'error' is missing in props validation             react/prop-types
+  14:7  error  'disabled' is missing in props validation          react/prop-types
+  15:7  error  'icon' is missing in props validation              react/prop-types
+  16:7  error  'rightIcon' is missing in props validation         react/prop-types
+  17:7  error  'helperText' is missing in props validation        react/prop-types
+  18:7  error  'required' is missing in props validation          react/prop-types
+  19:7  error  'showPassword' is missing in props validation      react/prop-types
+  20:7  error  'onPasswordToggle' is missing in props validation  react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\TimeTracker.jsx
+    1:8   error  'React' is defined but never used                    no-unused-vars
+    5:24  error  'task' is missing in props validation                react/prop-types
+    5:30  error  'onUpdate' is missing in props validation            react/prop-types
+    5:40  error  'userRole' is missing in props validation            react/prop-types
+    6:51  error  'task.timeSpent' is missing in props validation      react/prop-types
+    7:51  error  'task.timer_running' is missing in props validation  react/prop-types
+    8:10  error  'startTime' is assigned a value but never used       no-unused-vars
+   12:23  error  'task.timeSpent' is missing in props validation      react/prop-types
+   13:23  error  'task.timer_running' is missing in props validation  react/prop-types
+   43:27  error  'task.id' is missing in props validation             react/prop-types
+   43:38  error  'task._id' is missing in props validation            react/prop-types
+   43:50  error  'task.public_id' is missing in props validation      react/prop-types
+   58:27  error  'task.id' is missing in props validation             react/prop-types
+   58:38  error  'task._id' is missing in props validation            react/prop-types
+   58:50  error  'task.public_id' is missing in props validation      react/prop-types
+   72:27  error  'task.id' is missing in props validation             react/prop-types
+   72:38  error  'task._id' is missing in props validation            react/prop-types
+   72:50  error  'task.public_id' is missing in props validation      react/prop-types
+  107:28  error  'task.status' is missing in props validation         react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\Title.jsx
+  2:8   error  'React' is defined but never used           no-unused-vars
+  4:18  error  'title' is missing in props validation      react/prop-types
+  4:25  error  'className' is missing in props validation  react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\UserAvatar.jsx
+   1:8   error    'React' is defined but never used                                                                                                         no-unused-vars
+  28:17  error    Empty block statement                                                                                                                     no-empty
+  96:6   warning  React Hook useEffect has missing dependencies: 'navigate' and 'user.modules?.length'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\UserInfo.jsx
+   2:8   error  'React' is defined but never used                no-unused-vars
+   5:21  error  'user' is missing in props validation            react/prop-types
+   9:13  error  'open' is defined but never used                 no-unused-vars
+  12:38  error  'user.user_name' is missing in props validation  react/prop-types
+  28:40  error  'user.user_name' is missing in props validation  react/prop-types
+  32:70  error  'user.user_name' is missing in props validation  react/prop-types
+  35:28  error  'user.user_role' is missing in props validation  react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\ViewToggle.jsx
+   1:8   error  'React' is defined but never used           no-unused-vars
+  10:23  error  'mode' is missing in props validation       react/prop-types
+  10:38  error  'onChange' is missing in props validation   react/prop-types
+  10:48  error  'hasGrid' is missing in props validation    react/prop-types
+  10:64  error  'className' is missing in props validation  react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\WorkflowCanvas.jsx
+   1:8   error  'React' is defined but never used           no-unused-vars
+  17:25  error  'id' is missing in props validation         react/prop-types
+  17:29  error  'step' is missing in props validation       react/prop-types
+  17:35  error  'onChange' is missing in props validation   react/prop-types
+  17:45  error  'onRemove' is missing in props validation   react/prop-types
+  27:28  error  'step.name' is missing in props validation  react/prop-types
+  30:26  error  'step.role' is missing in props validation  react/prop-types
+  38:27  error  'template' is missing in props validation   react/prop-types
+  38:42  error  'onAddStep' is missing in props validation  react/prop-types
+  38:53  error  'onSave' is missing in props validation     react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\WorkflowHistoryDrawer.jsx
+   1:8   error  'React' is defined but never used            no-unused-vars
+  12:34  error  'instanceId' is missing in props validation  react/prop-types
+  12:46  error  'open' is missing in props validation        react/prop-types
+  12:52  error  'onClose' is missing in props validation     react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\WorkflowKanban.jsx
+    1:8    error  'React' is defined but never used                                no-unused-vars
+   12:3    error  'arrayMove' is defined but never used                            no-unused-vars
+   13:3    error  'SortableContext' is defined but never used                      no-unused-vars
+   15:3    error  'verticalListSortingStrategy' is defined but never used          no-unused-vars
+   67:27   error  'selectedWorkflow' is missing in props validation                react/prop-types
+   67:45   error  'onBack' is missing in props validation                          react/prop-types
+   68:111  error  'selectedWorkflow.id' is missing in props validation             react/prop-types
+   82:28   error  'selectedWorkflow.steps' is missing in props validation          react/prop-types
+   87:22   error  'selectedWorkflow.steps' is missing in props validation          react/prop-types
+   87:28   error  'selectedWorkflow.steps.forEach' is missing in props validation  react/prop-types
+  158:36   error  'selectedWorkflow.id' is missing in props validation             react/prop-types
+  184:88   error  'selectedWorkflow.name' is missing in props validation           react/prop-types
+  185:71   error  'selectedWorkflow.description' is missing in props validation    react/prop-types
+  203:31   error  'selectedWorkflow.steps' is missing in props validation          react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\WorkflowList.jsx
+   1:8   error    'React' is defined but never used                                                                         no-unused-vars
+  24:6   warning  React Hook useEffect has a missing dependency: 'tasks'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  45:19  error    Empty block statement                                                                                     no-empty
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\client\ClientAnalytics.jsx
+  1:8   error  'React' is defined but never used           no-unused-vars
+  6:28  error  'client' is missing in props validation     react/prop-types
+  6:28  error  'client' is defined but never used          no-unused-vars
+  6:36  error  'projects' is missing in props validation   react/prop-types
+  6:51  error  'dashboard' is missing in props validation  react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\client\ClientContacts.jsx
+   1:8   error  'React' is defined but never used                 no-unused-vars
+   8:27  error  'client' is missing in props validation           react/prop-types
+  21:28  error  'client.contacts' is missing in props validation  react/prop-types
+  41:28  error  'client.id' is missing in props validation        react/prop-types
+  48:28  error  'client.id' is missing in props validation        react/prop-types
+  54:21  error  Empty block statement                             no-empty
+  72:28  error  'client.id' is missing in props validation        react/prop-types
+  75:23  error  Empty block statement                             no-empty
+  82:26  error  'client.id' is missing in props validation        react/prop-types
+  85:21  error  Empty block statement                             no-empty
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\client\ClientDocuments.jsx
+    1:8   error  'React' is defined but never used                                no-unused-vars
+    1:35  error  'useEffect' is defined but never used                            no-unused-vars
+   11:28  error  'client' is missing in props validation                          react/prop-types
+   17:29  error  'client.documents' is missing in props validation                react/prop-types
+   41:28  error  'client.id' is missing in props validation                       react/prop-types
+   49:19  error  'client.id' is missing in props validation                       react/prop-types
+   50:41  error  'client.id' is missing in props validation                       react/prop-types
+  119:28  error  'client.id' is missing in props validation                       react/prop-types
+  122:23  error  Empty block statement                                            no-empty
+  174:56  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  174:73  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\client\ClientForm.jsx
+   1:8  error  'React' is defined but never used           no-unused-vars
+  57:3  error  'open' is missing in props validation       react/prop-types
+  58:3  error  'setOpen' is missing in props validation    react/prop-types
+  59:3  error  'client' is missing in props validation     react/prop-types
+  60:3  error  'onSuccess' is missing in props validation  react/prop-types
+  61:3  error  'isModal' is missing in props validation    react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\client\EditInClient.jsx
+   1:8   error  'React' is defined but never used                     no-unused-vars
+   4:18  error  'clients' is missing in props validation              react/prop-types
+   4:27  error  'onEdit' is missing in props validation               react/prop-types
+   4:35  error  'onRowClick' is missing in props validation           react/prop-types
+   4:47  error  'onDelete' is missing in props validation             react/prop-types
+   9:24  error  'setItemsPerPage' is assigned a value but never used  no-unused-vars
+  18:9   error  'handleDelete' is assigned a value but never used     no-unused-vars
+  18:25  error  'clientId' is defined but never used                  no-unused-vars
+  22:6   error  'clients.filter' is missing in props validation       react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\project\ProjectDocuments.jsx
+   2:8   error  'React' is defined but never used                   no-unused-vars
+  12:29  error  'project' is missing in props validation            react/prop-types
+  12:38  error  'onClose' is missing in props validation            react/prop-types
+  24:22  error  'project.id' is missing in props validation         react/prop-types
+  24:37  error  'project._id' is missing in props validation        react/prop-types
+  24:53  error  'project.public_id' is missing in props validation  react/prop-types
+  25:39  error  'project.public_id' is missing in props validation  react/prop-types
+  25:60  error  'project.id' is missing in props validation         react/prop-types
+  25:74  error  'project._id' is missing in props validation        react/prop-types
+  59:39  error  'project.public_id' is missing in props validation  react/prop-types
+  59:60  error  'project.id' is missing in props validation         react/prop-types
+  59:74  error  'project._id' is missing in props validation        react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\task\AddSubTask.jsx
+  9:23  error  'open' is missing in props validation     react/prop-types
+  9:29  error  'setOpen' is missing in props validation  react/prop-types
+  9:38  error  'id' is missing in props validation       react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\task\AddTask.jsx
+   1:8   error  'React' is defined but never used         no-unused-vars
+  16:20  error  'open' is missing in props validation     react/prop-types
+  16:26  error  'setOpen' is missing in props validation  react/prop-types
+  65:21  error  Empty block statement                     no-empty
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\task\Table.jsx
+    1:8   error  'React' is defined but never used                           no-unused-vars
+    2:10  error  'toast' is defined but never used                           no-unused-vars
+   16:18  error  'tasks' is missing in props validation                      react/prop-types
+   18:10  error  'selected' is assigned a value but never used               no-unused-vars
+   51:23  error  'task' is missing in props validation                       react/prop-types
+   53:11  error  'teamMembers' is assigned a value but never used            no-unused-vars
+   53:45  error  'task.team' is missing in props validation                  react/prop-types
+   53:58  error  'task.team' is missing in props validation                  react/prop-types
+   60:70  error  'task.stage' is missing in props validation                 react/prop-types
+   63:22  error  'task.title' is missing in props validation                 react/prop-types
+   70:67  error  'task.priority' is missing in props validation              react/prop-types
+   70:77  error  'task.priority.toLowerCase' is missing in props validation  react/prop-types
+   71:28  error  'task.priority' is missing in props validation              react/prop-types
+   71:38  error  'task.priority.toLowerCase' is missing in props validation  react/prop-types
+   74:22  error  'task.priority' is missing in props validation              react/prop-types
+   81:35  error  'task.date' is missing in props validation                  react/prop-types
+   81:49  error  'task.createdAt' is missing in props validation             react/prop-types
+   89:30  error  'task.activities' is missing in props validation            react/prop-types
+   89:42  error  'task.activities.length' is missing in props validation     react/prop-types
+   93:30  error  'task.assets' is missing in props validation                react/prop-types
+   93:38  error  'task.assets.length' is missing in props validation         react/prop-types
+   97:32  error  'task.subTasks' is missing in props validation              react/prop-types
+   97:42  error  'task.subTasks.length' is missing in props validation       react/prop-types
+  104:13  error  'task.team' is missing in props validation                  react/prop-types
+  104:27  error  'task.assigned_users' is missing in props validation        react/prop-types
+  105:13  error  'task.team' is missing in props validation                  react/prop-types
+  105:26  error  'task.assigned_users' is missing in props validation        react/prop-types
+  133:46  error  'task._id' is missing in props validation                   react/prop-types
+  148:25  error  'tasks.length' is missing in props validation               react/prop-types
+  149:25  error  'tasks.map' is missing in props validation                  react/prop-types
+  150:41  error  'task._id' is missing in props validation                   react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\task\TaskDialog.jsx
+    1:8   error  'React' is defined but never used              no-unused-vars
+   13:23  error  'task' is missing in props validation          react/prop-types
+   37:26  error  'task._id' is missing in props validation      react/prop-types
+   37:39  error  'task.task_id' is missing in props validation  react/prop-types
+   40:12  error  Empty block statement                          no-empty
+   53:19  error  'task.task_id' is missing in props validation  react/prop-types
+   55:16  error  Empty block statement                          no-empty
+  100:56  error  'task._id' is missing in props validation      react/prop-types
+  100:69  error  'task.task_id' is missing in props validation  react/prop-types
+  117:26  error  'task.task_id' is missing in props validation  react/prop-types
+  121:25  error  'task.task_id' is missing in props validation  react/prop-types
+  124:28  error  'task.task_id' is missing in props validation  react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\task\UpdateTask.jsx
+   1:8   error  'React' is defined but never used         no-unused-vars
+  11:10  error  'fetchUsers' is defined but never used    no-unused-vars
+  16:23  error  'open' is missing in props validation     react/prop-types
+  16:29  error  'setOpen' is missing in props validation  react/prop-types
+  16:38  error  'taskId' is missing in props validation   react/prop-types
+  57:23  error  Empty block statement                     no-empty
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\task\UpdateTaskStatus.jsx
+  6:29  error  'openStage' is missing in props validation       react/prop-types
+  6:40  error  'setOpenStage' is missing in props validation    react/prop-types
+  6:54  error  'id' is missing in props validation              react/prop-types
+  6:54  error  'id' is defined but never used                   no-unused-vars
+  6:58  error  'onStatusUpdate' is missing in props validation  react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\ui\DataTable.jsx
+   1:8   error  'React' is defined but never used                no-unused-vars
+   9:3   error  'columns' is missing in props validation         react/prop-types
+  10:3   error  'data' is missing in props validation            react/prop-types
+  11:3   error  'getRowKey' is missing in props validation       react/prop-types
+  12:3   error  'renderRow' is missing in props validation       react/prop-types
+  13:3   error  'emptyState' is missing in props validation      react/prop-types
+  14:3   error  'className' is missing in props validation       react/prop-types
+  24:24  error  'columns.map' is missing in props validation     react/prop-types
+  44:44  error  'columns.length' is missing in props validation  react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\ui\FormField.jsx
+   1:8  error  'React' is defined but never used             no-unused-vars
+   9:3  error  'label' is missing in props validation        react/prop-types
+  10:3  error  'labelFor' is missing in props validation     react/prop-types
+  11:3  error  'required' is missing in props validation     react/prop-types
+  12:3  error  'description' is missing in props validation  react/prop-types
+  13:3  error  'error' is missing in props validation        react/prop-types
+  14:3  error  'orientation' is missing in props validation  react/prop-types
+  15:3  error  'className' is missing in props validation    react/prop-types
+  16:3  error  'children' is missing in props validation     react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\ui\GridCard.jsx
+   1:8  error  'React' is defined but never used           no-unused-vars
+   9:3  error  'title' is missing in props validation      react/prop-types
+  10:3  error  'subtitle' is missing in props validation   react/prop-types
+  11:3  error  'value' is missing in props validation      react/prop-types
+  12:3  error  'icon' is missing in props validation       react/prop-types
+  13:3  error  'footer' is missing in props validation     react/prop-types
+  14:3  error  'tone' is missing in props validation       react/prop-types
+  15:3  error  'className' is missing in props validation  react/prop-types
+  16:3  error  'onClick' is missing in props validation    react/prop-types
+  17:3  error  'children' is missing in props validation   react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\components\ui\ListItem.jsx
+   1:8  error  'React' is defined but never used           no-unused-vars
+   9:3  error  'leading' is missing in props validation    react/prop-types
+  10:3  error  'title' is missing in props validation      react/prop-types
+  11:3  error  'subtitle' is missing in props validation   react/prop-types
+  12:3  error  'meta' is missing in props validation       react/prop-types
+  13:3  error  'children' is missing in props validation   react/prop-types
+  14:3  error  'onClick' is missing in props validation    react/prop-types
+  15:3  error  'className' is missing in props validation  react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\features\workflow\components\SlaBadge.jsx
+  1:8   error  'React' is defined but never used       no-unused-vars
+  4:21  error  'dueAt' is missing in props validation  react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\hooks\useChat.js
+   77:14  error    Empty block statement                                                                                                 no-empty
+  117:26  error    'error' is defined but never used                                                                                     no-unused-vars
+  159:6   warning  React Hook useEffect has a missing dependency: 'onMessageReceived'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\hooks\useNotifications.js
+  18:6   warning  React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  38:21  error    Empty block statement                                                                                    no-empty
+  56:21  error    Empty block statement                                                                                    no-empty
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\main.jsx
+   1:8   error  'React' is defined but never used  no-unused-vars
+  22:13  error  Empty block statement              no-empty
+  48:17  error  Empty block statement              no-empty
+  62:19  error  Empty block statement              no-empty
+  86:17  error  Empty block statement              no-empty
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\AdminApprovalQueue.jsx
+  1:8  error  'React' is defined but never used  no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\AdminDashboard.jsx
+    1:8   error  'React' is defined but never used           no-unused-vars
+    5:56  error  'LineChart' is defined but never used       no-unused-vars
+    5:67  error  'Line' is defined but never used            no-unused-vars
+  101:10  error  'error' is assigned a value but never used  no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\Analysis.jsx
+  1:8  error  'React' is defined but never used  no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\Approvals.jsx
+    1:8    error  'React' is defined but never used                                no-unused-vars
+    6:24   error  'List' is assigned a value but never used                        no-unused-vars
+    6:30   error  'Grid' is assigned a value but never used                        no-unused-vars
+    6:36   error  'Plus' is assigned a value but never used                        no-unused-vars
+    6:79   error  'ChevronRight' is assigned a value but never used                no-unused-vars
+    6:93   error  'Rows4' is assigned a value but never used                       no-unused-vars
+    6:100  error  'LayoutGrid' is assigned a value but never used                  no-unused-vars
+   13:9    error  'user' is assigned a value but never used                        no-unused-vars
+   92:19   error  Empty block statement                                            no-empty
+  187:21   error  Empty block statement                                            no-empty
+  226:19   error  Empty block statement                                            no-empty
+  750:17   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  750:64   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\ChangePassword.jsx
+  1:8  error  'React' is defined but never used  no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\Chat.jsx
+   1:8   error    'React' is defined but never used                                                                                   no-unused-vars
+  34:6   warning  React Hook useCallback has an unnecessary dependency: 'dispatch'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+  81:14  error    'MessageCircle' is not defined                                                                                      react/jsx-no-undef
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\Client.jsx
+    1:8    error    'React' is defined but never used                                                                            no-unused-vars
+   53:6    warning  React Hook useEffect has a missing dependency: 'loadData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+   59:23   error    Empty block statement                                                                                        no-empty
+   93:25   error    'client' is missing in props validation                                                                      react/prop-types
+   99:23   error    'client.name' is missing in props validation                                                                 react/prop-types
+   99:29   error    'client.name.charAt' is missing in props validation                                                          react/prop-types
+  103:82   error    'client.name' is missing in props validation                                                                 react/prop-types
+  106:50   error    'client.company' is missing in props validation                                                              react/prop-types
+  112:18   error    'client.isDeleted' is missing in props validation                                                            react/prop-types
+  116:19   error    'client.isDeleted' is missing in props validation                                                            react/prop-types
+  121:54   error    'client.isDeleted' is missing in props validation                                                            react/prop-types
+  128:46   error    'client.email' is missing in props validation                                                                react/prop-types
+  132:25   error    'client.phone' is missing in props validation                                                                react/prop-types
+  140:84   error    'client.manager_name' is missing in props validation                                                         react/prop-types
+  140:107  error    'client.managerName' is missing in props validation                                                          react/prop-types
+  140:129  error    'client.manager' is missing in props validation                                                              react/prop-types
+  142:62   error    'client.manager_name' is missing in props validation                                                         react/prop-types
+  142:85   error    'client.managerName' is missing in props validation                                                          react/prop-types
+  142:107  error    'client.manager' is missing in props validation                                                              react/prop-types
+  144:24   error    'client.manager_name' is missing in props validation                                                         react/prop-types
+  144:47   error    'client.managerName' is missing in props validation                                                          react/prop-types
+  144:69   error    'client.manager' is missing in props validation                                                              react/prop-types
+  145:27   error    'client.manager_name' is missing in props validation                                                         react/prop-types
+  145:50   error    'client.managerName' is missing in props validation                                                          react/prop-types
+  145:72   error    'client.manager' is missing in props validation                                                              react/prop-types
+  152:67   error    'client.id' is missing in props validation                                                                   react/prop-types
+  169:50   error    'client.id' is missing in props validation                                                                   react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\ClientDashboard.jsx
+    1:8   error  'React' is defined but never used         no-unused-vars
+  101:19  error  'label' is missing in props validation    react/prop-types
+  101:26  error  'count' is missing in props validation    react/prop-types
+  101:33  error  'bg' is missing in props validation       react/prop-types
+  101:37  error  'icon' is missing in props validation     react/prop-types
+  101:43  error  'thought' is missing in props validation  react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\ClientDetails.jsx
+    1:8   error  'React' is defined but never used                                no-unused-vars
+   34:27  error  'task' is defined but never used                                 no-unused-vars
+  101:53  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\ClientViewerHome.jsx
+   1:8  error    'React' is defined but never used                                                                                                                                                                                                     no-unused-vars
+  10:9  warning  The 'metrics' logical expression could make the dependencies of useMemo Hook (at line 16) change on every render. Move it inside the useMemo callback. Alternatively, wrap the initialization of 'metrics' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\Departments.jsx
+   22:29   error    'show' is missing in props validation                                                                                                                                                             react/prop-types
+   22:35   error    'onClose' is missing in props validation                                                                                                                                                          react/prop-types
+   22:44   error    'form' is missing in props validation                                                                                                                                                             react/prop-types
+   22:50   error    'setForm' is missing in props validation                                                                                                                                                          react/prop-types
+   22:59   error    'onSubmit' is missing in props validation                                                                                                                                                         react/prop-types
+   22:69   error    'editing' is missing in props validation                                                                                                                                                          react/prop-types
+   22:78   error    'managers' is missing in props validation                                                                                                                                                         react/prop-types
+   22:93   error    'formErrors' is missing in props validation                                                                                                                                                       react/prop-types
+   22:110  error    'setFormErrors' is missing in props validation                                                                                                                                                    react/prop-types
+   52:27   error    'form.name' is missing in props validation                                                                                                                                                        react/prop-types
+   66:27   error    'form.managerId' is missing in props validation                                                                                                                                                   react/prop-types
+   82:27   error    'form.headId' is missing in props validation                                                                                                                                                      react/prop-types
+  115:9    warning  The 'allUsers' logical expression could make the dependencies of useMemo Hook (at line 119) change on every render. To fix this, wrap the initialization of 'allUsers' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\Documents.jsx
+    1:8   error  'React' is defined but never used                   no-unused-vars
+    1:38  error  'useCallback' is defined but never used             no-unused-vars
+   12:24  error  'getClient' is defined but never used               no-unused-vars
+   19:71  error  'Shield' is assigned a value but never used         no-unused-vars
+   25:9   error  'currentUserId' is assigned a value but never used  no-unused-vars
+   80:27  error  Empty block statement                               no-empty
+  205:9   error  'canUpload' is assigned a value but never used      no-unused-vars
+  206:22  error  'doc' is defined but never used                     no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\EmployeeChat.jsx
+    1:8   error  'React' is defined but never used  no-unused-vars
+   35:19  error  Empty block statement              no-empty
+  112:14  error  'MessageCircle' is not defined     react/jsx-no-undef
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\EmployeeDashboard.jsx
+    1:8   error  'React' is defined but never used                                          no-unused-vars
+    6:10  error  'MODULE_MAP' is defined but never used                                     no-unused-vars
+   12:21  error  'title' is missing in props validation                                     react/prop-types
+   12:28  error  'data' is missing in props validation                                      react/prop-types
+   12:34  error  'colors' is missing in props validation                                    react/prop-types
+   12:47  error  'showValues' is missing in props validation                                react/prop-types
+   12:66  error  'horizontal' is missing in props validation                                react/prop-types
+   13:37  error  'data.map' is missing in props validation                                  react/prop-types
+   19:15  error  'data.length' is missing in props validation                               react/prop-types
+   25:19  error  'data.map' is missing in props validation                                  react/prop-types
+   65:15  error  'data.length' is missing in props validation                               react/prop-types
+   67:26  error  'data.reduce' is missing in props validation                               react/prop-types
+   72:13  error  'data.length' is missing in props validation                               react/prop-types
+   78:17  error  'data.map' is missing in props validation                                  react/prop-types
+  113:23  error  'title' is missing in props validation                                     react/prop-types
+  113:30  error  'data' is missing in props validation                                      react/prop-types
+  113:36  error  'size' is missing in props validation                                      react/prop-types
+  114:22  error  'data.reduce' is missing in props validation                               react/prop-types
+  134:19  error  'data.map' is missing in props validation                                  react/prop-types
+  178:19  error  'data.map' is missing in props validation                                  react/prop-types
+  203:28  error  'title' is missing in props validation                                     react/prop-types
+  203:35  error  'data' is missing in props validation                                      react/prop-types
+  203:41  error  'colors' is missing in props validation                                    react/prop-types
+  204:22  error  'data.reduce' is missing in props validation                               react/prop-types
+  210:15  error  'data.map' is missing in props validation                                  react/prop-types
+  251:22  error  'title' is missing in props validation                                     react/prop-types
+  251:29  error  'subtitle' is missing in props validation                                  react/prop-types
+  251:39  error  'value' is missing in props validation                                     react/prop-types
+  251:46  error  'icon' is missing in props validation                                      react/prop-types
+  251:52  error  'color' is missing in props validation                                     react/prop-types
+  251:59  error  'trend' is missing in props validation                                     react/prop-types
+  264:45  error  'trend.value' is missing in props validation                               react/prop-types
+  265:16  error  'trend.value' is missing in props validation                               react/prop-types
+  265:55  error  'trend.value' is missing in props validation                               react/prop-types
+  265:71  error  'trend.label' is missing in props validation                               react/prop-types
+  286:26  error  'title' is missing in props validation                                     react/prop-types
+  286:33  error  'data' is missing in props validation                                      react/prop-types
+  287:22  error  'data.reduce' is missing in props validation                               react/prop-types
+  293:15  error  'data.map' is missing in props validation                                  react/prop-types
+  327:9   error  'modules' is assigned a value but never used                               no-unused-vars
+  332:10  error  'error' is assigned a value but never used                                 no-unused-vars
+  343:13  error  'overviewPayload' is assigned a value but never used                       no-unused-vars
+  383:28  error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  389:17  error  '_' is defined but never used                                              no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\EmployeeHome.jsx
+  21:23  error    'module' is missing in props validation                                                                                                                                                                                               react/prop-types
+  22:27  error    'module.moduleId' is missing in props validation                                                                                                                                                                                      react/prop-types
+  22:46  error    'module.id' is missing in props validation                                                                                                                                                                                            react/prop-types
+  22:59  error    'module._id' is missing in props validation                                                                                                                                                                                           react/prop-types
+  22:73  error    'module.module_id' is missing in props validation                                                                                                                                                                                     react/prop-types
+  23:40  error    'module.name' is missing in props validation                                                                                                                                                                                          react/prop-types
+  25:53  error    'module.name' is missing in props validation                                                                                                                                                                                          react/prop-types
+  25:59  error    'module.name.charAt' is missing in props validation                                                                                                                                                                                   react/prop-types
+  36:91  error    'module.name' is missing in props validation                                                                                                                                                                                          react/prop-types
+  37:64  error    'module.access' is missing in props validation                                                                                                                                                                                        react/prop-types
+  69:9   warning  The 'metrics' logical expression could make the dependencies of useMemo Hook (at line 77) change on every render. Move it inside the useMemo callback. Alternatively, wrap the initialization of 'metrics' in its own useMemo() Hook  react-hooks/exhaustive-deps
+  70:9   warning  The 'resources' logical expression could make the dependencies of useMemo Hook (at line 77) change on every render. To fix this, wrap the initialization of 'resources' in its own useMemo() Hook                                     react-hooks/exhaustive-deps
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\EmployeeTasks.jsx
+     1:8    error    'React' is defined but never used                                                                                                 no-unused-vars
+     2:10   error    'Link' is defined but never used                                                                                                  no-unused-vars
+    15:3    error    'logWorkingHours' is defined but never used                                                                                       no-unused-vars
+    22:35   error    'XCircle' is assigned a value but never used                                                                                      no-unused-vars
+    22:68   error    'Check' is assigned a value but never used                                                                                        no-unused-vars
+    22:109  error    'MessageSquare' is assigned a value but never used                                                                                no-unused-vars
+    22:124  error    'Plus' is assigned a value but never used                                                                                         no-unused-vars
+    22:130  error    'Send' is assigned a value but never used                                                                                         no-unused-vars
+    22:163  error    'Eye' is assigned a value but never used                                                                                          no-unused-vars
+    59:7    error    'formatDuration' is assigned a value but never used                                                                               no-unused-vars
+   114:7    error    'getStatusDisplayText' is assigned a value but never used                                                                         no-unused-vars
+   154:9    error    'navigate' is assigned a value but never used                                                                                     no-unused-vars
+   270:10   error    'showChecklistModal' is assigned a value but never used                                                                           no-unused-vars
+   270:30   error    'setShowChecklistModal' is assigned a value but never used                                                                        no-unused-vars
+   272:10   error    'taskTimelines' is assigned a value but never used                                                                                no-unused-vars
+   273:10   error    'selectedTaskForTimeline' is assigned a value but never used                                                                      no-unused-vars
+   279:10   error    'showSubmitModal' is assigned a value but never used                                                                              no-unused-vars
+   280:10   error    'submitReason' is assigned a value but never used                                                                                 no-unused-vars
+   281:10   error    'showTimelineModal' is assigned a value but never used                                                                            no-unused-vars
+   284:10   error    'activeTimers' is assigned a value but never used                                                                                 no-unused-vars
+   377:17   error    Empty block statement                                                                                                             no-empty
+   392:13   error    'result' is assigned a value but never used                                                                                       no-unused-vars
+   411:9    error    'handleRequestReassignment' is assigned a value but never used                                                                    no-unused-vars
+   423:17   error    Empty block statement                                                                                                             no-empty
+   437:13   error    'result' is assigned a value but never used                                                                                       no-unused-vars
+   468:19   error    Empty block statement                                                                                                             no-empty
+   527:9    error    'loadReassignmentRequests' is assigned a value but never used                                                                     no-unused-vars
+   556:21   error    Empty block statement                                                                                                             no-empty
+   574:21   error    Empty block statement                                                                                                             no-empty
+   582:19   error    Empty block statement                                                                                                             no-empty
+   649:6    warning  React Hook useEffect has missing dependencies: 'loadProjects' and 'userRole'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+   664:6    warning  React Hook useEffect has a missing dependency: 'loadTasks'. Either include it or remove the dependency array                      react-hooks/exhaustive-deps
+   752:6    warning  React Hook useMemo has a missing dependency: 'getStatusCounts'. Either include it or remove the dependency array                  react-hooks/exhaustive-deps
+   845:13   error    'result' is assigned a value but never used                                                                                       no-unused-vars
+   888:13   error    'result' is assigned a value but never used                                                                                       no-unused-vars
+   939:13   error    'result' is assigned a value but never used                                                                                       no-unused-vars
+   974:9    error    'handleMoveToReview' is assigned a value but never used                                                                           no-unused-vars
+  1019:9    error    'handleUpdateTask' is assigned a value but never used                                                                             no-unused-vars
+  1038:13   error    'resp' is assigned a value but never used                                                                                         no-unused-vars
+  1402:9    error    'getAssignedUsers' is assigned a value but never used                                                                             no-unused-vars
+  1431:9    error    'detailProject' is assigned a value but never used                                                                                no-unused-vars
+  1432:9    error    'formattedDue' is assigned a value but never used                                                                                 no-unused-vars
+  1440:57   warning  React Hook useMemo has a missing dependency: 'getStatusCounts'. Either include it or remove the dependency array                  react-hooks/exhaustive-deps
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\Forgot.jsx
+  42:17  error  Empty block statement  no-empty
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\Login.jsx
+   1:8   error  'React' is defined but never used  no-unused-vars
+  97:19  error  Empty block statement              no-empty
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\ManagerApprovalQueue.jsx
+  1:8  error  'React' is defined but never used  no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\ManagerChat.jsx
+    1:8   error  'React' is defined but never used  no-unused-vars
+   35:19  error  Empty block statement              no-empty
+  115:14  error  'MessageCircle' is not defined     react/jsx-no-undef
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\ManagerClients.jsx
+   1:8  error  'React' is defined but never used                       no-unused-vars
+  10:9  error  'user' is assigned a value but never used               no-unused-vars
+  51:9  error  'selectedDocuments' is assigned a value but never used  no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\ManagerDashboard.jsx
+   1:8    error  'React' is defined but never used                  no-unused-vars
+   3:26   error  'httpPatchService' is defined but never used       no-unused-vars
+   3:44   error  'httpPostService' is defined but never used        no-unused-vars
+   5:8    error  'RefreshButton' is defined but never used          no-unused-vars
+  10:9    error  'ArrowUpRight' is assigned a value but never used  no-unused-vars
+  10:23   error  'TrendingUp' is assigned a value but never used    no-unused-vars
+  10:66   error  'Target' is assigned a value but never used        no-unused-vars
+  10:74   error  'BarChart3' is assigned a value but never used     no-unused-vars
+  10:113  error  'ChevronRight' is assigned a value but never used  no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\ManagerProjects.jsx
+   1:8   error  'React' is defined but never used                  no-unused-vars
+   9:23  error  'List' is assigned a value but never used          no-unused-vars
+   9:29  error  'Grid' is assigned a value but never used          no-unused-vars
+  15:9   error  'resources' is assigned a value but never used     no-unused-vars
+  23:10  error  'clientsError' is assigned a value but never used  no-unused-vars
+  60:19  error  Empty block statement                              no-empty
+  67:19  error  Empty block statement                              no-empty
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\ManagerTasks.jsx
+    1:8    error    'React' is defined but never used                                                                                           no-unused-vars
+    8:25   error    'hasApprovedRequest' is defined but never used                                                                              no-unused-vars
+   10:8    error    'RefreshButton' is defined but never used                                                                                   no-unused-vars
+   13:8    error    'ApprovalCard' is defined but never used                                                                                    no-unused-vars
+   16:43   error    'Clock' is assigned a value but never used                                                                                  no-unused-vars
+   16:62   error    'CheckSquare' is assigned a value but never used                                                                            no-unused-vars
+   16:75   error    'Check' is assigned a value but never used                                                                                  no-unused-vars
+   16:82   error    'Eye' is assigned a value but never used                                                                                    no-unused-vars
+   16:101  error    'UserCheck' is assigned a value but never used                                                                              no-unused-vars
+   21:9    error    'resources' is assigned a value but never used                                                                              no-unused-vars
+   31:10   error    'pendingApprovals' is assigned a value but never used                                                                       no-unused-vars
+   32:10   error    'approvalsLoading' is assigned a value but never used                                                                       no-unused-vars
+   33:10   error    'showApprovalsPanel' is assigned a value but never used                                                                     no-unused-vars
+   33:30   error    'setShowApprovalsPanel' is assigned a value but never used                                                                  no-unused-vars
+   49:10   error    'employeesLoading' is assigned a value but never used                                                                       no-unused-vars
+   64:9    error    'statusDisplayMap' is assigned a value but never used                                                                       no-unused-vars
+   73:9    error    'statusColorMap' is assigned a value but never used                                                                         no-unused-vars
+  119:9    error    'validateAssignment' is assigned a value but never used                                                                     no-unused-vars
+  190:25   error    Do not access Object.prototype method 'hasOwnProperty' from target object                                                   no-prototype-builtins
+  226:49   error    Empty block statement                                                                                                       no-empty
+  270:6    warning  React Hook useCallback has a missing dependency: 'getProjectDisplayName'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  320:9    error    'handleApproveRequest' is assigned a value but never used                                                                   no-unused-vars
+  340:9    error    'handleRejectRequest' is assigned a value but never used                                                                    no-unused-vars
+  391:6    warning  React Hook useEffect has a missing dependency: 'selectedProjectId'. Either include it or remove the dependency array        react-hooks/exhaustive-deps
+  396:6    warning  React Hook useEffect has a missing dependency: 'loadPendingApprovals'. Either include it or remove the dependency array     react-hooks/exhaustive-deps
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\ManagerUsers.jsx
+  1:8  error  'React' is defined but never used  no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\Notifications.jsx
+  219:43  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\Page404.jsx
+  21:27  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+  21:47  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\PageNotFound.jsx
+  1:8  error  'React' is defined but never used  no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\Profile.jsx
+    1:8   error  'React' is defined but never used                                no-unused-vars
+   46:23  error  Empty block statement                                            no-empty
+   96:23  error  Empty block statement                                            no-empty
+  392:32  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+  462:32  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+  545:34  error  'navigate' is not defined                                        no-undef
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\Projects.jsx
+    33:3   error  'Edit3' is assigned a value but never used         no-unused-vars
+    38:3   error  'List' is assigned a value but never used          no-unused-vars
+    39:3   error  'Grid' is assigned a value but never used          no-unused-vars
+    42:3   error  'CheckCircle2' is assigned a value but never used  no-unused-vars
+    43:3   error  'Clock' is assigned a value but never used         no-unused-vars
+    44:3   error  'AlertCircle' is assigned a value but never used   no-unused-vars
+    45:3   error  'PauseCircle' is assigned a value but never used   no-unused-vars
+  1295:98  error  'index' is defined but never used                  no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\ReassignTaskRequest.jsx
+    1:8   error  'React' is defined but never used                                   no-unused-vars
+    8:37  error  'selectedTask' is missing in props validation                       react/prop-types
+    8:51  error  'onClose' is missing in props validation                            react/prop-types
+    8:60  error  'onSuccess' is missing in props validation                          react/prop-types
+   21:26  error  'selectedTask.public_id' is missing in props validation             react/prop-types
+   21:54  error  'selectedTask.id' is missing in props validation                    react/prop-types
+   24:39  error  'selectedTask.public_id' is missing in props validation             react/prop-types
+   24:65  error  'selectedTask.id' is missing in props validation                    react/prop-types
+  114:37  error  'selectedTask.public_id' is missing in props validation             react/prop-types
+  114:63  error  'selectedTask.id' is missing in props validation                    react/prop-types
+  114:82  error  'selectedTask._id' is missing in props validation                   react/prop-types
+  404:54  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`     react/no-unescaped-entities
+  404:69  error  'selectedTask.title' is missing in props validation                 react/prop-types
+  404:75  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`     react/no-unescaped-entities
+  405:27  error  'selectedTask.status' is missing in props validation                react/prop-types
+  407:30  error  'selectedTask.status' is missing in props validation                react/prop-types
+  411:31  error  'selectedTask.status' is missing in props validation                react/prop-types
+  414:27  error  'selectedTask.assignedUsers' is missing in props validation         react/prop-types
+  414:42  error  'selectedTask.assignedUsers.length' is missing in props validation  react/prop-types
+  416:44  error  'selectedTask.assignedUsers' is missing in props validation         react/prop-types
+  416:58  error  'selectedTask.assignedUsers.map' is missing in props validation     react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\Report.jsx
+    1:8   error  'React' is defined but never used       no-unused-vars
+  499:24  error  'title' is missing in props validation  react/prop-types
+  499:31  error  'value' is missing in props validation  react/prop-types
+  499:38  error  'color' is missing in props validation  react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\Reset.jsx
+   1:8   error  'React' is defined but never used     no-unused-vars
+   1:17  error  'useState' is defined but never used  no-unused-vars
+  48:17  error  Empty block statement                 no-empty
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\Settings.jsx
+    1:8   error    'React' is defined but never used                                                                                  no-unused-vars
+    8:26  error    'refreshTokenThunk' is defined but never used                                                                      no-unused-vars
+   34:9   error    'user' is assigned a value but never used                                                                          no-unused-vars
+  193:36  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`                                                    react/no-unescaped-entities
+  295:59  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`                                                    react/no-unescaped-entities
+  411:48  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`                                                    react/no-unescaped-entities
+  420:69  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`                                                    react/no-unescaped-entities
+  545:17  error    Empty block statement                                                                                              no-empty
+  548:10  error    'showToken' is assigned a value but never used                                                                     no-unused-vars
+  548:21  error    'setShowToken' is assigned a value but never used                                                                  no-unused-vars
+  554:9   error    'dispatch' is assigned a value but never used                                                                      no-unused-vars
+  577:6   warning  React Hook useEffect has a missing dependency: 'loadSettings'. Either include it or remove the dependency array    react-hooks/exhaustive-deps
+  602:6   warning  React Hook useEffect has a missing dependency: 'fetchAuditLogs'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  640:26  error    'title' is missing in props validation                                                                             react/prop-types
+  640:33  error    'icon' is missing in props validation                                                                              react/prop-types
+  640:45  error    'children' is missing in props validation                                                                          react/prop-types
+  640:55  error    'sectionKey' is missing in props validation                                                                        react/prop-types
+  671:27  error    'checked' is missing in props validation                                                                           react/prop-types
+  671:36  error    'onChange' is missing in props validation                                                                          react/prop-types
+  671:46  error    'label' is missing in props validation                                                                             react/prop-types
+  671:53  error    'description' is missing in props validation                                                                       react/prop-types
+  691:25  error    'label' is missing in props validation                                                                             react/prop-types
+  691:32  error    'value' is missing in props validation                                                                             react/prop-types
+  691:39  error    'onChange' is missing in props validation                                                                          react/prop-types
+  691:49  error    'type' is missing in props validation                                                                              react/prop-types
+  691:64  error    'placeholder' is missing in props validation                                                                       react/prop-types
+  691:77  error    'description' is missing in props validation                                                                       react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\TaskDetails.jsx
+    3:8   error  'React' is defined but never used                     no-unused-vars
+   13:10  error  'useSelector' is defined but never used               no-unused-vars
+   14:10  error  'selectTasks' is defined but never used               no-unused-vars
+   14:39  error  'selectSubTasks' is defined but never used            no-unused-vars
+   15:16  error  'Info' is assigned a value but never used             no-unused-vars
+  127:7   error  Unnecessary try/catch wrapper                         no-useless-catch
+  188:31  error  Empty block statement                                 no-empty
+  225:13  error  'result' is assigned a value but never used           no-unused-vars
+  520:23  error  'activity' is missing in props validation             react/prop-types
+  520:33  error  'taskId' is missing in props validation               react/prop-types
+  537:13  error  'result' is assigned a value but never used           no-unused-vars
+  555:19  error  'item' is missing in props validation                 react/prop-types
+  569:33  error  'item.type' is missing in props validation            react/prop-types
+  579:49  error  'item.user_name' is missing in props validation       react/prop-types
+  583:49  error  'item.type' is missing in props validation            react/prop-types
+  586:55  error  'item.createdAt' is missing in props validation       react/prop-types
+  592:21  error  'item.activity' is missing in props validation        react/prop-types
+  594:21  error  'item.activity' is missing in props validation        react/prop-types
+  594:31  error  'item.activity.slice' is missing in props validation  react/prop-types
+  614:22  error  'activity.map' is missing in props validation         react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\TaskDetailsWithRequests.jsx
+    1:8   error    'React' is defined but never used                                                                                                                                             no-unused-vars
+    8:89  error    'FileText' is assigned a value but never used                                                                                                                                 no-unused-vars
+   85:6   warning  React Hook useEffect has missing dependencies: 'loadReassignmentRequests', 'loadTaskDetails', and 'location.state?.task'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  303:30  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`                                                                                                               react/no-unescaped-entities
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\Tasks.jsx
+     3:8    error  'ViewToggle' is defined but never used                           no-unused-vars
+     6:57   error  'Grid' is assigned a value but never used                        no-unused-vars
+     6:129  error  'MoreVertical' is assigned a value but never used                no-unused-vars
+     6:143  error  'CheckCircle' is assigned a value but never used                 no-unused-vars
+     6:156  error  'XCircle' is assigned a value but never used                     no-unused-vars
+     6:165  error  'PlayCircle' is assigned a value but never used                  no-unused-vars
+     6:177  error  'PauseCircle' is assigned a value but never used                 no-unused-vars
+     6:190  error  'Eye' is assigned a value but never used                         no-unused-vars
+     6:195  error  'LayoutGrid' is assigned a value but never used                  no-unused-vars
+     9:8    error  'Card' is defined but never used                                 no-unused-vars
+    12:3    error  'fetchSelectedTaskDetails' is defined but never used             no-unused-vars
+    61:10   error  'assigneeSearch' is assigned a value but never used              no-unused-vars
+    61:26   error  'setAssigneeSearch' is assigned a value but never used           no-unused-vars
+    62:10   error  'activeStatusEdit' is assigned a value but never used            no-unused-vars
+    68:9    error  'isLoading' is assigned a value but never used                   no-unused-vars
+    79:9    error  'detailActivities' is assigned a value but never used            no-unused-vars
+   131:17   error  'result' is assigned a value but never used                      no-unused-vars
+   347:9    error  'updateStatusInline' is assigned a value but never used          no-unused-vars
+   425:9    error  'getStatusKey' is assigned a value but never used                no-unused-vars
+   509:9    error  'isAdminCurrentUser' is assigned a value but never used          no-unused-vars
+  1008:40   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  1008:76   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\Trash.jsx
+    1:8   error  'clsx' is defined but never used                 no-unused-vars
+    2:8   error  'React' is defined but never used                no-unused-vars
+   19:10  error  'open' is assigned a value but never used        no-unused-vars
+   19:16  error  'setOpen' is assigned a value but never used     no-unused-vars
+   76:21  error  Empty block statement                            no-empty
+   91:23  error  'item' is missing in props validation            react/prop-types
+   96:20  error  'item.name' is missing in props validation       react/prop-types
+   96:34  error  'item.company' is missing in props validation    react/prop-types
+  102:16  error  'item.email' is missing in props validation      react/prop-types
+  106:16  error  'item.phone' is missing in props validation      react/prop-types
+  110:16  error  'item.industry' is missing in props validation   react/prop-types
+  114:16  error  'item.deletedAt' is missing in props validation  react/prop-types
+  114:42  error  'item.deletedAt' is missing in props validation  react/prop-types
+  120:44  error  'item.id' is missing in props validation         react/prop-types
+  120:55  error  'item._id' is missing in props validation        react/prop-types
+  124:43  error  'item.id' is missing in props validation         react/prop-types
+  124:54  error  'item._id' is missing in props validation        react/prop-types
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\Users.jsx
+    1:8   error    'React' is defined but never used                                                                                                                                                           no-unused-vars
+   21:23  error    'users' is missing in props validation                                                                                                                                                      react/prop-types
+   22:28  error    'users.length' is missing in props validation                                                                                                                                               react/prop-types
+   23:29  error    'users.filter' is missing in props validation                                                                                                                                               react/prop-types
+   51:23  error    'user' is missing in props validation                                                                                                                                                       react/prop-types
+   51:29  error    'size' is missing in props validation                                                                                                                                                       react/prop-types
+   73:28  error    'user.name' is missing in props validation                                                                                                                                                  react/prop-types
+   77:17  error    'user.isActive' is missing in props validation                                                                                                                                              react/prop-types
+   85:21  error    'user' is missing in props validation                                                                                                                                                       react/prop-types
+   85:27  error    'onClick' is missing in props validation                                                                                                                                                    react/prop-types
+   95:73  error    'user.name' is missing in props validation                                                                                                                                                  react/prop-types
+   96:58  error    'user.title' is missing in props validation                                                                                                                                                 react/prop-types
+   96:73  error    'user.role' is missing in props validation                                                                                                                                                  react/prop-types
+  100:61  error    'user.email' is missing in props validation                                                                                                                                                 react/prop-types
+  102:18  error    'user.phone' is missing in props validation                                                                                                                                                 react/prop-types
+  105:54  error    'user.phone' is missing in props validation                                                                                                                                                 react/prop-types
+  114:21  error    'user.role' is missing in props validation                                                                                                                                                  react/prop-types
+  116:25  error    'user.role' is missing in props validation                                                                                                                                                  react/prop-types
+  121:20  error    'user.role' is missing in props validation                                                                                                                                                  react/prop-types
+  126:23  error    'user.isActive' is missing in props validation                                                                                                                                              react/prop-types
+  130:22  error    'user.isActive' is missing in props validation                                                                                                                                              react/prop-types
+  140:24  error    'user' is missing in props validation                                                                                                                                                       react/prop-types
+  140:30  error    'onClick' is missing in props validation                                                                                                                                                    react/prop-types
+  151:22  error    'user.name' is missing in props validation                                                                                                                                                  react/prop-types
+  153:68  error    'user.title' is missing in props validation                                                                                                                                                 react/prop-types
+  159:18  error    'user.email' is missing in props validation                                                                                                                                                 react/prop-types
+  165:19  error    'user.role' is missing in props validation                                                                                                                                                  react/prop-types
+  167:23  error    'user.role' is missing in props validation                                                                                                                                                  react/prop-types
+  172:18  error    'user.role' is missing in props validation                                                                                                                                                  react/prop-types
+  177:18  error    'user.departmentName' is missing in props validation                                                                                                                                        react/prop-types
+  184:21  error    'user.isActive' is missing in props validation                                                                                                                                              react/prop-types
+  188:20  error    'user.isActive' is missing in props validation                                                                                                                                              react/prop-types
+  202:29  error    'user' is missing in props validation                                                                                                                                                       react/prop-types
+  202:35  error    'isOpen' is missing in props validation                                                                                                                                                     react/prop-types
+  202:43  error    'onClose' is missing in props validation                                                                                                                                                    react/prop-types
+  202:52  error    'onEdit' is missing in props validation                                                                                                                                                     react/prop-types
+  202:60  error    'onDelete' is missing in props validation                                                                                                                                                   react/prop-types
+  206:38  error    'user.projects' is missing in props validation                                                                                                                                              react/prop-types
+  206:48  error    'user.projects.length' is missing in props validation                                                                                                                                       react/prop-types
+  207:41  error    'user.tasks' is missing in props validation                                                                                                                                                 react/prop-types
+  207:48  error    'user.tasks.length' is missing in props validation                                                                                                                                          react/prop-types
+  210:19  error    'user.tasks' is missing in props validation                                                                                                                                                 react/prop-types
+  210:26  error    'user.tasks.filter' is missing in props validation                                                                                                                                          react/prop-types
+  216:14  error    'user.tasks' is missing in props validation                                                                                                                                                 react/prop-types
+  216:21  error    'user.tasks.filter' is missing in props validation                                                                                                                                          react/prop-types
+  231:69  error    'user.name' is missing in props validation                                                                                                                                                  react/prop-types
+  232:50  error    'user.title' is missing in props validation                                                                                                                                                 react/prop-types
+  232:64  error    'user.role' is missing in props validation                                                                                                                                                  react/prop-types
+  254:68  error    'user.email' is missing in props validation                                                                                                                                                 react/prop-types
+  256:23  error    'user.phone' is missing in props validation                                                                                                                                                 react/prop-types
+  260:29  error    'user.phone' is missing in props validation                                                                                                                                                 react/prop-types
+  268:28  error    'user.role' is missing in props validation                                                                                                                                                  react/prop-types
+  270:32  error    'user.role' is missing in props validation                                                                                                                                                  react/prop-types
+  275:27  error    'user.role' is missing in props validation                                                                                                                                                  react/prop-types
+  278:23  error    'user.departmentName' is missing in props validation                                                                                                                                        react/prop-types
+  282:29  error    'user.departmentName' is missing in props validation                                                                                                                                        react/prop-types
+  322:19  error    'user.projects' is missing in props validation                                                                                                                                              react/prop-types
+  322:36  error    'user.projects' is missing in props validation                                                                                                                                              react/prop-types
+  322:45  error    'user.projects.length' is missing in props validation                                                                                                                                       react/prop-types
+  325:35  error    'user.projects' is missing in props validation                                                                                                                                              react/prop-types
+  325:44  error    'user.projects.length' is missing in props validation                                                                                                                                       react/prop-types
+  328:25  error    'user.projects' is missing in props validation                                                                                                                                              react/prop-types
+  328:34  error    'user.projects.map' is missing in props validation                                                                                                                                          react/prop-types
+  341:19  error    'user.tasks' is missing in props validation                                                                                                                                                 react/prop-types
+  341:33  error    'user.tasks' is missing in props validation                                                                                                                                                 react/prop-types
+  341:39  error    'user.tasks.length' is missing in props validation                                                                                                                                          react/prop-types
+  344:32  error    'user.tasks' is missing in props validation                                                                                                                                                 react/prop-types
+  344:38  error    'user.tasks.length' is missing in props validation                                                                                                                                          react/prop-types
+  347:25  error    'user.tasks' is missing in props validation                                                                                                                                                 react/prop-types
+  347:31  error    'user.tasks.slice' is missing in props validation                                                                                                                                           react/prop-types
+  413:9   warning  The 'users' logical expression could make the dependencies of useMemo Hook (at line 457) change on every render. To fix this, wrap the initialization of 'users' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\VC.jsx
+  1:8  error  'React' is defined but never used  no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\VerifyOTP.jsx
+    2:8   error  'React' is defined but never used                                no-unused-vars
+   10:8   error  'Textbox' is defined but never used                              no-unused-vars
+   16:35  error  'setFocus' is assigned a value but never used                    no-unused-vars
+   16:45  error  'watch' is assigned a value but never used                       no-unused-vars
+  140:15  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+  249:37  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\Workflow.jsx
+    1:8   error  'React' is defined but never used                                                                                                                                                              no-unused-vars
+    3:8   error  'WorkflowKanban' is defined but never used                                                                                                                                                     no-unused-vars
+    6:10  error  'Navigate' is defined but never used                                                                                                                                                           no-unused-vars
+   10:67  error  'fetchProjects' is defined but never used                                                                                                                                                      no-unused-vars
+   25:10  error  'viewMode' is assigned a value but never used                                                                                                                                                  no-unused-vars
+   25:20  error  'setViewMode' is assigned a value but never used                                                                                                                                               no-unused-vars
+   28:10  error  'previewFlow' is assigned a value but never used                                                                                                                                               no-unused-vars
+   28:23  error  'setPreviewFlow' is assigned a value but never used                                                                                                                                            no-unused-vars
+   29:10  error  'selectedWorkflowForKanban' is assigned a value but never used                                                                                                                                 no-unused-vars
+   29:37  error  'setSelectedWorkflowForKanban' is assigned a value but never used                                                                                                                              no-unused-vars
+   47:9   error  'isEmployee' is assigned a value but never used                                                                                                                                                no-unused-vars
+   72:27  error  React Hook "useState" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?     react-hooks/rules-of-hooks
+   73:10  error  'newStepName' is assigned a value but never used                                                                                                                                               no-unused-vars
+   73:23  error  'setNewStepName' is assigned a value but never used                                                                                                                                            no-unused-vars
+   73:41  error  React Hook "useState" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?     react-hooks/rules-of-hooks
+   78:25  error  React Hook "useSelector" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?  react-hooks/rules-of-hooks
+   81:3   error  React Hook "useEffect" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?    react-hooks/rules-of-hooks
+   85:44  error  'e' is defined but never used                                                                                                                                                                  no-unused-vars
+   90:48  error  'e' is defined but never used                                                                                                                                                                  no-unused-vars
+   96:3   error  React Hook "useEffect" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?    react-hooks/rules-of-hooks
+  103:3   error  React Hook "useEffect" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?    react-hooks/rules-of-hooks
+  105:47  error  'e' is defined but never used                                                                                                                                                                  no-unused-vars
+  110:3   error  React Hook "useEffect" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?    react-hooks/rules-of-hooks
+  127:9   error  'openCreate' is assigned a value but never used                                                                                                                                                no-unused-vars
+  140:9   error  'openEdit' is assigned a value but never used                                                                                                                                                  no-unused-vars
+  155:9   error  'handleDelete' is assigned a value but never used                                                                                                                                              no-unused-vars
+  284:9   error  'filtered' is assigned a value but never used                                                                                                                                                  no-unused-vars
+  303:9   error  'toggleFilter' is assigned a value but never used                                                                                                                                              no-unused-vars
+  311:9   error  'clearFilters' is assigned a value but never used                                                                                                                                              no-unused-vars
+  321:9   error  'getScopeBadgeStyle' is assigned a value but never used                                                                                                                                        no-unused-vars
+  332:9   error  'getStatusBadgeStyle' is assigned a value but never used                                                                                                                                       no-unused-vars
+  339:9   error  'stats' is assigned a value but never used                                                                                                                                                     no-unused-vars
+  361:25  error  'e' is defined but never used                                                                                                                                                                  no-unused-vars
+  544:43  error  'e' is defined but never used                                                                                                                                                                  no-unused-vars
+  777:45  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`                                                                                                                                react/no-unescaped-entities
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\WorkflowBuilder.jsx
+  1:8   error  'React' is defined but never used      no-unused-vars
+  1:17  error  'useEffect' is defined but never used  no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\client\ClientAssignedTasks.jsx
+  1:8  error  'React' is defined but never used  no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\client\ClientDocuments.jsx
+    2:8   error  'React' is defined but never used                                no-unused-vars
+    2:35  error  'useEffect' is defined but never used                            no-unused-vars
+   11:28  error  'client' is missing in props validation                          react/prop-types
+   17:29  error  'client.documents' is missing in props validation                react/prop-types
+   42:44  error  'client.id' is missing in props validation                       react/prop-types
+   61:28  error  'client.id' is missing in props validation                       react/prop-types
+   73:19  error  'client.id' is missing in props validation                       react/prop-types
+   74:41  error  'client.id' is missing in props validation                       react/prop-types
+  140:28  error  'client.id' is missing in props validation                       react/prop-types
+  143:23  error  Empty block statement                                            no-empty
+  186:42  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  186:59  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\dashboard.jsx
+    2:8   error  'React' is defined but never used                no-unused-vars
+    7:10  error  'fetchTasks' is defined but never used           no-unused-vars
+   18:16  error  'label' is missing in props validation           react/prop-types
+   18:23  error  'value' is missing in props validation           react/prop-types
+   18:30  error  'icon' is missing in props validation            react/prop-types
+   18:42  error  'trend' is missing in props validation           react/prop-types
+   18:49  error  'variant' is missing in props validation         react/prop-types
+   65:19  error  'timeFilter' is missing in props validation      react/prop-types
+   65:31  error  'onFilterChange' is missing in props validation  react/prop-types
+   65:47  error  'onSearch' is missing in props validation        react/prop-types
+   65:57  error  'systemStatus' is missing in props validation    react/prop-types
+  115:24  error  'users' is missing in props validation           react/prop-types
+  115:31  error  'tasks' is missing in props validation           react/prop-types
+  116:28  error  'users.length' is missing in props validation    react/prop-types
+  117:29  error  'users.filter' is missing in props validation    react/prop-types
+  118:30  error  'tasks.filter' is missing in props validation    react/prop-types
+  119:30  error  'tasks.filter' is missing in props validation    react/prop-types
+  186:23  error  'users' is missing in props validation           react/prop-types
+  212:18  error  'users.slice' is missing in props validation     react/prop-types
+  255:22  error  'Settings' is not defined                        react/jsx-no-undef
+  258:22  error  'MoreVertical' is not defined                    react/jsx-no-undef
+  271:26  error  'tasks' is missing in props validation           react/prop-types
+  273:18  error  'tasks.length' is missing in props validation    react/prop-types
+  274:22  error  'tasks.filter' is missing in props validation    react/prop-types
+  275:20  error  'tasks.filter' is missing in props validation    react/prop-types
+  279:25  error  'tasks.filter' is missing in props validation    react/prop-types
+  289:10  error  'BarChart3' is not defined                       react/jsx-no-undef
+  293:77  error  'ListChecks' is not defined                      no-undef
+  294:79  error  'ListChecks' is not defined                      no-undef
+  295:75  error  'AlertTriangle' is not defined                   no-undef
+  296:86  error  'ListChecks' is not defined                      no-undef
+  308:10  error  'searchTerm' is assigned a value but never used  no-unused-vars
+  350:20  error  'Crown' is not defined                           react/jsx-no-undef
+  354:20  error  'Database' is not defined                        react/jsx-no-undef
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\pages\testRep.jsx
+    1:8   error  'React' is defined but never used                       no-unused-vars
+   21:9   error  'fetchTaskhours' is assigned a value but never used     no-unused-vars
+   21:24  error  'setfetchTaskhours' is assigned a value but never used  no-unused-vars
+   68:23  error  Empty block statement                                   no-empty
+   88:23  error  Empty block statement                                   no-empty
+  167:23  error  Empty block statement                                   no-empty
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\redux\slices\apiSlice.js
+  11:15  error  'builder' is defined but never used  no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\redux\slices\approvalSlice.js
+  36:83  error  Empty block statement  no-empty
+  52:83  error  Empty block statement  no-empty
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\redux\slices\authSlice.js
+    3:8   error  'axios' is defined but never used                     no-unused-vars
+    6:3   error  'httpPatchService' is defined but never used          no-unused-vars
+   11:8   error  'fetchWithTenant' is defined but never used           no-unused-vars
+   28:13  error  Empty block statement                                 no-empty
+   36:13  error  Empty block statement                                 no-empty
+   57:7   error  'handleAuthError' is assigned a value but never used  no-unused-vars
+  370:19  error  Empty block statement                                 no-empty
+  409:23  error  Empty block statement                                 no-empty
+  538:10  error  '_' is defined but never used                         no-unused-vars
+  538:13  error  'thunkAPI' is defined but never used                  no-unused-vars
+  541:21  error  Empty block statement                                 no-empty
+  565:19  error  Empty block statement                                 no-empty
+  611:19  error  Empty block statement                                 no-empty
+  621:19  error  Empty block statement                                 no-empty
+  867:52  error  'action' is defined but never used                    no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\redux\slices\documentSlice.js
+    2:43  error  'httpPutService' is defined but never used       no-unused-vars
+  165:52  error  'internalId' is assigned a value but never used  no-unused-vars
+  218:54  error  'state' is defined but never used                no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\redux\slices\notificationSlice.js
+  46:10  error  'params' is assigned a value but never used  no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\redux\slices\projectSlice.js
+   25:10  error  'params' is assigned a value but never used  no-unused-vars
+  138:10  error  'params' is assigned a value but never used  no-unused-vars
+  293:58  error  'action' is defined but never used           no-unused-vars
+  302:63  error  'action' is defined but never used           no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\redux\slices\taskSlice.js
+  275:25  error  'httpPatchService' is not defined               no-undef
+  346:15  error  'errorData' is assigned a value but never used  no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\redux\slices\userSlice.js
+   11:10  error  'toast' is defined but never used            no-unused-vars
+   51:10  error  '_' is defined but never used                no-unused-vars
+   51:15  error  'rejectWithValue' is defined but never used  no-unused-vars
+   54:21  error  Empty block statement                        no-empty
+  171:21  error  'state' is defined but never used            no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\socket\workflowSocket.js
+  18:34  error  'data' is defined but never used     no-unused-vars
+  23:17  error  Empty block statement                no-empty
+  26:34  error  'payload' is defined but never used  no-unused-vars
+  30:17  error  Empty block statement                no-empty
+  33:36  error  'data' is defined but never used     no-unused-vars
+  37:17  error  Empty block statement                no-empty
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\utils\fileHelpers.js
+  9:41  error  'useProxy' is assigned a value but never used  no-unused-vars
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\utils\logger.js
+   33:49  error  'data' is defined but never used                   no-unused-vars
+   49:10  error  'containsSensitiveData' is defined but never used  no-unused-vars
+   63:10  error  'sanitize' is defined but never used               no-unused-vars
+   94:11  error  'formatted' is assigned a value but never used     no-unused-vars
+   95:15  error  Empty block statement                              no-empty
+   95:23  error  Empty block statement                              no-empty
+  106:11  error  'formatted' is assigned a value but never used     no-unused-vars
+  107:15  error  Empty block statement                              no-empty
+  107:23  error  Empty block statement                              no-empty
+  118:11  error  'formatted' is assigned a value but never used     no-unused-vars
+  119:15  error  Empty block statement                              no-empty
+  119:23  error  Empty block statement                              no-empty
+  129:11  error  'formatted' is assigned a value but never used     no-unused-vars
+  130:15  error  Empty block statement                              no-empty
+  130:23  error  Empty block statement                              no-empty
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\utils\notificationRefresh.js
+  42:19  error  Empty block statement  no-empty
+  56:19  error  Empty block statement  no-empty
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\utils\tokenService.js
+  50:15  error  Empty block statement  no-empty
+  63:15  error  Empty block statement  no-empty
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\utils\validationUtils.js
+  10:24  error  Unnecessary escape character: \+  no-useless-escape
+  10:48  error  Unnecessary escape character: \.  no-useless-escape
+  10:64  error  Unnecessary escape character: \.  no-useless-escape
+
+C:\Users\nikhi\OneDrive\Documents\Desktop\Taskmgr-F_V4\src\utils\wsClient.js
+  20:23  error  Empty block statement          no-empty
+  25:26  error  'e' is defined but never used  no-unused-vars
+  35:51  error  Empty block statement          no-empty
+
+??? 1383 problems (1359 errors, 24 warnings)
+
