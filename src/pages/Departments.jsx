@@ -179,6 +179,10 @@ const Departments = () => {
         toast.success('✅ Department created');
         setForm({ name: '', managerId: '', headId: '' });
       }
+
+      // Fetch latest departments to ensure all populated fields (manager_name, head_name) are up-to-date
+      dispatch(fetchDepartments());
+
       setShowModal(false);
     } catch (err) {
       toast.error(err.message || '❌ Operation failed');

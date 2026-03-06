@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'sonner';
-import { Check, Eye, Loader2, RefreshCw, CheckCircle, X, Clock, User, FileText, AlertCircle, Calendar, BarChart3, Paperclip } from 'lucide-react';
+import { Check, Eye, Loader2, RefreshCw, CheckCircle, X, Clock, User, FileText, AlertCircle, Calendar, BarChart3, Paperclip, Filter } from 'lucide-react';
 import { fetchPendingApprovals, approveWorkflow } from '../redux/slices/workflowSlice';
 import { selectUser } from '../redux/slices/authSlice';
 
@@ -20,8 +20,11 @@ const ManagerApprovalPanel = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
   const [approvedRequests, setApprovedRequests] = useState(new Set());
-  const [actionError, setActionError] = useState(null); // New state for action errors
-  const [selectedProject, setSelectedProject] = useState('all'); // Project filter state
+  const [actionError, setActionError] = useState(null);
+  // Filter states (matching ManagerTasks style)
+  const [filterProject, setFilterProject] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterRequester, setFilterRequester] = useState('all');
 
   // Only show for managers
   const isManager = user?.role?.toLowerCase() === 'manager';
@@ -345,74 +348,117 @@ const ManagerApprovalPanel = () => {
             <Check className="w-8 h-8 mx-auto text-green-400" />
             <p className="mt-2 text-sm text-gray-500">No approvals found</p>
           </div>
-        ) : (
-          <div className="space-y-6">
-            {/* Project Filter Pills */}
-            {(() => {
-              const uniqueProjects = [
-                ...new Map(
-                  pendingApprovals
-                    .filter(r => r.project_name)
-                    .map(r => [r.project_public_id || r.project_name, { id: r.project_public_id, name: r.project_name }])
-                ).values()
-              ];
-              if (uniqueProjects.length < 2) return null;
-              return (
-                <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-gray-100">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide mr-1">Filter by Project:</span>
-                  <button
-                    onClick={() => setSelectedProject('all')}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${selectedProject === 'all'
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}
-                  >
-                    All Projects
-                    <span className="ml-1.5 bg-white/30 text-current rounded-full px-1.5 py-0.5 text-xs">
-                      {pendingApprovals.length}
-                    </span>
-                  </button>
-                  {uniqueProjects.map(proj => {
-                    const count = pendingApprovals.filter(
-                      r => (r.project_public_id || r.project_name) === (proj.id || proj.name)
-                    ).length;
-                    const isActive = selectedProject === (proj.id || proj.name);
-                    return (
-                      <button
-                        key={proj.id || proj.name}
-                        onClick={() => setSelectedProject(isActive ? 'all' : (proj.id || proj.name))}
-                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${isActive
-                            ? 'bg-blue-600 text-white shadow-sm'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                          }`}
-                      >
-                        {proj.name}
-                        <span className="ml-1.5 bg-white/30 text-current rounded-full px-1.5 py-0.5 text-xs">
-                          {count}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              );
-            })()}
+        ) : (() => {
+          // Derive unique projects & requesters for dropdowns
+          const uniqueProjects = [
+            ...new Map(
+              pendingApprovals
+                .filter(r => r.project_name)
+                .map(r => [r.project_public_id || r.project_name, { id: r.project_public_id || r.project_name, name: r.project_name }])
+            ).values()
+          ];
+          const uniqueRequesters = [
+            ...new Map(
+              pendingApprovals
+                .filter(r => r.requested_by_name || r.requestedByName)
+                .map(r => {
+                  const name = r.requested_by_name || r.requestedByName;
+                  return [name, name];
+                })
+            ).values()
+          ];
 
-            {/* Filtered Approval Cards */}
-            {(() => {
-              const filtered = selectedProject === 'all'
-                ? pendingApprovals
-                : pendingApprovals.filter(
-                  r => (r.project_public_id || r.project_name) === selectedProject
-                );
-              if (filtered.length === 0) {
-                return (
-                  <div className="text-center py-8 text-gray-400">
-                    <Check className="w-8 h-8 mx-auto mb-2" />
-                    <p className="text-sm">No requests for this project</p>
+          // Apply all three filters
+          const filteredApprovals = pendingApprovals.filter(r => {
+            const projMatch = filterProject === 'all' || (r.project_public_id || r.project_name) === filterProject;
+            const statusMatch = filterStatus === 'all' || (r.status || 'PENDING').toUpperCase() === filterStatus;
+            const requesterName = r.requested_by_name || r.requestedByName || '';
+            const requesterMatch = filterRequester === 'all' || requesterName === filterRequester;
+            return projMatch && statusMatch && requesterMatch;
+          });
+
+          const hasActiveFilters = filterProject !== 'all' || filterStatus !== 'all' || filterRequester !== 'all';
+
+          return (
+            <div className="space-y-6">
+              {/* ── Filter Toolbar (ManagerTasks style) ── */}
+              {(uniqueProjects.length > 0) && (
+                <div className="bg-gray-50 rounded-xl border border-gray-200 p-4 flex items-center gap-4 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <Filter className="w-4 h-4 text-gray-600" />
+                    <span className="text-gray-700 font-medium text-sm">Filters:</span>
                   </div>
-                );
-              }
-              return filtered.map((request) => {
+
+                  {/* Project filter */}
+                  {uniqueProjects.length > 0 && (
+                    <select
+                      value={filterProject}
+                      onChange={e => setFilterProject(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="all">All Projects</option>
+                      {uniqueProjects.map(p => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </select>
+                  )}
+
+                  {/* Status filter */}
+                  <select
+                    value={filterStatus}
+                    onChange={e => setFilterStatus(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="PENDING">Pending</option>
+                    <option value="APPROVED">Approved</option>
+                    <option value="REJECTED">Rejected</option>
+                  </select>
+
+                  {/* Requested By filter */}
+                  {uniqueRequesters.length > 0 && (
+                    <select
+                      value={filterRequester}
+                      onChange={e => setFilterRequester(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="all">All Requesters</option>
+                      {uniqueRequesters.map(name => (
+                        <option key={name} value={name}>{name}</option>
+                      ))}
+                    </select>
+                  )}
+
+                  {/* Results count + clear */}
+                  <div className="ml-auto flex items-center gap-3 text-sm text-gray-500">
+                    <span>{filteredApprovals.length} of {pendingApprovals.length} requests</span>
+                    {hasActiveFilters && (
+                      <button
+                        onClick={() => { setFilterProject('all'); setFilterStatus('all'); setFilterRequester('all'); }}
+                        className="text-blue-600 hover:text-blue-800 font-medium"
+                      >
+                        Clear Filters
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* ── Approval Cards ── */}
+              {filteredApprovals.length === 0 ? (
+                <div className="text-center py-10 text-gray-400">
+                  <Check className="w-8 h-8 mx-auto mb-2" />
+                  <p className="text-sm">No requests match the selected filters</p>
+                  {hasActiveFilters && (
+                    <button
+                      onClick={() => { setFilterProject('all'); setFilterStatus('all'); setFilterRequester('all'); }}
+                      className="mt-3 text-sm text-blue-600 hover:underline"
+                    >
+                      Clear all filters
+                    </button>
+                  )}
+                </div>
+              ) : filteredApprovals.map((request) => {
                 const isApproved = isRequestApproved(request);
                 const status = getRequestStatus(request);
 
@@ -496,8 +542,8 @@ const ManagerApprovalPanel = () => {
                             onClick={() => handleApprove(request.id)}
                             disabled={processingId === request.id || isApproved}
                             className={`inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${isApproved
-                                ? 'bg-green-500 cursor-not-allowed'
-                                : 'bg-green-600 hover:bg-green-700 disabled:bg-green-400'
+                              ? 'bg-green-500 cursor-not-allowed'
+                              : 'bg-green-600 hover:bg-green-700 disabled:bg-green-400'
                               }`}
                             title={isApproved ? "Task already approved" : "Approve task completion"}
                           >
@@ -518,8 +564,8 @@ const ManagerApprovalPanel = () => {
                             onClick={() => openRejectModal(request)}
                             disabled={processingId === request.id || isApproved}
                             className={`inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${isApproved
-                                ? 'bg-gray-400 cursor-not-allowed'
-                                : 'bg-red-600 hover:bg-red-700 disabled:bg-red-400'
+                              ? 'bg-gray-400 cursor-not-allowed'
+                              : 'bg-red-600 hover:bg-red-700 disabled:bg-red-400'
                               }`}
                             title={isApproved ? "Task already approved" : "Reject task completion"}
                           >
@@ -551,8 +597,8 @@ const ManagerApprovalPanel = () => {
                             <div>
                               <p className="text-sm font-medium text-gray-700 mb-1">Status</p>
                               <span className={`px-2 py-1 text-xs font-medium rounded-full ${request.task_details.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                                  request.task_details.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' :
-                                    'bg-gray-100 text-gray-800'
+                                request.task_details.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' :
+                                  'bg-gray-100 text-gray-800'
                                 }`}>
                                 {request.task_details.status}
                               </span>
@@ -560,8 +606,8 @@ const ManagerApprovalPanel = () => {
                             <div>
                               <p className="text-sm font-medium text-gray-700 mb-1">Priority</p>
                               <span className={`px-2 py-1 text-xs font-medium rounded-full ${request.task_details.priority === 'HIGH' ? 'bg-red-100 text-red-800' :
-                                  request.task_details.priority === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800' :
-                                    'bg-green-100 text-green-800'
+                                request.task_details.priority === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-green-100 text-green-800'
                                 }`}>
                                 {request.task_details.priority || 'LOW'}
                               </span>
@@ -663,13 +709,13 @@ const ManagerApprovalPanel = () => {
                     </div>
                   </div>
                 );
-              });
-            })()}
-          </div>
-        )}
+              })}
+            </div>
+          );
+        })()}
       </div>
 
-      {/* Reject Reason Modal - Don't show if selected request is approved */}
+      {/* Reject Reason Modal */}
       {showRejectModal && selectedRequest && !isRequestApproved(selectedRequest) && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">

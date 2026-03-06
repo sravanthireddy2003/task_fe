@@ -279,7 +279,11 @@ const ClientForm = ({
               Name *
             </label>
             <input
-              {...register("name", { required: "Name is required" })}
+              {...register("name", {
+                required: "Name is required",
+                minLength: { value: 2, message: "Name must be at least 2 characters" },
+                maxLength: { value: 100, message: "Name must be less than 100 characters" }
+              })}
               className="w-full px-5 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
               placeholder="Enter client name"
             />
@@ -320,11 +324,15 @@ const ClientForm = ({
                 required: "Phone is required",
                 pattern: {
                   value: /^[0-9]{10}$/,
-                  message: "10 digits required",
+                  message: "Valid 10 digit phone number required",
                 },
               })}
               className="w-full px-5 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
               placeholder="Enter 10-digit phone"
+              maxLength="10"
+              onInput={(e) => {
+                e.target.value = e.target.value.replace(/[^0-9]/g, "").slice(0, 10);
+              }}
             />
             {errors.phone && (
               <p className="text-red-500 text-sm mt-2 font-medium">
@@ -338,10 +346,16 @@ const ClientForm = ({
               Company
             </label>
             <input
-              {...register("company")}
+              {...register("company", {
+                minLength: { value: 2, message: "Company name must be at least 2 characters" },
+                maxLength: { value: 100, message: "Company name must be less than 100 characters" }
+              })}
               className="w-full px-5 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
               placeholder="Enter company name"
             />
+            {errors.company && (
+              <p className="text-red-500 text-sm mt-2 font-medium">{errors.company.message}</p>
+            )}
           </div>
         </div>
       </div>
@@ -366,10 +380,18 @@ const ClientForm = ({
               District
             </label>
             <input
-              {...register("district")}
+              {...register("district", {
+                pattern: {
+                  value: /^[a-zA-Z\s]*$/,
+                  message: "Only alphabets are allowed",
+                }
+              })}
               className="w-full px-5 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
               placeholder="Enter district"
             />
+            {errors.district && (
+              <p className="text-red-500 text-sm mt-2 font-medium">{errors.district.message}</p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-3">
@@ -393,10 +415,14 @@ const ClientForm = ({
             </label>
             <input
               {...register("pincode", {
-                pattern: { value: /^[0-9]{6}$/, message: "6 digits" },
+                pattern: { value: /^[0-9]{6}$/, message: "Valid 6 digit pincode required" },
               })}
               className="w-full px-5 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
               placeholder="Enter pincode"
+              maxLength="6"
+              onInput={(e) => {
+                e.target.value = e.target.value.replace(/[^0-9]/g, "").slice(0, 6);
+              }}
             />
             {errors.pincode && (
               <p className="text-red-500 text-sm mt-2 font-medium">
@@ -416,20 +442,47 @@ const ClientForm = ({
               GST/Tax ID
             </label>
             <input
-              {...register("taxId")}
+              {...register("taxId", {
+                pattern: {
+                  value: /^[a-zA-Z0-9]{15}$/,
+                  message: "GST must be exactly 15 alphanumeric characters",
+                }
+              })}
               className="w-full px-5 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
-              placeholder="Enter GST ID"
+              placeholder="Enter GST ID (e.g., 22AAAAA0000A1Z5)"
+              maxLength="15"
+              style={{ textTransform: "uppercase" }}
+              onInput={(e) => {
+                e.target.value = e.target.value.toUpperCase();
+              }}
             />
+            {errors.taxId && (
+              <p className="text-red-500 text-sm mt-2 font-medium">
+                {errors.taxId.message}
+              </p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-3">
               Industry
             </label>
             <input
-              {...register("industry")}
+              {...register("industry", {
+                minLength: { value: 2, message: "Industry must be at least 2 characters" },
+                maxLength: { value: 50, message: "Industry must be less than 50 characters" },
+                pattern: {
+                  value: /^[a-zA-Z\s]*$/,
+                  message: "Only alphabets are allowed",
+                }
+              })}
               className="w-full px-5 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
               placeholder="Enter industry"
             />
+            {errors.industry && (
+              <p className="text-red-500 text-sm mt-2 font-medium">
+                {errors.industry.message}
+              </p>
+            )}
           </div>
         </div>
         <div>

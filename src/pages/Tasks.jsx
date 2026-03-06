@@ -32,7 +32,9 @@ export default function Tasks() {
   const users = useSelector(selectUsers) || [];
 
   // Local UI state
-  const [view, setView] = useState('list'); // 'list', 'kanban', 'calendar', 'timeline'
+  const [view, setView] = useState('list'); // 'list', 'calendar', 'timeline'
+  const [calendarFilter, setCalendarFilter] = useState('month');
+  const [timelineFilter, setTimelineFilter] = useState('week');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [selectedTaskDetails, setSelectedTaskDetails] = useState(null);
@@ -377,7 +379,38 @@ export default function Tasks() {
     return matchesSearch && matchesStatus && matchesPriority;
   });
 
-  // Normalize backend status/stage into a Kanban column key
+  // Filter for timeline and calendar views
+  const getFilteredTasksForView = (filterType) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const endOfWeek = new Date(today);
+    endOfWeek.setDate(today.getDate() + 7);
+
+    const endOfMonth = new Date(today);
+    endOfMonth.setDate(today.getDate() + 30);
+
+    return filteredTasks.filter(task => {
+      if (!task.dueDate && !task.taskDate) return false;
+      const taskDate = new Date(task.dueDate || task.taskDate);
+      taskDate.setHours(0, 0, 0, 0);
+
+      if (filterType === 'today' || filterType === 'day') {
+        return taskDate.getTime() === today.getTime();
+      } else if (filterType === 'week') {
+        return taskDate >= today && taskDate <= endOfWeek;
+      } else if (filterType === 'month') {
+        return taskDate >= today && taskDate <= endOfMonth;
+      }
+      return true;
+    }).sort((a, b) => {
+      const dateA = new Date(a.dueDate || a.taskDate);
+      const dateB = new Date(b.dueDate || b.taskDate);
+      return dateA - dateB;
+    });
+  };
+
+  // Normalize backend status/stage
   const getStatusKey = (task) => {
     const rawStatus = (task.status || '').toString().toLowerCase();
     const rawStage = (task.stage || '').toString().toLowerCase();
@@ -393,15 +426,6 @@ export default function Tasks() {
     return 'pending';
   };
 
-  // Group tasks for Kanban view based on normalized status
-  const kanbanColumns = {
-    pending: filteredTasks.filter((task) => getStatusKey(task) === 'pending'),
-    in_progress: filteredTasks.filter((task) => getStatusKey(task) === 'in_progress'),
-    review: filteredTasks.filter((task) => getStatusKey(task) === 'review'),
-    completed: filteredTasks.filter((task) => getStatusKey(task) === 'completed'),
-    on_hold: filteredTasks.filter((task) => getStatusKey(task) === 'on_hold'),
-  };
-
   // Get status text for display
   const getStatusText = (status) => {
     if (!status) return 'To Do';
@@ -414,19 +438,7 @@ export default function Tasks() {
     return status.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
   };
 
-  // Get column title for Kanban
-  const getColumnTitle = (columnId) => {
-    const titles = {
-      pending: 'To Do',
-      in_progress: 'In Progress',
-      review: 'Review',
-      completed: 'Completed',
-      on_hold: 'Blocked'
-    };
-    return titles[columnId] || columnId;
-  };
-
-  // Get project name by ID
+  // Get status text for display
   const getProjectName = (projectId) => {
     const project = projects.find((p) =>
       p.id === projectId || p._id === projectId || p.public_id === projectId
@@ -457,15 +469,6 @@ export default function Tasks() {
     low: 'bg-gray-100 text-gray-800 border border-gray-200',
     medium: 'bg-amber-100 text-amber-800 border border-amber-200',
     high: 'bg-red-100 text-red-800 border border-red-200',
-  };
-
-  // Column colors for Kanban
-  const columnColors = {
-    pending: 'bg-gray-50',
-    in_progress: 'bg-blue-50',
-    review: 'bg-yellow-50',
-    completed: 'bg-green-50',
-    on_hold: 'bg-red-50',
   };
 
   // Format date for display
@@ -621,103 +624,21 @@ export default function Tasks() {
           </div>
         );
 
-      case 'kanban':
-        if (filteredTasks.length === 0) {
-          return (
-            <div className="bg-white rounded-xl border p-12 text-center">
-              <AlertCircle className="tm-icon-hero mx-auto mb-3 opacity-50" />
-              <p className="text-lg font-medium text-gray-900 mb-1">No tasks found</p>
-              <p className="text-gray-600 mb-6">No tasks match your selected filters.</p>
-              <div className="flex gap-3 justify-center" />
-            </div>
-          );
-        }
-        return (
-          <div className="flex gap-4 overflow-x-auto pb-4">
-            {Object.entries(kanbanColumns).map(([columnId, columnTasks]) => (
-              <div
-                key={columnId}
-                className={`flex-shrink-0 w-80 ${columnColors[columnId]} rounded-lg p-4`}
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-gray-900">
-                      {getColumnTitle(columnId)}
-                    </h3>
-                    <span className="bg-white px-2 py-1 rounded-full text-xs font-medium">
-                      {columnTasks.length}
-                    </span>
-                  </div>
-                  <button className="text-gray-400 hover:text-gray-600">
-                    <MoreVertical className="w-4 h-4" />
-                  </button>
-                </div>
-
-                <div className="space-y-3">
-                  {columnTasks.map((task) => (
-                    <Card
-                      key={task.id || task._id || task.public_id}
-                      className="cursor-pointer"
-                      onClick={() => handleOpenTaskDetails(task)}
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <h4 className={`font-medium ${(task.status || task.stage || 'pending').toLowerCase() === 'completed'
-                          ? 'text-gray-400 line-through'
-                          : 'text-gray-900'
-                          }`}>
-                          {task.title || task.name}
-                        </h4>
-                        <span
-                          className={`px-2 py-1 rounded text-xs ${priorityColors[(task.priority || 'MEDIUM').toLowerCase()]
-                            }`}
-                        >
-                          {(task.priority || 'MEDIUM').toUpperCase()}
-                        </span>
-                      </div>
-
-                      {task.description && (
-                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                          {task.description}
-                        </p>
-                      )}
-
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <User className="tm-icon text-gray-400" />
-                          <span className="text-xs text-gray-600">
-                            {getAssignedUsers(task)}
-                          </span>
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {formatDate(task.dueDate || task.taskDate)}
-                        </div>
-                      </div>
-
-                      <div className="mt-3 flex items-start justify-between">
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[getStatusKey(task)]
-                            }`}
-                        >
-                          {getStatusText(task.status || task.stage || 'pending')}
-                        </span>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        );
-
       case 'calendar':
         return (
           <div className="bg-white border rounded-xl p-6 overflow-x-auto">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <h3 className="text-lg font-semibold">Calendar View</h3>
               <div className="flex items-center gap-2 flex-wrap">
-                <button className="px-3 py-1 border rounded-lg text-sm bg-blue-50 text-blue-700 font-medium">Today</button>
-                <button className="px-3 py-1 border rounded-lg text-sm hover:bg-gray-50">Week</button>
-                <button className="px-3 py-1 border rounded-lg text-sm hover:bg-gray-50">Month</button>
+                <button
+                  onClick={() => setCalendarFilter('today')}
+                  className={`px-3 py-1 border rounded-lg text-sm font-medium ${calendarFilter === 'today' ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50'}`}>Today</button>
+                <button
+                  onClick={() => setCalendarFilter('week')}
+                  className={`px-3 py-1 border rounded-lg text-sm font-medium ${calendarFilter === 'week' ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50'}`}>Week</button>
+                <button
+                  onClick={() => setCalendarFilter('month')}
+                  className={`px-3 py-1 border rounded-lg text-sm font-medium ${calendarFilter === 'month' ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50'}`}>Month</button>
               </div>
             </div>
             <div className="min-w-[700px]">
@@ -729,7 +650,7 @@ export default function Tasks() {
               <div className="grid grid-cols-7 gap-2">
                 {Array.from({ length: 35 }).map((_, i) => {
                   const dayNumber = i + 1;
-                  const dayTasks = filteredTasks.filter(task => {
+                  const dayTasks = getFilteredTasksForView(calendarFilter).filter(task => {
                     if (!task.dueDate && !task.taskDate) return false;
                     const taskDate = new Date(task.dueDate || task.taskDate);
                     return taskDate.getDate() === dayNumber;
@@ -772,13 +693,19 @@ export default function Tasks() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <h3 className="text-lg font-semibold">Timeline View</h3>
               <div className="flex items-center gap-2 flex-wrap">
-                <button className="px-3 py-1 border rounded-lg text-sm bg-blue-50 text-blue-700 font-medium">Day</button>
-                <button className="px-3 py-1 border rounded-lg text-sm hover:bg-gray-50">Week</button>
-                <button className="px-3 py-1 border rounded-lg text-sm hover:bg-gray-50">Month</button>
+                <button
+                  onClick={() => setTimelineFilter('day')}
+                  className={`px-3 py-1 border rounded-lg text-sm font-medium ${timelineFilter === 'day' ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50'}`}>Day</button>
+                <button
+                  onClick={() => setTimelineFilter('week')}
+                  className={`px-3 py-1 border rounded-lg text-sm font-medium ${timelineFilter === 'week' ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50'}`}>Week</button>
+                <button
+                  onClick={() => setTimelineFilter('month')}
+                  className={`px-3 py-1 border rounded-lg text-sm font-medium ${timelineFilter === 'month' ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50'}`}>Month</button>
               </div>
             </div>
             <div className="space-y-4">
-              {filteredTasks.map((task) => (
+              {getFilteredTasksForView(timelineFilter).map((task) => (
                 <div
                   key={task.id}
                   className="flex items-start gap-4 p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
@@ -820,26 +747,6 @@ export default function Tasks() {
                         {getProjectName(selectedProjectId)}
                       </div>
                     </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); openModal(task); }}
-                      disabled={isProjectLocked}
-                      className={`p-2 rounded-lg ${isProjectLocked ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100'
-                        }`}
-                      title={isProjectLocked ? "Project Locked" : "Edit task"}
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleDelete(task); }}
-                      disabled={isProjectLocked}
-                      className={`p-2 rounded-lg ${isProjectLocked ? 'text-gray-300 cursor-not-allowed' : 'text-red-600 hover:bg-red-50'
-                        }`}
-                      title={isProjectLocked ? "Project Locked" : "Delete task"}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
                   </div>
                 </div>
               ))}
@@ -936,12 +843,8 @@ export default function Tasks() {
             </button>
           )}
 
-          {/* View Toggle: shared list/grid control (grid maps to kanban) */}
-          <ViewToggle
-            mode={view === 'list' ? 'list' : 'grid'}
-            onChange={(mode) => setView(mode === 'list' ? 'list' : 'kanban')}
-            className="ml-1"
-          />
+          {/* View Toggle: currently just 'list' as placeholder if grid/kanban removed */}
+          <div className="ml-1" />
 
           {/* Add Task Button - show in header only when there are tasks for the selected project */}
           {selectedProjectId !== 'all' && !isFetching && Array.isArray(tasks) && tasks.length > 0 && (
@@ -984,15 +887,6 @@ export default function Tasks() {
         >
           <List className="tm-icon" />
           List
-        </button>
-        <button
-          onClick={() => setView('kanban')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-t-lg font-medium ${view === 'kanban'
-            ? 'bg-white text-blue-600 border-t border-l border-r border-gray-300'
-            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
-        >
-          <LayoutGrid className="tm-icon" />
-          Kanban
         </button>
         <button
           onClick={() => setView('calendar')}
